@@ -10,7 +10,6 @@ use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRule;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
-use Shopwell\Core\Content\Cms\DataAbstractionLayer\Field\SlotConfigField;
 use Shopwell\Core\Content\Flow\Dispatching\Action\FlowMailVariables;
 use Shopwell\Core\Content\MailTemplate\MailTemplateException;
 use Shopwell\Core\Content\MailTemplate\Service\Event\MailDataSimulatorFieldEvent;
@@ -520,7 +519,6 @@ class MailDataSimulator
             case $field instanceof ObjectField:
             case $field instanceof PriceDefinitionField:
             case $field instanceof PriceField:
-            case $field instanceof SlotConfigField:
             case $field instanceof TaxFreeConfigField:
             case $field instanceof TreeBreadcrumbField:
             case $field instanceof VariantListingConfigField:

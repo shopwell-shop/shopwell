@@ -178,24 +178,6 @@ class TestBasicWithToOneRelationship extends SerializationFixture
                             'related' => \sprintf('%s/media/%s/order-line-items', $baseUrl, self::MEDIA_ID),
                         ],
                     ],
-                    'cmsBlocks' => [
-                        'data' => [],
-                        'links' => [
-                            'related' => \sprintf('%s/media/%s/cms-blocks', $baseUrl, self::MEDIA_ID),
-                        ],
-                    ],
-                    'cmsSections' => [
-                        'data' => [],
-                        'links' => [
-                            'related' => \sprintf('%s/media/%s/cms-sections', $baseUrl, self::MEDIA_ID),
-                        ],
-                    ],
-                    'cmsPages' => [
-                        'data' => [],
-                        'links' => [
-                            'related' => \sprintf('%s/media/%s/cms-pages', $baseUrl, self::MEDIA_ID),
-                        ],
-                    ],
                     'documents' => [
                         'data' => [],
                         'links' => [
@@ -344,9 +326,6 @@ class TestBasicWithToOneRelationship extends SerializationFixture
             'paymentMethods' => null,
             'productConfiguratorSettings' => null,
             'orderLineItems' => null,
-            'cmsBlocks' => null,
-            'cmsSections' => null,
-            'cmsPages' => null,
             'documents' => null,
             '_uniqueIdentifier' => self::MEDIA_ID,
             'versionId' => null,
@@ -383,9 +362,6 @@ class TestBasicWithToOneRelationship extends SerializationFixture
             $fixtures['data']['relationships']['tags'],
             $fixtures['data']['relationships']['productConfiguratorSettings'],
             $fixtures['data']['relationships']['orderLineItems'],
-            $fixtures['data']['relationships']['cmsBlocks'],
-            $fixtures['data']['relationships']['cmsSections'],
-            $fixtures['data']['relationships']['cmsPages'],
             $fixtures['data']['relationships']['documents'],
 
             $fixtures['included'][0]
@@ -419,9 +395,6 @@ class TestBasicWithToOneRelationship extends SerializationFixture
             $fixtures['paymentMethods'],
             $fixtures['productConfiguratorSettings'],
             $fixtures['orderLineItems'],
-            $fixtures['cmsBlocks'],
-            $fixtures['cmsSections'],
-            $fixtures['cmsPages'],
             $fixtures['documents']
         );
 

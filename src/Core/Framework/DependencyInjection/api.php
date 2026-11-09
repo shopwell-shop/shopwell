@@ -86,6 +86,15 @@ use Shopwell\Core\Framework\Api\Sync\SyncService;
 use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
+use Shopwell\Core\Framework\ContentSystem\Adapter\RootSourceRegistry;
+use Shopwell\Core\Framework\ContentSystem\Binding\Registry\ContentSystemBindingSpecificationRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Registry\ContentSystemStyleOptionRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\ContentSystemLayoutPresetRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\ContentSystemElementTypeRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\StoredSchemaResolver;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Inline\InlineMappingTokenParser;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Registry\AbstractContentSystemMappingCandidateRegistry;
+use Shopwell\Core\Framework\ContentSystem\Schema\ContentSystemDataLoaderSchemaGenerator;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
@@ -339,6 +348,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ShopIdProvider::class),
             service(StatsService::class),
             service('event_dispatcher'),
+            service(ContentSystemDataLoaderSchemaGenerator::class),
+            service(ContentSystemElementTypeRegistry::class),
+            service(ContentSystemStyleOptionRegistry::class),
+            service(RootSourceRegistry::class),
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service(StoredSchemaResolver::class),
+            service(ContentSystemLayoutPresetRegistry::class),
+            service(AbstractContentSystemMappingCandidateRegistry::class),
+            service(InlineMappingTokenParser::class),
             service(PresignedMediaUploadService::class)->nullOnInvalid(),
             service(MediaFileExtensionListProvider::class),
         ])

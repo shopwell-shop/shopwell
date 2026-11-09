@@ -61,22 +61,17 @@ const customEntityDefinitionWithAdminUi = {
     'write-protected': false,
     'read-protected': false,
     flags: {
-        'cms-aware': {},
         'admin-ui': adminUiExampleConfig,
     },
 };
 
-const withCmsAwareName = 'custom_entity_with_cms_aware';
-const customEntityDefinitionWithCmsAware = {
-    entity: withCmsAwareName,
+const withoutAdminUiName = 'custom_entity_without_admin_ui';
+const customEntityDefinitionWithoutAdminUi = {
+    entity: withoutAdminUiName,
     properties: {},
     'write-protected': false,
     'read-protected': false,
-    flags: {
-        'cms-aware': {
-            name: withCmsAwareName,
-        },
-    },
+    flags: {},
 };
 
 const withAllFlagsName = 'custom_entity_with_all_flags';
@@ -86,9 +81,6 @@ const customEntityDefinitionWithAllFlags = {
     'write-protected': false,
     'read-protected': false,
     flags: {
-        'cms-aware': {
-            name: withAllFlagsName,
-        },
         'admin-ui': adminUiExampleConfig,
     },
 };
@@ -98,7 +90,7 @@ function createCustomEntityDefinitionService() {
 
     customEntityDefinitionService.addDefinition(customEntityDefinitionBare);
     customEntityDefinitionService.addDefinition(customEntityDefinitionWithAdminUi);
-    customEntityDefinitionService.addDefinition(customEntityDefinitionWithCmsAware);
+    customEntityDefinitionService.addDefinition(customEntityDefinitionWithoutAdminUi);
     customEntityDefinitionService.addDefinition(customEntityDefinitionWithAllFlags);
 
     return customEntityDefinitionService;
@@ -122,29 +114,16 @@ describe('src/app/service/custom-entity-definition.service', () => {
         expect(service.getAllDefinitions()).toStrictEqual([
             customEntityDefinitionBare,
             customEntityDefinitionWithAdminUi,
-            customEntityDefinitionWithCmsAware,
+            customEntityDefinitionWithoutAdminUi,
             customEntityDefinitionWithAllFlags,
         ]);
-    });
-
-    it('should determine whether an entity with an cms-aware definition exists', () => {
-        expect(service.hasDefinitionWithCmsAware(bareDefinitionName)).toBe(false);
-        expect(service.hasDefinitionWithCmsAware(withAdminUiName)).toBe(false);
-        expect(service.hasDefinitionWithCmsAware(withCmsAwareName)).toBe(true);
-        expect(service.hasDefinitionWithCmsAware(withAllFlagsName)).toBe(true);
     });
 
     it('should determine whether an entity with an admin-ui definition exists', () => {
         expect(service.hasDefinitionWithAdminUi(bareDefinitionName)).toBe(false);
         expect(service.hasDefinitionWithAdminUi(withAdminUiName)).toBe(true);
-        expect(service.hasDefinitionWithAdminUi(withCmsAwareName)).toBe(false);
+        expect(service.hasDefinitionWithAdminUi(withoutAdminUiName)).toBe(false);
         expect(service.hasDefinitionWithAdminUi(withAllFlagsName)).toBe(true);
-    });
-
-    it('should return the correct collection of cms-aware definitions', () => {
-        const cmsAwareDefinitions = service.getCmsAwareDefinitions();
-
-        expect(cmsAwareDefinitions).toStrictEqual([customEntityDefinitionWithCmsAware, customEntityDefinitionWithAllFlags]);
     });
 
     it('should produce menu entry definitions for each entity with admin-ui', () => {

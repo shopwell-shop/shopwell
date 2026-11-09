@@ -14,7 +14,7 @@ import ProductCategoryHelper from 'src/plugin/google-analytics/product-category.
 export default class ProductPageHelper {
     static PRODUCT_ELEMENT_SELECTOR = '[data-product-information]';
 
-    static LISTING_SELECTOR = '.cms-element-product-listing-wrapper';
+    static LISTING_SELECTOR = '.product-listing-wrapper';
 
     /**
      * `add_to_cart` and the wishlist removal wait for the requested categories, so a slow request

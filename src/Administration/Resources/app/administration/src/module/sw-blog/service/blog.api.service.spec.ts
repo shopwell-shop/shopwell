@@ -68,10 +68,6 @@ function associationNames(criteria: { associations: unknown }, prefix: string = 
     });
 }
 
-function associationOf(criteria: { associations: unknown }, name: string): Association | undefined {
-    return (criteria.associations as Association[]).find((association) => association.association === name);
-}
-
 describe('src/module/sw-blog/service/blog.api.service', () => {
     describe('blogStatusOf', () => {
         const now = new Date('2026-05-01T10:00:00.000Z');
@@ -203,29 +199,17 @@ describe('src/module/sw-blog/service/blog.api.service', () => {
         });
     });
 
-    describe('cms page criteria', () => {
-        it('offers only layouts built for an article', () => {
-            expect(service.cmsPageOptionsCriteria().filters as Filters).toEqual([
-                expect.objectContaining({ type: 'equals', field: 'type', value: 'blog_detail' }),
+    describe('content layout criteria', () => {
+        it('offers standalone layouts for an article', () => {
+            expect(service.contentLayoutOptionsCriteria().filters as Filters).toEqual([
+                expect.objectContaining({ type: 'equals', field: 'rootSource', value: 'none' }),
             ]);
         });
 
-        it('offers only layouts built for a category listing', () => {
-            expect(service.categoryCmsPageOptionsCriteria().filters as Filters).toEqual([
-                expect.objectContaining({ type: 'equals', field: 'type', value: 'blog_listing' }),
+        it('offers standalone layouts for a category listing', () => {
+            expect(service.categoryContentLayoutOptionsCriteria().filters as Filters).toEqual([
+                expect.objectContaining({ type: 'equals', field: 'rootSource', value: 'none' }),
             ]);
-        });
-
-        it('reads the layout with the tree the page form needs', () => {
-            const criteria = service.cmsPageCriteria('page-1');
-            const sections = associationOf(criteria, 'sections');
-            const names = associationNames(criteria);
-
-            expect(criteria.ids).toEqual(['page-1']);
-            expect(names).toContain('previewMedia');
-            expect(names).toContain('sections.blocks');
-            expect(names).toContain('sections.blocks.slots.translations');
-            expect(sections?.criteria.sortings).toEqual([expect.objectContaining({ field: 'position', order: 'ASC' })]);
         });
     });
 

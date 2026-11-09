@@ -2,18 +2,12 @@
 
 namespace Shopwell\Core\Content\LandingPage\SalesChannel;
 
-use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
 use Shopwell\Core\Content\LandingPage\Extension\LandingPageRouteExtension;
 use Shopwell\Core\Content\LandingPage\LandingPageCollection;
-use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Content\LandingPage\LandingPageException;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -36,9 +30,6 @@ class LandingPageRoute extends AbstractLandingPageRoute
      */
     public function __construct(
         private readonly SalesChannelRepository $landingPageRepository,
-        private readonly SalesChannelCmsPageLoaderInterface $cmsPageLoader,
-        private readonly EntityCmsSlotConfigInheritanceBuilder $cmsSlotConfigInheritanceBuilder,
-        private readonly LandingPageDefinition $landingPageDefinition,
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly ExtensionDispatcher $extensions,
     ) {
@@ -65,38 +56,15 @@ class LandingPageRoute extends AbstractLandingPageRoute
         return $this->extensions->publish(
             name: LandingPageRouteExtension::NAME,
             extension: new LandingPageRouteExtension($landingPageId, $request, $context),
-            function: $this->_load(...),
+            function: fn (string $landingPageId, Request $request, SalesChannelContext $context): LandingPageRouteResponse => $this->_load($landingPageId, $context),
         );
     }
 
-    private function _load(string $landingPageId, Request $request, SalesChannelContext $context): LandingPageRouteResponse
+    private function _load(string $landingPageId, SalesChannelContext $context): LandingPageRouteResponse
     {
         $this->cacheTagCollector->addTag(self::buildName($landingPageId));
 
         $landingPage = $this->loadLandingPage($landingPageId, $context);
-
-        $pageId = $landingPage->getCmsPageId();
-
-        if (!$pageId) {
-            return new LandingPageRouteResponse($landingPage);
-        }
-
-        $resolverContext = new EntityResolverContext($context, $request, $this->landingPageDefinition, $landingPage);
-
-        $pages = $this->cmsPageLoader->load(
-            $request,
-            $this->createCriteria($pageId, $request),
-            $context,
-            $this->buildMergedCmsSlotConfig($landingPage, $context),
-            $resolverContext
-        );
-
-        $cmsPage = $pages->getEntities()->first();
-        if ($cmsPage === null) {
-            throw LandingPageException::notFound($pageId);
-        }
-
-        $landingPage->setCmsPage($cmsPage);
 
         return new LandingPageRouteResponse($landingPage);
     }
@@ -116,36 +84,5 @@ class LandingPageRoute extends AbstractLandingPageRoute
         }
 
         return $landingPage;
-    }
-
-    private function createCriteria(string $pageId, Request $request): Criteria
-    {
-        $criteria = new Criteria([$pageId]);
-        $criteria->setTitle('landing-page::cms-page');
-
-        $slots = RequestParamHelper::get($request, 'slots');
-
-        if (\is_string($slots)) {
-            $slots = explode('|', $slots);
-        }
-
-        if (\is_array($slots) && $slots !== []) {
-            $criteria
-                ->getAssociation('sections.blocks')
-                ->addFilter(new EqualsAnyFilter('slots.id', $slots));
-        }
-
-        return $criteria;
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>|null
-     */
-    private function buildMergedCmsSlotConfig(LandingPageEntity $landingPage, SalesChannelContext $context): ?array
-    {
-        return $this->cmsSlotConfigInheritanceBuilder->build(
-            $landingPage->getTranslations(),
-            $context,
-        );
     }
 }

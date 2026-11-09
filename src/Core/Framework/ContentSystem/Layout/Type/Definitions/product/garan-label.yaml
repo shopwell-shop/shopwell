@@ -1,0 +1,28 @@
+meta:
+  label: "Product GARAN Label"
+  description: "Displays the product's confirmed commercial guarantee label and guarantee terms."
+  icon: "regular-checkmark"
+  category: "commerce"
+  priority: 75
+
+properties:
+  product:
+    type: Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity
+    required: false
+    title: "Product"
+    description: "Product whose confirmed guarantee is displayed. Without an eligible product, no guarantee label is shown."
+    resolvedBy:
+      loader: entity
+      config:
+        entity: product
+        property: productId
+        associations:
+          - manufacturer
+          - guaranteeTermsMedia
+    mappable: true
+    defaultMapping:
+      type: root
+      id: product
+    adminUI:
+      component: "entity-single-select"
+      entity: "product"

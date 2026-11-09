@@ -158,7 +158,6 @@ export default {
                 .addAssociation('options.group')
                 .addAssociation('customFieldSets')
                 .addAssociation('featureSet')
-                .addAssociation('cmsPage')
                 .addAssociation('featureSet');
 
             criteria.getAssociation('manufacturer').addAssociation('media');

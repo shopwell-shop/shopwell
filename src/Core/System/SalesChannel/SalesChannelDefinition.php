@@ -12,13 +12,15 @@ use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSalesChannel\PromotionSalesChannelDefinition;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
+use Shopwell\Core\Content\Category\Aggregate\CategoryContentLayout\CategoryContentLayoutDefinition;
 use Shopwell\Core\Content\Category\CategoryDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
+use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageContentLayout\LandingPageContentLayoutDefinition;
 use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageSalesChannel\LandingPageSalesChannelDefinition;
 use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter\MailHeaderFooterDefinition;
 use Shopwell\Core\Content\MeasurementSystem\Field\MeasurementUnitsField;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductContentLayoutDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\ProductExport\ProductExportDefinition;
@@ -159,10 +161,6 @@ class SalesChannelDefinition extends EntityDefinition
 
             new OneToManyAssociationField('customers', CustomerDefinition::class, 'sales_channel_id', 'id'),
 
-            (new FkField('home_cms_page_id', 'homeCmsPageId', CmsPageDefinition::class))->setDescription('Unique identity of home CMS page.'),
-            (new ReferenceVersionField(CmsPageDefinition::class, 'home_cms_page_version_id'))->addFlags(new Required()),
-            new ManyToOneAssociationField('homeCmsPage', 'home_cms_page_id', CmsPageDefinition::class, 'id', false),
-            new TranslatedField('homeSlotConfig'),
             new TranslatedField('homeEnabled'),
             new TranslatedField('homeName'),
             new TranslatedField('homeMetaTitle'),
@@ -199,6 +197,9 @@ class SalesChannelDefinition extends EntityDefinition
             new OneToManyAssociationField('paymentPlans', 'payment_plan', 'sales_channel_id'),
             new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'sales_channel_id'),
             (new OneToManyAssociationField('orderReturns', 'order_return', 'sales_channel_id'))->addFlags(new CascadeDelete()),
+            new OneToManyAssociationField('productContentLayouts', ProductContentLayoutDefinition::class, 'sales_channel_id', 'id'),
+            new OneToManyAssociationField('categoryContentLayouts', CategoryContentLayoutDefinition::class, 'sales_channel_id', 'id'),
+            new OneToManyAssociationField('landingPageContentLayouts', LandingPageContentLayoutDefinition::class, 'sales_channel_id', 'id'),
         ]);
 
         return $fields;

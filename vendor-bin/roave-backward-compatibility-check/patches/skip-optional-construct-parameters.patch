@@ -1,5 +1,5 @@
---- /dev/null
-+++ ../src/DetectChanges/BCBreak/MethodBased/MethodParameterAdded.php
+--- a/src/DetectChanges/BCBreak/MethodBased/MethodParameterAdded.php
++++ b/src/DetectChanges/BCBreak/MethodBased/MethodParameterAdded.php
 @@ -30,6 +30,14 @@
              array_map(static fn (ReflectionParameter $param) => $param->getName(), $fromMethod->getParameters()),
          );

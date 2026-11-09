@@ -405,17 +405,6 @@
         "category_tag": "Tag"
       }
     },
-    "cms": {
-      "title": "CMS",
-      "entities": {
-        "cms_block": "Block",
-        "cms_page": "Page (layout)",
-        "cms_page_translation": "Page translation",
-        "cms_section": "section",
-        "cms_slot": "slot",
-        "cms_slot_translation": "Slot translation"
-      }
-    },
     "customer": {
       "title": "Customer",
       "entities": {
@@ -661,6 +650,15 @@
         "api_feature_flag_toggle": "Feature flags toggling API",
         "api_service_toggle": "Service toggling API",
         "api_service_list": "Services listing API"
+      }
+    },
+    "content_system": {
+      "title": "Content System",
+      "entities": {
+        "content_layout": "Content layout",
+        "category_content_layout": "Category layout assignment",
+        "product_content_layout": "Product layout assignment",
+        "landing_page_content_layout": "Landing page layout assignment"
       }
     }
   },

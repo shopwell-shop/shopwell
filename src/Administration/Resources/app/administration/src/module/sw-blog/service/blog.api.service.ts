@@ -6,7 +6,7 @@
  * No controller of its own is needed: the five entities are exposed by the generic admin api, so a
  * page reads and writes through the repository. What a page does *not* do is build a criteria
  * itself - "the entries, newest publication first", "the approved comments of this entry" and "the
- * cms pages a blog may use" are asked in more than one place, and a page that answers them on its
+ * content layouts a blog may use" are asked in more than one place, and a page that answers them on its
  * own drifts away from the others.
  *
  * The one rule that lives here and nowhere else is {@see blogStatusOf}. The entity has no `active`
@@ -215,56 +215,18 @@ export default class BlogApiService {
         return criteria;
     }
 
-    /**
-     * The cms pages a blog entry may be laid out with.
-     *
-     * The `blog_detail` type of the cms page is what keeps the selector free of landing pages and
-     * product layouts - a merchant picks a layout that was built for an article.
-     */
-    public cmsPageOptionsCriteria(): CriteriaType {
+    public contentLayoutOptionsCriteria(): CriteriaType {
         const criteria = new Criteria(1, 100);
-        criteria.addFilter(Criteria.equals('type', 'blog_detail'));
+        criteria.addFilter(Criteria.equals('rootSource', 'none'));
         criteria.addSorting(Criteria.sort('name', 'ASC'));
 
         return criteria;
     }
 
-    /**
-     * The cms pages a blog category may be laid out with.
-     */
-    public categoryCmsPageOptionsCriteria(): CriteriaType {
+    public categoryContentLayoutOptionsCriteria(): CriteriaType {
         const criteria = new Criteria(1, 100);
-        criteria.addFilter(Criteria.equals('type', 'blog_listing'));
+        criteria.addFilter(Criteria.equals('rootSource', 'none'));
         criteria.addSorting(Criteria.sort('name', 'ASC'));
-
-        return criteria;
-    }
-
-    /**
-     * One cms page with the tree the page form needs to render it.
-     *
-     * The page is read by the repository and not through `blog.cmsPage`: the entry only carries
-     * `cmsPageId`, because an association into the cms domain would have to grow a reverse
-     * one-to-many on `cms_page`, which belongs to another domain.
-     */
-    public cmsPageCriteria(id: string): CriteriaType {
-        const criteria = new Criteria(1, 1);
-        criteria.setIds([id]);
-        criteria.addAssociation('previewMedia');
-        criteria.addAssociation('sections');
-        criteria.addAssociation('sections.blocks');
-
-        const sections = criteria.getAssociation('sections');
-        sections?.addSorting(Criteria.sort('position', 'ASC'));
-
-        const blocks = criteria.getAssociation('sections.blocks');
-
-        if (blocks) {
-            blocks.addSorting(Criteria.sort('position', 'ASC'));
-
-            const slots = blocks.getAssociation('slots');
-            slots?.addAssociation('translations');
-        }
 
         return criteria;
     }

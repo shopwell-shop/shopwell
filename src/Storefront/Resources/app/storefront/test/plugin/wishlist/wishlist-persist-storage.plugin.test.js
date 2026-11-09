@@ -37,7 +37,7 @@ describe('WishlistPersistStoragePlugin tests', () => {
         Storage.removeItem(storageKey);
         document.body.innerHTML = `
             <div class="flashbags"></div>
-            <div class="cms-listing-row"></div>
+            <div class="product-listing-row"></div>
         `;
 
         wishlistStoragePlugin = new WishlistPersistStoragePlugin(
@@ -269,7 +269,7 @@ describe('WishlistPersistStoragePlugin tests', () => {
         expect(mergedProducts).toEqual(products);
         expect(Storage.getItem(storageKey)).toBeNull();
         expect(document.querySelector('.flashbags').innerHTML).toBe('<div class="alert">Merged</div>');
-        expect(document.querySelector('.cms-listing-row').innerHTML).toBe('<div class="product-box">Product</div>');
+        expect(document.querySelector('.product-listing-row').innerHTML).toBe('<div class="product-box">Product</div>');
         expect(pageletSpy).toHaveBeenCalledTimes(1);
         expect(callback).toHaveBeenCalledTimes(2);
     });
@@ -320,18 +320,18 @@ describe('WishlistPersistStoragePlugin tests', () => {
             method: 'POST',
             headers: defaultHeaders,
         });
-        expect(document.querySelector('.cms-listing-row').innerHTML).toBe('<div class="product-box">Product</div>');
+        expect(document.querySelector('.product-listing-row').innerHTML).toBe('<div class="product-box">Product</div>');
     });
 
     test('pagelet does not parse unsuccessful response', async () => {
         const response = createTextResponse('', false);
 
-        document.querySelector('.cms-listing-row').innerHTML = '<div class="product-box">Existing</div>';
+        document.querySelector('.product-listing-row').innerHTML = '<div class="product-box">Existing</div>';
         global.fetch = jest.fn(() => Promise.resolve(response));
 
         await wishlistStoragePlugin._pagelet();
 
         expect(response.text).not.toHaveBeenCalled();
-        expect(document.querySelector('.cms-listing-row').innerHTML).toBe('<div class="product-box">Existing</div>');
+        expect(document.querySelector('.product-listing-row').innerHTML).toBe('<div class="product-box">Existing</div>');
     });
 });

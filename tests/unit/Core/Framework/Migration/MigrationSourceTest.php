@@ -14,13 +14,10 @@ use Shopwell\Core\Migration\V6_3\Migration1566293076AddAutoIncrement;
 use Shopwell\Core\Migration\V6_3\Migration1566460168UpdateTexts;
 use Shopwell\Core\Migration\V6_3\Migration1566817701AddDisplayGroup;
 use Shopwell\Core\Migration\V6_3\Migration1567431050ContactFormTemplate;
-use Shopwell\Core\Migration\V6_3\Migration1568120239CmsSection;
-use Shopwell\Core\Migration\V6_3\Migration1568120302CmsBlockUpdate;
 use Shopwell\Core\Migration\V6_3\Migration1568645037AddEnqueueDbal;
 use Shopwell\Core\Migration\V6_3\Migration1568901713PromotionDiscount;
 use Shopwell\Core\Migration\V6_3\Migration1569403146ProductVisibilityUnique;
 use Shopwell\Core\Migration\V6_3\Migration1570187167AddedAppConfig;
-use Shopwell\Core\Migration\V6_3\Migration1570459127AddCmsSidebarLayout;
 use Shopwell\Core\Migration\V6_3\Migration1570621541UpdateDefaultMailTemplates;
 use Shopwell\Core\Migration\V6_3\Migration1570622696CustomerPasswordRecovery;
 use Shopwell\Core\Migration\V6_3\Migration1570629862ClearCategoryBreadcrumbs;
@@ -133,13 +130,10 @@ class MigrationSourceTest extends TestCase
             [Migration1566460168UpdateTexts::class, true],
             [Migration1566817701AddDisplayGroup::class, true],
             [Migration1567431050ContactFormTemplate::class, true],
-            [Migration1568120239CmsSection::class, true],
-            [Migration1568120302CmsBlockUpdate::class, true],
             [Migration1568645037AddEnqueueDbal::class, true],
             [Migration1568901713PromotionDiscount::class, true],
             [Migration1569403146ProductVisibilityUnique::class, true],
             [Migration1570187167AddedAppConfig::class, true],
-            [Migration1570459127AddCmsSidebarLayout::class, true],
             [Migration1570621541UpdateDefaultMailTemplates::class, true],
             [Migration1570622696CustomerPasswordRecovery::class, true],
             [Migration1570629862ClearCategoryBreadcrumbs::class, true],

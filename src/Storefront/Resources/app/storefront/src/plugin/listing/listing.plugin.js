@@ -16,9 +16,9 @@ export default class ListingPlugin extends Plugin {
         filterUrl: '',
         params: {},
         filterPanelSelector: '.filter-panel',
-        cmsProductListingSelector: '.cms-element-product-listing',
-        cmsProductListingWrapperSelector: '.cms-element-product-listing-wrapper',
-        cmsProductListingResultsSelector: '.js-listing-wrapper',
+        productListingSelector: '.product-listing-content',
+        productListingWrapperSelector: '.product-listing-wrapper',
+        productListingResultsSelector: '.js-listing-wrapper',
         activeFilterContainerSelector: '.filter-panel-active-container',
         activeFilterLabelClasses: 'filter-active btn',
         activeFilterLabelSelector: '.filter-active',
@@ -71,8 +71,8 @@ export default class ListingPlugin extends Plugin {
             this.ariaLiveContainer = this.ariaLiveContainers[0] ?? null;
         }
 
-        this._cmsProductListingWrapper = document.querySelector(this.options.cmsProductListingWrapperSelector);
-        this._cmsProductListingWrapperActive = !!this._cmsProductListingWrapper;
+        this._productListingWrapper = document.querySelector(this.options.productListingWrapperSelector);
+        this._productListingWrapperActive = !!this._productListingWrapper;
 
         this._allFiltersInitializedDebounce = Debouncer.debounce(this.sendDisabledFiltersRequest.bind(this), 100);
 
@@ -340,7 +340,7 @@ export default class ListingPlugin extends Plugin {
      * under `Core/Content/Product/SalesChannel/Listing/Processor/`, or via the scalar casts in
      * the handlers under `Core/Content/Product/SalesChannel/Listing/Filter/` on the PHP side.
      * Pipe-joining them produces either invalid queries like `p=1|2` (400 responses on
-     * `/widgets/cms/navigation/*`) or silently wrong filters like `rating=3|4`, which casts to
+     * `/widgets/content/navigation/*`) or silently wrong filters like `rating=3|4`, which casts to
      * `3`. Keep this in sync when the backend adds new single-valued listing params.
      *
      * @private
@@ -430,7 +430,7 @@ export default class ListingPlugin extends Plugin {
     }
 
     _scrollTopOfListing() {
-        const elemRect = this._cmsProductListingWrapper.getBoundingClientRect();
+        const elemRect = this._productListingWrapper.getBoundingClientRect();
         if (elemRect.top >= 0) {
             return;
         }
@@ -640,14 +640,14 @@ export default class ListingPlugin extends Plugin {
      * Add classes to add loading styling for product listing
      */
     addLoadingElementLoaderClass() {
-        this._cmsProductListingWrapper.classList.add(this.options.loadingElementLoaderClass);
+        this._productListingWrapper.classList.add(this.options.loadingElementLoaderClass);
     }
 
     /**
      * Remove loading styling classes for product listing
      */
     removeLoadingElementLoaderClass() {
-        this._cmsProductListingWrapper.classList.remove(this.options.loadingElementLoaderClass);
+        this._productListingWrapper.classList.remove(this.options.loadingElementLoaderClass);
     }
 
     /**
@@ -660,7 +660,7 @@ export default class ListingPlugin extends Plugin {
             this.addLoadingIndicatorClass();
         }
 
-        if (this._cmsProductListingWrapperActive) {
+        if (this._productListingWrapperActive) {
             this.addLoadingElementLoaderClass();
         }
 
@@ -705,7 +705,7 @@ export default class ListingPlugin extends Plugin {
                     this._updateAriaLive();
                 }
 
-                if (this._cmsProductListingWrapperActive) {
+                if (this._productListingWrapperActive) {
                     this.removeLoadingElementLoaderClass();
                 }
             });
@@ -748,7 +748,7 @@ export default class ListingPlugin extends Plugin {
      * @param {String} response - HTML of filtered product data.
      */
     renderResponse(response) {
-        ElementReplaceHelper.replaceFromMarkup(response, this.options.cmsProductListingSelector);
+        ElementReplaceHelper.replaceFromMarkup(response, this.options.productListingSelector);
 
         this._registry.forEach((item) => {
             if (typeof item.afterContentChange === 'function') {
@@ -788,7 +788,7 @@ export default class ListingPlugin extends Plugin {
             return;
         }
 
-        const listingResultsEl = this.el.querySelector(this.options.cmsProductListingResultsSelector);
+        const listingResultsEl = this.el.querySelector(this.options.productListingResultsSelector);
         target.innerHTML = listingResultsEl.dataset.ariaLiveText;
     }
 

@@ -59,8 +59,6 @@ class Migration1585744384ChangeCategoryProfile extends MigrationStep
             ['key' => 'media.mediaType', 'mappedKey' => 'media_type'],
             ['key' => 'media.translations.DEFAULT.title', 'mappedKey' => 'media_alt'],
             ['key' => 'media.translations.DEFAULT.alt', 'mappedKey' => 'media_title'],
-
-            ['key' => 'cmsPageId', 'mappedKey' => 'cms_page_id'],
         ];
     }
 }

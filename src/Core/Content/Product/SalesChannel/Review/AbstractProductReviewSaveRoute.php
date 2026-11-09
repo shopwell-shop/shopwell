@@ -10,6 +10,8 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 #[Package('after-sales')]
 abstract class AbstractProductReviewSaveRoute
 {
+    public const REVIEW_ID = 'sw-review-id';
+
     abstract public function getDecorated(): AbstractProductReviewSaveRoute;
 
     abstract public function save(string $productId, RequestDataBag $data, SalesChannelContext $context): NoContentResponse;

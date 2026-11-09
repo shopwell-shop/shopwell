@@ -10,9 +10,6 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDo
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
 use Shopwell\Core\Content\Category\CategoryDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSection\CmsSectionDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateMedia\MailTemplateMediaDefinition;
 use Shopwell\Core\Content\Media\Aggregate\MediaFolder\MediaFolderDefinition;
 use Shopwell\Core\Content\Media\Aggregate\MediaTag\MediaTagDefinition;
@@ -143,9 +140,6 @@ class MediaDefinition extends EntityDefinition
             (new OneToManyAssociationField('productOpenGraphImages', ProductDefinition::class, 'open_graph_media_id', 'id'))->addFlags(new SetNullOnDelete()),
             (new OneToManyAssociationField('productGuaranteeTerms', ProductDefinition::class, 'guarantee_terms_media_id', 'id'))->addFlags(new SetNullOnDelete()),
             (new OneToManyAssociationField('orderLineItems', OrderLineItemDefinition::class, 'cover_id'))->addFlags(new SetNullOnDelete()),
-            (new OneToManyAssociationField('cmsBlocks', CmsBlockDefinition::class, 'background_media_id'))->addFlags(new RestrictDelete()),
-            (new OneToManyAssociationField('cmsSections', CmsSectionDefinition::class, 'background_media_id'))->addFlags(new RestrictDelete()),
-            (new OneToManyAssociationField('cmsPages', CmsPageDefinition::class, 'preview_media_id'))->addFlags(new RestrictDelete()),
             (new OneToManyAssociationField('documents', DocumentDefinition::class, 'document_media_file_id'))->addFlags(new RestrictDelete()),
             (new OneToManyAssociationField('a11yDocuments', DocumentDefinition::class, 'document_a11y_media_file_id'))->addFlags(new RestrictDelete()),
             (new OneToManyAssociationField('appPaymentMethods', AppPaymentMethodDefinition::class, 'original_media_id', 'id'))->addFlags(new SetNullOnDelete()),

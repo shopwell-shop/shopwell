@@ -21,10 +21,10 @@
                     {% block layout_cookie_permission_inner_content %}
                         <div class="col cookie-permission-content">
                             {% set privacySnippetKey = 'cookie.messageTextPage' %}
-                            {% set cmsPath = 'frontend.cms.page.full' %}
+                            {% set contentPath = 'frontend.content.page.full' %}
 
                             {{ privacySnippetKey|trans({
-                                '%url%': path(cmsPath, { id: config('core.basicInformation.privacyPage') })
+                                '%url%': path(contentPath, { id: config('core.basicInformation.privacyPage') })
                             })|raw }}
                         </div>
                     {% endblock %}

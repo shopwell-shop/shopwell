@@ -3,7 +3,7 @@
 namespace Shopwell\Tests\Integration\Storefront\Controller;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\Exception\InvalidRouteScopeException;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
@@ -36,6 +36,7 @@ class StorefrontRoutingTest extends TestCase
             static function (StorefrontRenderEvent $event) use (&$renderedParameters): void {
                 $skippedViews = [
                     '@Storefront/storefront/layout/header.html.twig',
+                    '@Storefront/storefront/page/content/header.html.twig',
                     '@Storefront/storefront/layout/footer.html.twig',
                 ];
                 if (\in_array($event->getView(), $skippedViews, true)) {
@@ -58,8 +59,8 @@ class StorefrontRoutingTest extends TestCase
         static::assertCount(1, $renderedParameters);
         $page = $renderedParameters[0]['page'];
         static::assertInstanceOf(NavigationPage::class, $page);
-        static::assertInstanceOf(CmsPageEntity::class, $page->getCmsPage());
-        static::assertSame('Default listing layout', $page->getCmsPage()->getName());
+        static::assertInstanceOf(ContentPage::class, $renderedParameters[0]['contentPage']);
+        static::assertSame('Default category', $renderedParameters[0]['contentPage']->name);
     }
 
     public function testForwardFromAddPromotionToApiFails(): void

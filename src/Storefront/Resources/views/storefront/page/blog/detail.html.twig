@@ -142,10 +142,10 @@
                                         thread stay, because a merchant who builds an article layout
                                         decides how the article looks, not whether readers may answer it.
                                     #}
-                                    {% if page.cmsPage %}
-                                        {% block sw_blog_detail_content_cms %}
-                                            <div class="cms-page blog-detail__cms">
-                                                {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with { cmsPage: page.cmsPage } only %}
+                                    {% if page.contentPage %}
+                                        {% block sw_blog_detail_content_layout %}
+                                            <div class="content-page blog-detail__content-layout">
+                                                <twig:Sw:Content:Page :page="page.contentPage" />
                                             </div>
                                         {% endblock %}
                                     {% else %}

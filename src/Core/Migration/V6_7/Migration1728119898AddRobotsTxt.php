@@ -35,7 +35,7 @@ class Migration1728119898AddRobotsTxt extends MigrationStep
                     Disallow: /account/
                     Disallow: /checkout/
                     Disallow: /widgets/
-                    Allow: /widgets/cms/
+                    Allow: /widgets/content/
                     Allow: /widgets/menu/offcanvas
                     TXT,
             ]),

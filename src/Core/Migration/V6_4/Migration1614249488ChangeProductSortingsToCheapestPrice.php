@@ -20,7 +20,6 @@ class Migration1614249488ChangeProductSortingsToCheapestPrice extends MigrationS
     public function update(Connection $connection): void
     {
         $this->migrateSortings($connection);
-        $this->migrateCmsSortings($connection);
     }
 
     public function updateDestructive(Connection $connection): void
@@ -65,37 +64,6 @@ class Migration1614249488ChangeProductSortingsToCheapestPrice extends MigrationS
                     ['fields' => json_encode($fields, \JSON_THROW_ON_ERROR), 'id' => $id]
                 );
             }
-        }
-    }
-
-    private function migrateCmsSortings(Connection $connection): void
-    {
-        $elements = $connection->fetchAllAssociative('SELECT cms_slot_id, cms_slot_version_id, language_id, config FROM cms_slot_translation WHERE config LIKE \'%listingPrices%\'');
-
-        foreach ($elements as $element) {
-            $config = json_decode((string) $element['config'], true, 512, \JSON_THROW_ON_ERROR);
-
-            if (!isset($config['productStreamSorting'])) {
-                continue;
-            }
-            $sorting = $config['productStreamSorting'];
-            if (!isset($sorting['value'])) {
-                continue;
-            }
-            if ($sorting['value'] === 'listingPrices:ASC') {
-                $config['productStreamSorting']['value'] = 'cheapestPrice:ASC';
-            } elseif ($sorting['value'] === 'listingPrices:DESC') {
-                $config['productStreamSorting']['value'] = 'cheapestPrice:DESC';
-            } else {
-                continue;
-            }
-
-            $connection->executeStatement('UPDATE cms_slot_translation SET config = :config WHERE cms_slot_id = :id AND cms_slot_version_id = :version AND language_id = :language', [
-                'config' => json_encode($config, \JSON_THROW_ON_ERROR),
-                'id' => $element['cms_slot_id'],
-                'version' => $element['cms_slot_version_id'],
-                'language' => $element['language_id'],
-            ]);
         }
     }
 }

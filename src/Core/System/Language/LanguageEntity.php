@@ -12,8 +12,6 @@ use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMet
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationCollection;
 use Shopwell\Core\Checkout\Shipping\Aggregate\ShippingMethodTranslation\ShippingMethodTranslationCollection;
 use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationCollection;
-use Shopwell\Core\Content\Cms\Aggregate\CmsPageTranslation\CmsPageTranslationEntity;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlotTranslation\CmsSlotTranslationEntity;
 use Shopwell\Core\Content\ImportExport\ImportExportProfileTranslationCollection;
 use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageTranslation\LandingPageTranslationCollection;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter\MailHeaderFooterCollection;
@@ -37,10 +35,8 @@ use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopwell\Core\Framework\App\Aggregate\ActionButtonTranslation\ActionButtonTranslationCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptConditionTranslation\AppScriptConditionTranslationCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
-use Shopwell\Core\Framework\App\Aggregate\CmsBlockTranslation\AppCmsBlockTranslationCollection;
 use Shopwell\Core\Framework\App\Aggregate\FlowActionTranslation\AppFlowActionTranslationCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Feature;
@@ -164,16 +160,6 @@ class LanguageEntity extends Entity
 
     protected ?StateMachineStateTranslationCollection $stateMachineStateTranslations = null;
 
-    /**
-     * @var EntityCollection<CmsPageTranslationEntity>|null
-     */
-    protected ?EntityCollection $cmsPageTranslations = null;
-
-    /**
-     * @var EntityCollection<CmsSlotTranslationEntity>|null
-     */
-    protected ?EntityCollection $cmsSlotTranslations = null;
-
     protected ?MailTemplateCollection $mailTemplateTranslations = null;
 
     protected ?MailHeaderFooterCollection $mailHeaderFooterTranslations = null;
@@ -222,8 +208,6 @@ class LanguageEntity extends Entity
     protected ?ProductSearchConfigEntity $productSearchConfig = null;
 
     protected ?LandingPageTranslationCollection $landingPageTranslations = null;
-
-    protected ?AppCmsBlockTranslationCollection $appCmsBlockTranslations = null;
 
     protected ?AppScriptConditionTranslationCollection $appScriptConditionTranslations = null;
 
@@ -669,38 +653,6 @@ class LanguageEntity extends Entity
         $this->stateMachineStateTranslations = $stateMachineStateTranslations;
     }
 
-    /**
-     * @return EntityCollection<CmsPageTranslationEntity>|null
-     */
-    public function getCmsPageTranslations(): ?Collection
-    {
-        return $this->cmsPageTranslations;
-    }
-
-    /**
-     * @param EntityCollection<CmsPageTranslationEntity> $cmsPageTranslations
-     */
-    public function setCmsPageTranslations(Collection $cmsPageTranslations): void
-    {
-        $this->cmsPageTranslations = $cmsPageTranslations;
-    }
-
-    /**
-     * @return EntityCollection<CmsSlotTranslationEntity>|null
-     */
-    public function getCmsSlotTranslations(): ?Collection
-    {
-        return $this->cmsSlotTranslations;
-    }
-
-    /**
-     * @param EntityCollection<CmsSlotTranslationEntity> $cmsSlotTranslations
-     */
-    public function setCmsSlotTranslations(Collection $cmsSlotTranslations): void
-    {
-        $this->cmsSlotTranslations = $cmsSlotTranslations;
-    }
-
     public function getMailTemplateTranslations(): ?MailTemplateCollection
     {
         return $this->mailTemplateTranslations;
@@ -935,16 +887,6 @@ class LanguageEntity extends Entity
     public function setLandingPageTranslations(LandingPageTranslationCollection $landingPageTranslations): void
     {
         $this->landingPageTranslations = $landingPageTranslations;
-    }
-
-    public function getAppCmsBlockTranslations(): ?AppCmsBlockTranslationCollection
-    {
-        return $this->appCmsBlockTranslations;
-    }
-
-    public function setAppCmsBlockTranslations(AppCmsBlockTranslationCollection $appCmsBlockTranslations): void
-    {
-        $this->appCmsBlockTranslations = $appCmsBlockTranslations;
     }
 
     public function getAppScriptConditionTranslations(): ?AppScriptConditionTranslationCollection

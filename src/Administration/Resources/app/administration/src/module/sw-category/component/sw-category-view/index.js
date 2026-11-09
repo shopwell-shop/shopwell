@@ -37,20 +37,8 @@ export default {
             return Shopwell.Store.get('swCategoryDetail').isCategoryColumn;
         },
 
-        cmsPage() {
-            if (this.type === 'folder' || this.type === 'link') {
-                return false;
-            }
-
-            return Shopwell.Store.get('cmsPage').currentPage;
-        },
-
         isPage() {
             return this.type !== 'folder' && this.type !== 'link';
-        },
-
-        isCustomEntity() {
-            return this.type === 'custom_entity';
         },
 
         categoryViewTabs() {
@@ -71,16 +59,12 @@ export default {
                 }),
             ];
 
-            if (this.isPage && !this.isCustomEntity) {
+            if (this.isPage) {
                 tabs.push(createRouteTab('sw-category.view.products', 'sw.category.detail.products'));
             }
 
-            if (this.isCustomEntity) {
-                tabs.push(createRouteTab('sw-category.view.customEntity', 'sw.category.detail.customEntity'));
-            }
-
-            if (this.cmsPage || this.isPage) {
-                tabs.push(createRouteTab('sw-category.view.cms', 'sw.category.detail.cms'));
+            if (this.isPage) {
+                tabs.push(createRouteTab('sw-category.view.layout', 'sw.category.detail.layout'));
             }
 
             if (this.isPage) {

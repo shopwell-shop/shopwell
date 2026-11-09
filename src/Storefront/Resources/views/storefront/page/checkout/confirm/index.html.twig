@@ -56,12 +56,12 @@
                         {% endblock %}
 
                         {% block page_checkout_confirm_revocation_notice %}
-                            {% set cmsPath = 'frontend.cms.page' %}
+                            {% set contentPath = 'frontend.content.page' %}
                             <p class="revocation-notice">
                                 {% set revocationSnippetKey = 'checkout.confirmRevocationNoticeModal' %}
 
                                 {{ revocationSnippetKey|trans({
-                                    '%revocationModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.revocationPage') }) ~ '">',
+                                    '%revocationModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(contentPath, { id: config('core.basicInformation.revocationPage') }) ~ '">',
                                     '%revocationModalTagClose%': '</button>'
                                 })|raw }}
                             </p>
@@ -79,7 +79,7 @@
                         {% endblock %}
 
                         {% block page_checkout_confirm_tos_control %}
-                            {% set tosModalTagOpen = '<button type="button" class="checkout-confirm-terms-modal btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
+                            {% set tosModalTagOpen = '<button type="button" class="checkout-confirm-terms-modal btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.content.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
                             {% set tosModalTagClose = '</button>' %}
 
                             <div class="form-check">
@@ -261,12 +261,12 @@
             {% if config('core.cart.showTosCheckbox') %}
                 <div class="confirm-tos">
                     {% block page_checkout_confirm_tos_auto_confirmed_revocation_notice_bottom %}
-                        {% set cmsPath = 'frontend.cms.page' %}
+                        {% set contentPath = 'frontend.content.page' %}
                         <p class="revocation-notice mb-0 mt-4">
                             {% set revocationSnippetKey = 'checkout.confirmRevocationNoticeModal' %}
 
                             {{ revocationSnippetKey|trans({
-                                '%revocationModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.revocationPage') }) ~ '">',
+                                '%revocationModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(contentPath, { id: config('core.basicInformation.revocationPage') }) ~ '">',
                                 '%revocationModalTagClose%': '</button>'
                             })|raw }}
                             </p>
@@ -284,7 +284,7 @@
                     {% endblock %}
 
                     {% block page_checkout_confirm_tos_auto_confirmed_bottom %}
-                        {% set tosModalTagOpen = '<button type="button" class="checkout-confirm-terms-modal btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
+                        {% set tosModalTagOpen = '<button type="button" class="checkout-confirm-terms-modal btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.content.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
                         {% set tosModalTagClose = '</button>' %}
 
                         <div class="form-check mt-2 ">
@@ -312,10 +312,10 @@
                     {% endblock %}
                 </div>
             {% else %}
-                {% set tosModalTagOpen = '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
+                {% set tosModalTagOpen = '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.content.page', { id: config('core.basicInformation.tosPage') }) ~ '">' %}
                 {% set tosModalTagClose = '</button>' %}
 
-                {% set revocationModalTagOpen = '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.cms.page', { id: config('core.basicInformation.revocationPage') }) ~ '">' %}
+                {% set revocationModalTagOpen = '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path('frontend.content.page', { id: config('core.basicInformation.revocationPage') }) ~ '">' %}
                 {% set revocationModalTagClose = '</button>' %}
 
                 {% block page_checkout_confirm_tos_auto_confirmed_text %}

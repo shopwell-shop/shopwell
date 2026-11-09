@@ -255,7 +255,7 @@ describe('plugin/google-analytics/events/add-to-cart.event', () => {
 
             const formData = submitFromProductElement(`
                 ${breadcrumb}
-                <div class="cms-element-product-listing-wrapper">
+                <div class="product-listing-wrapper">
                     <article data-product-information='{"id":"product-1","brand":"Brand"}'>
                         <div class="form-slot"></div>
                     </article>

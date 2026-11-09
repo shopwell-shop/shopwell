@@ -6,7 +6,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\SalesChannel\Entity\DefinitionRegistryChain;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
 use Shopwell\Core\System\SalesChannel\Exception\SalesChannelRepositoryNotFoundException;
 use Symfony\Component\DependencyInjection\Container;
@@ -45,6 +48,28 @@ class SalesChannelDefinitionInstanceRegistryTest extends TestCase
         );
 
         $this->expectException(SalesChannelRepositoryNotFoundException::class);
-        $registry->getSalesChannelRepository('fooBar');
+        try {
+            $registry->getSalesChannelRepository('fooBar');
+        } catch (SalesChannelRepositoryNotFoundException $exception) {
+            static::assertSame(SalesChannelRepositoryNotFoundException::class, $exception::class);
+            static::assertSame(500, $exception->getStatusCode());
+            static::assertSame('FRAMEWORK__SALES_CHANNEL_REPOSITORY_NOT_FOUND', $exception->getErrorCode());
+            static::assertSame('SalesChannelRepository for entity "fooBar" does not exist.', $exception->getMessage());
+            static::assertSame(['entityName' => 'fooBar'], $exception->getParameters());
+
+            throw $exception;
+        }
+    }
+
+    public function testMissingSalesChannelRepositoryFallsBackToTheCoreRepository(): void
+    {
+        $repository = static::createStub(EntityRepository::class);
+        $container = new Container();
+        $container->set('fooBar.repository', $repository);
+        $core = new DefinitionInstanceRegistry($container, [], ['fooBar' => 'fooBar.repository']);
+        $salesChannel = new SalesChannelDefinitionInstanceRegistry('sales_channel_definition.', $container, [], []);
+        $chain = new DefinitionRegistryChain($core, $salesChannel);
+
+        static::assertSame($repository, $chain->getRepository('fooBar'));
     }
 }

@@ -151,7 +151,6 @@ describe('module/sw-import-export/service/importExportProfileMapping.service.spe
                 'stock',
                 'name',
                 'canonicalProductVersionId',
-                'cmsPageVersionId',
                 'createdAt',
             ].sort(),
         );
@@ -176,7 +175,6 @@ describe('module/sw-import-export/service/importExportProfileMapping.service.spe
                     'stock',
                     'name',
                     'canonicalProductVersionId',
-                    'cmsPageVersionId',
                     'createdAt',
                     'type',
                 ].sort(),

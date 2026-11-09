@@ -2,8 +2,8 @@
 
 namespace Shopwell\Core\Content\DependencyInjection;
 
-use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
 use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute;
+use Shopwell\Core\Content\ContactForm\Service\FormConfigResolver;
 use Shopwell\Core\Content\ContactForm\Validation\ContactFormValidationFactory;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Validation\DataValidator;
@@ -15,6 +15,9 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
+
+    $services->set(FormConfigResolver::class)
+        ->args([service(SystemConfigService::class)]);
 
     $services->set(ContactFormValidationFactory::class)
         ->args([
@@ -30,7 +33,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(RequestStack::class),
             service('shopwell.rate_limiter'),
-            service(CmsFormSlotConfigResolver::class),
+            service(FormConfigResolver::class),
             service(ExtensionDispatcher::class),
         ]);
 };

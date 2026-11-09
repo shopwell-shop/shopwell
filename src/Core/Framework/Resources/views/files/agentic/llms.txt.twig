@@ -19,23 +19,23 @@
         - [Sitemap]({{ seoUrl('frontend.sitemap.xml') }}): Public sitemap for discoverable pages.
 {% set imprintPageId = config('core.basicInformation.imprintPage') -%}
 {% if imprintPageId -%}
-        - [Imprint]({{ path('frontend.cms.page.full', { id: imprintPageId }) }})
+        - [Imprint]({{ path('frontend.content.page.full', { id: imprintPageId }) }})
 {% endif -%}
 {% set privacyPageId = config('core.basicInformation.privacyPage') -%}
 {% if privacyPageId -%}
-        - [Privacy policy]({{ path('frontend.cms.page.full', { id: privacyPageId }) }})
+        - [Privacy policy]({{ path('frontend.content.page.full', { id: privacyPageId }) }})
 {% endif -%}
 {% set tosPageId = config('core.basicInformation.tosPage') -%}
 {% if tosPageId -%}
-        - [Terms]({{ path('frontend.cms.page.full', { id: tosPageId }) }})
+        - [Terms]({{ path('frontend.content.page.full', { id: tosPageId }) }})
 {% endif -%}
 {% set shippingPaymentInfoPageId = config('core.basicInformation.shippingPaymentInfoPage') -%}
 {% if shippingPaymentInfoPageId -%}
-        - [Shipping/payment information]({{ path('frontend.cms.page.full', { id: shippingPaymentInfoPageId }) }})
+        - [Shipping/payment information]({{ path('frontend.content.page.full', { id: shippingPaymentInfoPageId }) }})
 {% endif -%}
 {% set revocationPageId = config('core.basicInformation.revocationPage') -%}
 {% if revocationPageId -%}
-        - [Revocation/cancellation policy]({{ path('frontend.cms.page.full', { id: revocationPageId }) }})
+        - [Revocation/cancellation policy]({{ path('frontend.content.page.full', { id: revocationPageId }) }})
 {% endif -%}
 {% else -%}
         - [Sales channel context]({{ path('store-api.context') }}): Public context information for this sales channel.

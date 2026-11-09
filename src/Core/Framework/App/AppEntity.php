@@ -4,11 +4,14 @@ namespace Shopwell\Core\Framework\App;
 
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleEntity;
 use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemBindingSpecification\AppContentSystemBindingSpecificationCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemElementType\AppContentSystemElementTypeCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemLayoutPreset\AppContentSystemLayoutPresetCollection;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemStyleOption\AppContentSystemStyleOptionCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptCondition\AppScriptConditionCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppShippingMethod\AppShippingMethodEntity;
 use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
-use Shopwell\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockCollection;
 use Shopwell\Core\Framework\App\Aggregate\FlowAction\AppFlowActionCollection;
 use Shopwell\Core\Framework\App\Aggregate\FlowEvent\AppFlowEventCollection;
 use Shopwell\Core\Framework\App\Template\TemplateCollection;
@@ -142,14 +145,17 @@ class AppEntity extends Entity
      */
     protected ?AppScriptConditionCollection $scriptConditions = null;
 
-    /**
-     * @internal
-     */
-    protected ?AppCmsBlockCollection $cmsBlocks = null;
-
     protected ?AppFlowActionCollection $flowActions = null;
 
     protected ?AppFlowEventCollection $flowEvents = null;
+
+    protected ?AppContentSystemElementTypeCollection $contentElementTypes = null;
+
+    protected ?AppContentSystemStyleOptionCollection $styleOptions = null;
+
+    protected ?AppContentSystemBindingSpecificationCollection $bindingSpecifications = null;
+
+    protected ?AppContentSystemLayoutPresetCollection $layoutPresets = null;
 
     /**
      * @var EntityCollection<AppShippingMethodEntity>|null
@@ -613,22 +619,6 @@ class AppEntity extends Entity
         $this->scriptConditions = $scriptConditions;
     }
 
-    /**
-     * @internal
-     */
-    public function getCmsBlocks(): ?AppCmsBlockCollection
-    {
-        return $this->cmsBlocks;
-    }
-
-    /**
-     * @internal
-     */
-    public function setCmsBlocks(AppCmsBlockCollection $cmsBlocks): void
-    {
-        $this->cmsBlocks = $cmsBlocks;
-    }
-
     public function getFlowActions(): ?AppFlowActionCollection
     {
         return $this->flowActions;
@@ -647,6 +637,46 @@ class AppEntity extends Entity
     public function setFlowEvents(AppFlowEventCollection $flowEvents): void
     {
         $this->flowEvents = $flowEvents;
+    }
+
+    public function getContentElementTypes(): ?AppContentSystemElementTypeCollection
+    {
+        return $this->contentElementTypes;
+    }
+
+    public function setContentElementTypes(AppContentSystemElementTypeCollection $contentElementTypes): void
+    {
+        $this->contentElementTypes = $contentElementTypes;
+    }
+
+    public function getStyleOptions(): ?AppContentSystemStyleOptionCollection
+    {
+        return $this->styleOptions;
+    }
+
+    public function setStyleOptions(AppContentSystemStyleOptionCollection $styleOptions): void
+    {
+        $this->styleOptions = $styleOptions;
+    }
+
+    public function getBindingSpecifications(): ?AppContentSystemBindingSpecificationCollection
+    {
+        return $this->bindingSpecifications;
+    }
+
+    public function setBindingSpecifications(AppContentSystemBindingSpecificationCollection $bindingSpecifications): void
+    {
+        $this->bindingSpecifications = $bindingSpecifications;
+    }
+
+    public function getLayoutPresets(): ?AppContentSystemLayoutPresetCollection
+    {
+        return $this->layoutPresets;
+    }
+
+    public function setLayoutPresets(AppContentSystemLayoutPresetCollection $layoutPresets): void
+    {
+        $this->layoutPresets = $layoutPresets;
     }
 
     /**

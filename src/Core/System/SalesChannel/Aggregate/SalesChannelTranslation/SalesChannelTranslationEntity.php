@@ -19,11 +19,6 @@ class SalesChannelTranslationEntity extends TranslationEntity
 
     protected ?string $name = null;
 
-    /**
-     * @var array<string, mixed>|null
-     */
-    protected ?array $homeSlotConfig = null;
-
     protected bool $homeEnabled;
 
     protected ?string $homeName = null;
@@ -54,22 +49,6 @@ class SalesChannelTranslationEntity extends TranslationEntity
     public function setName(?string $name): void
     {
         $this->name = $name;
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function getHomeSlotConfig(): ?array
-    {
-        return $this->homeSlotConfig;
-    }
-
-    /**
-     * @param array<string, mixed>|null $homeSlotConfig
-     */
-    public function setHomeSlotConfig(?array $homeSlotConfig): void
-    {
-        $this->homeSlotConfig = $homeSlotConfig;
     }
 
     public function getHomeEnabled(): ?bool

@@ -29,7 +29,8 @@
                 "Honor Shopwell class aliases": "patches/honor-class-aliases-8.19.patch",
                 "Honor @final annotations": "patches/honor-doc-final.patch"
             }
-        }
+        },
+        "composer-exit-on-patch-failure": true
     },
     "replace": {
         "symfony/polyfill-ctype": "*",
@@ -41,5 +42,13 @@
         "symfony/polyfill-php80": "*",
         "symfony/polyfill-php81": "*",
         "symfony/polyfill-php82": "*"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@php bin/verify-patches.php"
+        ],
+        "post-update-cmd": [
+            "@php bin/verify-patches.php"
+        ]
     }
 }

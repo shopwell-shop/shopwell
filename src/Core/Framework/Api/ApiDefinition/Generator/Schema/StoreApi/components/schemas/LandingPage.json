@@ -30,9 +30,6 @@
                     "customFields": {
                         "type": "object"
                     },
-                    "slotConfig": {
-                        "type": "object"
-                    },
                     "metaTitle": {
                         "type": "string"
                     },
@@ -44,14 +41,6 @@
                     },
                     "url": {
                         "type": "string"
-                    },
-                    "cmsPageId": {
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
-                    },
-                    "cmsPageVersionId": {
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
                     },
                     "createdAt": {
                         "type": "string",
@@ -65,10 +54,6 @@
                     },
                     "translated": {
                         "type": "object"
-                    },
-                    "cmsPage": {
-                        "$ref": "#/components/schemas/CmsPage",
-                        "description": "CMS page layout for the landing page"
                     },
                     "seoUrls": {
                         "description": "SEO-friendly URLs for the landing page across different sales channels",

@@ -11,7 +11,7 @@ export default class ViewItemListEvent extends EventAwareAnalyticsEvent
      * @returns {boolean}
      */
     supports() {
-        const listingWrapper = document.querySelector('.cms-element-product-listing-wrapper');
+        const listingWrapper = document.querySelector('.product-listing-wrapper');
         return !!listingWrapper;
     }
 
@@ -42,7 +42,7 @@ export default class ViewItemListEvent extends EventAwareAnalyticsEvent
             return;
         }
 
-        const listing = document.querySelector('.cms-element-product-listing-wrapper');
+        const listing = document.querySelector('.product-listing-wrapper');
         const items = this.getListItems();
         if (items.length === 0) {
             return;
@@ -62,7 +62,7 @@ export default class ViewItemListEvent extends EventAwareAnalyticsEvent
     getListItems() {
         // Scoped to the listing: a page can also render sliders and cross selling, whose products
         // belong to their own lists and must not be reported as part of this one.
-        const listing = document.querySelector('.cms-element-product-listing-wrapper');
+        const listing = document.querySelector('.product-listing-wrapper');
         const productBoxes = listing?.querySelectorAll(ProductPageHelper.PRODUCT_ELEMENT_SELECTOR) ?? [];
         const lineItems = [];
 

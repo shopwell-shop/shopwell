@@ -131,8 +131,6 @@ framework:
             log_level: notice
         Shopwell\Core\Content\Category\Exception\CategoryNotFoundException:
             log_level: notice
-        Shopwell\Core\Content\Cms\Exception\PageNotFoundException:
-            log_level: notice
         Shopwell\Core\Checkout\Cart\Exception\CustomerNotLoggedInException:
             log_level: notice
         Shopwell\Core\Framework\Routing\Exception\CustomerNotLoggedInRoutingException:

@@ -45,12 +45,15 @@ class RequestTransformerTest extends TestCase
     {
         /** @var list<string> $registeredApiPrefixes */
         $registeredApiPrefixes = static::getContainer()->getParameter('shopwell.routing.registered_api_prefixes');
+        /** @var list<string> $apiContextRoutePrefixes */
+        $apiContextRoutePrefixes = static::getContainer()->getParameter('shopwell.routing.api_context_route_prefixes');
 
         $this->requestTransformer = new RequestTransformer(
             new CoreRequestTransformer(),
             static::getContainer()->get(SeoResolver::class),
             $registeredApiPrefixes,
-            static::getContainer()->get(DomainLoader::class)
+            static::getContainer()->get(DomainLoader::class),
+            $apiContextRoutePrefixes,
         );
 
         $this->zhLanguageId = $this->getZhCnLanguageId();
@@ -93,6 +96,18 @@ class RequestTransformerTest extends TestCase
             static::assertSame($expectedRequest->resolvedUrl, $resolved->attributes->get(RequestTransformer::SALES_CHANNEL_RESOLVED_URI));
             static::assertSame($expectedLanguageId, $resolved->headers->get(PlatformRequest::HEADER_LANGUAGE_ID));
         }
+    }
+
+    public function testAdministrationBelowVirtualDomainPathIsNotTransformed(): void
+    {
+        $this->createSalesChannels([
+            self::getChineseSalesChannel(Uuid::randomHex(), Uuid::randomHex(), 'http://chinese.test/zh'),
+        ]);
+
+        $resolved = $this->requestTransformer->transform(Request::create('http://chinese.test/zh/admin'));
+
+        static::assertFalse($resolved->attributes->has(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID));
+        static::assertFalse($resolved->attributes->has(SalesChannelRequest::ATTRIBUTE_IS_SALES_CHANNEL_REQUEST));
     }
 
     /**

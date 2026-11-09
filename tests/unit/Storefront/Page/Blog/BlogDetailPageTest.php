@@ -8,8 +8,10 @@ use Shopwell\Core\Content\Blog\Aggregate\BlogAuthor\BlogAuthorEntity;
 use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\Service\BlogCommentTreeResult;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Media\MediaEntity;
+use Shopwell\Core\Framework\ContentSystem\LayoutReference;
+use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Storefront\Page\Blog\BlogDetailPage;
 
@@ -43,7 +45,7 @@ class BlogDetailPageTest extends TestCase
         static::assertTrue($page->getCommentsEnabled());
         static::assertFalse($page->getCommentsAutoPublish());
         static::assertSame(10, $page->getCommentsPerPage());
-        static::assertNull($page->getCmsPage());
+        static::assertNull($page->getContentPage());
     }
 
     public function testTheArticleStateTravelsToTheTemplate(): void
@@ -71,7 +73,7 @@ class BlogDetailPageTest extends TestCase
         $page->setCommentsEnabled(false);
         $page->setCommentsAutoPublish(true);
         $page->setCommentsPerPage(25);
-        $page->setCmsPage(new CmsPageEntity());
+        $page->setContentPage(ContentPage::fromRenderResult(new RenderResult([], LayoutReference::create('content-layout-id', 'Blog layout', null), null)));
 
         static::assertSame($blog, $page->getBlog());
         $relatedBlogs = $page->getRelatedBlogs();
@@ -90,7 +92,7 @@ class BlogDetailPageTest extends TestCase
         static::assertFalse($page->getCommentsEnabled());
         static::assertTrue($page->getCommentsAutoPublish());
         static::assertSame(25, $page->getCommentsPerPage());
-        static::assertInstanceOf(CmsPageEntity::class, $page->getCmsPage());
+        static::assertInstanceOf(ContentPage::class, $page->getContentPage());
     }
 
     public function testThePageAnswersWithTheBlogEntityName(): void

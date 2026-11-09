@@ -95,7 +95,6 @@ Module.register('sw-blog', {
     targetVersion: '1.0.0',
     color: '#d9406b',
     // `regular-newspaper` and `regular-pen` do not exist in the icon set of this administration,
-    // `regular-image-text` is the content icon the cms module uses as well
     icon: 'regular-image-text',
     entity: 'blog',
 
@@ -235,8 +234,6 @@ Module.register('sw-blog', {
     navigation: [
         {
             id: 'sw-blog',
-            // `sw-content` is registered by `sw-cms`; a blog entry is content between a landing page
-            // and a cms layout, so it hangs below it instead of opening a menu of its own
             label: 'sw-blog.general.mainMenuItemGeneral',
             // a navigation entry points at the *name* of a route - the router resolves it to build the
             // link of the menu item

@@ -138,23 +138,9 @@
                     "keywords": {
                         "type": "string"
                     },
-                    "cmsPageId": {
-                        "description": "Unique identity of CMS page.",
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
-                    },
-                    "cmsPageVersionId": {
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
-                    },
                     "customEntityTypeId": {
                         "type": "string",
                         "pattern": "^[0-9a-f]{32}$"
-                    },
-                    "cmsPageIdSwitched": {
-                        "description": "Runtime field, cannot be used as part of the criteria.",
-                        "type": "boolean",
-                        "deprecated": true
                     },
                     "seoUrl": {
                         "description": "Runtime field, cannot be used as part of the criteria.",
@@ -206,10 +192,6 @@
                         "items": {
                             "$ref": "#/components/schemas/Tag"
                         }
-                    },
-                    "cmsPage": {
-                        "$ref": "#/components/schemas/CmsPage",
-                        "description": "CMS page layout for the category"
                     },
                     "seoUrls": {
                         "description": "SEO-friendly URLs for the category across different sales channels",

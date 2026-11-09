@@ -30,6 +30,7 @@ on:
 
 jobs:
   visual-tests:
+    if: ${{ vars.SHOPWELL_ACCEPTANCE_TESTS_ENABLED != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

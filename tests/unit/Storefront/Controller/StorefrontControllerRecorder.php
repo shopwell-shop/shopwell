@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Storefront\Controller;
 
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Execution\Hook;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -27,6 +28,10 @@ final class StorefrontControllerRecorder
     public array $renderStorefrontParameters;
 
     public Hook $calledHook;
+
+    public ?ContentPage $contentPage = null;
+
+    public ?string $loadedContentPath = null;
 
     public string $forwardToRoute;
 
@@ -103,6 +108,13 @@ final class StorefrontControllerRecorder
     public function hook(Hook $hook): void
     {
         $this->calledHook = $hook;
+    }
+
+    public function loadContentPage(string $path): ?ContentPage
+    {
+        $this->loadedContentPath = $path;
+
+        return $this->contentPage;
     }
 
     public function addFlash(string $type, mixed $message): void

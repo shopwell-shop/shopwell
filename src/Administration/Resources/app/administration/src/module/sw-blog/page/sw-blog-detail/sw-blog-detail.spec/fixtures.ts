@@ -22,7 +22,7 @@ export const blog = {
     publishedAt: null,
     authorId: 'author-1',
     coverMediaId: null,
-    cmsPageId: 'page-1',
+    contentLayoutId: 'page-1',
     categories: [],
     videos: [],
 };

@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopwell\Core\Content\Category\CategoryCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductMedia\ProductMediaCollection;
@@ -2477,45 +2476,6 @@ class ProductRepositoryTest extends TestCase
 
         static::assertSame($colorId, $redOption->getGroupId());
         static::assertSame($colorId, $blueOption->getGroupId());
-    }
-
-    public function testCreateAndAssignCMSPage(): void
-    {
-        $id = Uuid::randomHex();
-
-        $cmsPageId = Uuid::randomHex();
-
-        static::getContainer()->get('cms_page.repository')->create(
-            [
-                [
-                    'id' => $cmsPageId,
-                    'type' => 'product_detail',
-                ],
-            ],
-            $this->context
-        );
-
-        $data = [
-            'id' => $id,
-            'productNumber' => Uuid::randomHex(),
-            'name' => 'test',
-            'stock' => 10,
-            'tax' => ['name' => 'test', 'taxRate' => 15],
-            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
-            'manufacturer' => ['name' => 'test'],
-            'cmsPageId' => $cmsPageId,
-        ];
-
-        $this->repository->create([$data], Context::createDefaultContext());
-
-        $criteria = new Criteria([$id]);
-        $criteria->addAssociation('cmsPage');
-        $product = $this->repository->search($criteria, Context::createDefaultContext())->getEntities()->get($id);
-        static::assertNotNull($product);
-        static::assertSame($cmsPageId, $product->getCmsPageId());
-        $cmsPage = $product->getCmsPage();
-        static::assertInstanceOf(CmsPageEntity::class, $cmsPage);
-        static::assertSame('product_detail', $cmsPage->getType());
     }
 
     public function testModifyProductPriceMatrix(): void

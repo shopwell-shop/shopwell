@@ -697,7 +697,6 @@ export default [
         files: [
             'src/**/sw-grouped-single-select/sw-grouped-single-select.html.twig',
             'src/**/sw-sidebar-collapse/sw-sidebar-collapse.html.twig',
-            'src/**/sw-cms-create/sw-cms-create.html.twig',
             'src/**/sw-mail-header-footer-create/sw-mail-header-footer-create.html.twig',
             'src/**/sw-mail-template-create/sw-mail-template-create.html.twig',
             'src/**/sw-property-create/sw-property-create.html.twig',

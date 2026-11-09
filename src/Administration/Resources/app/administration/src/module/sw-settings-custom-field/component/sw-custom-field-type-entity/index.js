@@ -67,7 +67,7 @@ export default {
                 },
                 {
                     label: this.$t('sw-settings-custom-field.customField.entity.shoppingExperienceLayout'),
-                    value: 'cms_page',
+                    value: 'content_layout',
                 },
             ];
 

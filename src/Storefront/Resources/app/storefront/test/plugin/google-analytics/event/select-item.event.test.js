@@ -22,7 +22,7 @@ describe('plugin/google-analytics/events/select-item.event', () => {
 
     function renderListing(products, listAttributes = 'data-list-id="category:1" data-list-name="Shirts"') {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper" ${listAttributes}>
+            <div class="product-listing-wrapper" ${listAttributes}>
                 ${products.map(product => `
                     <div class="product-box" data-product-information='${JSON.stringify(product)}'>
                         <a href="/detail" class="product-name stretched-link">${product.name}</a>
@@ -116,7 +116,7 @@ describe('plugin/google-analytics/events/select-item.event', () => {
     // an extension renders its own product elements in its own shopping experience element
     test('attributes a product of an extension element to that element', () => {
         document.body.innerHTML = `
-            <div data-cms-element-id="element-1">
+            <div data-element-id="element-1">
                 <article class="acme-teaser" data-product-information='${JSON.stringify(mug)}'>
                     <a href="/detail" class="acme-teaser-link">Mug</a>
                 </article>
@@ -129,7 +129,7 @@ describe('plugin/google-analytics/events/select-item.event', () => {
         document.querySelectorAll('.acme-teaser-link')[1].click();
 
         expect(window.gtag).toHaveBeenCalledWith('event', 'select_item', expect.objectContaining({
-            'item_list_id': 'cms:element-1',
+            'item_list_id': 'content:element-1',
             'items': [expect.objectContaining({ 'item_id': 'SW10000', 'index': 1 })],
         }));
     });

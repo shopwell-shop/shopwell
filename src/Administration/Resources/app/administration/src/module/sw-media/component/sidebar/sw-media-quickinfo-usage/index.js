@@ -3,7 +3,6 @@ import './sw-media-quickinfo-usage.scss';
 
 const { Application } = Shopwell;
 const types = Shopwell.Utils.types;
-const { Criteria } = Shopwell.Data;
 
 /**
  * @sw-package discovery
@@ -39,7 +38,7 @@ export default {
             avatarUsers: [],
             paymentMethods: [],
             shippingMethods: [],
-            layouts: [],
+
             landingPages: [],
             isLoading: false,
         };
@@ -58,32 +57,8 @@ export default {
             return this.repositoryFactory.create('category');
         },
 
-        cmsPageRepository() {
-            return this.repositoryFactory.create('cms_page');
-        },
-
         moduleFactory() {
             return Application.getContainer('factory').module;
-        },
-
-        slotConfigCriteria() {
-            const criteria = new Criteria();
-
-            criteria.setLimit(5);
-            criteria.addFilter(Criteria.contains('slotConfig.*.media.value', this.item.id));
-            criteria.addFields('name');
-
-            return criteria;
-        },
-
-        cmsPageBlockConfigCriteria() {
-            const criteria = new Criteria();
-
-            criteria.setLimit(5);
-            criteria.addFilter(Criteria.equals('sections.blocks.slots.config.media.value', this.item.id));
-            criteria.addFields('name');
-
-            return criteria;
         },
 
         getUsages() {
@@ -118,10 +93,6 @@ export default {
                 usages.push(this.getShippingMethodUsage(shippingMethod));
             });
 
-            this.layouts.forEach((layout) => {
-                usages.push(this.getLayoutUsage(layout));
-            });
-
             if (!types.isEmpty(this.avatarUsers)) {
                 this.avatarUsers.forEach((avatarUser) => {
                     usages.push(this.getAvatarUserUsage(avatarUser));
@@ -151,7 +122,7 @@ export default {
     },
 
     methods: {
-        async createdComponent() {
+        createdComponent() {
             this.loadProductAssociations();
             this.loadCategoryAssociations();
             this.loadManufacturerAssociations();
@@ -160,46 +131,6 @@ export default {
             this.loadAvatarUserAssociations();
             this.loadPaymentMethodAssociations();
             this.loadShippingMethodAssociations();
-            this.loadLayoutAssociations();
-            await this.loadSlotConfigAssociations();
-        },
-
-        async loadSlotConfigAssociations() {
-            this.isLoading = true;
-
-            const [
-                foundInProducts,
-                foundInLandingPages,
-                foundInCategories,
-                foundInCmsPages,
-            ] = await Promise.all([
-                this.productRepository.search(this.slotConfigCriteria),
-                this.landingPageRepository.search(this.slotConfigCriteria),
-                this.categoryRepository.search(this.slotConfigCriteria),
-                this.cmsPageRepository.search(this.cmsPageBlockConfigCriteria),
-            ]);
-
-            foundInProducts.forEach((foundInProduct) => {
-                if (this.products && !this.products.some((productMedia) => productMedia.product.id === foundInProduct.id)) {
-                    this.products.push({ product: foundInProduct });
-                }
-            });
-
-            this.landingPages = foundInLandingPages;
-
-            foundInCategories.forEach((foundInCategory) => {
-                if (this.categories && !this.categories.some((category) => category.id === foundInCategory.id)) {
-                    this.categories.push(foundInCategory);
-                }
-            });
-
-            foundInCmsPages.forEach((foundInCmsPage) => {
-                if (this.layouts && !this.layouts.some((layout) => layout.id === foundInCmsPage.id)) {
-                    this.layouts.push(foundInCmsPage);
-                }
-            });
-
-            this.isLoading = false;
         },
 
         loadProductAssociations() {
@@ -232,42 +163,6 @@ export default {
 
         loadShippingMethodAssociations() {
             this.shippingMethods = this.item.shippingMethods;
-        },
-
-        loadLayoutAssociations() {
-            this.layouts = [];
-            this.item.cmsBlocks.forEach((layout) => {
-                if (!this.isExistedCmsMedia(layout.section.pageId)) {
-                    this.layouts.push({
-                        id: layout.section.pageId,
-                        name: layout.section.page.translated.name,
-                    });
-                }
-            });
-
-            this.item.cmsSections.forEach((layout) => {
-                if (!this.isExistedCmsMedia(layout.pageId)) {
-                    this.layouts.push({
-                        id: layout.pageId,
-                        name: layout.page.translated.name,
-                    });
-                }
-            });
-
-            this.item.cmsPages.forEach((layout) => {
-                if (!this.isExistedCmsMedia(layout.id)) {
-                    this.layouts.push({
-                        id: layout.id,
-                        name: layout.translated.name,
-                    });
-                }
-            });
-        },
-
-        isExistedCmsMedia(id) {
-            return this.layouts.some((layout) => {
-                return layout.id === id;
-            });
         },
 
         getProductUsage(product) {
@@ -363,18 +258,6 @@ export default {
                     id: shippingMethod.id,
                 },
                 icon: this.getIconForModule('sw-settings-shipping'),
-            };
-        },
-
-        getLayoutUsage(layout) {
-            return {
-                name: layout.name,
-                tooltip: this.$t('sw-media.sidebar.usage.tooltipFoundLayout'),
-                link: {
-                    name: 'sw.cms.detail',
-                    id: layout.id,
-                },
-                icon: this.getIconForModule('sw-cms'),
             };
         },
 

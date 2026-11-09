@@ -7,7 +7,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
@@ -57,7 +56,6 @@ class SalesChannelTranslationDefinition extends EntityTranslationDefinition
     {
         $fields = new FieldCollection([
             (new StringField('name', 'name'))->addFlags(new ApiAware(), new Required()),
-            new JsonField('home_slot_config', 'homeSlotConfig'),
             (new BoolField('home_enabled', 'homeEnabled'))->addFlags(new Required()),
             new StringField('home_name', 'homeName'),
             new StringField('home_meta_title', 'homeMetaTitle'),

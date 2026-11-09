@@ -2,6 +2,15 @@
 
 ## Features
 
+### Experience Studio replaces legacy CMS
+
+Experience Studio and Content System now provide page layouts.
+The legacy CMS entities, editor, app blocks and Storefront rendering contracts were removed without a compatibility layer.
+Use `content_layout` assignments and Content System components for category, product, landing and static pages.
+Blog layouts use `contentLayoutId`.
+Fresh installation uses Content System tables and new default layouts; configure legal page content before use.
+
+
 ### Payment gateway for external systems
 
 The platform can act as a payment gateway for external systems, independently of the checkout. A merchant configures the credentials of a payment interface (alipay, wechat, paypal, stripe) once, enables the channels of that interface it wants to offer, and authorizes an app per interface and channel; an app either collects with the credentials of the platform or with its own.

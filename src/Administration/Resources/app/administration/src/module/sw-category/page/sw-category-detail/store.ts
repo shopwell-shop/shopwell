@@ -31,7 +31,6 @@ const swCategoryDetailStore = Shopwell.Store.register({
         loadActiveLandingPage({ repository, id, apiContext, criteria = new Criteria(1, 25) }: LoadPayload<'landing_page'>) {
             if (id === 'create') {
                 const landingPage = repository.create(apiContext);
-                landingPage.cmsPageId = undefined;
                 this.landingPage = landingPage;
                 return Promise.resolve();
             }

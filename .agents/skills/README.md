@@ -16,7 +16,9 @@ Portable AI capabilities packaged in the [Anthropic Agent Skills](https://agents
 | [`shopwell-pr-hygiene`](shopwell-pr-hygiene/SKILL.md) | "create a PR", "update the PR", "address review feedback" | Applies Shopwell PR template, title, and follow-up commit conventions. |
 | [`shopwell-php-code`](shopwell-php-code/SKILL.md) | "edit PHP code", "add migration", "add API route", "deprecate this" | Applies Shopwell PHP architecture, public surface, migration, API schema, and deprecation rules. |
 | [`shopwell-admin-js`](shopwell-admin-js/SKILL.md) | "edit Administration", "Admin UI", "Vue component", "Jest spec" | Applies Shopwell Administration JS/TS/Vue architecture, ACL, Jest, and linting conventions. |
+| [`shopwell-experience-studio-icons`](shopwell-experience-studio-icons/SKILL.md) | "create an Experience Studio SVG icon", "refine the element illustrations", "align picker icon frames" | Creates matching SVG illustrations with the shared light frame, soft shadow, palette, and separate YAML illustration/Meteor fields. |
 | [`shopwell-phpunit-tests`](shopwell-phpunit-tests/SKILL.md) | "write PHPUnit tests", "add data provider", "feature flag test" | Applies Shopwell PHPUnit structure, fixtures, feature-flag, DBAL, coverage, and data-provider rules. |
+| [`shopwell-storefront-component`](shopwell-storefront-component/SKILL.md) | "Create a twig ux component", "Create a storefront component", "Migrate to twig ux component" | Creates or migrates Shopwell Storefront Twig UX components following all best practices. |
 
 ## How auto-loading works
 

@@ -95,17 +95,11 @@ export default Shopwell.Component.wrapComponentConfig({
                 };
             });
 
-            if (this.customEntityDataDefinition?.flags?.['cms-aware']) {
-                detailTabItems.push(
-                    {
-                        label: this.$t('sw-custom-entity.detail.tabs.layout'),
-                        name: 'cms-aware-tab-layout',
-                    },
-                    {
-                        label: this.$t('sw-custom-entity.detail.tabs.seo'),
-                        name: 'cms-aware-tab-seo',
-                    },
-                );
+            if (this.customEntityDataDefinition?.properties?.swSeoMetaTitle) {
+                detailTabItems.push({
+                    label: this.$t('sw-custom-entity.detail.tabs.seo'),
+                    name: 'seo-tab',
+                });
             }
 
             return detailTabItems;
@@ -239,22 +233,6 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.customEntityProperties?.[field]?.type || '';
         },
 
-        updateCmsPageId(cmsPageId: EntityKey<'cms_page'> | null): void {
-            if (!this.customEntityData) {
-                return;
-            }
-
-            this.customEntityData.swCmsPageId = cmsPageId;
-        },
-
-        updateCmsSlotOverwrites(cmsSlotOverwrites: Entity<'generic_custom_entity'>['swSlotConfig'] | null): void {
-            if (!this.customEntityData) {
-                return;
-            }
-
-            this.customEntityData.swSlotConfig = cmsSlotOverwrites;
-        },
-
         updateSeoMetaTitle(swSeoMetaTitle: string | null) {
             if (!this.customEntityData) {
                 return;
@@ -301,20 +279,6 @@ export default Shopwell.Component.wrapComponentConfig({
             }
 
             this.customEntityData.swOgImageId = swOgImageId;
-        },
-
-        onCreateLayout(): void {
-            if (!this.customEntityData) {
-                return;
-            }
-
-            void this.$router.push({
-                name: 'sw.cms.create',
-                params: {
-                    id: this.customEntityData.id,
-                    type: this.customEntityName,
-                },
-            });
         },
     },
 });

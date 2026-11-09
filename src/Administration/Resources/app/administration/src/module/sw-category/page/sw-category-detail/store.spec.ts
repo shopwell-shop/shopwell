@@ -3,11 +3,11 @@ import type Repository from '../../../../core/data/repository.data';
 import type { ContextStore } from '../../../../app/store/context.store';
 
 const newLandingPageMock = {
-    cmsPageId: '12345',
+    name: 'New landing page',
 };
 
 const existingLandingPageMock = {
-    cmsPageId: '67890',
+    name: 'Existing landing page',
 };
 
 const categoriesMock: Record<string, Partial<Entity<'category'>>> = {
@@ -64,7 +64,7 @@ describe('sw-category.store', () => {
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(landingPageRepositoryMock.create).toHaveBeenCalledWith(apiContextMock);
-        expect(swCategoryDetailStore.landingPage).toStrictEqual({ cmsPageId: undefined });
+        expect(swCategoryDetailStore.landingPage).toStrictEqual({ name: 'New landing page' });
     });
 
     it('loads an active landing page loading an existing one', async () => {

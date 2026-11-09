@@ -17,14 +17,6 @@ async function createWrapper(
     };
     Shopwell.Store.get('swCategoryDetail').isCategoryColumn = true;
 
-    Shopwell.Store.unregister('cmsPage');
-    Shopwell.Store.register({
-        id: 'cmsPage',
-        state: () => ({
-            currentPage: undefined,
-        }),
-    });
-
     return mount(await wrapTestComponent('sw-category-view', { sync: true }), {
         global: {
             stubs: {
@@ -150,8 +142,8 @@ describe('src/module/sw-category/component/sw-category-view', () => {
                 onClick: expect.any(Function),
             }),
             expect.objectContaining({
-                label: 'sw-category.view.cms',
-                name: 'sw.category.detail.cms',
+                label: 'sw-category.view.layout',
+                name: 'sw.category.detail.layout',
                 onClick: expect.any(Function),
             }),
             expect.objectContaining({
@@ -169,21 +161,12 @@ describe('src/module/sw-category/component/sw-category-view', () => {
             [
                 'sw.category.detail.base',
                 'sw.category.detail.products',
-                'sw.category.detail.cms',
+                'sw.category.detail.layout',
                 'sw.category.detail.seo',
             ],
         ],
         ['folder', ['sw.category.detail.base']],
         ['link', ['sw.category.detail.base']],
-        [
-            'custom_entity',
-            [
-                'sw.category.detail.base',
-                'sw.category.detail.customEntity',
-                'sw.category.detail.cms',
-                'sw.category.detail.seo',
-            ],
-        ],
     ])('should provide the expected meteor tabs for the `%s` category type', async (categoryType, expectedTabNames) => {
         const wrapper = await createWrapper(categoryType, { featureActive: true });
         const tabs = wrapper.getComponent({ name: 'mt-tabs' });
@@ -242,20 +225,12 @@ describe('src/module/sw-category/component/sw-category-view', () => {
         expect(productTab.text()).toBe('sw-category.view.products');
     }
 
-    function checkCustomEntityTab(customEntityTab) {
-        expect(customEntityTab.props()).toStrictEqual({
-            route: { name: 'sw.category.detail.customEntity' },
-            title: 'sw-category.view.customEntity',
+    function checkLayoutTab(layoutTab) {
+        expect(layoutTab.props()).toStrictEqual({
+            route: { name: 'sw.category.detail.layout' },
+            title: 'sw-category.view.layout',
         });
-        expect(customEntityTab.text()).toBe('sw-category.view.customEntity');
-    }
-
-    function checkCmsTab(cmsTab) {
-        expect(cmsTab.props()).toStrictEqual({
-            route: { name: 'sw.category.detail.cms' },
-            title: 'sw-category.view.cms',
-        });
-        expect(cmsTab.text()).toBe('sw-category.view.cms');
+        expect(layoutTab.text()).toBe('sw-category.view.layout');
     }
 
     function checkSeoTab(seoTab) {
@@ -270,16 +245,14 @@ describe('src/module/sw-category/component/sw-category-view', () => {
         const wrapper = await createWrapper('page');
 
         const generalTab = wrapper.getComponent('.sw-category-detail__tab-base');
+        expect(generalTab.exists()).toBe(true);
         checkGeneralTab(generalTab);
 
         const productTab = wrapper.getComponent('.sw-category-detail__tab-products');
         checkProductTab(productTab);
 
-        const customEntityTab = wrapper.getComponent('.sw-category-detail__tab-custom-entity');
-        expect(customEntityTab.isVisible()).toBe(false);
-
-        const cmsTab = wrapper.getComponent('.sw-category-detail__tab-cms');
-        checkCmsTab(cmsTab);
+        const layoutTab = wrapper.getComponent('.sw-category-detail__tab-layout');
+        checkLayoutTab(layoutTab);
 
         const seoTab = wrapper.getComponent('.sw-category-detail__tab-seo');
         checkSeoTab(seoTab);
@@ -294,11 +267,8 @@ describe('src/module/sw-category/component/sw-category-view', () => {
         const productTab = wrapper.getComponent('.sw-category-detail__tab-products');
         expect(productTab.isVisible()).toBe(false);
 
-        const customEntityTab = wrapper.getComponent('.sw-category-detail__tab-custom-entity');
-        expect(customEntityTab.isVisible()).toBe(false);
-
-        const cmsTab = wrapper.getComponent('.sw-category-detail__tab-cms');
-        expect(cmsTab.isVisible()).toBe(false);
+        const layoutTab = wrapper.getComponent('.sw-category-detail__tab-layout');
+        expect(layoutTab.isVisible()).toBe(false);
 
         const seoTab = wrapper.getComponent('.sw-category-detail__tab-seo');
         expect(seoTab.isVisible()).toBe(false);
@@ -313,32 +283,10 @@ describe('src/module/sw-category/component/sw-category-view', () => {
         const productTab = wrapper.getComponent('.sw-category-detail__tab-products');
         expect(productTab.isVisible()).toBe(false);
 
-        const customEntityTab = wrapper.getComponent('.sw-category-detail__tab-custom-entity');
-        expect(customEntityTab.isVisible()).toBe(false);
-
-        const cmsTab = wrapper.getComponent('.sw-category-detail__tab-cms');
-        expect(cmsTab.isVisible()).toBe(false);
+        const layoutTab = wrapper.getComponent('.sw-category-detail__tab-layout');
+        expect(layoutTab.isVisible()).toBe(false);
 
         const seoTab = wrapper.getComponent('.sw-category-detail__tab-seo');
         expect(seoTab.isVisible()).toBe(false);
-    });
-
-    it('should display the tabs for the `custom_entity` category type', async () => {
-        const wrapper = await createWrapper('custom_entity');
-
-        const generalTab = wrapper.getComponent('.sw-category-detail__tab-base');
-        checkGeneralTab(generalTab);
-
-        const productTab = wrapper.getComponent('.sw-category-detail__tab-products');
-        expect(productTab.isVisible()).toBe(false);
-
-        const customEntityTab = wrapper.getComponent('.sw-category-detail__tab-custom-entity');
-        checkCustomEntityTab(customEntityTab);
-
-        const cmsTab = wrapper.getComponent('.sw-category-detail__tab-cms');
-        checkCmsTab(cmsTab);
-
-        const seoTab = wrapper.getComponent('.sw-category-detail__tab-seo');
-        checkSeoTab(seoTab);
     });
 });

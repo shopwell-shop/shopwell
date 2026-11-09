@@ -46,12 +46,7 @@ export default function createSearchTypeService() {
             placeholderSnippet: 'sw-media.general.placeholderSearchBar',
             listingRoute: 'sw.media.index',
         },
-        cms_page: {
-            entityName: 'cms_page',
-            placeholderSnippet: 'sw-cms.general.placeholderSearchBar',
-            listingRoute: 'sw.cms.index',
-            hideOnGlobalSearchBar: true,
-        },
+
         customer_group: {
             entityName: 'customer_group',
             placeholderSnippet: 'sw-settings-customer-group.general.placeholderSearchBar',

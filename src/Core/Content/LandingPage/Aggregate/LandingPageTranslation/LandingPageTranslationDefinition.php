@@ -7,7 +7,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
@@ -50,7 +49,6 @@ class LandingPageTranslationDefinition extends EntityTranslationDefinition
         return new FieldCollection([
             (new StringField('name', 'name'))->addFlags(new ApiAware(), new Required()),
             (new StringField('url', 'url'))->addFlags(new ApiAware(), new Required()),
-            (new JsonField('slot_config', 'slotConfig'))->addFlags(new ApiAware()),
             (new StringField('meta_title', 'metaTitle'))->addFlags(new ApiAware()),
             (new StringField('meta_description', 'metaDescription'))->addFlags(new ApiAware()),
             (new StringField('keywords', 'keywords'))->addFlags(new ApiAware()),

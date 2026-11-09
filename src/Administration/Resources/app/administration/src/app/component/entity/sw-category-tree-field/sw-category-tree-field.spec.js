@@ -41,8 +41,8 @@ const categoryData = [
     },
 ];
 
-function createCategoryCollection(items = []) {
-    return new EntityCollection('/category', 'category', null, { isShopwellContext: true }, items, 2, null);
+function createCategoryCollection(items = [], total = items.length) {
+    return new EntityCollection('/category', 'category', null, { isShopwellContext: true }, items, total, null);
 }
 
 const responses = global.repositoryFactoryMock.responses;
@@ -75,7 +75,6 @@ async function createWrapper(props = {}) {
         props: {
             placeholder: 'some-placeholder',
             categoriesCollection: createCategoryCollection(),
-            pageId: '123',
             ...props,
         },
         global: {
@@ -244,10 +243,7 @@ describe('src/app/component/entity/sw-category-tree-field', () => {
 
         await wrapper.setProps({
             singleSelect: true,
-            categoriesCollection: createCategoryCollection(intitalCategories),
-        });
-        await wrapper.setData({
-            selectedCategoriesTotal: 5,
+            categoriesCollection: createCategoryCollection(intitalCategories, 5),
         });
         await flushPromises();
 
@@ -284,7 +280,6 @@ describe('src/app/component/entity/sw-category-tree-field', () => {
 
         await wrapper.setProps({
             categoriesCollection: createCategoryCollection(selectedCategories),
-            pageId: null,
         });
 
         expect(wrapper.vm.selectedCategoriesItemsIds).toHaveLength(2);

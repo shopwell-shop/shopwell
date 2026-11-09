@@ -10,8 +10,6 @@ import { blogApi } from '../../service/blog.api.service';
 
 type BlogCategory = EntitySchema.Entity<'blog_category'>;
 
-type CmsPage = EntitySchema.Entity<'cms_page'>;
-
 /**
  * One category of the blog.
  *
@@ -40,7 +38,6 @@ export default defineComponent({
     data(): {
         category: BlogCategory | null;
         entries: EntityCollection<'blog'> | null;
-        cmsPage: CmsPage | null;
         isLoading: boolean;
         isSaving: boolean;
         showDeleteModal: boolean;
@@ -48,7 +45,6 @@ export default defineComponent({
         return {
             category: null,
             entries: null,
-            cmsPage: null,
             isLoading: false,
             isSaving: false,
             showDeleteModal: false,
@@ -64,8 +60,8 @@ export default defineComponent({
             return this.repositoryFactory.create('blog');
         },
 
-        cmsPageRepository(): RepositoryType<'cms_page'> {
-            return this.repositoryFactory.create('cms_page');
+        contentLayoutOptionsCriteria(): CriteriaType {
+            return blogApi(this).categoryContentLayoutOptionsCriteria();
         },
 
         canEdit(): boolean {
@@ -74,10 +70,6 @@ export default defineComponent({
 
         canDelete(): boolean {
             return this.acl.can('blog.deleter');
-        },
-
-        cmsPageOptionsCriteria(): CriteriaType {
-            return blogApi(this).categoryCmsPageOptionsCriteria();
         },
 
         name(): string {
@@ -144,8 +136,6 @@ export default defineComponent({
                 this.category = category ?? null;
 
                 this.applyActiveDefault();
-
-                await this.loadCmsPage();
             } catch {
                 this.createNotificationError({ message: this.$t('sw-blog.detail.messageLoadError') });
             } finally {
@@ -189,46 +179,6 @@ export default defineComponent({
             });
         },
 
-        async loadCmsPage(): Promise<void> {
-            const cmsPageId = this.category?.cmsPageId ?? null;
-
-            if (!cmsPageId) {
-                this.cmsPage = null;
-
-                return;
-            }
-
-            const criteria = blogApi(this).cmsPageCriteria(cmsPageId);
-
-            try {
-                const page = await this.cmsPageRepository.get(cmsPageId, Shopwell.Context.api, criteria);
-                this.cmsPage = page ?? null;
-            } catch {
-                this.cmsPage = null;
-            }
-        },
-
-        onCmsPageChanged(): void {
-            void this.loadCmsPage();
-        },
-
-        /**
-         * Writes the version column of the layout reference, and only together with its id.
-         *
-         * A reference into the version aware `cms_page` spans two columns, so both are written in one
-         * go. Without a chosen layout both are left untouched - the cleared id is what makes the
-         * storefront fall back to its own listing template.
-         */
-        applyCmsPage(): void {
-            if (!this.category || !this.category.cmsPageId) {
-                return;
-            }
-
-            if (this.cmsPage?.versionId) {
-                this.category.cmsPageVersionId = this.cmsPage.versionId;
-            }
-        },
-
         /**
          * Saving stays on the page, the same way the entry page keeps it: a category is corrected in
          * several passes, and a save that jumps back to the list makes the merchant find it again
@@ -254,8 +204,6 @@ export default defineComponent({
             this.isSaving = true;
 
             try {
-                this.applyCmsPage();
-
                 await this.categoryRepository.save(this.category);
 
                 this.createNotificationSuccess({ message: this.$t('sw-blog.detail.messageSaveSuccess') });

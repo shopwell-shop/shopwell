@@ -1,0 +1,984 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\DependencyInjection;
+
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\DomainAwareLayoutResolver;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutContextFactory;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutResolver;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\NavigationAliasResolver;
+use Shopwell\Core\Framework\ContentSystem\Adapter\NoneSpecificationSource;
+use Shopwell\Core\Framework\ContentSystem\Adapter\RenderingSpecificationFactory;
+use Shopwell\Core\Framework\ContentSystem\Adapter\RenderingSpecificationResolver;
+use Shopwell\Core\Framework\ContentSystem\Adapter\RootSourceRegistry;
+use Shopwell\Core\Framework\ContentSystem\Adapter\StandaloneLayoutSpecificationSource;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentDiagnoseController;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentInlineMappingParseController;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutMutationController;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentPreviewController;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentPreviewPageBuilder;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentPreviewPayloadStore;
+use Shopwell\Core\Framework\ContentSystem\Api\DraftLayoutDecoder;
+use Shopwell\Core\Framework\ContentSystem\Api\LayoutMutationController;
+use Shopwell\Core\Framework\ContentSystem\Api\UnknownRequestFieldExceptionListener;
+use Shopwell\Core\Framework\ContentSystem\Binding\AttributionReconciler;
+use Shopwell\Core\Framework\ContentSystem\Binding\BindingApplicator;
+use Shopwell\Core\Framework\ContentSystem\Binding\DefaultBindingSpecificationSynthesizer;
+use Shopwell\Core\Framework\ContentSystem\Binding\Loader\DatabaseBindingSpecificationLoader;
+use Shopwell\Core\Framework\ContentSystem\Binding\Loader\YamlBindingSpecificationLoader;
+use Shopwell\Core\Framework\ContentSystem\Binding\Registry\CachedContentSystemBindingSpecificationRegistry;
+use Shopwell\Core\Framework\ContentSystem\Binding\Registry\ContentSystemBindingSpecificationRegistry;
+use Shopwell\Core\Framework\ContentSystem\Binding\Serialization\BindingSpecificationCanonicalizer;
+use Shopwell\Core\Framework\ContentSystem\Binding\Serialization\BindingSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Binding\Validation\TypeConsistentBindingSpecificationValidator;
+use Shopwell\Core\Framework\ContentSystem\Cache\CacheFinalizer;
+use Shopwell\Core\Framework\ContentSystem\Cache\CacheInvalidationSubscriber;
+use Shopwell\Core\Framework\ContentSystem\Cache\EntityCacheTagResolver;
+use Shopwell\Core\Framework\ContentSystem\Cache\MappedMediaCacheInvalidator;
+use Shopwell\Core\Framework\ContentSystem\ContentPipeline;
+use Shopwell\Core\Framework\ContentSystem\Diagnostics\LayoutDiagnostics;
+use Shopwell\Core\Framework\ContentSystem\Diagnostics\RootContextMapper;
+use Shopwell\Core\Framework\ContentSystem\DraftLayoutChecker;
+use Shopwell\Core\Framework\ContentSystem\Helper\ContentLayoutMetadataDeriver;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataContext\ContextPathResolver;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\ConfigCanonicalizer;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\DataLoaderConfigSerializerProvider;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\DataLoaderProvider;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\EntityCollectionLoader\EntityCollectionLoader;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\EntityCollectionLoader\EntityCollectionLoaderConfigSerializer;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\EntityLoader\EntityLoader;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\EntityLoader\EntityLoaderConfigSerializer;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\LoaderInputResolver;
+use Shopwell\Core\Framework\ContentSystem\Layout\Codec\PropertyTypeConformanceValidator;
+use Shopwell\Core\Framework\ContentSystem\Layout\Codec\StoredElementCodec;
+use Shopwell\Core\Framework\ContentSystem\Layout\Codec\StoredTreeCodec;
+use Shopwell\Core\Framework\ContentSystem\Layout\Codec\StoredTreeConstraints;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Context\ContextDependencyAnalyzer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Context\ProviderDeliveryKeyResolver;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\BoxSpacingNormalizer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\ElementStyleNormalizer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Loader\DatabaseStyleOptionLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Loader\YamlStyleOptionLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Registry\CachedContentSystemStyleOptionRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Registry\ContentSystemStyleOptionRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Serialization\StyleOptionSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Validation\StyleOptionCollisionDetector;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Validation\StyleOptionConstraintDeriver;
+use Shopwell\Core\Framework\ContentSystem\Layout\Entity\ContentLayoutDefinition;
+use Shopwell\Core\Framework\ContentSystem\Layout\Field\StoredElementListFieldSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\LayoutDefaultSeeder;
+use Shopwell\Core\Framework\ContentSystem\Layout\LayoutWriteBoundary;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\ContentSystemLayoutProvisioner;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\LayoutPresetPayloadCompiler;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Loader\ContentSystemLayoutPresetAppLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Loader\DatabaseLayoutPresetLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Loader\LayoutPresetNameResolver;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Loader\YamlLayoutPresetLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\CachedContentSystemLayoutPresetRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\ContentSystemLayoutPresetRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Serialization\LayoutPresetSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Validation\ContentSystemLayoutPresetValidator;
+use Shopwell\Core\Framework\ContentSystem\Layout\Scaffolding\StoredTreePreparer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Scaffolding\VirtualRootWrapper;
+use Shopwell\Core\Framework\ContentSystem\Layout\StoredTreeStyleNormalizer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Loader\DatabaseTypeLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Loader\ElementTypeNameResolver;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Loader\YamlTypeLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\CachedContentSystemElementTypeRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\ContentSystemElementTypeRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Serialization\ElementTypeSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\StoredDefaultProvider;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\StoredSchemaResolver;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Validation\ElementTypeCollisionDetector;
+use Shopwell\Core\Framework\ContentSystem\Mapping\DefaultMappingSeeder;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Inline\InlineMappingExpander;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Inline\InlineMappingInterpolator;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Inline\InlineMappingTokenParser;
+use Shopwell\Core\Framework\ContentSystem\Mapping\MappingConsumers;
+use Shopwell\Core\Framework\ContentSystem\Mapping\MappingRuntimeResolver;
+use Shopwell\Core\Framework\ContentSystem\Mapping\MappingTypeCompatibility;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Registry\AbstractContentSystemMappingCandidateRegistry;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Registry\ContentSystemMappingCandidateRegistry;
+use Shopwell\Core\Framework\ContentSystem\Mapping\StoredMappingInspector;
+use Shopwell\Core\Framework\ContentSystem\Mutation\ContextConsumerMirror;
+use Shopwell\Core\Framework\ContentSystem\Mutation\MutationPipeline;
+use Shopwell\Core\Framework\ContentSystem\Mutation\PersistedLayoutMutator;
+use Shopwell\Core\Framework\ContentSystem\Mutation\PropertyMappingMutationFactory;
+use Shopwell\Core\Framework\ContentSystem\Output\ElementTreePruner;
+use Shopwell\Core\Framework\ContentSystem\Output\Encoder\ContentDataPageEncoder;
+use Shopwell\Core\Framework\ContentSystem\Output\Encoder\ContentDecomposedPageEncoder;
+use Shopwell\Core\Framework\ContentSystem\Output\Encoder\ContentPageEncoder;
+use Shopwell\Core\Framework\ContentSystem\Output\Encoder\ContentResponseEncodingListener;
+use Shopwell\Core\Framework\ContentSystem\Output\Encoder\ResolvedValueIndexEncoder;
+use Shopwell\Core\Framework\ContentSystem\Output\Format\DataResponseFactory;
+use Shopwell\Core\Framework\ContentSystem\Output\Format\DecomposedResponseFactory;
+use Shopwell\Core\Framework\ContentSystem\Output\Format\FullResponseFactory;
+use Shopwell\Core\Framework\ContentSystem\Output\Format\SkeletonResponseFactory;
+use Shopwell\Core\Framework\ContentSystem\Output\Index\LoaderValueIdentityFactory;
+use Shopwell\Core\Framework\ContentSystem\Output\Index\ResolvedValueIndexFactory;
+use Shopwell\Core\Framework\ContentSystem\Output\Index\ValueFingerprinter;
+use Shopwell\Core\Framework\ContentSystem\Output\PartialRenderer;
+use Shopwell\Core\Framework\ContentSystem\Output\SubTreeExtractor;
+use Shopwell\Core\Framework\ContentSystem\Rendering\ContextDeliveryResolver;
+use Shopwell\Core\Framework\ContentSystem\Rendering\ContextDistributor;
+use Shopwell\Core\Framework\ContentSystem\Rendering\ElementDataResolver;
+use Shopwell\Core\Framework\ContentSystem\Rendering\ElementLowering;
+use Shopwell\Core\Framework\ContentSystem\Rendering\RenderedElementFactory;
+use Shopwell\Core\Framework\ContentSystem\Rendering\RenderedTreeFactory;
+use Shopwell\Core\Framework\ContentSystem\Rendering\WiringPlanner;
+use Shopwell\Core\Framework\ContentSystem\Resolution\AvailableContextResolver;
+use Shopwell\Core\Framework\ContentSystem\Resolution\ElementResolver;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\Routing\ContentRouteLoader;
+use Shopwell\Core\Framework\ContentSystem\Schema\ContentSystemDataLoaderMapResolver;
+use Shopwell\Core\Framework\ContentSystem\Schema\ContentSystemDataLoaderSchemaGenerator;
+use Shopwell\Core\Framework\ContentSystem\Validation\ContentLayoutAssignmentWriteValidator;
+use Shopwell\Core\Framework\ContentSystem\Validation\ContentLayoutDefaultValidator;
+use Shopwell\Core\Framework\ContentSystem\Validation\ContentLayoutWriteValidator;
+use Shopwell\Core\Framework\ContentSystem\Validation\LayoutGate;
+use Shopwell\Core\Framework\ContentSystem\Validation\LayoutRootSourceReader;
+use Shopwell\Core\Framework\ContentSystem\Validation\StoredMappingValidator;
+use Shopwell\Core\Framework\ContentSystem\Validation\ViolationConstraintMapper;
+use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
+use Shopwell\Core\System\SalesChannel\Api\StructEncoder;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
+use Shopwell\Core\System\SystemConfig\Event\SystemConfigChangedEvent;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\abstract_arg;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_locator;
+
+return static function (ContainerConfigurator $containerConfigurator): void {
+    // Filled by the bundle that owns the section assignment tables; the Storefront sets header and footer.
+    $containerConfigurator->parameters()
+        ->set('shopwell.content_system.section_assignment_entities', []);
+
+    $services = $containerConfigurator->services();
+
+    // Entity Definitions
+    $services->set(ContentLayoutDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    // Scaffolding Services
+    $services->set(VirtualRootWrapper::class);
+    $services->set(StoredTreePreparer::class)
+        ->args([
+            service(VirtualRootWrapper::class),
+            service(PartialRenderer::class),
+            service(DataLoaderConfigSerializerProvider::class),
+            service(DataLoaderProvider::class),
+            service(InlineMappingTokenParser::class),
+            service(ContentSystemElementTypeRegistry::class),
+        ]);
+
+    // Output Services
+    $services->set(PartialRenderer::class)
+        ->args([
+            service(ElementTreePruner::class),
+            service(ContextDependencyAnalyzer::class),
+            service(SubTreeExtractor::class),
+        ]);
+
+    // Field Serializers
+    $services->set(StoredElementListFieldSerializer::class)
+        ->args([
+            service(ValidatorInterface::class),
+            service(DefinitionInstanceRegistry::class),
+            service(StoredTreeCodec::class),
+            service(ViolationConstraintMapper::class),
+            service(LayoutWriteBoundary::class),
+            service(StoredTreeConstraints::class),
+        ])
+        ->tag('shopwell.field_serializer');
+
+    // Both directions of the stored forest's wire shape
+    $services->set(StoredElementCodec::class)
+        ->args([
+            service(DataLoaderConfigSerializerProvider::class),
+        ]);
+
+    $services->set(StoredTreeCodec::class)
+        ->args([
+            service(StoredElementCodec::class),
+        ]);
+
+    // The write-time constraint descriptor over that same wire shape
+    $services->set(StoredTreeConstraints::class)
+        ->args([
+            service(ContentSystemStyleOptionRegistry::class),
+            service(StyleOptionConstraintDeriver::class),
+        ]);
+
+    // The descriptor's one element-type-aware rule: a stored property value agrees with its declared type
+    $services->set(PropertyTypeConformanceValidator::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+        ])
+        ->tag('validator.constraint_validator');
+
+    // Write-boundary default seeding (seeds type stored defaults into every DAL write of the layout field)
+    $services->set(StoredDefaultProvider::class);
+
+    $services->set(LayoutDefaultSeeder::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(StoredDefaultProvider::class),
+        ]);
+
+    // The forest-wide style pass, shared by the write boundary and the draft decode so the two cannot drift
+    $services->set(StoredTreeStyleNormalizer::class)
+        ->args([
+            service(ElementStyleNormalizer::class),
+        ]);
+
+    // The single admission point for a layout write: seed type defaults, normalize style, reconcile attribution
+    $services->set(LayoutWriteBoundary::class)
+        ->args([
+            service(LayoutDefaultSeeder::class),
+            service(StoredTreeStyleNormalizer::class),
+            service(AttributionReconciler::class),
+        ]);
+
+    // Content Data Loaders
+    $services->set(EntityLoader::class)
+        ->args([
+            service(SalesChannelDefinitionInstanceRegistry::class),
+            service(DefinitionInstanceRegistry::class),
+            service(EntityCacheTagResolver::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(EntityCollectionLoader::class)
+        ->args([
+            service(SalesChannelDefinitionInstanceRegistry::class),
+            service(DefinitionInstanceRegistry::class),
+            service(EntityCacheTagResolver::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    // Data Loader Provider with Tagged Locator
+    $services->set(DataLoaderProvider::class)
+        ->args([
+            tagged_locator('content_system.data_loader', null, 'getRequirementType'),
+        ]);
+
+    // Config Serializers
+    $services->set(EntityLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(EntityCollectionLoaderConfigSerializer::class)
+        ->args([
+            service(EntityLoaderConfigSerializer::class),
+        ])
+        ->tag('content_system.config_serializer');
+
+    // Config Serializer Provider with Tagged Locator
+    $services->set(DataLoaderConfigSerializerProvider::class)
+        ->args([
+            tagged_locator('content_system.config_serializer', null, 'getSource'),
+        ]);
+
+    // Config canonicalization for structural comparison (dedup hash, attribution reconciliation)
+    $services->set(ConfigCanonicalizer::class);
+
+    // Context Path Resolver
+    $services->set(ContextPathResolver::class);
+
+    // Cache Services
+    $services->set(EntityCacheTagResolver::class);
+
+    $services->set(MappedMediaCacheInvalidator::class)
+        ->args([service(CacheInvalidator::class)])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(CacheFinalizer::class)
+        ->args([
+            service(CacheTagCollector::class),
+        ]);
+
+    $services->set(CacheInvalidationSubscriber::class)
+        ->args([
+            service(CacheInvalidator::class),
+            service(Connection::class),
+            service(EntityCacheTagResolver::class),
+            service(DefinitionInstanceRegistry::class),
+            param('shopwell.content_system.section_assignment_entities'),
+        ])
+        ->tag('kernel.event_listener')
+        ->tag('kernel.event_listener', ['event' => EntityDeleteEvent::class, 'method' => 'beforeDelete'])
+        ->tag('kernel.event_listener', ['event' => SystemConfigChangedEvent::class, 'method' => 'invalidateDefaultLayout']);
+
+    // Hydration Services
+    $services->set(LoaderInputResolver::class);
+
+    // Render Layers (stored forest -> rendered forest)
+    $services->set(RenderedElementFactory::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+        ]);
+
+    $services->set(ElementDataResolver::class)
+        ->args([
+            service(DataLoaderProvider::class),
+            service(LoaderInputResolver::class),
+            service(LoaderValueIdentityFactory::class),
+        ]);
+
+    $services->set(ValueFingerprinter::class);
+
+    $services->set(LoaderValueIdentityFactory::class)
+        ->args([
+            service(DataLoaderConfigSerializerProvider::class),
+            service(ConfigCanonicalizer::class),
+            service(ValueFingerprinter::class),
+        ]);
+
+    $services->set(ResolvedValueIndexFactory::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(ValueFingerprinter::class),
+        ]);
+
+    $services->set(ContextDistributor::class)
+        ->args([
+            service(ContextPathResolver::class),
+        ]);
+
+    $services->set(ContextDeliveryResolver::class)
+        ->args([
+            service(ContextDistributor::class),
+            service(ContextPathResolver::class),
+            service(MappingRuntimeResolver::class),
+        ]);
+
+    $services->set(RenderedTreeFactory::class)
+        ->args([
+            service(RenderedElementFactory::class),
+        ]);
+
+    $services->set(ElementLowering::class)
+        ->args([
+            service(ElementDataResolver::class),
+            service(ContextDeliveryResolver::class),
+            service(RenderedTreeFactory::class),
+            service(InlineMappingExpander::class),
+            service(MappingConsumers::class),
+            service(ContextPathResolver::class),
+        ]);
+
+    $services->set(WiringPlanner::class)
+        ->args([
+            service(ProviderDeliveryKeyResolver::class),
+        ]);
+
+    // Layout Context Utilities
+    $services->set(ContextDependencyAnalyzer::class);
+    $services->set(ProviderDeliveryKeyResolver::class);
+
+    // Output Services (Post-Hydration Processing)
+    $services->set(ElementTreePruner::class);
+    $services->set(SubTreeExtractor::class);
+
+    // Entity Layout Services
+    $services->set(EntityLayoutResolver::class);
+    $services->set(EntityLayoutContextFactory::class)
+        ->args([
+            service(EntityLayoutResolver::class),
+            service(RootContextMapper::class),
+            service(SystemConfigService::class),
+            service(CacheTagCollector::class),
+        ]);
+
+    // Domain-Aware Layout Resolution (Header/Footer)
+    $services->set(DomainAwareLayoutResolver::class);
+
+    $services->set(NavigationAliasResolver::class);
+
+    // Helper Services
+    $services->set(ContentLayoutMetadataDeriver::class);
+
+    // Content Pipeline
+    $services->set(ContentPipeline::class)
+        ->public()
+        ->args([
+            service('event_dispatcher'),
+            service(StoredTreePreparer::class),
+            service(WiringPlanner::class),
+            service(ElementLowering::class),
+            service(VirtualRootWrapper::class),
+            service(PartialRenderer::class),
+            service(ResolvedValueIndexFactory::class),
+        ]);
+
+    // Rendering Specification Factory
+    $services->set(RenderingSpecificationFactory::class);
+
+    $services->set(StandaloneLayoutSpecificationSource::class);
+
+    // Section Resolvers
+    $services->set(RenderingSpecificationResolver::class)
+        ->args([
+            tagged_iterator('content_system.entity_specification_source'),
+            service(RenderingSpecificationFactory::class),
+            service(StandaloneLayoutSpecificationSource::class),
+        ])
+        ->tag('content_system.section_resolver', ['section' => 'main']);
+
+    // Output Format Handlers
+    $services->set(FullResponseFactory::class)
+        ->tag('content_system.output_format', ['format' => 'full']);
+
+    $services->set(SkeletonResponseFactory::class)
+        ->tag('content_system.output_format', ['format' => 'skeleton']);
+
+    $services->set(DataResponseFactory::class)
+        ->tag('content_system.output_format', ['format' => 'data']);
+
+    $services->set(DecomposedResponseFactory::class)
+        ->tag('content_system.output_format', ['format' => 'decomposed']);
+
+    // Response Encoding (module-owned wire shape)
+    $services->set(ContentPageEncoder::class)
+        ->args([
+            service(StructEncoder::class),
+        ]);
+
+    // The two index-reading formats (decomposed, data) share this encoding of the resolved value index
+    $services->set(ResolvedValueIndexEncoder::class)
+        ->args([
+            service(StructEncoder::class),
+        ]);
+
+    $services->set(ContentDecomposedPageEncoder::class)
+        ->args([
+            service(ResolvedValueIndexEncoder::class),
+        ]);
+
+    $services->set(ContentDataPageEncoder::class)
+        ->args([
+            service(ResolvedValueIndexEncoder::class),
+        ]);
+
+    $services->set(ContentResponseEncodingListener::class)
+        ->args([
+            service(ContentPageEncoder::class),
+            service(ContentDecomposedPageEncoder::class),
+            service(ContentDataPageEncoder::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    // Schema Services
+    $services->set(ContentSystemDataLoaderMapResolver::class)
+        ->args([
+            service(DataLoaderProvider::class),
+        ]);
+
+    $services->set(ContentSystemDataLoaderSchemaGenerator::class)
+        ->args([
+            service(ContentSystemDataLoaderMapResolver::class),
+        ]);
+
+    // Element Type System
+    $services->set(ElementTypeSpecificationSerializer::class);
+
+    $services->set(ElementTypeNameResolver::class);
+
+    $services->set(ElementTypeCollisionDetector::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+        ]);
+
+    $services->set(YamlTypeLoader::class)
+        ->args([
+            service(ElementTypeSpecificationSerializer::class),
+            service('validator'),
+            service(ElementTypeNameResolver::class),
+        ])
+        ->arg('$directories', [])
+        ->tag('content_system.type_loader');
+
+    $services->set(DatabaseTypeLoader::class)
+        ->args([
+            service(ElementTypeSpecificationSerializer::class),
+            service('validator'),
+            service(Connection::class),
+            param('kernel.environment'),
+        ])
+        ->tag('content_system.type_loader');
+
+    $services->set(ContentSystemElementTypeRegistry::class)
+        ->args([
+            tagged_iterator('content_system.type_loader'),
+        ]);
+
+    $services->set(CachedContentSystemElementTypeRegistry::class)
+        ->decorate(ContentSystemElementTypeRegistry::class)
+        ->args([
+            service(CachedContentSystemElementTypeRegistry::class . '.inner'),
+            service('cache.system'),
+        ]);
+
+    $services->set(LayoutPresetPayloadCompiler::class)
+        ->args([
+            service(DraftLayoutDecoder::class),
+            service(StoredElementCodec::class),
+        ]);
+
+    $services->set(LayoutPresetSpecificationSerializer::class);
+
+    $services->set(ContentSystemLayoutPresetValidator::class);
+
+    $services->set(LayoutPresetNameResolver::class);
+
+    $services->set(YamlLayoutPresetLoader::class)
+        ->args([
+            service(LayoutPresetSpecificationSerializer::class),
+            service('validator'),
+            service(LayoutPresetNameResolver::class),
+        ])
+        ->arg('$directories', [])
+        ->tag('content_system.layout_preset_loader');
+
+    $services->set(ContentSystemLayoutPresetAppLoader::class)
+        ->args([
+            service(YamlLayoutPresetLoader::class),
+            service(DatabaseLayoutPresetLoader::class),
+            service(ContentSystemLayoutPresetValidator::class),
+        ]);
+
+    $services->set(DatabaseLayoutPresetLoader::class)
+        ->args([
+            service(LayoutPresetSpecificationSerializer::class),
+            service('validator'),
+            service(Connection::class),
+            param('kernel.environment'),
+        ])
+        ->tag('content_system.layout_preset_loader');
+
+    $services->set(ContentSystemLayoutPresetRegistry::class)
+        ->args([
+            tagged_iterator('content_system.layout_preset_loader'),
+            service(LayoutPresetPayloadCompiler::class),
+            service(ContentSystemLayoutPresetValidator::class),
+            service('logger'),
+        ]);
+
+    $services->set(CachedContentSystemLayoutPresetRegistry::class)
+        ->decorate(ContentSystemLayoutPresetRegistry::class)
+        ->args([
+            service(CachedContentSystemLayoutPresetRegistry::class . '.inner'),
+            service('cache.system'),
+        ]);
+
+    // Universal Style Option System
+    $services->set(StyleOptionSpecificationSerializer::class);
+
+    $services->set(StyleOptionCollisionDetector::class)
+        ->args([
+            service(ContentSystemStyleOptionRegistry::class),
+        ]);
+
+    $services->set(StyleOptionConstraintDeriver::class);
+
+    $services->set(YamlStyleOptionLoader::class)
+        ->args([
+            service(StyleOptionSpecificationSerializer::class),
+            service('validator'),
+        ])
+        ->arg('$directories', [])
+        ->tag('content_system.style_option_loader');
+
+    $services->set(DatabaseStyleOptionLoader::class)
+        ->args([
+            service(StyleOptionSpecificationSerializer::class),
+            service('validator'),
+            service(Connection::class),
+            param('kernel.environment'),
+        ])
+        ->tag('content_system.style_option_loader');
+
+    $services->set(ContentSystemStyleOptionRegistry::class)
+        ->args([
+            tagged_iterator('content_system.style_option_loader'),
+        ]);
+
+    $services->set(CachedContentSystemStyleOptionRegistry::class)
+        ->decorate(ContentSystemStyleOptionRegistry::class)
+        ->args([
+            service(CachedContentSystemStyleOptionRegistry::class . '.inner'),
+            service('cache.system'),
+        ]);
+
+    $services->set(BoxSpacingNormalizer::class);
+
+    $services->set(ElementStyleNormalizer::class)
+        ->args([
+            service(ContentSystemStyleOptionRegistry::class),
+            service(BoxSpacingNormalizer::class),
+        ]);
+
+    // Binding Specification System
+    $services->set(BindingSpecificationSerializer::class);
+
+    // Load-time sugar canonicalizer: expands sugared resolves entries to canonical {loader, config} form before validation
+    $services->set(BindingSpecificationCanonicalizer::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(ContentSystemDataLoaderMapResolver::class),
+            service(DefinitionInstanceRegistry::class),
+            service(SalesChannelDefinitionInstanceRegistry::class),
+        ]);
+
+    // Synthesizes a type's default binding specification from its properties' resolvedBy keys
+    $services->set(DefaultBindingSpecificationSynthesizer::class);
+
+    $services->set(YamlBindingSpecificationLoader::class)
+        ->arg('$directories', [])
+        ->arg('$nameResolver', service(ElementTypeNameResolver::class))
+        ->arg('$synthesizer', service(DefaultBindingSpecificationSynthesizer::class))
+        ->arg('$serializer', service(BindingSpecificationSerializer::class))
+        ->arg('$canonicalizer', service(BindingSpecificationCanonicalizer::class))
+        ->arg('$validator', service('validator'))
+        ->tag('content_system.binding_specification_loader');
+
+    $services->set(DatabaseBindingSpecificationLoader::class)
+        ->args([
+            param('kernel.environment'),
+            service(Connection::class),
+            service(BindingSpecificationSerializer::class),
+            service('validator'),
+        ])
+        ->tag('content_system.binding_specification_loader');
+
+    $services->set(ContentSystemBindingSpecificationRegistry::class)
+        ->args([
+            tagged_iterator('content_system.binding_specification_loader'),
+        ]);
+
+    $services->set(CachedContentSystemBindingSpecificationRegistry::class)
+        ->decorate(ContentSystemBindingSpecificationRegistry::class)
+        ->args([
+            service(CachedContentSystemBindingSpecificationRegistry::class . '.inner'),
+            service('cache.system'),
+        ]);
+
+    $services->set(TypeConsistentBindingSpecificationValidator::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(DataLoaderConfigSerializerProvider::class),
+            service(RootContextMapper::class),
+            service(ContentSystemDataLoaderMapResolver::class),
+            service(RootSourceRegistry::class),
+        ])
+        ->tag('validator.constraint_validator');
+
+    // Write-seam attribution reconciliation: keeps a stored attributedSpecifications entry honest against current wiring
+    $services->set(AttributionReconciler::class)
+        ->args([
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service(DataLoaderConfigSerializerProvider::class),
+            service(ConfigCanonicalizer::class),
+        ]);
+
+    // Apply-side of a binding decision, shared by the bind-element and insert-element mutation ops
+    $services->set(BindingApplicator::class)
+        ->args([
+            service(DataLoaderConfigSerializerProvider::class),
+        ]);
+
+    // What an element type stores (as opposed to its hydrated properties): the storageSchema introspection fold
+    $services->set(StoredSchemaResolver::class)
+        ->args([
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service(DataLoaderProvider::class),
+        ]);
+
+    // Root-source authority: the valid set of root sources (entity types + sections + none) and their resolution
+    $services->set(NoneSpecificationSource::class);
+
+    $services->set(RootSourceRegistry::class)
+        ->arg('$entitySources', tagged_iterator('content_system.entity_specification_source'))
+        ->arg('$sectionSources', tagged_locator('content_system.specification_source', 'section'))
+        // $entityTypes set by ContentLayoutAssignableCompilerPass
+        ->arg('$entityTypes', [])
+        ->arg('$noneSource', service(NoneSpecificationSource::class));
+
+    // Content Route Loader (arg 0 set by ContentRouteCompilerPass)
+    $services->set(ContentRouteLoader::class)
+        ->args([
+            abstract_arg('route definitions, set by ContentRouteCompilerPass'),
+        ])
+        ->tag('routing.loader');
+
+    // Resolution & Diagnostics
+    $services->set(AvailableContextResolver::class)
+        ->public()
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(ElementResolver::class),
+            service(ProviderDeliveryKeyResolver::class),
+            service(ContextPathResolver::class),
+            service(StoredMappingInspector::class),
+        ]);
+
+    $services->set(ElementResolver::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(ContentSystemDataLoaderMapResolver::class),
+            service(DataLoaderConfigSerializerProvider::class),
+            service(DataLoaderProvider::class),
+            service(MappingConsumers::class),
+        ]);
+
+    $services->set(RootContextMapper::class)
+        ->args([
+            service(DataLoaderProvider::class),
+        ]);
+
+    $services->set(LayoutDiagnostics::class)
+        ->args([
+            service(AvailableContextResolver::class),
+            service(ElementResolver::class),
+            service(ContentSystemElementTypeRegistry::class),
+            service(RootContextMapper::class),
+            service(ContentSystemDataLoaderMapResolver::class),
+            service(DataLoaderConfigSerializerProvider::class),
+            service(ContentSystemStyleOptionRegistry::class),
+            service(ContextPathResolver::class),
+            service(MappingConsumers::class),
+            service(StoredMappingInspector::class),
+        ]);
+
+    $services->set(LayoutGate::class)
+        ->args([
+            service(LayoutDiagnostics::class),
+        ]);
+
+    $services->set(ViolationConstraintMapper::class);
+
+    // Shared read of a layout's immutable root source (in-flight write batch first, then committed row)
+    $services->set(LayoutRootSourceReader::class)
+        ->args([
+            service(DefinitionInstanceRegistry::class),
+        ]);
+
+    // Data-mapping catalogue: one authority behind both the introspection endpoint and the write gate below
+    $services->set(MappingTypeCompatibility::class);
+
+    // Shared mapping-vs-mirrored-wiring test.
+    $services->set(MappingConsumers::class);
+
+    $services->set(PropertyMappingMutationFactory::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(StoredMappingInspector::class),
+        ]);
+
+    $services->set(ContentSystemMappingCandidateRegistry::class)
+        ->args([
+            tagged_iterator('content_system.mapping_candidate_provider'),
+            service('logger'),
+        ])
+        ->tag('kernel.reset', ['method' => 'reset']);
+    $services->alias(AbstractContentSystemMappingCandidateRegistry::class, ContentSystemMappingCandidateRegistry::class)->public();
+
+    // Inline mapping: the `{{map:path}}` tokens an author embeds in an inlineMappable string property. The parser
+    // is the single source of truth for the syntax and is shared by the render path and the write gate, so the
+    // text one admits and the other resolves cannot drift.
+    $services->set(InlineMappingTokenParser::class);
+
+    $services->set(ContentInlineMappingParseController::class)
+        ->public()
+        ->args([
+            service(InlineMappingTokenParser::class),
+        ]);
+
+    $services->set(MappingRuntimeResolver::class)
+        ->args([
+            service(AbstractContentSystemMappingCandidateRegistry::class),
+            service(StoredMappingInspector::class),
+        ]);
+
+    $services->set(InlineMappingInterpolator::class)
+        ->args([
+            service(MappingRuntimeResolver::class),
+        ]);
+
+    $services->set(InlineMappingExpander::class)
+        ->args([
+            service(StoredMappingInspector::class),
+            service(InlineMappingTokenParser::class),
+            service(InlineMappingInterpolator::class),
+        ]);
+
+    // The mapping admissibility rules themselves, shared by the two surfaces that report them: the write
+    // gate below (per-rule error codes) and LayoutDiagnostics above (one invalid_mapping violation)
+    $services->set(StoredMappingInspector::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(AbstractContentSystemMappingCandidateRegistry::class),
+            service(MappingTypeCompatibility::class),
+            service(MappingConsumers::class),
+            service(InlineMappingTokenParser::class),
+        ]);
+
+    $services->set(StoredMappingValidator::class)
+        ->args([
+            service(StoredMappingInspector::class),
+        ]);
+
+    // Resolvability gate (DAL PreWriteValidationEvent)
+    $services->set(ContentLayoutWriteValidator::class)
+        ->args([
+            service(LayoutGate::class),
+            service(ViolationConstraintMapper::class),
+            service(RootSourceRegistry::class),
+            service(LayoutRootSourceReader::class),
+            service(StoredMappingValidator::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(ContentLayoutAssignmentWriteValidator::class)
+        ->args([
+            service(DefinitionInstanceRegistry::class),
+            service(LayoutRootSourceReader::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    // Default-layout gate (system config change, content_layout delete)
+    $services->set(ContentLayoutDefaultValidator::class)
+        ->args([
+            service(DefinitionInstanceRegistry::class),
+            service(LayoutRootSourceReader::class),
+            service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    // Shared draft-layout decode (structural gate) for the preview, diagnose and mutation routes
+    $services->set(DraftLayoutDecoder::class)
+        ->args([
+            service(StoredElementCodec::class),
+            service(StoredTreeStyleNormalizer::class),
+            service(ViolationConstraintMapper::class),
+        ]);
+
+    // Remaps the serializer's ExtraAttributesException to a content-system 400 for the strict-mapped admin routes
+    $services->set(UnknownRequestFieldExceptionListener::class)
+        ->tag('kernel.event_subscriber');
+
+    // Layout Validation
+    $services->set(DraftLayoutChecker::class)
+        ->args([
+            service(LayoutDiagnostics::class),
+        ]);
+
+    // Resolve-and-diagnose Action (Admin API)
+    $services->set(ContentDiagnoseController::class)
+        ->public()
+        ->args([
+            service(DraftLayoutDecoder::class),
+            service(RootSourceRegistry::class),
+            service(LayoutDiagnostics::class),
+        ]);
+
+    $services->set(ContentPreviewPageBuilder::class)
+        ->args([
+            service(SalesChannelContextService::class),
+            service(RenderingSpecificationResolver::class),
+            service(DraftLayoutDecoder::class),
+            service(DraftLayoutChecker::class),
+            service(ContentPipeline::class),
+        ]);
+
+    $services->set(ContentPreviewPayloadStore::class)
+        ->args([
+            service('cache.system'),
+            service('validator'),
+        ]);
+
+    // Preview Action (Admin API)
+    $services->set(ContentPreviewController::class)
+        ->public()
+        ->args([
+            service(ContentPreviewPageBuilder::class),
+            service(ContentPreviewPayloadStore::class),
+        ]);
+
+    // Mutation Pipeline
+    $services->set(ContextConsumerMirror::class);
+
+    $services->set(MutationPipeline::class)
+        ->args([
+            service(LayoutDiagnostics::class),
+            service(ContextConsumerMirror::class),
+            service(DefaultMappingSeeder::class),
+        ]);
+    $services->set(DefaultMappingSeeder::class)
+        ->args([
+            service(ContentSystemElementTypeRegistry::class),
+            service(StoredMappingInspector::class),
+        ]);
+
+    // Layout Mutation Actions (Admin API)
+    $services->set(LayoutMutationController::class)
+        ->public()
+        ->args([
+            service(DraftLayoutDecoder::class),
+            service(MutationPipeline::class),
+            service(ContentSystemElementTypeRegistry::class),
+            service(RootSourceRegistry::class),
+            service(StoredElementCodec::class),
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service(BindingApplicator::class),
+            service(ContentSystemLayoutPresetRegistry::class),
+            service(PropertyMappingMutationFactory::class),
+            service(StoredMappingInspector::class),
+        ]);
+
+    // Persisted Layout Mutation (load by id, mutate, commit through the gates)
+    $services->set(PersistedLayoutMutator::class)
+        ->args([
+            service('lock.factory'),
+            service('content_layout.repository'),
+            service(RootSourceRegistry::class),
+            service(LayoutDiagnostics::class),
+            service(DefaultMappingSeeder::class),
+        ]);
+
+    // Layout provisioning from presets (default layouts on install and update)
+    $services->set(ContentSystemLayoutProvisioner::class)
+        ->args([
+            service(ContentSystemLayoutPresetRegistry::class),
+            service(DraftLayoutDecoder::class),
+            service(MutationPipeline::class),
+            service(ContentSystemElementTypeRegistry::class),
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service(BindingApplicator::class),
+            service(RootSourceRegistry::class),
+            service(StoredElementCodec::class),
+            service('content_layout.repository'),
+            service(DefinitionInstanceRegistry::class),
+        ]);
+
+    // Persisted Layout Mutation Actions (Admin API)
+    $services->set(ContentLayoutMutationController::class)
+        ->public()
+        ->args([
+            service(PersistedLayoutMutator::class),
+            service(ContentSystemElementTypeRegistry::class),
+            service(StoredElementCodec::class),
+            service(DraftLayoutDecoder::class),
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service(BindingApplicator::class),
+            service(PropertyMappingMutationFactory::class),
+            service(StoredMappingInspector::class),
+        ]);
+};

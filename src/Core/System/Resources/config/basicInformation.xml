@@ -214,90 +214,90 @@
         <title>Shop pages</title>
         <title lang="zh-CN">商城页面</title>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>tosPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Layout for GTC pages</label>
             <label lang="zh-CN">服务条款页面的布局</label>
             <placeholder>Assign layout...</placeholder>
             <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>revocationPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Layout for revocation notices</label>
             <label lang="zh-CN">撤销说明页面的布局</label>
             <placeholder>Assign layout...</placeholder>
             <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>shippingPaymentInfoPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Layout for payment and shipping information</label>
             <label lang="zh-CN">支付与配送信息页面的布局</label>
             <placeholder>Assign layout...</placeholder>
             <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>privacyPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Layout for privacy pages</label>
             <label lang="zh-CN">隐私政策页面的布局</label>
             <placeholder>Assign layout...</placeholder>
             <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>imprintPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Layout for an imprint</label>
             <label lang="zh-CN">法律声明页面的布局</label>
             <placeholder>Select layout</placeholder>
             <placeholder lang="zh-CN">选择布局</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>http404Page</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Layout for 404 pages</label>
             <label lang="zh-CN">404 页面的布局</label>
             <placeholder>Assign layout...</placeholder>
             <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>maintenancePage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Shop page layout for maintenance pages</label>
             <label lang="zh-CN">维护页面的商城页面布局</label>
             <placeholder>Select layout</placeholder>
             <placeholder lang="zh-CN">选择布局</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>contactPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Shop page layout for contact pages</label>
             <label lang="zh-CN">联系页面的商城页面布局</label>
             <placeholder>Assign layout...</placeholder>
             <placeholder lang="zh-CN">分配布局...</placeholder>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>revocationRequestPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Shop page layout for revocation request</label>
             <label lang="zh-CN">撤销申请页面的商城页面布局</label>
             <placeholder>Assign layout...</placeholder>
@@ -306,10 +306,10 @@
             <helpText lang="zh-CN">要让该页面可访问，需先启用「在页脚显示『撤销合同』按钮」选项。</helpText>
         </component>
 
-        <component name="sw-cms-page-select">
+        <component name="sw-entity-single-select">
             <name>newsletterPage</name>
-            <entity>cms_page</entity>
-            <pageType>page</pageType>
+            <entity>content_layout</entity>
+            <labelProperty>name</labelProperty>
             <label>Shop page layout for newsletter pages</label>
             <label lang="zh-CN">邮件订阅页面的商城页面布局</label>
             <placeholder>Assign layout...</placeholder>

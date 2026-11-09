@@ -19,6 +19,13 @@ import type ExtensionSdkService from 'src/core/service/api/extension-sdk.service
 import type CartStoreService from 'src/core/service/api/cart-store-api.api.service';
 import type CustomSnippetApiService from 'src/core/service/api/custom-snippet.api.service';
 import type MediaService from 'src/core/service/api/media.api.service';
+import type ContentSystemElementTypeApiService from 'src/core/service/api/content-system-element-type.api.service';
+import type ContentSystemLayoutDraftMutationApiService from 'src/core/service/api/content-system-layout-draft-mutation.api.service';
+import type ContentSystemEntityTypeApiService from 'src/core/service/api/content-system-entity-type.api.service';
+import type ContentSystemStyleOptionApiService from 'src/core/service/api/content-system-style-option.api.service';
+import type ContentSystemPreviewApiService from 'src/core/service/api/content-system-preview.api.service';
+import type ContentSystemLayoutPresetApiService from 'src/core/service/api/content-system-layout-preset.api.service';
+import type ContentSystemMappingCandidateApiService from 'src/core/service/api/content-system-mapping-candidate.api.service';
 import type LocaleFactory from 'src/core/factory/locale.factory';
 import type UserActivityService from 'src/app/service/user-activity.service';
 import type { FullState } from 'src/core/factory/state.factory';
@@ -59,11 +66,8 @@ import type AppModulesService from './core/service/api/app-modules.service';
 import type AclService from './app/service/acl.service';
 import type EntityValidationService from './app/service/entity-validation.service';
 import type CustomEntityDefinitionService from './app/service/custom-entity-definition.service';
-import type CmsPageTypeService from './module/sw-cms/service/cms-page-type.service';
 import type StoreContextService from './core/service/api/store-context.api.service';
 import type OrderStateMachineApiService from './core/service/api/order-state-machine.api.service';
-import type cmsElementFavoritesService from './module/sw-cms/service/cms-element-favorites.service';
-import type cmsBlockFavoritesService from './module/sw-cms/service/cms-block-favorites.service';
 import type CheckoutStoreService from './core/service/api/checkout-store.api.service';
 import type ExtensionHelperService from './app/service/extension-helper.service';
 import type PaymentTransferApiService from './module/sw-finance/service/payment-transfer.api.service';
@@ -96,8 +100,6 @@ import type PlaceholderMixin from './app/mixin/placeholder.mixin';
 import type ListingMixin from './app/mixin/listing.mixin';
 import type CartNotificationMixin from './module/sw-order/mixin/cart-notification.mixin';
 import type SwExtensionErrorMixin from './module/sw-extension/mixin/sw-extension-error.mixin';
-import type CmsElementMixin from './module/sw-cms/mixin/sw-cms-element.mixin';
-import type CmsStateMixin from './module/sw-cms/mixin/sw-cms-state.mixin';
 import type GenericConditionMixin from './app/mixin/generic-condition.mixin';
 import type RuleBetweenOperatorMixin from './app/mixin/rule-between-operator.mixin';
 import type SwFormFieldMixin from './app/mixin/form-field.mixin';
@@ -107,13 +109,12 @@ import type BusinessEventsApiService from './core/service/api/business-events.ap
 import type { FileValidationService } from './app/service/file-validation.service';
 import type SnackbarService from './app/service/snackbar.service';
 import type { DevtoolComponent } from './app/adapter/view/sw-vue-devtools';
-import type { CmsPageStore } from './module/sw-cms/store/cms-page.store';
+import type { ExperienceStudioEditorStore } from './module/sw-experience-studio/store/experience-studio-editor.store';
 import type { TopBarButtonStore } from './app/store/topbar-button.store';
 import type { TeaserPopoverStore } from './app/store/teaser-popover.store';
 import type { AdminMenuStore } from './app/store/admin-menu.store';
 import type { AdminMenuConfigStore } from './app/store/admin-menu-config.store';
 import type { InAppPurchasesStore } from './app/store/in-app-purchase-checkout.store';
-import type { CmsService } from './module/sw-cms/service/cms.service';
 import type { ExtensionComponentSectionsStore } from './app/store/extension-component-sections.store';
 import type { BlockOverrideStore } from './app/store/block-override.store';
 import type { ExtensionEntryRoutes } from './app/store/extension-entry-routes.store';
@@ -153,10 +154,8 @@ import type SmsTemplateAuditService from './module/sw-settings-sms/service/sms-t
 import type { SwPromotionDetailStore } from './module/sw-promotion-v2/page/sw-promotion-v2-detail/store';
 import type { SwFlowStore } from './module/sw-flow/store/flow.store';
 import type { SwBulkStore } from './app/store/sw-bulk-edit.store';
-import type createTextEditorDataMappingButton from './app/component/meteor-wrapper/mt-text-editor/sw-text-editor-toolbar-button-cms-data-mapping';
 import type SsoSettingsService from './core/service/api/sso-settings.service';
 import type SsoInvitationService from './core/service/api/sso-invitation.service';
-import type CMSConstant from './module/sw-cms/constant/sw-cms.constant';
 import type CUSTOMERConstant from './module/sw-customer/constant/sw-customer.constant';
 import type FLOWConstant from './module/sw-flow/constant/flow.constant';
 import type SnippetApiService from './core/service/api/snippet.api.service';
@@ -206,7 +205,6 @@ declare global {
     interface CustomShopwellProperties {}
 
     interface CustomShopwellConstants {
-        CMS: typeof CMSConstant;
         CUSTOMER: typeof CUSTOMERConstant;
         FLOW: typeof FLOWConstant;
     }
@@ -246,16 +244,18 @@ declare global {
         acl: AclService;
         adminMenuApiService: $TSFixMe;
         appAclService: $TSFixMe;
-        appCmsService: $TSFixMe;
         appModulesService: AppModulesService;
         businessEventService: BusinessEventsApiService;
         cacheService: CacheService;
         cartStoreService: CartStoreService;
         checkoutStoreService: CheckoutStoreService;
-        cmsBlockFavorites: cmsBlockFavoritesService;
-        cmsElementFavorites: cmsElementFavoritesService;
-        cmsPageTypeService: CmsPageTypeService;
-        cmsService: CmsService;
+        contentSystemLayoutDraftMutationService: ContentSystemLayoutDraftMutationApiService;
+        contentSystemEntityTypeService: ContentSystemEntityTypeApiService;
+        contentSystemElementTypeService: ContentSystemElementTypeApiService;
+        contentSystemLayoutPresetService: ContentSystemLayoutPresetApiService;
+        contentSystemStyleOptionService: ContentSystemStyleOptionApiService;
+        contentSystemMappingCandidateService: ContentSystemMappingCandidateApiService;
+        contentSystemPreviewService: ContentSystemPreviewApiService;
         configService: ConfigApiService;
         contextStoreService: StoreContextService;
         customEntityDefinitionService: CustomEntityDefinitionService;
@@ -340,8 +340,6 @@ declare global {
         listing: typeof ListingMixin;
         'cart-notification': typeof CartNotificationMixin;
         'sw-extension-error': typeof SwExtensionErrorMixin;
-        'cms-element': typeof CmsElementMixin;
-        'cms-state': typeof CmsStateMixin;
         'generic-condition': typeof GenericConditionMixin;
         'sw-form-field': typeof SwFormFieldMixin;
         'discard-detail-page-changes': typeof DiscardDetailPageChangesMixin;
@@ -403,7 +401,6 @@ declare global {
         mapSystemConfigErrors: typeof mapErrors.mapSystemConfigErrors;
         mapCollectionPropertyErrors: typeof mapErrors.mapCollectionPropertyErrors;
         mapPageErrors: typeof mapErrors.mapPageErrors;
-        createTextEditorDataMappingButton: typeof createTextEditorDataMappingButton;
     }
 
     /**
@@ -415,7 +412,6 @@ declare global {
     }
 
     interface PiniaRootState {
-        cmsPage: CmsPageStore;
         topBarButton: TopBarButtonStore;
         teaserPopover: TeaserPopoverStore;
         adminMenu: AdminMenuStore;
@@ -427,6 +423,7 @@ declare global {
         extensionSdkModules: ExtensionSdkModules;
         extensions: Extensions;
         error: ErrorStore;
+        experienceStudioEditor: ExperienceStudioEditorStore;
         context: ContextStore;
         adminHelpCenter: AdminHelpCenterStore;
         actionButtons: ActionButtonsStore;

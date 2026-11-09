@@ -9,5 +9,5 @@ use Symfony\Component\HttpFoundation\Request;
 #[Package('discovery')]
 interface ErrorPageLoaderInterface
 {
-    public function load(string $cmsErrorLayoutId, Request $request, SalesChannelContext $context): ErrorPage;
+    public function load(string $layoutId, Request $request, SalesChannelContext $context): ErrorPage;
 }

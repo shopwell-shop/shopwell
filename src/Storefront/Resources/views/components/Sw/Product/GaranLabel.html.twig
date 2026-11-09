@@ -1,0 +1,10 @@
+{# @sw-package discovery #}
+{# @internal #}
+
+{% props product = null %}
+
+{% if product %}
+    <div {{ attributes.defaults({ class: 'sw-product-garan-label' }) }}>
+        {{ block('buy_widget_garan_label', '@Storefront/storefront/component/buy-widget/buy-widget.html.twig') }}
+    </div>
+{% endif %}

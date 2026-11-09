@@ -15,7 +15,6 @@ use Shopwell\Core\Checkout\Document\Renderer\AbstractDocumentRenderer;
 use Shopwell\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\FilterPickerInterface;
 use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\FilterSorterInterface;
-use Shopwell\Core\Content\Cms\DataResolver\Element\CmsElementResolverInterface;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\FlowStorer;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\AbstractListingFilterHandler;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Processor\AbstractListingProcessor;
@@ -148,10 +147,6 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
         $container
             ->registerForAutoconfiguration(AbstractTaxProvider::class)
             ->addTag('shopwell.tax.provider');
-
-        $container
-            ->registerForAutoconfiguration(CmsElementResolverInterface::class)
-            ->addTag('shopwell.cms.data_resolver');
 
         $container
             ->registerForAutoconfiguration(FieldSerializerInterface::class)

@@ -12,9 +12,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileDefinition;
 use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSection\CmsSectionDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition;
 use Shopwell\Core\Framework\Context;
@@ -65,7 +62,6 @@ class EntityForeignKeyResolverTest extends TestCase
     public function testMetaFieldsEnrichedInRestrictions(): void
     {
         $mediaId = Uuid::randomHex();
-        $cmsPageId = Uuid::randomHex();
         $downloadId = Uuid::randomHex();
 
         $emptyResult = static::createStub(Result::class);
@@ -80,22 +76,11 @@ class EntityForeignKeyResolverTest extends TestCase
             ],
         ]);
 
-        $cmsPageResult = static::createStub(Result::class);
-        $cmsPageResult->method('fetchAllAssociative')->willReturn([
-            [
-                'id' => $cmsPageId,
-                '_id' => Uuid::fromHexToBytes($mediaId),
-                '_fileName' => 'shopwell-logo',
-                '_fileExtension' => 'png',
-            ],
-        ]);
-
         $this->connection->method('executeQuery')->willReturnOnConsecutiveCalls(
             $downloadResult,
             $emptyResult,
             $emptyResult,
             $emptyResult,
-            $cmsPageResult,
             $emptyResult,
             $emptyResult,
             $emptyResult,
@@ -114,16 +99,6 @@ class EntityForeignKeyResolverTest extends TestCase
             'product_download' => [
                 [
                     'id' => $downloadId,
-                    'media' => [
-                        'id' => $mediaId,
-                        'fileExtension' => 'png',
-                        'fileName' => 'shopwell-logo',
-                    ],
-                ],
-            ],
-            'cms_page' => [
-                [
-                    'id' => $cmsPageId,
                     'media' => [
                         'id' => $mediaId,
                         'fileExtension' => 'png',
@@ -341,9 +316,6 @@ class EntityForeignKeyResolverTest extends TestCase
         new StaticDefinitionInstanceRegistry(
             [
                 $rootDef,
-                new CmsPageDefinition(),
-                new CmsBlockDefinition(),
-                new CmsSectionDefinition(),
                 new ProductDownloadDefinition(),
                 new OrderLineItemDownloadDefinition(),
                 new DocumentDefinition(),

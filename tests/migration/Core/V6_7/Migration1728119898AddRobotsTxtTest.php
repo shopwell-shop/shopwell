@@ -48,7 +48,7 @@ class Migration1728119898AddRobotsTxtTest extends TestCase
                 Disallow: /account/
                 Disallow: /checkout/
                 Disallow: /widgets/
-                Allow: /widgets/cms/
+                Allow: /widgets/content/
                 Allow: /widgets/menu/offcanvas
                 TXT,
             $robotsRules['_value']

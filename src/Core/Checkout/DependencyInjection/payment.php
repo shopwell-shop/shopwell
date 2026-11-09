@@ -26,6 +26,8 @@ use Shopwell\Core\Checkout\Payment\Cart\Token\PaymentTokenGenerator;
 use Shopwell\Core\Checkout\Payment\Cart\Token\PaymentTokenLifecycle;
 use Shopwell\Core\Checkout\Payment\Cleanup\CleanupPaymentTokenTask;
 use Shopwell\Core\Checkout\Payment\Cleanup\CleanupPaymentTokenTaskHandler;
+use Shopwell\Core\Checkout\Payment\ContentSystem\DataLoader\PaymentMethodDataLoader;
+use Shopwell\Core\Checkout\Payment\ContentSystem\DataLoader\PaymentMethodLoaderConfigSerializer;
 use Shopwell\Core\Checkout\Payment\Controller\PaymentController;
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentDistinguishableNameGenerator;
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentDistinguishableNameSubscriber;
@@ -42,6 +44,7 @@ use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability;
 use Shopwell\Core\Checkout\Payment\Install\PaymentMethodIconInstaller;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
+use Shopwell\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition;
@@ -376,4 +379,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('shopwell.sync.fk_resolver');
+
+    // Content System
+    $services->alias(AbstractPaymentMethodRoute::class, PaymentMethodRoute::class);
+
+    $services->set(PaymentMethodDataLoader::class)
+        ->args([
+            service(AbstractPaymentMethodRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(PaymentMethodLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
 };

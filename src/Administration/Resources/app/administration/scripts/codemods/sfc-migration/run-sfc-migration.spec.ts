@@ -238,48 +238,6 @@ describe('scripts/codemods/sfc-migration/run-sfc-migration', () => {
         });
     });
 
-    describe('a target above the Administration source', () => {
-        const name = 'sw-mixin-cms-element-scaffold';
-        let tmpDir: string;
-        const sfcPath = (dir: string, component: string) => path.join(tmpDir, dir, component, `${component}.vue`);
-
-        beforeAll(() => {
-            tmpDir = makeRoot('sfc-migration-mixed-');
-            fs.cpSync(path.join(FIXTURES, name), path.join(tmpDir, `admin/src/${name}`), { recursive: true });
-            registerAll(path.join(tmpDir, 'admin/src'), name);
-
-            // The same component under another name, because a name registered twice is skipped.
-            const index = fs
-                .readFileSync(path.join(FIXTURES, name, 'index.js'), 'utf8')
-                .replace(`${name}.html`, `${name}-copy.html`);
-            writeFile(tmpDir, `plugin/${name}-copy/index.js`, index);
-            fs.copyFileSync(
-                path.join(FIXTURES, name, `${name}.html.twig`),
-                path.join(tmpDir, `plugin/${name}-copy/${name}-copy.html.twig`),
-            );
-            registerAll(path.join(tmpDir, 'plugin'), `${name}-copy`);
-        });
-
-        afterAll(() => {
-            fs.rmSync(tmpDir, { recursive: true, force: true });
-        });
-
-        it('migrates each component outside the Administration source as an extension', async () => {
-            const result = await runMigration(tmpDir, { write: true, adminSrc: path.join(tmpDir, 'admin/src') });
-
-            // useCmsElementDeprecated is not published, so only the Administration can import it.
-            expect(reportOf(result, name)?.outcome).toBe('partial');
-            expect(fs.readFileSync(sfcPath('admin/src', name), 'utf8')).toContain(
-                "import useCmsElementDeprecated from 'src/app/composables/use-cms-element-deprecated';",
-            );
-            expect(reportOf(result, `${name}-copy`)?.outcome).toBe('skipped');
-            expect(reportOf(result, `${name}-copy`)?.reasons).toContain(
-                "useCmsElementDeprecated() replaces the 'cms-element' mixin but is not published to extensions through shopwell:composables",
-            );
-            expect(fs.existsSync(sfcPath('plugin', `${name}-copy`))).toBe(false);
-        });
-    });
-
     describe('a real fixture tree written with --write', () => {
         let tmpDir: string;
         let result: MigrationResult;
@@ -404,13 +362,13 @@ describe('scripts/codemods/sfc-migration/run-sfc-migration', () => {
         beforeAll(async () => {
             tmpDir = makeRoot('sfc-migration-registry-');
 
-            // CMS block layout: the registering module index sits one level above the component.
+            // Nested component layout: the registering module index sits one level above the component.
             writeFile(
                 tmpDir,
                 'blocks/demo/index.js',
-                "Shopwell.Component.register('sw-cms-block-demo', () => import('./component'));\n",
+                "Shopwell.Component.register('sw-demo-block-demo', () => import('./component'));\n",
             );
-            writeComponent(tmpDir, 'blocks/demo/component', 'sw-cms-block-demo');
+            writeComponent(tmpDir, 'blocks/demo/component', 'sw-demo-block-demo');
 
             // Page layout: the registration spells the index module out.
             writeFile(tmpDir, 'sw-login/index.js', "Component.register('sw-login', () => import('./page/index'));\n");
@@ -420,9 +378,9 @@ describe('scripts/codemods/sfc-migration/run-sfc-migration', () => {
             writeFile(
                 tmpDir,
                 'blocks/mismatch/index.js',
-                "Component.register('sw-cms-block-mismatch', () => import('./component'));\n",
+                "Component.register('sw-demo-block-mismatch', () => import('./component'));\n",
             );
-            writeComponent(tmpDir, 'blocks/mismatch/component', 'sw-cms-block-other');
+            writeComponent(tmpDir, 'blocks/mismatch/component', 'sw-demo-block-other');
 
             // The same name registered for two directories.
             writeFile(
@@ -447,11 +405,11 @@ describe('scripts/codemods/sfc-migration/run-sfc-migration', () => {
             fs.rmSync(tmpDir, { recursive: true, force: true });
         });
 
-        it('migrates a CMS-block-like component under its registered name', () => {
+        it('migrates a nested component under its registered name', () => {
             const dir = path.join(tmpDir, 'blocks', 'demo', 'component');
 
-            expect(reportOf(result, 'sw-cms-block-demo')).toMatchObject({ outcome: 'full', registration: 'register' });
-            expect(fs.existsSync(path.join(dir, 'sw-cms-block-demo.vue'))).toBe(true);
+            expect(reportOf(result, 'sw-demo-block-demo')).toMatchObject({ outcome: 'full', registration: 'register' });
+            expect(fs.existsSync(path.join(dir, 'sw-demo-block-demo.vue'))).toBe(true);
             expect(fs.readFileSync(path.join(dir, 'index.js'), 'utf8')).toContain('export default {');
         });
 
@@ -461,11 +419,11 @@ describe('scripts/codemods/sfc-migration/run-sfc-migration', () => {
         });
 
         it('skips a registered name the template filename does not confirm', () => {
-            expect(reportOf(result, 'sw-cms-block-mismatch')).toMatchObject({
+            expect(reportOf(result, 'sw-demo-block-mismatch')).toMatchObject({
                 outcome: 'skipped',
                 reasons: ['template filename does not match the registered component name'],
             });
-            expect(fs.existsSync(path.join(tmpDir, 'blocks', 'mismatch', 'component', 'sw-cms-block-mismatch.vue'))).toBe(
+            expect(fs.existsSync(path.join(tmpDir, 'blocks', 'mismatch', 'component', 'sw-demo-block-mismatch.vue'))).toBe(
                 false,
             );
         });

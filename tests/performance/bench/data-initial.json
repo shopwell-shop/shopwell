@@ -71,13 +71,6 @@
       ]
     }
   ],
-  "cms_page": [
-    {
-      "id": "{listing}",
-      "name": "Listing page",
-      "type": "todo@dr"
-    }
-  ],
   "category": [
     {
       "id": "{navigation}",

@@ -371,7 +371,7 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
                     id: 'sw-product',
                     label: 'sw-product.general.mainMenuItemGeneral',
                     color: 'var(--sw-color-module-green-default)',
-                    path: 'sw.cms.index',
+                    path: 'sw.experience.studio.index',
                     icon: 'regular-products',
                     parent: 'sw-catalogue',
                     position: 10,
@@ -412,7 +412,7 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         const navigationLink = wrapper.findComponent('.sw-admin-menu__navigation-link');
         expect(navigationLink.element.tagName).toBe('A');
         expect(navigationLink.props().to).toMatchObject({
-            name: 'sw.cms.index',
+            name: 'sw.experience.studio.index',
         });
     });
 

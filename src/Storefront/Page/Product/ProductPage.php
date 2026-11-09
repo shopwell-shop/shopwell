@@ -3,7 +3,6 @@
 namespace Shopwell\Storefront\Page\Product;
 
 use Shopwell\Core\Content\Breadcrumb\Struct\BreadcrumbCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewResult;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
@@ -16,8 +15,6 @@ use Shopwell\Storefront\Page\Page;
 class ProductPage extends Page
 {
     protected SalesChannelProductEntity $product;
-
-    protected CmsPageEntity $cmsPage;
 
     protected ?string $navigationId = null;
 
@@ -42,16 +39,6 @@ class ProductPage extends Page
     public function setProduct(SalesChannelProductEntity $product): void
     {
         $this->product = $product;
-    }
-
-    public function getCmsPage(): ?CmsPageEntity
-    {
-        return $this->cmsPage;
-    }
-
-    public function setCmsPage(CmsPageEntity $cmsPage): void
-    {
-        $this->cmsPage = $cmsPage;
     }
 
     public function getNavigationId(): ?string

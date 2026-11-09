@@ -2,6 +2,8 @@
 
 namespace Shopwell\Core\Content\DependencyInjection;
 
+use Shopwell\Core\Content\Breadcrumb\ContentSystem\DataLoader\BreadcrumbDataLoader;
+use Shopwell\Core\Content\Breadcrumb\ContentSystem\DataLoader\BreadcrumbLoaderConfigSerializer;
 use Shopwell\Core\Content\Breadcrumb\SalesChannel\BreadcrumbRoute;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
@@ -20,4 +22,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CacheTagCollector::class),
             service(ExtensionDispatcher::class),
         ]);
+
+    // Content System
+    $services->set(BreadcrumbDataLoader::class)
+        ->args([
+            service(BreadcrumbRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(BreadcrumbLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
 };

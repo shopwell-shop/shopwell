@@ -15,10 +15,7 @@ const testEntityData = {
     id: 'some-id',
     title: 'some-title',
     description: 'some-description',
-    swCmsPageId: 'CMS-PAGE-ID-MOCK',
-    swSlotConfig: {
-        'SLOT-ID-MOCK': 'TEXT-OVERRIDE-MOCK',
-    },
+
     swSeoMetaTitle: 'SEO-META-TITLE-MOCK',
     swSeoMetaDescription: 'SEO-META-DESCRIPTION-MOCK',
     swSeoUrl: 'SEO-URL-MOCK',
@@ -31,6 +28,7 @@ const testEntityData = {
 const customEntityDefinition = {
     entity: testEntityName,
     properties: {
+        swSeoMetaTitle: { type: 'string' },
         id: {
             type: 'string',
         },
@@ -95,7 +93,6 @@ const customEntityDefinition = {
                 ],
             },
         },
-        'cms-aware': true,
     },
 };
 
@@ -177,10 +174,7 @@ async function createWrapper({
                 'sw-custom-entity-input-field': {
                     template: '<input/>',
                 },
-                'sw-generic-cms-page-assignment': {
-                    template: '<div class="sw-generic-cms-page-assignment"></div>',
-                    props: ['cms-page-id', 'slot-overrides'],
-                },
+
                 'sw-generic-seo-general-card': {
                     template: '<div class="sw-generic-seo-general-card"></div>',
                     props: [
@@ -293,11 +287,10 @@ describe('module/sw-custom-entity/page/sw-generic-custom-entity-detail', () => {
         expect(wrapper.find('.mt-tabs').exists()).toBe(false);
 
         const tabItems = wrapper.findAll('.sw-generic-custom-entity-detail__tab-item');
-        expect(tabItems).toHaveLength(4);
+        expect(tabItems).toHaveLength(3);
         expect(tabItems.at(0).text()).toBe('custom_test_entity.tabs.main');
         expect(tabItems.at(1).text()).toBe('custom_test_entity.tabs.secondary');
-        expect(tabItems.at(2).text()).toBe('sw-custom-entity.detail.tabs.layout');
-        expect(tabItems.at(3).text()).toBe('sw-custom-entity.detail.tabs.seo');
+        expect(tabItems.at(2).text()).toBe('sw-custom-entity.detail.tabs.seo');
         expect(wrapper.findAll('.sw-generic-custom-entity-detail__tab')).toHaveLength(1);
     });
 
@@ -322,12 +315,8 @@ describe('module/sw-custom-entity/page/sw-generic-custom-entity-detail', () => {
                 name: 'secondary',
             },
             {
-                label: 'sw-custom-entity.detail.tabs.layout',
-                name: 'cms-aware-tab-layout',
-            },
-            {
                 label: 'sw-custom-entity.detail.tabs.seo',
-                name: 'cms-aware-tab-seo',
+                name: 'seo-tab',
             },
         ]);
         expect(wrapper.findAll('.sw-generic-custom-entity-detail__tab-item')).toHaveLength(0);
@@ -405,57 +394,9 @@ describe('module/sw-custom-entity/page/sw-generic-custom-entity-detail', () => {
         expect(wrapper.vm.customEntityData.description).toBe(testEntityData.description);
     });
 
-    it('should render the layout tab, pass in the cmsPageId and the cmsSlotOverrides and react to changes', async () => {
-        const wrapper = await createWrapper({
-            activeTab: 'cms-aware-tab-layout',
-            routeId: testEntityData.id,
-        });
-        await flushPromises();
-
-        const cmsAwareTab = wrapper.getComponent('.sw-generic-custom-entity-detail__tab-cms-aware');
-        expect(cmsAwareTab.props('cmsPageId')).toBe(testEntityData.swCmsPageId);
-        expect(cmsAwareTab.props('slotOverrides')).toStrictEqual(testEntityData.swSlotConfig);
-
-        const mockCMSPageId = 'mockCMSPageId';
-        const mockSlotOverrides = 'mockSlotOverride';
-
-        cmsAwareTab.vm.$emit('update:cms-page-id', mockCMSPageId);
-        cmsAwareTab.vm.$emit('update:slot-overrides', mockSlotOverrides);
-        await flushPromises();
-
-        expect(cmsAwareTab.props('cmsPageId')).toBe(mockCMSPageId);
-        expect(cmsAwareTab.props('slotOverrides')).toStrictEqual(mockSlotOverrides);
-
-        expect(wrapper.vm.customEntityData).toStrictEqual({
-            ...testEntityData,
-            swCmsPageId: mockCMSPageId,
-            swSlotConfig: mockSlotOverrides,
-        });
-    });
-
-    it('should create a new layout on the `create-layout` event', async () => {
-        const wrapper = await createWrapper({
-            activeTab: 'cms-aware-tab-layout',
-            routeId: testEntityData.id,
-        });
-        await flushPromises();
-
-        const cmsAwareTab = wrapper.getComponent('.sw-generic-custom-entity-detail__tab-cms-aware');
-        cmsAwareTab.vm.$emit('create-layout');
-        await flushPromises();
-
-        expect(wrapper.vm.$router.push).toHaveBeenCalledWith({
-            name: 'sw.cms.create',
-            params: {
-                id: testEntityData.id,
-                type: testEntityName,
-            },
-        });
-    });
-
     it('should render the sw-generic-seo-general-card and react to changes', async () => {
         const wrapper = await createWrapper({
-            activeTab: 'cms-aware-tab-seo',
+            activeTab: 'seo-tab',
             routeId: testEntityData.id,
         });
         await flushPromises();
@@ -491,7 +432,7 @@ describe('module/sw-custom-entity/page/sw-generic-custom-entity-detail', () => {
 
     it('should render the sw-generic-social-media-card and react to changes', async () => {
         const wrapper = await createWrapper({
-            activeTab: 'cms-aware-tab-seo',
+            activeTab: 'seo-tab',
             routeId: testEntityData.id,
         });
         await flushPromises();
@@ -534,8 +475,6 @@ describe('module/sw-custom-entity/page/sw-generic-custom-entity-detail', () => {
         expect(wrapper.vm.customEntityData).toBeNull();
 
         [
-            'updateCmsPageId',
-            'updateCmsSlotOverwrites',
             'updateSeoMetaTitle',
             'updateSeoMetaDescription',
             'updateSeoUrl',

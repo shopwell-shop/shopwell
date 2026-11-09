@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test, type TestContext as NodeTestContext } from 'node:test';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import {
     ADMINISTRATION_DEPRECATION_BASELINE_PATH,
     FEATURE_REGISTRY_PATH,
@@ -295,6 +299,7 @@ test('detection selects only the acceptance arm for a spec change after PHP and 
                 pull_request: {
                     ...context.payload.pull_request,
                     number: 123,
+                    base: { sha: 'base-sha' },
                     head: { ...context.payload.pull_request.head, sha: 'head-sha' },
                 },
             },
@@ -302,7 +307,10 @@ test('detection selects only the acceptance arm for a spec change after PHP and 
         core: { info() {} },
         github: {
             rest: {
-                repos: { async getContent() { return { data: REGISTRY }; } },
+                repos: {
+                    async getContent() { return { data: REGISTRY }; },
+                    async compareCommitsWithBasehead() { throw new Error('Unexpected fallback'); },
+                },
                 pulls: { async get() { return { data: diffFor('tests/acceptance/tests/Example.spec.ts', '+await button.click();') }; } },
                 issues: { async addLabels() {} },
             },
@@ -310,4 +318,169 @@ test('detection selects only the acceptance arm for a spec change after PHP and 
     });
     assert.deepEqual(arms, { php: false, js: false, acceptance: true });
     assert.deepEqual(labelsForMajorTestArms(arms, context.payload.pull_request.labels), ['major-acceptance']);
+});
+
+
+const tooLargeDiff = () => Object.assign(new Error('diff too large'), {
+    status: 406,
+    response: { data: { errors: [{ field: 'diff', code: 'too_large' }] } },
+});
+
+function gitFixture(t: NodeTestContext, files: Record<string, string>, baseFiles: Record<string, string> = {}) {
+    const root = mkdtempSync(join(tmpdir(), 'major-label-test-'));
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const origin = join(root, 'origin');
+    const cwd = join(root, 'checkout');
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: origin, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    mkdirSync(origin);
+    git('init', '--initial-branch=main');
+    git('config', 'user.email', 'test@example.com');
+    git('config', 'user.name', 'Test');
+    const writeFiles = (entries: Record<string, string>) => {
+        for (const [path, text] of Object.entries(entries)) {
+            mkdirSync(dirname(join(origin, path)), { recursive: true });
+            writeFileSync(join(origin, path), text);
+        }
+    };
+    writeFiles({ 'README.md': 'initial\n', ...baseFiles });
+    git('add', '.');
+    git('commit', '-m', 'initial');
+    const mergeBase = git('rev-parse', 'HEAD');
+    git('checkout', '-b', 'change');
+    writeFiles(files);
+    git('add', '.');
+    git('commit', '-m', 'change');
+    const head = git('rev-parse', 'HEAD');
+    git('checkout', 'main');
+    writeFiles({ 'src/Core/BaseOnly.php': "<?php // v6.8.0.0\n" });
+    git('add', '.');
+    git('commit', '-m', 'advance base');
+    const base = git('rev-parse', 'HEAD');
+    execFileSync('git', ['clone', '--depth=1', `file://${origin}`, cwd], { stdio: 'pipe' });
+
+    return { cwd, head, base, mergeBase };
+}
+
+function largeDiffToolkit(fixture: { head: string; base: string; mergeBase: string }, error: unknown = tooLargeDiff()) {
+    return {
+        context: {
+            ...baseContext(),
+            payload: {
+                action: 'opened',
+                pull_request: {
+                    number: 123,
+                    base: { sha: fixture.base },
+                    head: { sha: fixture.head, repo: { full_name: 'fork/shopwell' } },
+                    labels: [],
+                },
+            },
+        },
+        core: { info() {} },
+        github: {
+            rest: {
+                repos: {
+                    async getContent() { return { data: REGISTRY }; },
+                    async compareCommitsWithBasehead(options: { basehead: string }) {
+                        assert.equal(options.basehead, `${fixture.base}...${fixture.head}`);
+                        return { data: { merge_base_commit: { sha: fixture.mergeBase } } };
+                    },
+                },
+                pulls: { async get(): Promise<{ data: unknown }> { throw error; } },
+                issues: { async addLabels() {} },
+            },
+        },
+    };
+}
+
+test('406 too_large uses the full exact merge-base diff without checking out fork code', async (t) => {
+    const path = 'src/Administration/Resources/app/administration/src/example.ts';
+    const fixture = gitFixture(t, {
+        [path]: "Feature.isActive('WEBHOOKS_REWORK');\n",
+        'tests/acceptance/tests/Example.spec.ts': 'await button.click();\n',
+        'untrusted.sh': 'exit 99\n',
+    });
+    const arms = await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd });
+
+    assert.deepEqual(arms, { php: true, js: true, acceptance: true });
+    assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { cwd: fixture.cwd, encoding: 'utf8' }).trim(), fixture.base);
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: fixture.cwd, encoding: 'utf8' }), '');
+});
+
+test('406 fallback examines markers and acceptance specs beyond 3000 changed files', async (t) => {
+    const files = Object.fromEntries(Array.from({ length: 3001 }, (_, index) => [`aaa/file-${index}.txt`, 'plain\n']));
+    files['src/Administration/Resources/app/administration/src/z-last.ts'] = "Feature.isActive('WEBHOOKS_REWORK');\n";
+    files['tests/acceptance/tests/ZLast.spec.ts'] = 'await button.click();\n';
+    const fixture = gitFixture(t, files);
+
+    assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
+        php: true, js: true, acceptance: true,
+    });
+});
+
+test('406 fallback preserves docs exclusions and ignores base-only markers', async (t) => {
+    const fixture = gitFixture(t, {
+        'docs/README.md': 'v6.8.0.0\n',
+        '.github/example.ts': "const marker = 'WEBHOOKS_REWORK';\n",
+        'tests/acceptance/fixtures/Example.ts': 'fixture\n',
+    });
+
+    assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
+        php: false, js: false, acceptance: false,
+    });
+});
+
+test('406 fallback sees removed markers in a file too large for an API patch', async (t) => {
+    const path = 'src/Core/Example.php';
+    const fixture = gitFixture(t, { [path]: '<?php\n' }, {
+        [path]: "<?php\nFeature::isActive('WEBHOOKS_REWORK');\n" + `${'plain line '.repeat(10)}\n`.repeat(21000),
+    });
+
+    assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
+        php: true, js: false, acceptance: false,
+    });
+});
+
+test('406 fallback fails closed when exact commits cannot be fetched', async (t) => {
+    const fixture = gitFixture(t, { 'src/Core/Example.php': '<?php\n' });
+    execFileSync('git', ['remote', 'set-url', 'origin', join(fixture.cwd, 'missing')], { cwd: fixture.cwd });
+
+    await assert.rejects(detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), /git|fetch/);
+});
+
+test('406 fallback rejects invalid merge-base SHAs before invoking Git', async (t) => {
+    const fixture = gitFixture(t, { 'src/Core/Example.php': '<?php\n' });
+    fixture.mergeBase = '--help';
+
+    await assert.rejects(detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), /SHA/);
+});
+
+test('ordinary API failures are propagated instead of being treated as oversized diffs', async () => {
+    const error = Object.assign(new Error('unavailable'), { status: 503 });
+    const fixture = { base: 'a'.repeat(40), head: 'b'.repeat(40), mergeBase: 'c'.repeat(40) };
+
+    await assert.rejects(detectMajorTestArms(largeDiffToolkit(fixture, error)), error);
+});
+
+
+test('a 406 unrelated to diff size is propagated', async () => {
+    const error = Object.assign(new Error('unacceptable'), { status: 406 });
+    const fixture = { base: 'a'.repeat(40), head: 'b'.repeat(40), mergeBase: 'c'.repeat(40) };
+
+    await assert.rejects(detectMajorTestArms(largeDiffToolkit(fixture, error)), error);
+});
+
+
+test('406 fallback retains active conditional checkout configuration', async (t) => {
+    const fixture = gitFixture(t, { 'tests/acceptance/tests/Example.spec.ts': 'await button.click();\n' });
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: fixture.cwd, encoding: 'utf8' }).trim();
+    const origin = git('remote', 'get-url', 'origin');
+    const credentials = join(fixture.cwd, '.git', 'checkout-auth.config');
+    git('config', '--file', credentials, 'remote.origin.url', origin);
+    git('config', '--unset', 'remote.origin.url');
+    git('config', `includeIf.gitdir:${git('rev-parse', '--absolute-git-dir')}.path`, credentials);
+    assert.equal(git('remote', 'get-url', 'origin'), origin);
+
+    assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
+        php: false, js: false, acceptance: true,
+    });
 });

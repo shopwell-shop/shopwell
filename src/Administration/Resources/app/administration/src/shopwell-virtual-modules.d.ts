@@ -406,8 +406,6 @@ declare module 'shopwell:composables' {
     const members: typeof branch;
 
     export default members;
-    export const useCmsElement: (typeof members)['useCmsElement'];
-    export const useCmsState: (typeof members)['useCmsState'];
     export const useInlineSnippet: (typeof members)['useInlineSnippet'];
     export const useListing: (typeof members)['useListing'];
     export const useMediaGridListener: (typeof members)['useMediaGridListener'];
@@ -422,24 +420,6 @@ declare module 'shopwell:composables' {
     export const useUserSettings: (typeof members)['useUserSettings'];
     export const useValidation: (typeof members)['useValidation'];
     export const useVideoCover: (typeof members)['useVideoCover'];
-}
-
-/** @experimental stableVersion:v6.9.0 feature:ADMIN_MIXIN_COMPOSABLES */
-declare module 'shopwell:composables/useCmsElement' {
-    import type branch from 'src/app/composables/index';
-
-    const member: (typeof branch)['useCmsElement'];
-
-    export default member;
-}
-
-/** @experimental stableVersion:v6.9.0 feature:ADMIN_MIXIN_COMPOSABLES */
-declare module 'shopwell:composables/useCmsState' {
-    import type branch from 'src/app/composables/index';
-
-    const member: (typeof branch)['useCmsState'];
-
-    export default member;
 }
 
 /** @experimental stableVersion:v6.9.0 feature:ADMIN_MIXIN_COMPOSABLES */
@@ -674,13 +654,6 @@ declare module 'shopwell:mixins/rule-between-operator' {
 }
 
 /** @experimental stableVersion:v6.8.0 */
-declare module 'shopwell:stores/cmsPage' {
-    const useStore: () => PiniaRootState['cmsPage'];
-
-    export default useStore;
-}
-
-/** @experimental stableVersion:v6.8.0 */
 declare module 'shopwell:stores/topBarButton' {
     const useStore: () => PiniaRootState['topBarButton'];
 
@@ -753,6 +726,13 @@ declare module 'shopwell:stores/extensions' {
 /** @experimental stableVersion:v6.8.0 */
 declare module 'shopwell:stores/error' {
     const useStore: () => PiniaRootState['error'];
+
+    export default useStore;
+}
+
+/** @experimental stableVersion:v6.8.0 */
+declare module 'shopwell:stores/experienceStudioEditor' {
+    const useStore: () => PiniaRootState['experienceStudioEditor'];
 
     export default useStore;
 }

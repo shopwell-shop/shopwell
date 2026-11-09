@@ -8,6 +8,9 @@ use Shopwell\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethod
 use Shopwell\Core\Checkout\Shipping\Aggregate\ShippingMethodTag\ShippingMethodTagDefinition;
 use Shopwell\Core\Checkout\Shipping\Aggregate\ShippingMethodTranslation\ShippingMethodTranslationDefinition;
 use Shopwell\Core\Checkout\Shipping\Api\ShippingMethodTechnicalNameFkResolver;
+use Shopwell\Core\Checkout\Shipping\ContentSystem\DataLoader\ShippingMethodDataLoader;
+use Shopwell\Core\Checkout\Shipping\ContentSystem\DataLoader\ShippingMethodLoaderConfigSerializer;
+use Shopwell\Core\Checkout\Shipping\SalesChannel\AbstractShippingMethodRoute;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\SalesChannelShippingMethodDefinition;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
@@ -64,4 +67,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('shopwell.sync.fk_resolver');
+
+    // Content System
+    $services->alias(AbstractShippingMethodRoute::class, ShippingMethodRoute::class);
+
+    $services->set(ShippingMethodDataLoader::class)
+        ->args([
+            service(AbstractShippingMethodRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(ShippingMethodLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
 };

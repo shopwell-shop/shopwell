@@ -38,7 +38,8 @@
             "_score": "Score"
           }
         }
-      }
+      },
+      "defaultSortingCantBeDisabled": "This sorting is the default sorting. It has to be active to cause no problems with your product listing."
     },
     "index": {
       "defaultSalesChannel": {

@@ -227,10 +227,10 @@ class ProductListingReadinessCheckTest extends TestCase
     {
         $context = Context::createDefaultContext();
 
-        $parent = $this->getCategoryData(withCmsPage: false);
+        $parent = $this->getCategoryData();
         $products = $this->getProductData($salesChannelId);
 
-        $child = $this->getCategoryData(withCmsPage: true);
+        $child = $this->getCategoryData();
         $child['parentId'] = $parent['id'];
         $child['products'] = $products;
 
@@ -253,7 +253,7 @@ class ProductListingReadinessCheckTest extends TestCase
     {
         $context = Context::createDefaultContext();
 
-        $parent = $this->getCategoryData(withCmsPage: false);
+        $parent = $this->getCategoryData();
 
         $this->categoryRepository->upsert([$parent], $context);
 
@@ -291,10 +291,9 @@ class ProductListingReadinessCheckTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function getCategoryData(bool $withCmsPage): array
+    private function getCategoryData(): array
     {
         $categoryId = Uuid::randomHex();
-        $pageId = Uuid::randomHex();
         $streamId = Uuid::randomHex();
 
         $data = [
@@ -312,29 +311,6 @@ class ProductListingReadinessCheckTest extends TestCase
                 ]],
             ],
         ];
-
-        if ($withCmsPage) {
-            $data['cmsPageId'] = $pageId;
-            $data['cmsPage'] = [
-                'id' => $pageId,
-                'type' => 'product_list',
-                'sections' => [
-                    [
-                        'position' => 0,
-                        'type' => 'sidebar',
-                        'blocks' => [
-                            [
-                                'type' => 'product-listing',
-                                'position' => 1,
-                                'slots' => [
-                                    ['type' => 'product-listing', 'slot' => 'content'],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ];
-        }
 
         return $data;
     }

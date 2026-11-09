@@ -1,0 +1,29 @@
+meta:
+  label: "Buy button"
+  description: "Adds the current product to the cart."
+  icon: "regular-shopping-cart"
+  category: "commerce"
+  priority: 78
+
+properties:
+  product:
+    type: Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity
+    required: true
+    title: "Product"
+    description: "Hydrated product added to the cart when the customer submits the form."
+    resolvedBy: productId
+    mappable: true
+    defaultMapping:
+      type: root
+      id: product
+    adminUI:
+      component: "entity-single-select"
+      entity: "product"
+
+  showQuantitySelect:
+    type: boolean
+    title: "Show quantity selection"
+    description: "Let the customer choose the purchase quantity inside the cart form."
+    default: true
+    adminUI:
+      component: "switch"

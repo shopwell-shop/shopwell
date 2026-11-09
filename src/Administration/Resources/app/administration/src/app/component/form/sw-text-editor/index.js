@@ -86,12 +86,6 @@ export default {
             default: false,
         },
 
-        allowInlineDataMapping: {
-            type: Boolean,
-            required: false,
-            default: false,
-        },
-
         sanitizeInput: {
             type: Boolean,
             required: false,
@@ -317,7 +311,7 @@ export default {
                 nextColWidth: null,
             },
             isTableEdit: false,
-            cmsPageState: Shopwell.Store.get('cmsPage'),
+
             minorElementTags: [
                 '#text',
                 'br',
@@ -378,20 +372,6 @@ export default {
                 'justify-content': this.verticalAlign,
             };
         },
-
-        availableDataMappings() {
-            let mappings = [];
-
-            Object.entries(this.cmsPageState.currentMappingTypes).forEach((entry) => {
-                const [type, value] = entry;
-
-                if (type === 'string') {
-                    mappings = [...mappings, ...value];
-                }
-            });
-
-            return mappings;
-        },
     },
 
     watch: {
@@ -433,23 +413,6 @@ export default {
     },
 
     methods: {
-        getDataMappingButtonChildren() {
-            return this.availableDataMappings.map((mapping) => ({
-                type: mapping,
-                name: mapping,
-                title: mapping,
-                handler: this.handleInsertDataMapping,
-            }));
-        },
-
-        updateDataMappingButtonChildren() {
-            const dataMappingButton = this.buttonConfig.find((button) => button.type === 'data-mapping');
-
-            if (dataMappingButton) {
-                dataMappingButton.children = this.getDataMappingButtonChildren();
-            }
-        },
-
         createdComponent() {
             this.content = this.value ?? '';
 
@@ -472,24 +435,6 @@ export default {
                         handler: this.toggleCodeEditor,
                         position: 'right',
                     });
-                }
-
-                if (this.allowInlineDataMapping && this.availableDataMappings.length > 0) {
-                    const dataMappingButton = {
-                        type: 'data-mapping',
-                        title: this.$t('sw-text-editor-toolbar.title.data-mapping'),
-                        icon: 'regular-variables-xs',
-                        position: 'left',
-                        dropdownPosition: 'left',
-                        searchable: true,
-                        tooltipShowDelay: 500,
-                        tooltipHideDelay: 100,
-                    };
-
-                    dataMappingButton.children = this.getDataMappingButtonChildren();
-
-                    this.buttonConfig.push(dataMappingButton);
-                    this.$watch('availableDataMappings', this.updateDataMappingButtonChildren);
                 }
             }
 
@@ -583,12 +528,6 @@ export default {
         toggleCodeEditor(buttonConf) {
             this.isCodeEdit = !this.isCodeEdit;
             buttonConf.expanded = !buttonConf.expanded;
-        },
-
-        handleInsertDataMapping({ name }) {
-            this.onTextStyleChange('insertText', `{{ ${name} }}`);
-
-            this.selection = document.getSelection();
         },
 
         resetForeColor() {

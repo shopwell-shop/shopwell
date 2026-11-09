@@ -39,6 +39,7 @@ class PaymentException extends HttpException
     final public const PAYMENT_VALIDATE_PREPARED_ERROR = 'CHECKOUT__VALIDATE_PREPARED_PAYMENT_ERROR';
     final public const PAYMENT_METHOD_DUPLICATE_TECHNICAL_NAME = 'CHECKOUT__DUPLICATE_PAYMENT_METHOD_TECHNICAL_NAME';
     final public const MISSING_REQUEST_PARAMETER_CODE = 'CHECKOUT__MISSING_REQUEST_PARAMETER';
+    final public const INVALID_FIELD_VALUE_TYPE = 'CHECKOUT__PAYMENT_INVALID_FIELD_VALUE_TYPE';
     final public const PAYMENT_GATEWAY_RESULT_MISSING = 'CHECKOUT__PAYMENT_GATEWAY_RESULT_MISSING';
     final public const PAYMENT_CHANNEL_UNAVAILABLE = 'CHECKOUT__PAYMENT_CHANNEL_UNAVAILABLE';
     final public const PAYMENT_CHANNEL_DISABLED = 'CHECKOUT__PAYMENT_CHANNEL_DISABLED';
@@ -375,6 +376,16 @@ class PaymentException extends HttpException
             self::PAYMENT_PLATFORM_TENANT_MISSING,
             'The platform tenant "{{ technicalName }}" is missing. The payment migration has not seeded it.',
             ['technicalName' => $technicalName]
+        );
+    }
+
+    public static function invalidFieldValueType(string $fieldName, string $expectedType, string $actualType): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_FIELD_VALUE_TYPE,
+            'Field {{ fieldName }} expected {{ expectedType }}, got {{ actualType }}',
+            ['fieldName' => $fieldName, 'expectedType' => $expectedType, 'actualType' => $actualType]
         );
     }
 }

@@ -21,8 +21,6 @@ type BlogVideo = EntitySchema.Entity<'blog_video'>;
 
 type BlogCategory = EntitySchema.Entity<'blog_category'>;
 
-type CmsPage = EntitySchema.Entity<'cms_page'>;
-
 /**
  * One entry, as a canvas with a settings rail next to it.
  *
@@ -67,7 +65,6 @@ export default defineComponent({
     data(): {
         blog: Blog | null;
         video: BlogVideo | null;
-        cmsPage: CmsPage | null;
         assignments: BlogCategoryAssignment[];
         selectedCategoryIds: Array<EntitySchema.EntityKey<'blog_category'>>;
         categories: BlogCategory[];
@@ -85,7 +82,6 @@ export default defineComponent({
         return {
             blog: null,
             video: null,
-            cmsPage: null,
             assignments: [],
             selectedCategoryIds: [],
             categories: [],
@@ -122,10 +118,6 @@ export default defineComponent({
             return this.repositoryFactory.create('blog_video');
         },
 
-        cmsPageRepository(): RepositoryType<'cms_page'> {
-            return this.repositoryFactory.create('cms_page');
-        },
-
         assignmentRepository(): RepositoryType<'blog_category_assignment'> {
             return this.repositoryFactory.create('blog_category_assignment');
         },
@@ -136,6 +128,10 @@ export default defineComponent({
 
         authorRepository(): RepositoryType<'blog_author'> {
             return this.repositoryFactory.create('blog_author');
+        },
+
+        contentLayoutOptionsCriteria(): CriteriaType {
+            return blogApi(this).contentLayoutOptionsCriteria();
         },
 
         canEdit(): boolean {
@@ -152,10 +148,6 @@ export default defineComponent({
 
                 return { value: type, label: this.$te(key) ? this.$t(key) : type };
             });
-        },
-
-        cmsPageOptionsCriteria(): CriteriaType {
-            return blogApi(this).cmsPageOptionsCriteria();
         },
 
         title(): string {
@@ -251,7 +243,6 @@ export default defineComponent({
 
                 await this.loadAssignments();
                 this.ensureVideo();
-                await this.loadCmsPage();
             } catch {
                 this.createNotificationError({ message: this.$t('sw-blog.detail.messageLoadError') });
             } finally {
@@ -457,54 +448,6 @@ export default defineComponent({
             return video;
         },
 
-        /**
-         * The layout is read through its own repository: the entry only carries `cmsPageId`, because
-         * an association into the cms domain would have to grow a reverse one-to-many on `cms_page`.
-         */
-        async loadCmsPage(): Promise<void> {
-            const cmsPageId = this.blog?.cmsPageId ?? null;
-
-            if (!cmsPageId) {
-                this.cmsPage = null;
-
-                return;
-            }
-
-            const criteria = blogApi(this).cmsPageCriteria(cmsPageId);
-
-            try {
-                const page = await this.cmsPageRepository.get(cmsPageId, Shopwell.Context.api, criteria);
-                this.cmsPage = page ?? null;
-            } catch {
-                this.cmsPage = null;
-            }
-        },
-
-        onCmsPageChanged(): void {
-            void this.loadCmsPage();
-        },
-
-        /**
-         * Writes the version column of the layout reference, and only together with its id.
-         *
-         * A reference into the version aware `cms_page` spans two columns: `cmsPageId` names the
-         * page, `cmsPageVersionId` the revision it was picked from. Writing the id alone leaves a
-         * dangling reference, so both are written together in one go.
-         *
-         * Without a chosen layout both columns are left untouched: the selection cleared the id, and
-         * the version beside it is never read while the id is empty, so the entry falls back to the
-         * template the storefront ships with instead of pointing at nothing.
-         */
-        applyCmsPage(): void {
-            if (!this.blog || !this.blog.cmsPageId) {
-                return;
-            }
-
-            if (this.cmsPage?.versionId) {
-                this.blog.cmsPageVersionId = this.cmsPage.versionId;
-            }
-        },
-
         onCoverSelected(media: Array<Pick<EntitySchema.Entity<'media'>, 'id'>>): void {
             this.setCover(media[0]?.id ?? null);
         },
@@ -568,8 +511,6 @@ export default defineComponent({
             this.isSaving = true;
 
             try {
-                this.applyCmsPage();
-
                 if (this.video) {
                     await this.videoRepository.save(this.video);
                 }

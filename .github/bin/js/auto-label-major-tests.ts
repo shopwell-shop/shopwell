@@ -27,6 +27,12 @@
  * acceptance-tests-changed; fixtures, tasks and dependency-only changes do not.
  */
 
+import { execFile } from 'node:child_process';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
+
 export const FEATURE_REGISTRY_PATH = 'src/Core/Framework/Resources/config/packages/feature.yaml';
 export const ADMINISTRATION_APP_PATH = 'src/Administration/Resources/app/administration/';
 export const ADMINISTRATION_SOURCE_PATH = `${ADMINISTRATION_APP_PATH}src/`;
@@ -62,6 +68,7 @@ type PullRequestContext = PullRequestDetectionContext & {
         action: string;
         pull_request: {
             number: number;
+            base: { sha: string };
             head: {
                 sha: string;
                 repo: {
@@ -76,6 +83,11 @@ type PullRequestContext = PullRequestDetectionContext & {
 type GitHubRestClient = {
     rest: {
         repos: {
+            compareCommitsWithBasehead(options: {
+                owner: string;
+                repo: string;
+                basehead: string;
+            }): Promise<{ data: { merge_base_commit: { sha: string } } }>;
             getContent(options: {
                 owner: string;
                 repo: string;
@@ -261,7 +273,87 @@ export function labelsForMajorTestArms(arms: MajorTestArms, existingLabels: Pull
     ].filter((label): label is string => label !== null);
 }
 
-export async function detectMajorTestArms({ github, core, context }: DetectionToolkit): Promise<MajorTestArms> {
+const execute = promisify(execFile);
+
+function requireCommitSha(sha: string): string {
+    if (!/^[a-f0-9]{40}$/.test(sha)) {
+        throw new Error('Expected an exact commit SHA');
+    }
+
+    return sha;
+}
+
+async function fullDiffFromGit({ github, core, context }: DetectionToolkit, cwd: string): Promise<string> {
+    const base = requireCommitSha(context.payload.pull_request.base.sha);
+    const head = requireCommitSha(context.payload.pull_request.head.sha);
+    const { data } = await github.rest.repos.compareCommitsWithBasehead({
+        ...context.repo,
+        basehead: `${base}...${head}`,
+    });
+    const mergeBase = requireCommitSha(data.merge_base_commit.sha);
+    const git = async (...args: string[]) => {
+        const { stdout } = await execute('git', args, {
+            cwd,
+            encoding: 'utf8',
+            maxBuffer: Number.MAX_SAFE_INTEGER,
+            timeout: 120_000,
+        });
+
+        return stdout;
+    };
+    const entries = (await git('config', '--show-origin', '--name-only', '--null', '--list')).split('\0');
+    const configFiles = new Set<string>();
+    for (let index = 0; index < entries.length; index += 2) {
+        if (entries[index].startsWith('file:')) {
+            configFiles.add(resolve(cwd, entries[index].slice(5)));
+        }
+    }
+    const includes = [...configFiles].flatMap((file) => ['-c', `include.path=${file}`]);
+    const directory = await mkdtemp(join(tmpdir(), 'major-test-diff-'));
+
+    try {
+        await git('init', '--bare', directory);
+        // Include effective files explicitly: checkout authentication can use gitdir-conditional includes.
+        const isolated = (...args: string[]) => git(...includes, '--git-dir', directory, ...args);
+        await isolated('fetch', '--no-tags', '--depth=1', '--no-write-fetch-head', 'origin', mergeBase, head);
+        for (const sha of [mergeBase, head]) {
+            if ((await isolated('rev-parse', '--verify', `${sha}^{commit}`)).trim() !== sha) {
+                throw new Error(`Fetched commit does not match SHA ${sha}`);
+            }
+        }
+        const diff = await isolated('diff', '--no-ext-diff', '--no-textconv', '--find-renames', mergeBase, head, '--');
+        core.info('diff too large for the API; evaluated the complete merge-base diff from exact commit trees');
+
+        return diff;
+    } finally {
+        await rm(directory, { recursive: true, force: true });
+    }
+}
+
+async function fetchMajorTestDiff(toolkit: DetectionToolkit, cwd: string): Promise<string> {
+    const { github, context } = toolkit;
+    try {
+        const { data } = await github.rest.pulls.get({
+            ...context.repo,
+            pull_number: context.payload.pull_request.number,
+            mediaType: { format: 'diff' },
+        });
+
+        return String(data);
+    } catch (error) {
+        const failure = error as { status?: number; response?: { data?: { errors?: Array<{ field?: string; code?: string }> } } };
+        if (failure?.status !== 406 || !failure.response?.data?.errors?.some(({ field, code }) => field === 'diff' && code === 'too_large')) {
+            throw error;
+        }
+    }
+
+    return fullDiffFromGit(toolkit, cwd);
+}
+
+export async function detectMajorTestArms(
+    { github, core, context }: DetectionToolkit,
+    { cwd = process.cwd() }: { cwd?: string } = {},
+): Promise<MajorTestArms> {
     if (!shouldDetect(context)) {
         core.info('skipping major-flag detection: event or existing labels rule it out');
 
@@ -278,12 +370,7 @@ export async function detectMajorTestArms({ github, core, context }: DetectionTo
 
     const majorFlags = parseMajorFlags(String(registry));
 
-    const { data: diff } = await github.rest.pulls.get({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        pull_number: context.payload.pull_request.number,
-        mediaType: { format: 'diff' },
-    });
+    const diff = await fetchMajorTestDiff({ github, core, context }, cwd);
 
     const arms = {
         php: hasMajorMarkers(String(diff), majorFlags),

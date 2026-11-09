@@ -1,5 +1,5 @@
---- /dev/null
-+++ ../src/CompareClasses.php
+--- a/src/CompareClasses.php
++++ b/src/CompareClasses.php
 @@ -16,11 +16,15 @@
  
  final class CompareClasses implements CompareApi

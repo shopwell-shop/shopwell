@@ -19,7 +19,6 @@ Shopwell.Component.register('sw-custom-entity-input-field', () => import('./comp
  * @private
  * @sw-package framework
  */
-Shopwell.Component.register('sw-generic-cms-page-assignment', () => import('./component/sw-generic-cms-page-assignment'));
 
 /**
  * @private

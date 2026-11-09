@@ -29,9 +29,9 @@
  * `Shopwell.Composables` — src/app/composables/index.ts
  * The same literal shape and output as the data branch:
  *
- *     export default { useCmsElement, useListing, … };
+ *     export default { useNotification, useListing, … };
  *
- *     → shopwell:composables             named exports { useCmsElement, useListing, … }
+ *     → shopwell:composables             named exports { useNotification, useListing, … }
  *       shopwell:composables/useListing  default only, like every composable file
  *
  * `Shopwell.Mixin` — src/global.types.ts, `interface MixinContainer`
@@ -52,7 +52,6 @@
  *
  *     declare global {
  *         interface PiniaRootState {
- *             cmsPage: CmsPageStore;
  *             swOrderDetail: SwOrderDetailStore;
  *         }
  *     }
@@ -265,7 +264,7 @@ const CENTRAL_MIXIN_DIR = './app/mixin/';
  * `shopwell:mixins/<name>` looks the mixin up when the importing module is evaluated, so the mixin has
  * to be registered by then. `src/app/mixin/index.js` registers its whole directory in one eager glob,
  * and a generated module imports that index, so those are guaranteed. A mixin a feature module
- * registers as it loads — `cms-element`, say — has no such moment and keeps `Mixin.getByName()`.
+ * registers as it loads has no such moment and keeps `Mixin.getByName()`.
  *
  * Membership is read from where `MixinContainer` imports each mixin's type, so moving a mixin file
  * moves it between the two groups on its own.

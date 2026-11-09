@@ -1,5 +1,5 @@
---- /dev/null
-+++ ../bin/roave-backward-compatibility-check.php
+--- a/bin/roave-backward-compatibility-check.php
++++ b/bin/roave-backward-compatibility-check.php
 @@ -54,6 +54,28 @@
          throw new RuntimeException('Could not find Composer autoload.php');
      })();
@@ -60,8 +60,7 @@
                                      new MethodBased\SkipMethodBasedErrors(new MethodBased\OnlyPublicMethodChanged(
                                          new MethodBased\MultipleChecksOnAMethod(
                                              new MethodBased\SkipMethodBasedErrors(new MethodBased\MethodBecameFinal()),
-@@ -182,7 +204,7 @@
-                                             )),
+@@ -183,6 +205,6 @@
                                          ),
                                      )),
 -                                ))),
@@ -69,8 +68,7 @@
                              )),
                          ),
                      )),
-@@ -208,7 +230,7 @@
-                                 )),
+@@ -209,6 +231,6 @@
                              )),
                              new ClassBased\SkipClassBasedErrors(new ClassBased\MethodChanged(
 -                                new MethodBased\SkipMethodBasedErrors(new MethodBased\OnlyPublicMethodChanged(new MethodBased\ExcludeInternalMethod(

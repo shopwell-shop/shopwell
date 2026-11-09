@@ -3,8 +3,7 @@
 namespace Shopwell\Tests\Integration\Storefront\Page;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
-use Shopwell\Core\Content\Cms\DataResolver\FieldConfig;
+use Shopwell\Core\Framework\ContentSystem\Layout\Entity\ContentLayoutCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
@@ -30,9 +29,9 @@ class ErrorPageTest extends TestCase
     private SalesChannelContext $salesChannelContext;
 
     /**
-     * @var EntityRepository<CmsPageCollection>
+     * @var EntityRepository<ContentLayoutCollection>
      */
-    private EntityRepository $cmsPageRepository;
+    private EntityRepository $contentLayoutRepository;
 
     private string $errorLayoutId;
 
@@ -42,14 +41,14 @@ class ErrorPageTest extends TestCase
 
         $contextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
 
-        $this->cmsPageRepository = static::getContainer()->get('cms_page.repository');
+        $this->contentLayoutRepository = static::getContainer()->get('content_layout.repository');
         $this->salesChannelContext = $contextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
 
         $this->errorLayoutId = $this->createPage();
         static::getContainer()->get(SystemConfigService::class)->set('core.basicInformation.http404Page', $this->errorLayoutId);
     }
 
-    public function testItDoesLoad404CmsLayoutPageIn404Case(): void
+    public function testItDoesLoad404ContentLayoutPageIn404Case(): void
     {
         $request = new Request();
         $context = $this->createSalesChannelContextWithNavigation();
@@ -60,7 +59,7 @@ class ErrorPageTest extends TestCase
         $page = $this->getPageLoader()->load($this->errorLayoutId, $request, $context);
 
         self::assertPageEvent(ErrorPageLoadedEvent::class, $event, $context, $request, $page);
-        static::assertSame('404 layout', $page->getCmsPage()?->getName());
+        static::assertSame('404 layout', $page->getContentPage()?->name);
     }
 
     protected function getPageLoader(): ErrorPageLoader
@@ -73,27 +72,16 @@ class ErrorPageTest extends TestCase
         $page = [
             'id' => Uuid::randomHex(),
             'name' => '404 layout',
-            'type' => 'page',
-            'sections' => [
-                [
-                    'id' => Uuid::randomHex(),
-                    'type' => 'default',
-                    'position' => 0,
-                    'blocks' => [
-                        [
-                            'position' => 1,
-                            'type' => 'image-text',
-                            'slots' => [
-                                ['type' => 'text', 'slot' => 'left', 'config' => ['content' => ['source' => FieldConfig::SOURCE_STATIC, 'value' => '404 - Not Found']]],
-                                ['type' => 'image', 'slot' => 'right', 'config' => ['url' => ['source' => FieldConfig::SOURCE_STATIC, 'value' => 'http://shopwell.cn/image.jpg']]],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
+            'version' => '1.0.0',
+            'rootSource' => 'none',
+            'layout' => [[
+                'id' => Uuid::randomHex(),
+                'component' => 'Sw:Content:Text',
+                'properties' => ['text' => '<p>Page not found</p>'],
+            ]],
         ];
 
-        $this->cmsPageRepository->create([$page], $this->salesChannelContext->getContext());
+        $this->contentLayoutRepository->create([$page], $this->salesChannelContext->getContext());
 
         return $page['id'];
     }

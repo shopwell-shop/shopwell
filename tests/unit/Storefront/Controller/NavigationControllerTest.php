@@ -93,19 +93,27 @@ class NavigationControllerTest extends TestCase
 
     public function testHomeRendersStorefront(): void
     {
+        $category = new CategoryEntity();
+        $category->setId(Uuid::randomHex());
+        $category->setType(CategoryDefinition::TYPE_PAGE);
+
+        $navigationPage = new NavigationPage();
+        $navigationPage->setCategory($category);
+
         $this->pageLoader->method('load')
-            ->willReturn(new NavigationPage());
+            ->willReturn($navigationPage);
 
         $request = new Request();
         $context = Generator::generateSalesChannelContext();
 
         $this->controller->home($request, $context);
-        static::assertSame('@Storefront/storefront/page/content/index.html.twig', $this->controller->recorder()->renderStorefrontView);
+        static::assertSame('@Storefront/storefront/page/content/page.html.twig', $this->controller->recorder()->renderStorefrontView);
     }
 
     public function testIndexRendersStorefront(): void
     {
         $category = new CategoryEntity();
+        $category->setId(Uuid::randomHex());
         $category->setType(CategoryDefinition::TYPE_PAGE);
 
         $navigationPage = new NavigationPage();
@@ -120,7 +128,7 @@ class NavigationControllerTest extends TestCase
         $context = Generator::generateSalesChannelContext();
 
         $this->controller->index($context, $request);
-        static::assertSame('@Storefront/storefront/page/content/index.html.twig', $this->controller->recorder()->renderStorefrontView);
+        static::assertSame('@Storefront/storefront/page/content/page.html.twig', $this->controller->recorder()->renderStorefrontView);
     }
 
     public static function redirectOnLinkTypeDataProvider(): \Generator

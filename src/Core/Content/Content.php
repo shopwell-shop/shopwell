@@ -36,7 +36,6 @@ class Content extends Bundle
         $phpLoader->load('product_stream.php');
         $phpLoader->load('product_export.php');
         $phpLoader->load('property.php');
-        $phpLoader->load('cms.php');
         $phpLoader->load('mail.php');
         $phpLoader->load('mail_template.php');
         $phpLoader->load('delivery_time.php');

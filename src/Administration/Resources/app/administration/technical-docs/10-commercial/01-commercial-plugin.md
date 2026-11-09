@@ -208,8 +208,6 @@ Features enhance existing components:
 // Override media library to add image generation
 Shopwell.Component.override('sw-media-library', () => import('./module/sw-media/component/sw-media-library'));
 
-// Override CMS components for enhanced functionality
-Shopwell.Component.override('sw-cms-block-config', () => import('./module/sw-cms/component/sw-cms-block/sw-cms-block-config'));
 ```
 
 ### Service Registration Pattern

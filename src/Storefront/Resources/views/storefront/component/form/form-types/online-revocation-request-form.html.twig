@@ -1,0 +1,104 @@
+{% block content_form_revocation %}
+    {% set formPrefix = 'content-form-online-revocation-request' %}
+    <form action="{{ path(action) }}"
+          method="post"
+          data-form-handler="true"
+          data-content-form-handler="true"
+          data-form-preserver="true"
+          id="{{ formPrefix }}"
+          aria-label="{{ formTitle ? formTitle : 'revocationRequest.headline'|trans|sw_sanitize }}">
+
+        <div class="form-content">
+            <div class="row g-2">
+                {% block content_form_revocation_input_name %}
+                    {% set nameFieldRequired = config('core.basicInformation.nameFieldRequired') == true %}
+                    {% sw_include '@Storefront/storefront/component/form/form-components/form-input.html.twig'
+                        with {
+                        fieldName: 'name',
+                        autocomplete: 'section-personal name',
+                        required: nameFieldRequired,
+                        additionalClass: 'col-md-12',
+                        label: 'revocationRequest.nameLabel',
+                    } %}
+                {% endblock %}
+            </div>
+
+            <div class="row g-2">
+                {% block content_form_revocation_input_email %}
+                    {% sw_include '@Storefront/storefront/component/form/form-components/form-input.html.twig'
+                        with {
+                        fieldName: 'email',
+                        autocomplete: 'email',
+                        type: 'email',
+                        required: true,
+                        additionalClass: 'col-md-12',
+                        label: 'revocationRequest.eMailLabel',
+                    } %}
+                {% endblock %}
+            </div>
+
+            <div class="row g-2">
+                {% block content_form_revocation_input_contract_number %}
+                    {% sw_include '@Storefront/storefront/component/form/form-components/form-input.html.twig'
+                        with {
+                        fieldName: 'contractNumber',
+                        required: true,
+                        additionalClass: 'col-md-12',
+                        label: 'revocationRequest.contractNumberLabel',
+                    } %}
+                {% endblock %}
+            </div>
+
+            <div class="row g-2">
+                {% block content_form_revocation_comment_textarea %}
+                    {% sw_include '@Storefront/storefront/component/form/form-components/form-textarea.html.twig'
+                        with {
+                        rows: 5,
+                        fieldName: 'comment',
+                        additionalClass: 'col-12',
+                        label: 'revocationRequest.commentLabel',
+                    }
+                    %}
+                {% endblock %}
+            </div>
+
+            {% block content_form_revocation_captcha %}
+                {% sw_include '@Storefront/storefront/component/captcha/base.html.twig' with { additionalClass : 'col-md-12' } %}
+            {% endblock %}
+
+            {% block content_form_revocation_privacy %}
+                <div class="form-text privacy-notice data-protection-information">
+                    {% block content_form_revocation_privacy_notice %}
+                        {% set contentPath = 'frontend.content.page' %}
+
+                        {{ 'revocationRequest.privacyNoticeTextModal'|trans({
+                            '%privacyModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(contentPath, { id: config('core.basicInformation.privacyPage') }) ~ '">',
+                            '%privacyModalTagClose%': '</button>',
+                        })|raw }}
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block content_form_revocation_required_fields_info %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-info-required.html.twig' %}
+            {% endblock %}
+
+            {% block content_form_revocation_submit %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-submit.html.twig' with { submitText: 'revocationRequest.formSubmit'|sw_sanitize } %}
+            {% endblock %}
+        </div>
+
+        {% block content_form_revocation_hidden_fields %}
+            <div class="form-hidden-fields">
+                {% if page.navigationId and page.entityName %}
+                    <input type="hidden" id="{{ formPrefix }}-navigationId" name="navigationId" value="{{ page.navigationId }}">
+                    <input type="hidden" id="{{ formPrefix }}-entityName" name="entityName" value="{{ page.entityName }}">
+                {% else %}
+                    <input type="hidden" id="{{ formPrefix }}-navigationId" name="navigationId" value="{{ shopwell.navigation.id }}">
+                {% endif %}
+
+                <input type="submit" class="submit--hidden d-none">
+            </div>
+        {% endblock %}
+    </form>
+{% endblock %}

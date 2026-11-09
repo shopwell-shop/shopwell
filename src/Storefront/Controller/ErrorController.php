@@ -48,13 +48,13 @@ class ErrorController extends StorefrontController
             $request->attributes->set('navigationId', $context->getSalesChannel()->getNavigationCategoryId());
 
             $salesChannelId = $context->getSalesChannelId();
-            $cmsErrorLayoutId = $this->systemConfigService->getString('core.basicInformation.http404Page', $salesChannelId);
-            if ($cmsErrorLayoutId !== '' && $is404StatusCode) {
-                $errorPage = $this->errorPageLoader->load($cmsErrorLayoutId, $request, $context);
+            $errorLayoutId = $this->systemConfigService->getString('core.basicInformation.http404Page', $salesChannelId);
+            if ($errorLayoutId !== '' && $is404StatusCode) {
+                $errorPage = $this->errorPageLoader->load($errorLayoutId, $request, $context);
 
                 $response = $this->renderStorefront(
-                    '@Storefront/storefront/page/content/index.html.twig',
-                    ['page' => $errorPage]
+                    '@Storefront/storefront/page/content/page.html.twig',
+                    ['page' => $errorPage, 'contentPage' => $errorPage->getContentPage(), 'isNewContentStructure' => true]
                 );
             } else {
                 $errorTemplate = $this->errorTemplateResolver->resolve($exception, $request);

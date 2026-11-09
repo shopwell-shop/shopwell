@@ -24,12 +24,9 @@ class Migration1610448012LandingPage extends MigrationStep
               `id` BINARY(16) NOT NULL,
               `version_id` BINARY(16) NOT NULL,
               `active` TINYINT(1) NOT NULL DEFAULT 1,
-              `cms_page_id` BINARY(16) NULL,
               `created_at` DATETIME(3) NOT NULL,
               `updated_at` DATETIME(3) NULL,
-              PRIMARY KEY (`id`, `version_id`),
-              CONSTRAINT `fk.landing_page.cms_page_id` FOREIGN KEY (`cms_page_id`)
-                REFERENCES `cms_page` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+              PRIMARY KEY (`id`, `version_id`)
             ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
 
@@ -43,11 +40,9 @@ class Migration1610448012LandingPage extends MigrationStep
               `meta_description` varchar(255) NULL,
               `keywords` varchar(255) NULL,
               `custom_fields` JSON NULL,
-              `slot_config` JSON,
               `created_at` DATETIME(3) NOT NULL,
               `updated_at` DATETIME(3) NULL,
               PRIMARY KEY (`landing_page_id`, `landing_page_version_id`, `language_id`),
-              CONSTRAINT `json.landing_page_translation.slot_config` CHECK (JSON_VALID(`slot_config`)),
               CONSTRAINT `json.landing_page_translation.custom_fields` CHECK (JSON_VALID(`custom_fields`)),
               CONSTRAINT `fk.landing_page_translation.language_id` FOREIGN KEY (`language_id`)
                 REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,

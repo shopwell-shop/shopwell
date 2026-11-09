@@ -161,12 +161,12 @@
         #}
         {% if config('core.listing.allowBuyInListing') %}
             {% block component_product_box_price_tax_info %}
-                {% set cmsPath = 'frontend.cms.page' %}
+                {% set contentPath = 'frontend.content.page' %}
 
                 <button class="product-price-tax-link btn btn-link-inline fs-6"
                         type="button"
                         data-ajax-modal="true"
-                        data-url="{{ path(cmsPath, { id: config('core.basicInformation.shippingPaymentInfoPage') }) }}"
+                        data-url="{{ path(contentPath, { id: config('core.basicInformation.shippingPaymentInfoPage') }) }}"
                         aria-haspopup="dialog">
                     {% if context.taxState == 'gross' %}
                         {{ 'general.grossTaxInformation'|trans|sw_sanitize }}

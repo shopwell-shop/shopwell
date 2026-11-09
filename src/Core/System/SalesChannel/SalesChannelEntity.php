@@ -15,12 +15,14 @@ use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSalesChannel\PromotionSalesChannelCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopwell\Core\Content\Category\Aggregate\CategoryContentLayout\CategoryContentLayoutCollection;
 use Shopwell\Core\Content\Category\CategoryEntity;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
+use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageContentLayout\LandingPageContentLayoutCollection;
 use Shopwell\Core\Content\LandingPage\LandingPageCollection;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter\MailHeaderFooterEntity;
 use Shopwell\Core\Content\MeasurementSystem\MeasurementUnits;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductContentLayoutCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityCollection;
 use Shopwell\Core\Content\ProductExport\ProductExportCollection;
@@ -72,17 +74,6 @@ class SalesChannelEntity extends Entity
     protected string $navigationCategoryVersionId;
 
     protected int $navigationCategoryDepth;
-
-    /**
-     * @var array<string, mixed>|null
-     */
-    protected ?array $homeSlotConfig = null;
-
-    protected ?string $homeCmsPageId = null;
-
-    protected ?string $homeCmsPageVersionId = null;
-
-    protected ?CmsPageEntity $homeCmsPage = null;
 
     protected bool $homeEnabled;
 
@@ -233,6 +224,12 @@ class SalesChannelEntity extends Entity
     protected MeasurementUnits $measurementUnits;
 
     protected ?string $businessTimeZone = null;
+
+    protected ?ProductContentLayoutCollection $productContentLayouts = null;
+
+    protected ?CategoryContentLayoutCollection $categoryContentLayouts = null;
+
+    protected ?LandingPageContentLayoutCollection $landingPageContentLayouts = null;
 
     public function getMailHeaderFooter(): ?MailHeaderFooterEntity
     {
@@ -607,42 +604,6 @@ class SalesChannelEntity extends Entity
         $this->navigationCategory = $navigationCategory;
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function getHomeSlotConfig(): ?array
-    {
-        return $this->homeSlotConfig;
-    }
-
-    /**
-     * @param array<string, mixed>|null $homeSlotConfig
-     */
-    public function setHomeSlotConfig(?array $homeSlotConfig): void
-    {
-        $this->homeSlotConfig = $homeSlotConfig;
-    }
-
-    public function getHomeCmsPageId(): ?string
-    {
-        return $this->homeCmsPageId;
-    }
-
-    public function setHomeCmsPageId(?string $homeCmsPageId): void
-    {
-        $this->homeCmsPageId = $homeCmsPageId;
-    }
-
-    public function getHomeCmsPage(): ?CmsPageEntity
-    {
-        return $this->homeCmsPage;
-    }
-
-    public function setHomeCmsPage(?CmsPageEntity $homeCmsPage): void
-    {
-        $this->homeCmsPage = $homeCmsPage;
-    }
-
     public function getHomeEnabled(): bool
     {
         return $this->homeEnabled;
@@ -1009,16 +970,6 @@ class SalesChannelEntity extends Entity
         $this->navigationCategoryVersionId = $navigationCategoryVersionId;
     }
 
-    public function getHomeCmsPageVersionId(): ?string
-    {
-        return $this->homeCmsPageVersionId;
-    }
-
-    public function setHomeCmsPageVersionId(?string $homeCmsPageVersionId): void
-    {
-        $this->homeCmsPageVersionId = $homeCmsPageVersionId;
-    }
-
     public function getFooterCategoryVersionId(): ?string
     {
         return $this->footerCategoryVersionId;
@@ -1087,5 +1038,35 @@ class SalesChannelEntity extends Entity
     public function setPaymentSubscriptions(PaymentSubscriptionCollection $paymentSubscriptions): void
     {
         $this->paymentSubscriptions = $paymentSubscriptions;
+    }
+
+    public function getProductContentLayouts(): ?ProductContentLayoutCollection
+    {
+        return $this->productContentLayouts;
+    }
+
+    public function setProductContentLayouts(ProductContentLayoutCollection $productContentLayouts): void
+    {
+        $this->productContentLayouts = $productContentLayouts;
+    }
+
+    public function getCategoryContentLayouts(): ?CategoryContentLayoutCollection
+    {
+        return $this->categoryContentLayouts;
+    }
+
+    public function setCategoryContentLayouts(CategoryContentLayoutCollection $categoryContentLayouts): void
+    {
+        $this->categoryContentLayouts = $categoryContentLayouts;
+    }
+
+    public function getLandingPageContentLayouts(): ?LandingPageContentLayoutCollection
+    {
+        return $this->landingPageContentLayouts;
+    }
+
+    public function setLandingPageContentLayouts(LandingPageContentLayoutCollection $landingPageContentLayouts): void
+    {
+        $this->landingPageContentLayouts = $landingPageContentLayouts;
     }
 }

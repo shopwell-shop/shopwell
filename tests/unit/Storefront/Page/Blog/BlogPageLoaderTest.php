@@ -15,14 +15,13 @@ use Shopwell\Core\Content\Blog\Service\BlogDetailReader;
 use Shopwell\Core\Content\Blog\Service\BlogDetailStruct;
 use Shopwell\Core\Content\Blog\Service\BlogListingReader;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader;
 use Shopwell\Core\Content\Media\MediaCollection;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\ContentSystem\LayoutReference;
+use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\ContentRouteResponse;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Storefront\Page\Blog\BlogDetailPageLoadedEvent;
 use Shopwell\Storefront\Page\Blog\BlogPageLoadedEvent;
@@ -32,7 +31,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The loader is the seam between the core readers and the storefront page: it must not run a query
- * of its own, it must turn a missing cms layout into null instead of an error, and it must dispatch
+ * of its own, it must turn a missing content layout into null instead of an error, and it must dispatch
  * the page loaded event exactly once with the page it is about to return. The meta information is
  * the other visible contract - a category listing is a landing page and needs the seo block of that
  * category, not the label of the chip bar.
@@ -67,7 +66,7 @@ class BlogPageLoaderTest extends TestCase
         $category->metaTitle = 'Guides — the blog';
         $category->metaDescription = 'All guides';
         $category->keywords = 'guides, howto';
-        $category->cmsPageId = 'cms-page-id';
+        $category->contentLayoutId = 'content-layout-id';
         $category->setUniqueIdentifier('category-id');
 
         $listingReader = $this->createMock(BlogListingReader::class);
@@ -80,19 +79,18 @@ class BlogPageLoaderTest extends TestCase
         $listingReader->expects($this->once())
             ->method('layoutOf')
             ->with('category-id', static::isInstanceOf(BlogCategoryCollection::class))
-            ->willReturn('cms-page-id');
+            ->willReturn('content-layout-id');
 
         $settings = static::createStub(BlogSettings::class);
         $settings->method('getPostsPerPage')->willReturn(12);
 
-        $cmsPage = new CmsPageEntity();
-        $cmsPage->setUniqueIdentifier('cms-page-id');
+        $contentPage = ContentPage::fromRenderResult(new RenderResult([], LayoutReference::create('content-layout-id', 'Blog layout', null), null));
 
         $loader = new BlogPageLoader(
             $listingReader,
             static::createStub(BlogDetailReader::class),
             $settings,
-            $this->cmsPageLoader($cmsPage),
+            $this->contentRoute($contentPage),
             $this->eventDispatcher(BlogPageLoadedEvent::class),
         );
 
@@ -104,8 +102,8 @@ class BlogPageLoaderTest extends TestCase
         static::assertSame([$category], array_values($categories->getElements()));
         static::assertSame(['blog-1' => 2, 'blog-2' => 5], $page->getReadingTimes());
         static::assertSame('category-id', $page->getActiveCategoryId());
-        static::assertSame('cms-page-id', $page->getCmsPageId());
-        static::assertSame($cmsPage, $page->getCmsPage());
+        static::assertSame('content-layout-id', $page->getContentLayoutId());
+        static::assertEquals($contentPage, $page->getContentPage());
         static::assertSame(12, $page->getLimit());
         static::assertSame(2, $page->getPageNumber());
         static::assertSame(20, $page->getTotal());
@@ -119,7 +117,7 @@ class BlogPageLoaderTest extends TestCase
         static::assertSame('guides, howto', $meta->getMetaKeywords());
     }
 
-    public function testTheUnfilteredListingNeedsNoCmsLayoutAndFallsBackToTheBlogTitle(): void
+    public function testTheUnfilteredListingNeedsNoContentLayoutAndFallsBackToTheBlogTitle(): void
     {
         $salesChannelContext = Generator::generateSalesChannelContext();
         $request = new Request();
@@ -136,22 +134,22 @@ class BlogPageLoaderTest extends TestCase
         $listingReader->method('categoriesInUse')->willReturn(new BlogCategoryCollection());
         $listingReader->method('layoutOf')->willReturn(null);
 
-        $cmsPageLoader = $this->createMock(SalesChannelCmsPageLoader::class);
-        $cmsPageLoader->expects($this->never())->method('load');
+        $contentRoute = $this->createMock(AbstractContentRoute::class);
+        $contentRoute->expects($this->never())->method('load');
 
         $loader = new BlogPageLoader(
             $listingReader,
             static::createStub(BlogDetailReader::class),
             static::createStub(BlogSettings::class),
-            $cmsPageLoader,
+            $contentRoute,
             $this->eventDispatcher(BlogPageLoadedEvent::class),
         );
 
         $page = $loader->load($request, $salesChannelContext);
 
         static::assertNull($page->getActiveCategoryId());
-        static::assertNull($page->getCmsPageId());
-        static::assertNull($page->getCmsPage());
+        static::assertNull($page->getContentLayoutId());
+        static::assertNull($page->getContentPage());
         $meta = $page->getMetaInformation();
         static::assertNotNull($meta);
         static::assertSame('Blog', $meta->getMetaTitle());
@@ -168,7 +166,7 @@ class BlogPageLoaderTest extends TestCase
         $blog->teaser = 'A teaser';
         $blog->metaTitle = 'A seo headline';
         $blog->keywords = 'headline, blog';
-        $blog->cmsPageId = 'cms-page-id';
+        $blog->contentLayoutId = 'content-layout-id';
 
         $author = new BlogAuthorEntity();
         $author->setUniqueIdentifier('author-id');
@@ -190,14 +188,13 @@ class BlogPageLoaderTest extends TestCase
             ->with('blog-id', $request, $salesChannelContext)
             ->willReturn($detail);
 
-        $cmsPage = new CmsPageEntity();
-        $cmsPage->setUniqueIdentifier('cms-page-id');
+        $contentPage = ContentPage::fromRenderResult(new RenderResult([], LayoutReference::create('content-layout-id', 'Blog layout', null), null));
 
         $loader = new BlogPageLoader(
             static::createStub(BlogListingReader::class),
             $detailReader,
             static::createStub(BlogSettings::class),
-            $this->cmsPageLoader($cmsPage),
+            $this->contentRoute($contentPage),
             $this->eventDispatcher(BlogDetailPageLoadedEvent::class),
         );
 
@@ -205,7 +202,7 @@ class BlogPageLoaderTest extends TestCase
 
         static::assertSame($blog, $page->getBlog());
         static::assertSame($author, $page->getAuthor());
-        static::assertSame($cmsPage, $page->getCmsPage());
+        static::assertEquals($contentPage, $page->getContentPage());
         static::assertSame([['level' => 2, 'id' => 'section-1', 'title' => 'A headline']], $page->getToc());
         static::assertSame('<h2 id="section-1">A headline</h2>', $page->getContent());
         static::assertSame(3, $page->getReadingTimeMinutes());
@@ -238,7 +235,7 @@ class BlogPageLoaderTest extends TestCase
             static::createStub(BlogListingReader::class),
             $detailReader,
             static::createStub(BlogSettings::class),
-            static::createStub(SalesChannelCmsPageLoader::class),
+            static::createStub(AbstractContentRoute::class),
             $this->eventDispatcher(BlogDetailPageLoadedEvent::class),
         );
 
@@ -259,7 +256,7 @@ class BlogPageLoaderTest extends TestCase
             static::createStub(BlogListingReader::class),
             $detailReader,
             static::createStub(BlogSettings::class),
-            static::createStub(SalesChannelCmsPageLoader::class),
+            static::createStub(AbstractContentRoute::class),
             static::createStub(EventDispatcherInterface::class),
         );
 
@@ -277,21 +274,14 @@ class BlogPageLoaderTest extends TestCase
         return $blog;
     }
 
-    private function cmsPageLoader(CmsPageEntity $cmsPage): SalesChannelCmsPageLoader
+    private function contentRoute(ContentPage $contentPage): AbstractContentRoute
     {
-        $loader = static::createStub(SalesChannelCmsPageLoader::class);
-        $loader->method('load')->willReturnCallback(
-            static fn (Request $request, Criteria $criteria, SalesChannelContext $context): EntitySearchResult => new EntitySearchResult(
-                'cms_page',
-                1,
-                new CmsPageCollection([$cmsPage]),
-                null,
-                $criteria,
-                $context->getContext(),
-            )
-        );
+        $route = static::createStub(AbstractContentRoute::class);
+        $route->method('load')->willReturn(new ContentRouteResponse(
+            new RenderResult([], LayoutReference::create($contentPage->id, $contentPage->name, null), null),
+        ));
 
-        return $loader;
+        return $route;
     }
 
     /**

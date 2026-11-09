@@ -107,23 +107,6 @@
     "appScriptConditionId",
     "languageId"
   ],
-  "app_cms_block": [
-    "id",
-    "name",
-    "block",
-    "template",
-    "styles",
-    "appId",
-    "createdAt",
-    "updatedAt"
-  ],
-  "app_cms_block_translation": [
-    "label",
-    "createdAt",
-    "updatedAt",
-    "appCmsBlockId",
-    "languageId"
-  ],
   "app_flow_action": [
     "id",
     "appId",
@@ -308,7 +291,6 @@
     "countries",
     "paymentMethods",
     "shippingMethods",
-    "homeCmsPageId",
     "customerGroupsRegistrations",
     "landingPages",
     "createdAt",
@@ -317,7 +299,6 @@
   ],
   "sales_channel_translation": [
     "name",
-    "homeSlotConfig",
     "homeEnabled",
     "homeName",
     "homeMetaTitle",
@@ -657,7 +638,6 @@
     "visible",
     "active",
     "tags",
-    "cmsPageId",
     "productStreamId",
     "customEntityTypeId",
     "createdAt",
@@ -666,7 +646,6 @@
   "category_translation": [
     "name",
     "breadcrumb",
-    "slotConfig",
     "linkType",
     "internalLink",
     "externalLink",
@@ -762,7 +741,6 @@
     "deliveryTimeId",
     "featureSetId",
     "canonicalProductId",
-    "cmsPageId",
     "price",
     "productNumber",
     "restockTime",
@@ -880,7 +858,6 @@
     "packUnit",
     "packUnitPlural",
     "customSearchKeywords",
-    "slotConfig",
     "createdAt",
     "updatedAt",
     "productId",
@@ -1106,77 +1083,6 @@
     "propertyGroupId",
     "languageId"
   ],
-  "cms_page": [
-    "id",
-    "type",
-    "entity",
-    "cssClass",
-    "config",
-    "previewMediaId",
-    "locked",
-    "createdAt",
-    "updatedAt"
-  ],
-  "cms_page_translation": [
-    "name",
-    "createdAt",
-    "updatedAt",
-    "cmsPageId",
-    "languageId"
-  ],
-  "cms_section": [
-    "id",
-    "position",
-    "type",
-    "locked",
-    "name",
-    "sizingMode",
-    "mobileBehavior",
-    "backgroundColor",
-    "backgroundMediaId",
-    "backgroundMediaMode",
-    "cssClass",
-    "pageId",
-    "visibility",
-    "createdAt",
-    "updatedAt"
-  ],
-  "cms_block": [
-    "id",
-    "position",
-    "type",
-    "locked",
-    "name",
-    "sectionPosition",
-    "marginTop",
-    "marginBottom",
-    "marginLeft",
-    "marginRight",
-    "backgroundColor",
-    "backgroundMediaId",
-    "backgroundMediaMode",
-    "cssClass",
-    "visibility",
-    "sectionId",
-    "createdAt",
-    "updatedAt"
-  ],
-  "cms_slot": [
-    "id",
-    "type",
-    "slot",
-    "locked",
-    "blockId",
-    "createdAt",
-    "updatedAt"
-  ],
-  "cms_slot_translation": [
-    "config",
-    "createdAt",
-    "updatedAt",
-    "cmsSlotId",
-    "languageId"
-  ],
   "mail_template": [
     "id",
     "mailTemplateTypeId",
@@ -1268,7 +1174,6 @@
     "id",
     "active",
     "tags",
-    "cmsPageId",
     "salesChannels",
     "createdAt",
     "updatedAt"
@@ -1276,7 +1181,6 @@
   "landing_page_translation": [
     "name",
     "url",
-    "slotConfig",
     "metaTitle",
     "metaDescription",
     "keywords",

@@ -36,7 +36,6 @@ import addShopwellUpdatesListener from 'src/core/service/shopwell-updates-listen
 import addCustomerGroupRegistrationListener from 'src/core/service/customer-group-registration-listener.service';
 import LocaleHelperService from 'src/app/service/locale-helper.service';
 import FilterService from 'src/app/service/filter.service';
-import AppCmsService from 'src/app/service/app-cms.service';
 import MediaDefaultFolderService from 'src/app/service/media-default-folder.service';
 import AppAclService from 'src/app/service/app-acl.service';
 import ShopwellDiscountCampaignService from 'src/app/service/discount-campaign.service';
@@ -216,11 +215,6 @@ Application.addServiceProvider('feature', () => {
             privileges: Shopwell.Service('privileges'),
             appRepository: Shopwell.Service('repositoryFactory').create('app'),
         });
-    })
-    .addServiceProvider('appCmsService', (container: $TSFixMe) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-        const appCmsBlocksService = container.appCmsBlocks;
-        return new AppCmsService(appCmsBlocksService, adapter);
     })
     .addServiceProvider('shopwellDiscountCampaignService', () => {
         return new ShopwellDiscountCampaignService();

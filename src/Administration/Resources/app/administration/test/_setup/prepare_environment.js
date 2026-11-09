@@ -84,7 +84,6 @@ import CacheService from '../../src/app/service/cache.service';
 setDefaultActiveFeatureFlags([...global.activeFeatureFlags]);
 
 // initialize the Stores
-import '../../src/module/sw-cms/store/cms-page.store';
 import '../../src/app/store/teaser-popover.store';
 import '../../src/app/store/topbar-button.store';
 import '../../src/app/store/admin-menu.store';
@@ -495,9 +494,7 @@ global.allowedErrors = [
         },
     },
     /*
-     * Duplicate registrations will happen, when the root index file of CMS components is imported.
-     * This file has to be imported during tests, since it's usually also registering the same
-     * components to the CMS registries.
+     * Importing a module entry point can register components that a test already loaded.
      */
     {
         method: 'warn',

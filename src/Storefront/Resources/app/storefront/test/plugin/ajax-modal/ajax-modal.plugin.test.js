@@ -87,9 +87,9 @@ describe('AjaxModalPlugin tests', () => {
             <!-- This is the modal trigger -->
             <a
                 data-ajax-modal="true"
-                data-url="/widgets/cms/contact-form-id"
-                data-prev-url="/widgets/cms/prev-id"
-                href="/widgets/cms/contact-form-id"
+                data-url="/widgets/content/contact-form-id"
+                data-prev-url="/widgets/content/prev-id"
+                href="/widgets/content/contact-form-id"
             >
                 Open ajax modal
             </a>
@@ -147,7 +147,7 @@ describe('AjaxModalPlugin tests', () => {
             Promise.resolve({
                 ok: true,
                 text: () => Promise.resolve('Some text'),
-            })
+            }),
         );
 
         await ajaxModalPlugin._loadModalContent(pseudoModalUtil, element);
@@ -181,9 +181,9 @@ describe('AjaxModalPlugin tests', () => {
             <!-- This is the modal trigger -->
             <a
                 data-ajax-modal="true"
-                data-url="/widgets/cms/contact-form-id"
-                data-prev-url="/widgets/cms/prev-id"
-                href="/widgets/cms/contact-form-id"
+                data-url="/widgets/content/contact-form-id"
+                data-prev-url="/widgets/content/prev-id"
+                href="/widgets/content/contact-form-id"
             >
                 Open ajax modal
             </a>
@@ -224,12 +224,12 @@ describe('AjaxModalPlugin tests', () => {
             response,
             loadingIndicatorUtil,
             pseudoModalUtil,
-            document.querySelector('.js-pseudo-modal-template-content-element')
+            document.querySelector('.js-pseudo-modal-template-content-element'),
         );
 
         // Verify back button is rendered at correct location using the <template> as boilerplate
         const renderedBackButton = document.querySelector('.js-pseudo-modal-template-content-element .js-pseudo-modal-back-btn');
-        expect(renderedBackButton.getAttribute('href')).toBe('/widgets/cms/prev-id');
-        expect(renderedBackButton.getAttribute('data-url')).toBe('/widgets/cms/prev-id');
+        expect(renderedBackButton.getAttribute('href')).toBe('/widgets/content/prev-id');
+        expect(renderedBackButton.getAttribute('data-url')).toBe('/widgets/content/prev-id');
     });
 });

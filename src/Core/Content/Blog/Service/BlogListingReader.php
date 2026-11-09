@@ -168,7 +168,7 @@ class BlogListingReader
     }
 
     /**
-     * The cms layout of the listing the visitor filtered for, null when there is none.
+     * The content layout of the listing the visitor filtered for, null when there is none.
      *
      * Resolved from the loaded categories instead of a second query: the chip bar already reads the
      * filtered category, and a page that renders its own listing must not cost an extra round trip.
@@ -183,7 +183,7 @@ class BlogListingReader
 
         foreach ($categories as $category) {
             if ($category->id === $categoryId) {
-                return $category->cmsPageId;
+                return $category->contentLayoutId;
             }
         }
 

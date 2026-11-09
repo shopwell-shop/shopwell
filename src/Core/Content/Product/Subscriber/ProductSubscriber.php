@@ -19,7 +19,6 @@ use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Content\Product\ProductEvents;
 use Shopwell\Core\Content\Product\SalesChannel\Price\AbstractProductPriceCalculator;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
@@ -28,7 +27,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelEntityLoadedEvent;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -47,7 +45,6 @@ class ProductSubscriber implements EventSubscriberInterface
         private readonly AbstractPropertyGroupSorter $propertyGroupSorter,
         private readonly AbstractProductMaxPurchaseCalculator $maxPurchaseCalculator,
         private readonly AbstractIsNewDetector $isNewDetector,
-        private readonly SystemConfigService $systemConfigService,
         private readonly ProductMeasurementUnitBuilder $measurementUnitBuilder,
         private readonly AbstractMeasurementUnitConverter $measurementUnitConverter,
         private readonly RequestStack $requestStack,
@@ -82,8 +79,6 @@ class ProductSubscriber implements EventSubscriberInterface
             if ($isAdminSource) {
                 $this->convertMeasurementUnit($product);
             }
-
-            $this->setDefaultLayout($product);
 
             $this->productVariationBuilder->build($product);
         }
@@ -120,8 +115,6 @@ class ProductSubscriber implements EventSubscriberInterface
             $assigns['measurements'] = $this->measurementUnitBuilder->buildFromContext($product, $event->getSalesChannelContext());
 
             $product->assign($assigns);
-
-            $this->setDefaultLayout($product, $event->getSalesChannelContext()->getSalesChannelId());
 
             $this->productVariationBuilder->build($product);
         }
@@ -230,28 +223,6 @@ class ProductSubscriber implements EventSubscriberInterface
                 'parentIds' => ArrayParameterType::BINARY,
             ]
         );
-    }
-
-    /**
-     * @param Entity $product - typehint as Entity because it could be a ProductEntity or PartialEntity
-     */
-    private function setDefaultLayout(Entity $product, ?string $salesChannelId = null): void
-    {
-        if (!$product->has('cmsPageId')) {
-            return;
-        }
-
-        if ($product->get('cmsPageId') !== null) {
-            return;
-        }
-
-        $cmsPageId = $this->systemConfigService->get(ProductDefinition::CONFIG_KEY_DEFAULT_CMS_PAGE_PRODUCT, $salesChannelId);
-
-        if (!$cmsPageId) {
-            return;
-        }
-
-        $product->assign(['cmsPageId' => $cmsPageId]);
     }
 
     private function convertMeasurementUnit(ProductEntity|PartialEntity $product): void

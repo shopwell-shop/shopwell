@@ -207,9 +207,6 @@ describe('src/module/sw-media/component/sw-media-library/index', () => {
             'avatarUsers',
             'paymentMethods',
             'shippingMethods',
-            'cmsBlocks.section.page',
-            'cmsSections.page',
-            'cmsPages',
         ].forEach((association) => {
             const associationParts = association.split('.');
 
@@ -324,17 +321,6 @@ describe('src/module/sw-media/component/sw-media-library/index', () => {
                 avatarUsers: { limit: 25, 'total-count-mode': 1 },
                 paymentMethods: { limit: 25, 'total-count-mode': 1 },
                 shippingMethods: { limit: 25, 'total-count-mode': 1 },
-                cmsBlocks: {
-                    limit: 25,
-                    associations: expect.any(Object),
-                    'total-count-mode': 1,
-                },
-                cmsSections: {
-                    limit: 25,
-                    associations: expect.any(Object),
-                    'total-count-mode': 1,
-                },
-                cmsPages: { limit: 25, 'total-count-mode': 1 },
             },
             'total-count-mode': 1,
         });
@@ -371,17 +357,6 @@ describe('src/module/sw-media/component/sw-media-library/index', () => {
                 avatarUsers: { limit: 25, 'total-count-mode': 1 },
                 paymentMethods: { limit: 25, 'total-count-mode': 1 },
                 shippingMethods: { limit: 25, 'total-count-mode': 1 },
-                cmsBlocks: {
-                    limit: 25,
-                    associations: expect.any(Object),
-                    'total-count-mode': 1,
-                },
-                cmsSections: {
-                    limit: 25,
-                    associations: expect.any(Object),
-                    'total-count-mode': 1,
-                },
-                cmsPages: { limit: 25, 'total-count-mode': 1 },
             },
             'total-count-mode': 1,
         });

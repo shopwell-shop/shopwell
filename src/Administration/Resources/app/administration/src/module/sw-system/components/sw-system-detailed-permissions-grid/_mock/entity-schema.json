@@ -771,36 +771,6 @@
         "localField": "id",
         "referenceField": "languageId"
       },
-      "cmsPageTranslations": {
-        "type": "association",
-        "relation": "one_to_many",
-        "entity": "cms_page_translation",
-        "flags": {
-          "cascade_delete": true,
-          "read_protected": [
-            [
-              "Shopwell\\Core\\Framework\\Api\\Context\\SalesChannelApiSource"
-            ]
-          ]
-        },
-        "localField": "id",
-        "referenceField": "languageId"
-      },
-      "cmsSlotTranslations": {
-        "type": "association",
-        "relation": "one_to_many",
-        "entity": "cms_slot_translation",
-        "flags": {
-          "cascade_delete": true,
-          "read_protected": [
-            [
-              "Shopwell\\Core\\Framework\\Api\\Context\\SalesChannelApiSource"
-            ]
-          ]
-        },
-        "localField": "id",
-        "referenceField": "languageId"
-      },
       "mailTemplateTranslations": {
         "type": "association",
         "relation": "one_to_many",

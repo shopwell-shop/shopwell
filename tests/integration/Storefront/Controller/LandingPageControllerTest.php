@@ -66,25 +66,6 @@ class LandingPageControllerTest extends TestCase
                     'id' => $salesChannel->getId(),
                 ],
             ],
-            'cmsPage' => [
-                'id' => $this->ids->create('cms-page'),
-                'type' => 'product_list',
-                'sections' => [
-                    [
-                        'position' => 0,
-                        'type' => 'sidebar',
-                        'blocks' => [
-                            [
-                                'type' => 'product-listing',
-                                'position' => 1,
-                                'slots' => [
-                                    ['type' => 'product-listing', 'slot' => 'content'],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
         ];
 
         static::getContainer()->get('landing_page.repository')

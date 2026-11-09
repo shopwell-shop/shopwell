@@ -3,11 +3,16 @@
 namespace Shopwell\Core\Content\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
+use Shopwell\Core\Content\Category\Aggregate\CategoryContentLayout\CategoryContentLayoutDefinition;
+use Shopwell\Core\Content\Category\Aggregate\CategoryContentLayout\CategoryMappingCandidateProvider;
+use Shopwell\Core\Content\Category\Aggregate\CategoryContentLayout\CategorySpecificationSource;
 use Shopwell\Core\Content\Category\Aggregate\CategoryTag\CategoryTagDefinition;
 use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationDefinition;
 use Shopwell\Core\Content\Category\CategoryDefinition;
-use Shopwell\Core\Content\Category\Cms\CategoryNameCmsElementResolver;
-use Shopwell\Core\Content\Category\Cms\CategoryNavigationCmsElementResolver;
+use Shopwell\Core\Content\Category\ContentSystem\DataLoader\NavigationDataLoader;
+use Shopwell\Core\Content\Category\ContentSystem\DataLoader\NavigationLoaderConfigSerializer;
+use Shopwell\Core\Content\Category\ContentSystem\DataLoader\ServiceMenuDataLoader;
+use Shopwell\Core\Content\Category\ContentSystem\DataLoader\ServiceMenuLoaderConfigSerializer;
 use Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryBreadcrumbUpdater;
 use Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryIndexer;
 use Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryNonExistentExceptionHandler;
@@ -21,22 +26,22 @@ use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Category\Service\DefaultCategoryLevelLoader;
 use Shopwell\Core\Content\Category\Service\NavigationLoader;
+use Shopwell\Core\Content\Category\Service\NavigationLoaderInterface;
 use Shopwell\Core\Content\Category\Subscriber\CategorySubscriber;
 use Shopwell\Core\Content\Category\Subscriber\CategoryTreeMovedSubscriber;
 use Shopwell\Core\Content\Category\Tree\CategoryTreePathResolver;
 use Shopwell\Core\Content\Category\Validation\EntryPointValidator;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutContextFactory;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\NavigationAliasResolver;
+use Shopwell\Core\Framework\ContentSystem\Helper\ContentLayoutMetadataDeriver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
-use Shopwell\Core\Framework\Util\HtmlSanitizer;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -101,9 +106,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('sales_channel.category.repository'),
-            service(SalesChannelCmsPageLoader::class),
-            service(EntityCmsSlotConfigInheritanceBuilder::class),
-            service(SalesChannelCategoryDefinition::class),
             service(CacheTagCollector::class),
             service(ExtensionDispatcher::class),
         ]);
@@ -161,9 +163,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CategorySubscriber::class)
         ->args([
-            service(SystemConfigService::class),
             service(CategoryUrlGenerator::class),
-            service(Connection::class),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -176,15 +176,46 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CategoryNonExistentExceptionHandler::class)
         ->tag('shopwell.dal.exception_handler');
 
-    $services->set(CategoryNavigationCmsElementResolver::class)
+    // Content System
+    $services->set(CategoryContentLayoutDefinition::class)
         ->args([
-            service(NavigationLoader::class),
+            service(ContentLayoutMetadataDeriver::class),
         ])
-        ->tag('shopwell.cms.data_resolver');
+        ->tag('shopwell.entity.definition');
 
-    $services->set(CategoryNameCmsElementResolver::class)
+    $services->alias(NavigationLoaderInterface::class, NavigationLoader::class);
+
+    $services->set(NavigationDataLoader::class)
         ->args([
-            service(HtmlSanitizer::class),
+            service(NavigationLoaderInterface::class),
+            service(NavigationAliasResolver::class),
         ])
-        ->tag('shopwell.cms.data_resolver');
+        ->tag('content_system.data_loader');
+
+    $services->set(NavigationLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(ServiceMenuDataLoader::class)
+        ->args([
+            service(NavigationLoaderInterface::class),
+            service(NavigationAliasResolver::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(ServiceMenuLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(CategorySpecificationSource::class)
+        ->args([
+            service('category_content_layout.repository'),
+            service(CategoryContentLayoutDefinition::class),
+            service(EntityLayoutContextFactory::class),
+        ])
+        ->tag('content_system.entity_specification_source', ['priority' => 100]);
+
+    $services->set(CategoryMappingCandidateProvider::class)
+        ->args([
+            service(CategoryContentLayoutDefinition::class),
+        ])
+        ->tag('content_system.mapping_candidate_provider', ['priority' => 100]);
 };

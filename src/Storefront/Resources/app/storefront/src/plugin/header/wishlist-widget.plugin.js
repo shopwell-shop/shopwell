@@ -88,7 +88,7 @@ export default class WishlistWidgetPlugin extends Plugin {
             this._reInitWishlistButton(event.detail.productId);
         });
 
-        const listingEl = document.querySelector('.cms-element-product-listing-wrapper');
+        const listingEl = document.querySelector('.product-listing-wrapper');
 
         if (listingEl) {
             const listingPlugin = window.PluginManager.getPluginInstanceFromElement(listingEl, 'Listing');

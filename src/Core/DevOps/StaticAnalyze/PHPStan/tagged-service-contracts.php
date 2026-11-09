@@ -17,7 +17,6 @@ use Shopwell\Core\Checkout\Gateway\Command\Handler\AbstractCheckoutGatewayComman
 use Shopwell\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\FilterPickerInterface;
 use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\FilterSorterInterface;
-use Shopwell\Core\Content\Cms\DataResolver\Element\CmsElementResolverInterface;
 use Shopwell\Core\Content\Flow\Dispatching\Action\FlowAction;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\FlowStorer;
 use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\AbstractEntitySerializer;
@@ -28,7 +27,6 @@ use Shopwell\Core\Content\Media\Core\Application\AbstractMediaPathStrategy;
 use Shopwell\Core\Content\Media\File\AbstractFileContentValidator;
 use Shopwell\Core\Content\Media\Metadata\MetadataLoader\MetadataLoaderInterface;
 use Shopwell\Core\Content\Media\TypeDetector\TypeDetectorInterface;
-use Shopwell\Core\Content\Product\Cms\ProductSlider\AbstractProductSliderProcessor;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\StockUpdate\AbstractStockUpdateFilter;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\AbstractListingFilterHandler;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Processor\AbstractListingProcessor;
@@ -44,6 +42,15 @@ use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\AdapterFactoryInterface;
 use Shopwell\Core\Framework\Adapter\Twig\NamespaceHierarchy\TemplateNamespaceHierarchyBuilderInterface;
 use Shopwell\Core\Framework\Api\Cors\CorsHeaderProviderInterface;
 use Shopwell\Core\Framework\Api\Sync\AbstractFkResolver;
+use Shopwell\Core\Framework\ContentSystem\Adapter\AbstractSpecificationSource;
+use Shopwell\Core\Framework\ContentSystem\Binding\Loader\AbstractContentSystemBindingSpecificationLoader;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\AbstractContentDataLoader;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\AbstractContentDataLoaderConfigSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Loader\AbstractContentSystemStyleOptionLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Loader\AbstractContentSystemLayoutPresetLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Loader\AbstractContentSystemElementTypeLoader;
+use Shopwell\Core\Framework\ContentSystem\Mapping\Provider\AbstractMappingCandidateProvider;
+use Shopwell\Core\Framework\ContentSystem\Output\Format\AbstractResponseFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -79,6 +86,16 @@ return [
     'parameters' => [
         // Changing a mapped contract class is a backward compatibility break and must not be done in a minor release.
         'shopwellTaggedServiceContractTagContracts' => [
+            'content_system.binding_specification_loader' => AbstractContentSystemBindingSpecificationLoader::class,
+            'content_system.config_serializer' => AbstractContentDataLoaderConfigSerializer::class,
+            'content_system.data_loader' => AbstractContentDataLoader::class,
+            'content_system.entity_specification_source' => AbstractSpecificationSource::class,
+            'content_system.layout_preset_loader' => AbstractContentSystemLayoutPresetLoader::class,
+            'content_system.mapping_candidate_provider' => AbstractMappingCandidateProvider::class,
+            'content_system.output_format' => AbstractResponseFactory::class,
+            'content_system.specification_source' => AbstractSpecificationSource::class,
+            'content_system.style_option_loader' => AbstractContentSystemStyleOptionLoader::class,
+            'content_system.type_loader' => AbstractContentSystemElementTypeLoader::class,
             'document.renderer' => AbstractDocumentRenderer::class,
             'document_type.renderer' => AbstractDocumentTypeRenderer::class,
             'flow.action' => FlowAction::class,
@@ -97,8 +114,6 @@ return [
             'shopwell.cart.processor' => CartProcessorInterface::class,
             'shopwell.cart.validator' => CartValidatorInterface::class,
             'shopwell.checkout.gateway.command' => AbstractCheckoutGatewayCommandHandler::class,
-            'shopwell.cms.data_resolver' => CmsElementResolverInterface::class,
-            'shopwell.cms.product_slider.processor' => AbstractProductSliderProcessor::class,
             'shopwell.dal.exception_handler' => ExceptionHandlerInterface::class,
             'shopwell.demodata_generator' => DemodataGeneratorInterface::class,
             'shopwell.document_v2.provider' => AbstractDocumentDataProvider::class,

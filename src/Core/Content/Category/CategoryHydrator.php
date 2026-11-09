@@ -56,9 +56,6 @@ class CategoryHydrator extends EntityHydrator
         if (isset($row[$root . '.active'])) {
             $entity->active = (bool) $row[$root . '.active'];
         }
-        if (isset($row[$root . '.cmsPageId'])) {
-            $entity->cmsPageId = Uuid::fromBytesToHex($row[$root . '.cmsPageId']);
-        }
         if (isset($row[$root . '.productStreamId'])) {
             $entity->productStreamId = Uuid::fromBytesToHex($row[$root . '.productStreamId']);
         }
@@ -74,7 +71,6 @@ class CategoryHydrator extends EntityHydrator
         }
 
         $entity->media = $this->manyToOne($row, $root, $definition->getField('media'), $context);
-        $entity->cmsPage = $this->manyToOne($row, $root, $definition->getField('cmsPage'), $context);
         $entity->productStream = $this->manyToOne($row, $root, $definition->getField('productStream'), $context);
 
         $this->translate($definition, $entity, $row, $root, $context, $definition->getTranslatedFields());

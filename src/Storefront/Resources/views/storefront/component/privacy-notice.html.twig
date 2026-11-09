@@ -21,7 +21,7 @@
         {% endblock %}
 
         {% block component_privacy_dpi %}
-            {% set cmsPath = 'frontend.cms.page' %}
+            {% set contentPath = 'frontend.content.page' %}
 
             {# @deprecated tag:v6.8.0 - Block "component_privacy_legal_guarantee_notice_paragraph" will be moved out of "component_privacy_dpi", in front of the privacy fieldset. #}
             {% if not feature('v6.8.0.0') %}
@@ -42,9 +42,9 @@
                 {% set privacyNoticeSnippet = requiresTermsOfService ? 'general.privacyNoticeTextModal' : 'contact.privacyNoticeTextModal' %}
 
                 {% set dataProtectionLabel = privacyNoticeSnippet|trans({
-                    '%privacyModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.privacyPage') }) ~ '">',
+                    '%privacyModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(contentPath, { id: config('core.basicInformation.privacyPage') }) ~ '">',
                     '%privacyModalTagClose%': '</button>',
-                    '%tosModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.tosPage') }) ~ '">',
+                    '%tosModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(contentPath, { id: config('core.basicInformation.tosPage') }) ~ '">',
                     '%tosModalTagClose%': '</button>',
                 })|raw %}
 
@@ -61,9 +61,9 @@
                     {% block component_privacy_label %}
                         <div>
                             {{ privacyNoticeSnippet|trans({
-                                '%privacyModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.privacyPage') }) ~ '">',
+                                '%privacyModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(contentPath, { id: config('core.basicInformation.privacyPage') }) ~ '">',
                                 '%privacyModalTagClose%': '</button>',
-                                '%tosModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(cmsPath, { id: config('core.basicInformation.tosPage') }) ~ '">',
+                                '%tosModalTagOpen%': '<button type="button" class="btn btn-link-inline" aria-haspopup="dialog" data-ajax-modal="true" data-url="' ~ path(contentPath, { id: config('core.basicInformation.tosPage') }) ~ '">',
                                 '%tosModalTagClose%': '</button>',
                             })|raw }}
                         </div>

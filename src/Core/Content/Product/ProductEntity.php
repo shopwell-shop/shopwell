@@ -6,7 +6,6 @@ use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlistProduct\CustomerWishlistProductCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopwell\Core\Content\Category\CategoryCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection;
@@ -191,15 +190,6 @@ class ProductEntity extends Entity implements \Stringable
     protected ?ProductCollection $children = null;
 
     protected ?ProductMediaCollection $media = null;
-
-    protected ?string $cmsPageId = null;
-
-    protected ?CmsPageEntity $cmsPage = null;
-
-    /**
-     * @var array<string, array<string, array<string, mixed>>|null>|null
-     */
-    protected ?array $slotConfig = null;
 
     protected ?ProductSearchKeywordCollection $searchKeywords = null;
 
@@ -830,42 +820,6 @@ class ProductEntity extends Entity implements \Stringable
     public function setCover(ProductMediaEntity $cover): void
     {
         $this->cover = $cover;
-    }
-
-    public function getCmsPage(): ?CmsPageEntity
-    {
-        return $this->cmsPage;
-    }
-
-    public function setCmsPage(CmsPageEntity $cmsPage): void
-    {
-        $this->cmsPage = $cmsPage;
-    }
-
-    public function getCmsPageId(): ?string
-    {
-        return $this->cmsPageId;
-    }
-
-    public function setCmsPageId(string $cmsPageId): void
-    {
-        $this->cmsPageId = $cmsPageId;
-    }
-
-    /**
-     * @return array<string, array<string, array<string, mixed>>|null>|null
-     */
-    public function getSlotConfig(): ?array
-    {
-        return $this->slotConfig;
-    }
-
-    /**
-     * @param array<string, array<string, array<string, mixed>>|null> $slotConfig
-     */
-    public function setSlotConfig(array $slotConfig): void
-    {
-        $this->slotConfig = $slotConfig;
     }
 
     public function getParent(): ?ProductEntity

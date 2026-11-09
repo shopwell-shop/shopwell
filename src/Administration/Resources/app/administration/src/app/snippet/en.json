@@ -677,7 +677,6 @@
       "typeLabelOrder": "Order",
       "typeLabelMedia": "Media",
       "typeLabelCategory": "Category",
-      "typeLabelCms": "CMS",
       "typeLabelModule": "Module",
       "typeLabelAction": "Action",
       "addNewEntity": "Add new {entity}",
@@ -689,7 +688,7 @@
         "manufacturer": "G M | A M",
         "settings-rule": "G S R | A R",
         "sales-channel": "&nbsp; | A S",
-        "cms": "G E | A E",
+        "experience-studio": "G E | &nbsp;",
         "dashboard": "G H | &nbsp;",
         "product-stream": "G D | &nbsp;",
         "order": "G O | &nbsp;",
@@ -1065,7 +1064,6 @@
       "custom_field": "Custom field | Custom fields",
       "cart": "Cart | Carts",
       "category": "Category | Categories",
-      "cms_page": "Layout | Layouts",
       "document": "Document | Documents",
       "property": "Property | Properties",
       "country": "Country | Countries",
@@ -1155,7 +1153,8 @@
       "blog_category": "Article category | Article categories",
       "blog_author": "Author | Authors",
       "blog_comment": "Comment | Comments",
-      "blog_video": "Video | Videos"
+      "blog_video": "Video | Videos",
+      "content_layout": "Layout | Layouts"
     },
     "day-of-week": {
       "monday": "Monday",
@@ -1270,7 +1269,8 @@
     },
     "sw-page": {
       "backButton": "Go back"
-    }
+    },
+    "mediaUploadCaption": "Upload an image"
   },
   "sw-text-editor-toolbar": {
     "link": {
@@ -1287,7 +1287,7 @@
       "labelType": "Link-Type",
       "labelLink": "Link",
       "labelProduct": "Product",
-      "labelCategory":"Category",
+      "labelCategory": "Category",
       "labelMedia": "File",
       "labelEmail": "Email address",
       "labelPhoneNumber": "Phone number",
@@ -1370,9 +1370,6 @@
     "buttonVariantSecondary": "Secondary",
     "buttonVariantPrimarySmall": "Primary (small)",
     "buttonVariantSecondarySmall": "Secondary (small)"
-  },
-  "sw-text-editor-toolbar-button-cms-data-mapping": {
-    "label": "Insert variable"
   },
   "sw-tree": {
     "general": {
@@ -1536,8 +1533,6 @@
     "keyboardShortcutAddProduct": "A P",
     "functionAddCategory": "Add category",
     "keyboardShortcutAddCategory": "A C",
-    "functionAddShoppingExperienceLayout": "Add Shopping Experience layout",
-    "keyboardShortcutAddShoppingExperienceLayout": "A E",
     "functionAddCustomer": "Add customer",
     "keyboardShortcutAddCustomer": "A U",
     "functionAddProperties": "Add properties",
@@ -1564,7 +1559,7 @@
     "keyboardShortcutGoToOrders": "G O",
     "functionGoToCustomers": "Open customers",
     "keyboardShortcutGoToCustomers": "G U",
-    "functionGoToShoppingExperience": "Open Shopping Experiences",
+    "functionGoToShoppingExperience": "Open Experience Studio",
     "keyboardShortcutGoToShoppingExperience": "G E",
     "functionGoToMedia": "Open media",
     "keyboardShortcutGoToMedia": "G M E",
@@ -1845,7 +1840,7 @@
     },
     "properties": {
       "transformation": {
-        "label":"Transformation",
+        "label": "Transformation",
         "position": {
           "label": "Position"
         },
@@ -1887,5 +1882,15 @@
         "themeSaveError": "The appearance could not be saved."
       }
     }
+  },
+  "sw-sorting-select": {
+    "labelSort": "Sort by:",
+    "labelSortByNameAsc": "Name, ascending",
+    "labelSortByNameDesc": "Name, descending",
+    "labelSortByCreatedAsc": "Creation date, ascending",
+    "labelSortByCreatedDsc": "Creation date, descending",
+    "labelSortByUpdatedAsc": "Modification date, ascending",
+    "labelSortByUpdatedDsc": "Modification date, descending",
+    "labelSortByAllPages": "All types"
   }
 }

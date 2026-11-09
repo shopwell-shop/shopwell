@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\McpException;
 use Shopwell\Core\Framework\ShopwellHttpException;
 use Shopwell\Core\System\SalesChannel\Exception\NoContextDataException;
+use Shopwell\Core\System\SalesChannel\Exception\SalesChannelRepositoryNotFoundException;
 use Symfony\Component\HttpFoundation\Response;
 
 #[Package('discovery')]
@@ -61,6 +62,11 @@ class SalesChannelException extends HttpException
             'The criteria contains more than {{ limit }} nested criteria.',
             ['limit' => $limit]
         );
+    }
+
+    public static function salesChannelRepositoryNotFound(string $entityName): SalesChannelRepositoryNotFoundException
+    {
+        return new SalesChannelRepositoryNotFoundException($entityName);
     }
 
     public static function salesChannelNotFound(string $salesChannelId): self

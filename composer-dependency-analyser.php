@@ -38,7 +38,6 @@ return $config
     ], [ErrorType::DEV_DEPENDENCY_IN_PROD])
     ->ignoreErrorsOnPaths([
         __DIR__ . '/src/Core/Framework/Demodata/',
-        __DIR__ . '/src/Core/Content/Cms/Command/CreatePageCommand.php',
     ], [ErrorType::SHADOW_DEPENDENCY]) // faker lib via `shopwell/dev-tools`
     ->ignoreErrorsOnPackageAndPaths('symfony/var-dumper', [
         __DIR__ . '/src/Core/Framework/Script/Debugging/ScriptTraces.php',

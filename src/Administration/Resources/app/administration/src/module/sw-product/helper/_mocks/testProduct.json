@@ -11,8 +11,6 @@
   "deliveryTimeId": null,
   "featureSetId": null,
   "canonicalProductId": null,
-  "cmsPageId": null,
-  "cmsPageVersionId": null,
   "price": [
     {
       "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
@@ -95,7 +93,6 @@
   "packUnit": null,
   "packUnitPlural": null,
   "customFields": null,
-  "slotConfig": null,
   "customSearchKeywords": null,
   "cheapestPrice": {
     "hasRange": false,
@@ -129,7 +126,6 @@
     "packUnit": null,
     "packUnitPlural": null,
     "customFields": {},
-    "slotConfig": null,
     "customSearchKeywords": null
   },
   "apiAlias": null,

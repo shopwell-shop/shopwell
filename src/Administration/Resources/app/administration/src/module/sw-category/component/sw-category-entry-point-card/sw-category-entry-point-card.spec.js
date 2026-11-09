@@ -23,7 +23,7 @@ async function createWrapper(category = {}) {
                 'mt-card': {
                     template: '<div class="mt-card"><slot></slot></div>',
                 },
-                'sw-cms-list-item': true,
+
                 'sw-single-select': {
                     template: '<div class="sw-single-select"></div>',
                     props: ['disabled'],

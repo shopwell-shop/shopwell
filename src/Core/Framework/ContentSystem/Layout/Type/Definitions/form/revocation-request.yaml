@@ -1,0 +1,25 @@
+meta:
+  label: "Revocation request form"
+  description: "Displays the revocation request form."
+  icon: "regular-envelope"
+  category: "content"
+  priority: 60
+
+properties:
+  title:
+    type: string
+    required: false
+    translatable: true
+    title: "Title"
+    description: "Optional heading displayed above the form."
+    default: ""
+    adminUI:
+      component: "text-field"
+
+  genders:
+    type: Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection
+    required: false
+    title: "Genders"
+    description: "Translated gender choices loaded for this sales channel."
+    resolvedBy:
+      form_genders: {}

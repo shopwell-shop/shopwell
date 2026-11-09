@@ -1,0 +1,10 @@
+.sw-modal {
+    --bs-modal-header-border-width: 1px;
+    --bs-modal-footer-border-width: 1px;
+    --bs-modal-header-border-color: var(--bs-gray-300);
+    --bs-modal-footer-border-color: var(--bs-gray-300);
+}
+
+.sw-modal__title {
+    font-size: 1.25rem;
+}

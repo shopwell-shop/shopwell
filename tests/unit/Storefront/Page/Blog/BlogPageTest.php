@@ -8,8 +8,10 @@ use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryCollection;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryEntity;
 use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Blog\BlogEntity;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Framework\ContentSystem\LayoutReference;
+use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Storefront\Page\Blog\BlogPage;
 
@@ -33,8 +35,8 @@ class BlogPageTest extends TestCase
         static::assertNull($page->getCoverMedia());
         static::assertSame([], $page->getReadingTimes());
         static::assertNull($page->getActiveCategoryId());
-        static::assertNull($page->getCmsPageId());
-        static::assertNull($page->getCmsPage());
+        static::assertNull($page->getContentLayoutId());
+        static::assertNull($page->getContentPage());
         static::assertSame(1, $page->getPageNumber());
         static::assertSame(0, $page->getTotalPages());
         static::assertSame(0, $page->getTotal());
@@ -64,8 +66,8 @@ class BlogPageTest extends TestCase
         $page->setCoverMedia(new MediaCollection());
         $page->setReadingTimes(['blog-id' => 7]);
         $page->setActiveCategoryId('category-id');
-        $page->setCmsPageId('cms-page-id');
-        $page->setCmsPage(new CmsPageEntity());
+        $page->setContentLayoutId('content-layout-id');
+        $page->setContentPage(ContentPage::fromRenderResult(new RenderResult([], LayoutReference::create('content-layout-id', 'Blog layout', null), null)));
         $page->setPageNumber(3);
         $page->setTotalPages(5);
         $page->setTotal(48);
@@ -82,8 +84,8 @@ class BlogPageTest extends TestCase
         static::assertSame([$category], array_values($categories->getElements()));
         static::assertSame(['blog-id' => 7], $page->getReadingTimes());
         static::assertSame('category-id', $page->getActiveCategoryId());
-        static::assertSame('cms-page-id', $page->getCmsPageId());
-        static::assertInstanceOf(CmsPageEntity::class, $page->getCmsPage());
+        static::assertSame('content-layout-id', $page->getContentLayoutId());
+        static::assertInstanceOf(ContentPage::class, $page->getContentPage());
         static::assertSame(3, $page->getPageNumber());
         static::assertSame(5, $page->getTotalPages());
         static::assertSame(48, $page->getTotal());

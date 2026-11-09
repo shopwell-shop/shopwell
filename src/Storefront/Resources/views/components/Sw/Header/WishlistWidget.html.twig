@@ -1,0 +1,12 @@
+{% props
+    wishlistEnabled = config('core.cart.wishlistEnabled'),
+%}
+
+{% if wishlistEnabled %}
+    <twig:Sw:Header:Widget
+        icon="heart"
+        aria-label="{{ 'header.wishlist'|trans|striptags }}"
+    >
+
+    </twig:Sw:Header:Widget>
+{% endif %}

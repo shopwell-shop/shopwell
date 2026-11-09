@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   markdown-only-changes:
+    if: ${{ vars.SHOPWELL_ACCEPTANCE_TESTS_ENABLED != 'false' }}
     runs-on: ubuntu-24.04
     outputs:
       docs_only: ${{ steps.check.outputs.docs_only }}
@@ -37,7 +38,7 @@ jobs:
   generate-acceptance-matrix:
     needs:
       - markdown-only-changes
-    if: ${{ needs.markdown-only-changes.outputs.docs_only != 'true' }}
+    if: ${{ vars.SHOPWELL_ACCEPTANCE_TESTS_ENABLED != 'false' && (needs.markdown-only-changes.outputs.docs_only != 'true') }}
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
@@ -57,6 +58,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   acceptance:
+    if: ${{ vars.SHOPWELL_ACCEPTANCE_TESTS_ENABLED != 'false' }}
     runs-on: ${{ github.repository == 'shopwell-shop/shopwell-private' && format('runs-on={0}/runner=sw-amd64/cpu=4', github.run_id) || 'ubuntu-24.04' }}
     env:
       V6_8_0_0: ${{ matrix.major && '1' || '' }}
@@ -89,7 +91,7 @@ jobs:
 
   acceptance-code-style:
     name: Acceptance code style
-    if: ${{ inputs.major != 'only' }}
+    if: ${{ vars.SHOPWELL_ACCEPTANCE_TESTS_ENABLED != 'false' && (inputs.major != 'only') }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -123,7 +125,7 @@ jobs:
       id-token: write
     needs:
       - markdown-only-changes
-    if: ${{ needs.markdown-only-changes.outputs.docs_only != 'true' && inputs.major != 'only' }}
+    if: ${{ vars.SHOPWELL_ACCEPTANCE_TESTS_ENABLED != 'false' && (needs.markdown-only-changes.outputs.docs_only != 'true' && inputs.major != 'only') }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -154,7 +156,7 @@ jobs:
   # this is not practical with matrix jobs directly, because you've to specify all permutations
   acceptance-check:
     name: ${{ inputs.major == 'only' && github.event_name == 'pull_request' && 'acceptance-major-check' || 'acceptance-check' }}
-    if: always()
+    if: ${{ vars.SHOPWELL_ACCEPTANCE_TESTS_ENABLED != 'false' && (always()) }}
     needs:
       - acceptance-code-style
       - markdown-only-changes

@@ -53,7 +53,6 @@ import {
 import * as Vue from 'vue';
 import { registerNativeExtensionTargets } from 'src/core/factory/native-extension-targets';
 import type { DefineComponent, Ref } from 'vue';
-import CMS from '../module/sw-cms/constant/sw-cms.constant';
 import CUSTOMER from '../module/sw-customer/constant/sw-customer.constant';
 import FLOW from '../module/sw-flow/constant/flow.constant';
 import InAppPurchase from './in-app-purchase';
@@ -318,7 +317,6 @@ class ShopwellClass implements CustomShopwellProperties {
     };
 
     public Constants: CustomShopwellConstants = {
-        CMS: CMS,
         CUSTOMER: CUSTOMER,
         FLOW: FLOW,
     } as CustomShopwellConstants;

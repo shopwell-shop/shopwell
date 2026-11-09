@@ -535,24 +535,19 @@ class MediaRepositoryTest extends TestCase
 
     public function testItDoesNotDeleteFilesIfMediaHasDeleteRestrictions(): void
     {
-        $cmsPageId = Uuid::randomHex();
         $mediaId = Uuid::randomHex();
         $fileName = $mediaId . '-' . (new \DateTime())->getTimestamp();
-
-        $cmsPageRepository = static::getContainer()->get('cms_page.repository');
-
-        $cmsPageRepository->create([[
-            'id' => $cmsPageId,
-            'name' => 'cms-page',
-            'type' => 'page',
-            'previewMedia' => [
+        $product = (new ProductBuilder(new IdsCollection(), 'download-product'))->price(10)->build();
+        $product['downloads'] = [[
+            'media' => [
                 'id' => $mediaId,
                 'name' => 'test media',
                 'mimeType' => 'image/png',
                 'fileExtension' => 'png',
                 'fileName' => $fileName,
             ],
-        ]], $this->context);
+        ]];
+        static::getContainer()->get('product.repository')->create([$product], $this->context);
 
         $media = $this->mediaRepository->search(new Criteria([$mediaId]), $this->context)->getEntities()->get($mediaId);
         static::assertInstanceOf(MediaEntity::class, $media);
@@ -568,31 +563,7 @@ class MediaRepositoryTest extends TestCase
             $this->mediaRepository->delete([['id' => $mediaId]], $this->context);
             static::fail('asserted DeleteRestrictViolationException');
         } catch (RestrictDeleteViolationException $exception) {
-            static::assertSame(
-                [
-                    'entity' => 'media',
-                    'usagesString' => 'cms_page (1)',
-                    'usages' => [
-                        [
-                            'entityName' => 'cms_page',
-                            'count' => 1,
-                        ],
-                    ],
-                    'metaData' => [
-                        'cms_page' => [
-                            [
-                                'id' => $cmsPageId,
-                                'media' => [
-                                    'id' => $mediaId,
-                                    'fileExtension' => 'png',
-                                    'fileName' => $fileName,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                $exception->getParameters()
-            );
+            static::assertSame('product_download', $exception->getParameters()['usages'][0]['entityName']);
         }
 
         static::assertTrue($this->getPublicFilesystem()->has($mediaUrl));

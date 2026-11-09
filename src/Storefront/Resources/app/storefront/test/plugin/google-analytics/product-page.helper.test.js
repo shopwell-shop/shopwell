@@ -176,7 +176,7 @@ describe('plugin/google-analytics/product-page.helper', () => {
             window.activeRoute = 'frontend.navigation.page';
             document.body.innerHTML = `
                 <nav aria-label="breadcrumb"><span class="breadcrumb-title">Sale</span></nav>
-                <div class="cms-element-product-listing-wrapper">
+                <div class="product-listing-wrapper">
                     <div class="card product-box" data-product-information='{"id":"product-1"}'><button class="buy"></button></div>
                 </div>
             `;
@@ -460,7 +460,7 @@ describe('plugin/google-analytics/product-page.helper', () => {
         test('reports the breadcrumb categories for a product element on a listing', () => {
             document.body.innerHTML = `
                 ${breadcrumb}
-                <div class="cms-element-product-listing-wrapper">
+                <div class="product-listing-wrapper">
                     <div class="card product-box" data-product-information='{"id":"product-1"}'>
                         <button class="buy"></button>
                     </div>
@@ -490,7 +490,7 @@ describe('plugin/google-analytics/product-page.helper', () => {
         test('reports the breadcrumb categories without the element of the interaction', () => {
             document.body.innerHTML = `
                 ${breadcrumb}
-                <div class="cms-element-product-listing-wrapper">
+                <div class="product-listing-wrapper">
                     <div class="card product-box" data-product-information='{"id":"product-1"}'>
                         <div class="product-wishlist-product-1"></div>
                     </div>

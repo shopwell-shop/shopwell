@@ -13,7 +13,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Choice;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -57,7 +56,6 @@ class CategoryTranslationDefinition extends EntityTranslationDefinition
         return new FieldCollection([
             (new StringField('name', 'name'))->addFlags(new ApiAware(), new Required()),
             (new BreadcrumbField())->addFlags(new ApiAware(), new WriteProtected()),
-            new JsonField('slot_config', 'slotConfig'),
             (new StringField('link_type', 'linkType'))->addFlags(new ApiAware(), new Choice([
                 CategoryDefinition::LINK_TYPE_CATEGORY,
                 CategoryDefinition::LINK_TYPE_PRODUCT,

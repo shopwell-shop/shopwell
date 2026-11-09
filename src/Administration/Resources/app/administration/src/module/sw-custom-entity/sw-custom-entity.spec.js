@@ -10,12 +10,11 @@ describe('src/module/sw-custom-entity', () => {
             'sw-generic-custom-entity-detail',
             'sw-generic-custom-entity-list',
             'sw-custom-entity-input-field',
-            'sw-generic-cms-page-assignment',
             'sw-generic-seo-general-card',
             'sw-generic-social-media-card',
         ];
 
-        expect(components.size).toBe(6);
+        expect(components.size).toBe(expectedComponents.length);
         expectedComponents.forEach((expectedComponent) => {
             expect(components.has(expectedComponent)).toBe(true);
         });

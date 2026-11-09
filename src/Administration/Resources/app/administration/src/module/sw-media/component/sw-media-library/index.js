@@ -222,9 +222,6 @@ export default {
                 'avatarUsers',
                 'paymentMethods',
                 'shippingMethods',
-                'cmsBlocks.section.page',
-                'cmsSections.page',
-                'cmsPages',
             ].forEach((association) => {
                 const associationParts = association.split('.');
 

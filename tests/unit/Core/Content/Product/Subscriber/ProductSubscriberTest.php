@@ -7,7 +7,6 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Content\MeasurementSystem\ProductMeasurement\ProductMeasurementEnum;
 use Shopwell\Core\Content\MeasurementSystem\ProductMeasurement\ProductMeasurementUnitBuilder;
 use Shopwell\Core\Content\MeasurementSystem\Unit\AbstractMeasurementUnitConverter;
@@ -21,13 +20,10 @@ use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Content\Product\ProductMaxPurchaseCalculator;
 use Shopwell\Core\Content\Product\ProductVariationBuilder;
 use Shopwell\Core\Content\Product\SalesChannel\Price\AbstractProductPriceCalculator;
-use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
-use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopwell\Core\Content\Product\Subscriber\ProductSubscriber;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEvent;
@@ -39,10 +35,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\Context\LanguageInfo;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelEntityLoadedEvent;
-use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -54,148 +47,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
 #[CoversClass(ProductSubscriber::class)]
 class ProductSubscriberTest extends TestCase
 {
-    private const CONFIG = ProductDefinition::CONFIG_KEY_DEFAULT_CMS_PAGE_PRODUCT;
-
-    #[DataProvider('resolveCmsPageIdProviderWithLoadedEventProvider')]
-    public function testResolveCmsPageIdProviderWithLoadedEvent(Entity $entity, SystemConfigService $config, ?string $expected): void
-    {
-        $subscriber = new ProductSubscriber(
-            static::createStub(ProductVariationBuilder::class),
-            static::createStub(AbstractProductPriceCalculator::class),
-            static::createStub(AbstractPropertyGroupSorter::class),
-            static::createStub(ProductMaxPurchaseCalculator::class),
-            static::createStub(IsNewDetector::class),
-            $config,
-            static::createStub(ProductMeasurementUnitBuilder::class),
-            static::createStub(AbstractMeasurementUnitConverter::class),
-            new RequestStack(),
-            static::createStub(Connection::class)
-        );
-
-        /** @var EntityLoadedEvent<ProductEntity|PartialEntity> $event */
-        $event = new EntityLoadedEvent(
-            static::createStub(ProductDefinition::class),
-            [$entity],
-            Context::createDefaultContext()
-        );
-
-        $subscriber->loaded($event);
-
-        static::assertSame($expected, $entity->get('cmsPageId'));
-    }
-
-    #[DataProvider('resolveCmsPageIdProviderWithSalesChannelLoadedEventProvider')]
-    public function testResolveCmsPageIdProviderWithSalesChannelLoadedEvent(Entity $entity, SystemConfigService $config, ?string $expected): void
-    {
-        $subscriber = new ProductSubscriber(
-            static::createStub(ProductVariationBuilder::class),
-            static::createStub(AbstractProductPriceCalculator::class),
-            static::createStub(AbstractPropertyGroupSorter::class),
-            static::createStub(ProductMaxPurchaseCalculator::class),
-            static::createStub(IsNewDetector::class),
-            $config,
-            static::createStub(ProductMeasurementUnitBuilder::class),
-            static::createStub(AbstractMeasurementUnitConverter::class),
-            new RequestStack(),
-            static::createStub(Connection::class)
-        );
-
-        /** @var SalesChannelEntityLoadedEvent<ProductEntity|PartialEntity> $event */
-        $event = new SalesChannelEntityLoadedEvent(
-            static::createStub(SalesChannelProductDefinition::class),
-            [$entity],
-            static::createStub(SalesChannelContext::class)
-        );
-
-        $subscriber->salesChannelLoaded($event);
-
-        static::assertSame($expected, $entity->get('cmsPageId'));
-    }
-
-    public static function resolveCmsPageIdProviderWithLoadedEventProvider(): \Generator
-    {
-        yield 'It does not set cms page id if no product entity given' => [
-            (new CategoryEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => 'own-id']),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'own-id',
-        ];
-
-        yield 'It does not set cms page id if already given' => [
-            (new ProductEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => 'own-id']),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'own-id',
-        ];
-
-        yield 'It does not set if no default is given' => [
-            (new ProductEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService(),
-            null,
-        ];
-
-        yield 'It sets cms page id if none is given and default is provided' => [
-            (new ProductEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'config-id',
-        ];
-
-        yield 'It does not set cms page id if already given with partial entity' => [
-            (new PartialEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => 'own-id']),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'own-id',
-        ];
-
-        yield 'It does not set if no default is given with partial entity' => [
-            (new PartialEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService(),
-            null,
-        ];
-
-        yield 'It sets cms page id if none is given and default is provided with partial entity' => [
-            (new PartialEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'config-id',
-        ];
-    }
-
-    public static function resolveCmsPageIdProviderWithSalesChannelLoadedEventProvider(): \Generator
-    {
-        yield 'It does not set cms page id if already given' => [
-            (new SalesChannelProductEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => 'own-id']),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'own-id',
-        ];
-
-        yield 'It does not set if no default is given' => [
-            (new SalesChannelProductEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService(),
-            null,
-        ];
-
-        yield 'It sets cms page id if none is given and default is provided' => [
-            (new SalesChannelProductEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'config-id',
-        ];
-
-        yield 'It does not set cms page id if already given with partial entity' => [
-            (new PartialEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => 'own-id']),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'own-id',
-        ];
-
-        yield 'It does not set if no default is given with partial entity' => [
-            (new PartialEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService(),
-            null,
-        ];
-
-        yield 'It sets cms page id if none is given and default is provided with partial entity' => [
-            (new PartialEntity())->assign(['id' => Uuid::randomHex(), 'cmsPageId' => null]),
-            new StaticSystemConfigService([self::CONFIG => 'config-id']),
-            'config-id',
-        ];
-    }
-
     public function testEnsureServicesAreCalled(): void
     {
         $isNewDetector = $this->createMock(IsNewDetector::class);
@@ -219,7 +70,6 @@ class ProductSubscriberTest extends TestCase
             $propertyGroupSorter,
             $maxPurchaseCalculator,
             $isNewDetector,
-            static::createStub(SystemConfigService::class),
             static::createStub(ProductMeasurementUnitBuilder::class),
             static::createStub(AbstractMeasurementUnitConverter::class),
             new RequestStack(),
@@ -276,7 +126,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             $measurementBuilder,
             $measurementUnitConverter,
             $requestStack,
@@ -344,7 +193,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             $measurementUnitBuilder,
             $measurementUnitConverter,
             $requestStack,
@@ -425,7 +273,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             $measurementBuilder,
             $measurementUnitConverter,
             $requestStack,
@@ -554,7 +401,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             $measurementUnitConverter,
             $requestStack,
@@ -608,7 +454,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             $measurementUnitConverter,
             $requestStack,
@@ -672,7 +517,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             $measurementUnitConverter,
             $requestStack,
@@ -711,7 +555,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             $measurementUnitConverter,
             $requestStack,
@@ -761,7 +604,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             $measurementUnitConverter,
             $requestStack,
@@ -849,7 +691,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             $measurementUnitConverter,
             $requestStack,
@@ -881,7 +722,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             static::createStub(AbstractMeasurementUnitConverter::class),
             new RequestStack(),
@@ -915,7 +755,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             static::createStub(AbstractMeasurementUnitConverter::class),
             new RequestStack(),
@@ -963,7 +802,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             static::createStub(AbstractMeasurementUnitConverter::class),
             new RequestStack(),
@@ -1027,7 +865,6 @@ class ProductSubscriberTest extends TestCase
             static::createStub(AbstractPropertyGroupSorter::class),
             static::createStub(ProductMaxPurchaseCalculator::class),
             static::createStub(IsNewDetector::class),
-            new StaticSystemConfigService(),
             static::createStub(ProductMeasurementUnitBuilder::class),
             static::createStub(AbstractMeasurementUnitConverter::class),
             new RequestStack(),

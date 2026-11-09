@@ -1,80 +1,36 @@
+import { shallowMount } from '@vue/test-utils';
+
 /**
  * @sw-package inventory
  */
-
-import { mount } from '@vue/test-utils';
-
-async function createWrapper() {
-    return mount(await wrapTestComponent('sw-product-layout-assignment', { sync: true }), {
-        global: {
-            stubs: {
-                'sw-cms-list-item': true,
-                'sw-cms-reset-inheritance': true,
-            },
-        },
-    });
-}
-
-describe('module/sw-product/component/sw-product-layout-assignment', () => {
+describe('sw-product-layout-assignment', () => {
     let wrapper;
 
-    it('should emit an event when openLayoutModal() function is called', async () => {
-        global.activeAclRoles = [];
-        wrapper = await createWrapper();
-        await flushPromises();
-        wrapper.vm.openLayoutModal();
-
-        const pageChangeEvents = wrapper.emitted()['modal-layout-open'];
-        expect(pageChangeEvents).toHaveLength(1);
+    afterEach(() => {
+        wrapper?.unmount();
     });
 
-    it('should emit an event when openInPageBuilder() function is called', async () => {
-        global.activeAclRoles = [];
-        wrapper = await createWrapper();
-        await flushPromises();
-        wrapper.vm.openInPageBuilder();
+    it.each([true, false])('allows Experience Studio navigation according to its viewer privilege: %s', async (allowed) => {
+        const push = jest.fn();
 
-        const pageChangeEvents = wrapper.emitted()['button-edit-click'];
-        expect(pageChangeEvents).toHaveLength(1);
-    });
-
-    it('should emit an event when onLayoutReset() function is called', async () => {
-        global.activeAclRoles = [];
-        wrapper = await createWrapper();
-        await flushPromises();
-        wrapper.vm.onLayoutReset();
-
-        const pageChangeEvents = wrapper.emitted()['button-delete-click'];
-        expect(pageChangeEvents).toHaveLength(1);
-    });
-
-    it('should not be able to edit layout assignment', async () => {
-        global.activeAclRoles = ['product.viewer'];
-        wrapper = await createWrapper();
-        await flushPromises();
-
-        const cmsItem = wrapper.find('sw-cms-list-item-stub');
-        const buttons = wrapper.findAll('button');
-
-        expect(cmsItem.attributes('disabled')).toBeTruthy();
-        expect(buttons.length).toBeGreaterThan(0);
-
-        buttons.forEach((button) => {
-            expect(button.attributes('disabled')).toBeDefined();
+        wrapper = shallowMount(await wrapTestComponent('sw-product-layout-assignment', { sync: true }), {
+            global: {
+                mocks: { $router: { push } },
+                provide: { acl: { can: (privilege) => allowed && privilege === 'experience_studio.viewer' } },
+                stubs: {
+                    'mt-card': { template: '<section><slot /></section>' },
+                    'mt-button': {
+                        name: 'mt-button',
+                        props: ['disabled'],
+                        template: '<button :disabled="disabled"><slot /></button>',
+                    },
+                },
+            },
         });
-    });
 
-    it('should be able to edit layout assignment', async () => {
-        global.activeAclRoles = ['product.editor'];
-        wrapper = await createWrapper();
+        expect(wrapper.get('button').element.disabled).toBe(!allowed);
+        await wrapper.get('button').trigger('click');
 
-        const cmsItem = wrapper.find('sw-cms-list-item-stub');
-        const buttons = wrapper.findAll('sw-button-stub');
-
-        expect(cmsItem.attributes('disabled')).toBeFalsy();
-
-        buttons.forEach((button) => {
-            expect(button.attributes('disabled')).toBeFalsy();
-        });
+        expect(push.mock.calls).toEqual(allowed ? [[{ name: 'sw.experience.studio.index' }]] : []);
     });
 });

@@ -4,20 +4,9 @@ namespace Shopwell\Tests\Unit\Storefront\Page\LandingPage;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
-use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSection\CmsSectionEntity;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotCollection;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
-use Shopwell\Core\Content\Cms\Exception\PageNotFoundException;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
-use Shopwell\Core\Content\LandingPage\LandingPageException;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRouteResponse;
-use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -55,49 +44,19 @@ class LandingPageLoaderTest extends TestCase
         $landingPageLoader->load($request, $salesChannelContext);
     }
 
-    public function testNoLandingPageException(): void
-    {
-        $landingPageRouteMock = $this->createMock(LandingPageRoute::class);
-        $landingPageRouteMock->expects($this->once())->method('load');
-
-        $landingPageLoader = new LandingPageLoader(
-            static::createStub(GenericPageLoader::class),
-            $landingPageRouteMock,
-            static::createStub(EventDispatcherInterface::class)
-        );
-
-        $landingPageId = Uuid::randomHex();
-        $request = new Request([], [], ['landingPageId' => $landingPageId]);
-        $salesChannelContext = $this->getSalesChannelContext();
-
-        $expectedException = LandingPageException::notFound($landingPageId);
-
-        // @deprecated tag:v6.8.0 - remove this if block
-        if (!Feature::isActive('v6.8.0.0')) {
-            $expectedException = new PageNotFoundException($landingPageId);
-        }
-
-        $this->expectExceptionObject($expectedException);
-        $landingPageLoader->load($request, $salesChannelContext);
-    }
-
     public function testItLoads(): void
     {
-        $productId = Uuid::randomHex();
         $landingPageId = Uuid::randomHex();
         $request = new Request([], [], ['landingPageId' => $landingPageId]);
         $salesChannelContext = $this->getSalesChannelContext();
 
-        $product = $this->getProduct($productId);
-        $cmsPage = $this->getCmsPage($product);
-
-        $landingPageLoader = $this->getLandingPageLoaderWithProduct($landingPageId, $cmsPage, $request, $salesChannelContext);
+        $landingPageLoader = $this->getLandingPageLoaderWithProduct($landingPageId, $request, $salesChannelContext);
 
         $page = $landingPageLoader->load($request, $salesChannelContext);
 
-        $cmsPageLoaded = $page->getLandingPage();
-        static::assertNotNull($cmsPageLoaded);
-        static::assertSame($cmsPage, $cmsPageLoaded->getCmsPage());
+        $loadedLandingPage = $page->getLandingPage();
+        static::assertNotNull($loadedLandingPage);
+        static::assertSame($landingPageId, $loadedLandingPage->getId());
         static::assertSame($landingPageId, $page->getNavigationId());
     }
 
@@ -158,13 +117,11 @@ class LandingPageLoaderTest extends TestCase
 
     private function getLandingPageLoaderWithProduct(
         string $landingPageId,
-        CmsPageEntity $cmsPage,
         Request $request,
         SalesChannelContext $salesChannelContext
     ): LandingPageLoader {
         $landingPage = new LandingPageEntity();
         $landingPage->setId($landingPageId);
-        $landingPage->setCmsPage($cmsPage);
 
         return new LandingPageLoader(
             static::createStub(GenericPageLoader::class),
@@ -182,13 +139,8 @@ class LandingPageLoaderTest extends TestCase
         Request $request,
         SalesChannelContext $salesChannelContext
     ): LandingPageLoader {
-        $productId = Uuid::randomHex();
-        $product = $this->getProduct($productId);
-        $cmsPage = $this->getCmsPage($product);
-
         $landingPage = new LandingPageEntity();
         $landingPage->setId($landingPageId);
-        $landingPage->setCmsPage($cmsPage);
         $landingPage->setTranslated($translated);
         $landingPage->setName('INCORRECT_NAME');
 
@@ -227,14 +179,6 @@ class LandingPageLoaderTest extends TestCase
         return $landingPageRoute;
     }
 
-    private function getProduct(string $productId): SalesChannelProductEntity
-    {
-        $product = new SalesChannelProductEntity();
-        $product->setId($productId);
-
-        return $product;
-    }
-
     private function getSalesChannelContext(): SalesChannelContext
     {
         $salesChannelEntity = new SalesChannelEntity();
@@ -243,26 +187,5 @@ class LandingPageLoaderTest extends TestCase
         return Generator::generateSalesChannelContext(
             salesChannel: $salesChannelEntity,
         );
-    }
-
-    private function getCmsPage(SalesChannelProductEntity $productEntity): CmsPageEntity
-    {
-        $cmsPageEntity = new CmsPageEntity();
-
-        $cmsSectionEntity = new CmsSectionEntity();
-        $cmsSectionEntity->setId(Uuid::randomHex());
-
-        $cmsBlockEntity = new CmsBlockEntity();
-        $cmsBlockEntity->setId(Uuid::randomHex());
-
-        $cmsSlotEntity = new CmsSlotEntity();
-        $cmsSlotEntity->setId(Uuid::randomHex());
-        $cmsSlotEntity->setSlot(json_encode($productEntity->getTranslated(), \JSON_THROW_ON_ERROR));
-
-        $cmsBlockEntity->setSlots(new CmsSlotCollection([$cmsSlotEntity]));
-        $cmsSectionEntity->setBlocks(new CmsBlockCollection([$cmsBlockEntity]));
-        $cmsPageEntity->setSections(new CmsSectionCollection([$cmsSectionEntity]));
-
-        return $cmsPageEntity;
     }
 }

@@ -75,18 +75,8 @@
                         </div>
                     </template>
 
-                    <sw-generic-cms-page-assignment
-                        v-if="activeTabName === 'cms-aware-tab-layout'"
-                        :cms-page-id="customEntityData?.swCmsPageId"
-                        :slot-overrides="customEntityData?.swSlotConfig"
-                        class="sw-generic-custom-entity-detail__tab sw-generic-custom-entity-detail__tab-cms-aware"
-                        @update:cms-page-id="updateCmsPageId"
-                        @update:slot-overrides="updateCmsSlotOverwrites"
-                        @create-layout="onCreateLayout"
-                    />
-
                     <template
-                        v-else-if="activeTabName === 'cms-aware-tab-seo'"
+                        v-if="activeTabName === 'seo-tab'"
                     >
                         <sw-generic-seo-general-card
                             :seo-meta-title="customEntityData?.swSeoMetaTitle"
@@ -129,18 +119,9 @@
                         </sw-tabs-item>
 
                         <sw-tabs-item
-                            v-if="customEntityDataDefinition?.flags?.['cms-aware']"
+                            v-if="customEntityDataDefinition?.properties?.swSeoMetaTitle"
                             class="sw-generic-custom-entity-detail__tab-item"
-                            name="cms-aware-tab-layout"
-                            :active-tab="active"
-                        >
-                            {{ $t('sw-custom-entity.detail.tabs.layout') }}
-                        </sw-tabs-item>
-
-                        <sw-tabs-item
-                            v-if="customEntityDataDefinition?.flags?.['cms-aware']"
-                            class="sw-generic-custom-entity-detail__tab-item"
-                            name="cms-aware-tab-seo"
+                            name="seo-tab"
                             :active-tab="active"
                         >
                             {{ $t('sw-custom-entity.detail.tabs.seo') }}
@@ -179,18 +160,8 @@
                             </div>
                         </template>
 
-                        <sw-generic-cms-page-assignment
-                            v-if="active === 'cms-aware-tab-layout'"
-                            :cms-page-id="customEntityData?.swCmsPageId"
-                            :slot-overrides="customEntityData?.swSlotConfig"
-                            class="sw-generic-custom-entity-detail__tab sw-generic-custom-entity-detail__tab-cms-aware"
-                            @update:cms-page-id="updateCmsPageId"
-                            @update:slot-overrides="updateCmsSlotOverwrites"
-                            @create-layout="onCreateLayout"
-                        />
-
                         <template
-                            v-else-if="active === 'cms-aware-tab-seo'"
+                            v-if="active === 'seo-tab'"
                         >
                             <sw-generic-seo-general-card
                                 :seo-meta-title="customEntityData?.swSeoMetaTitle"

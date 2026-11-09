@@ -4,8 +4,8 @@ namespace Shopwell\Storefront\Page\Blog;
 
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryCollection;
 use Shopwell\Core\Content\Blog\BlogCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Storefront\Page\Page;
 
@@ -44,19 +44,19 @@ class BlogPage extends Page
     protected ?string $activeCategoryId = null;
 
     /**
-     * The cms layout of the listing, null when the merchant built none.
+     * The content layout of the listing, null when the merchant built none.
      *
      * The layout hangs on the category and not on the shop: "Guides" may be a magazine style grid
      * while "Company news" is a plain list. The listing without a filter has no category and therefore
-     * no layout of its own - it falls back to the twig listing, which is the same template a cms
+     * no layout of its own - it falls back to the twig listing, which is the same template a content
      * element renders.
      */
-    protected ?string $cmsPageId = null;
+    protected ?string $contentLayoutId = null;
 
     /**
      * The resolved layout of the filtered category, null when the merchant built none.
      */
-    protected ?CmsPageEntity $cmsPage = null;
+    protected ?ContentPage $contentPage = null;
 
     protected int $pageNumber = 1;
 
@@ -106,30 +106,30 @@ class BlogPage extends Page
     }
 
     /**
-     * The cms layout of the filtered category, null for the unfiltered listing and for a category
+     * The content layout of the filtered category, null for the unfiltered listing and for a category
      * without a layout of its own.
      */
-    public function getCmsPageId(): ?string
+    public function getContentLayoutId(): ?string
     {
-        return $this->cmsPageId;
+        return $this->contentLayoutId;
     }
 
-    public function setCmsPageId(?string $cmsPageId): void
+    public function setContentLayoutId(?string $contentLayoutId): void
     {
-        $this->cmsPageId = $cmsPageId;
+        $this->contentLayoutId = $contentLayoutId;
     }
 
     /**
      * The layout the merchant built for the filtered category, null for the twig listing.
      */
-    public function getCmsPage(): ?CmsPageEntity
+    public function getContentPage(): ?ContentPage
     {
-        return $this->cmsPage;
+        return $this->contentPage;
     }
 
-    public function setCmsPage(?CmsPageEntity $cmsPage): void
+    public function setContentPage(?ContentPage $contentPage): void
     {
-        $this->cmsPage = $cmsPage;
+        $this->contentPage = $contentPage;
     }
 
     public function getCoverMedia(): ?MediaCollection

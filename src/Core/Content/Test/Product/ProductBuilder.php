@@ -4,7 +4,6 @@ namespace Shopwell\Core\Content\Test\Product;
 
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\ProductDefinition;
-use Shopwell\Core\Content\Test\Cms\LayoutBuilder;
 use Shopwell\Core\Content\Test\TestProductSeoUrlRoute;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
@@ -140,11 +139,6 @@ class ProductBuilder
     protected array $media = [];
 
     protected ?string $coverId = null;
-
-    /**
-     * @var array{id: string}|array<mixed>|null
-     */
-    protected ?array $cmsPage = null;
 
     /**
      * @var CrossSellings
@@ -592,46 +586,6 @@ class ProductBuilder
         ];
 
         $this->coverId = $this->ids->get($key);
-
-        return $this;
-    }
-
-    public function layout(string $key): self
-    {
-        if ($this->ids->has($key)) {
-            $this->cmsPage = ['id' => $this->ids->get($key)];
-
-            return $this;
-        }
-
-        $this->cmsPage = (new LayoutBuilder($this->ids, $key, 'detailpage'))
-            ->productHeading()
-            ->galleryBuybox()
-            ->descriptionReviews()
-            ->crossSelling()
-            ->build();
-
-        return $this;
-    }
-
-    /**
-     * @param array<mixed> $value
-     */
-    public function slot(string $key, array $value, string $languageId = Defaults::LANGUAGE_SYSTEM): self
-    {
-        if (isset($this->translations[$languageId]['slotConfig']) && \is_array($this->translations[$languageId]['slotConfig'])) {
-            $slotConfig = $this->translations[$languageId]['slotConfig'];
-        } else {
-            $slotConfig = [];
-        }
-
-        $slotConfig[$this->ids->get($key)] = $value;
-
-        $this->translation(
-            $languageId,
-            'slotConfig',
-            $slotConfig
-        );
 
         return $this;
     }

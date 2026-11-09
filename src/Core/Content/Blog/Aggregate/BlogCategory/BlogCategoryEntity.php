@@ -10,7 +10,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
-use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ReferenceVersion;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Translations;
@@ -104,15 +103,8 @@ class BlogCategoryEntity extends EntityStruct
      * The layout of the listing belongs here and not to a global configuration: two categories of the
      * same blog may want different densities, and a shop wide switch would force one on both.
      */
-    #[ForeignKey(entity: 'cms_page', api: ['admin-api' => true, 'store-api' => true])]
-    public ?string $cmsPageId = null;
-
-    /**
-     * The layout is version aware, so a reference into it always spans id and version - `cms_page` is
-     * keyed by (id, version_id) and MySQL 8.4 rejects a foreign key that references only part of it.
-     */
-    #[ReferenceVersion(entity: 'cms_page')]
-    public ?string $cmsPageVersionId = null;
+    #[ForeignKey(entity: 'content_layout', api: ['admin-api' => true, 'store-api' => true])]
+    public ?string $contentLayoutId = null;
 
     /**
      * The translated columns of the category, one row per language.

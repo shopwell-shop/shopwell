@@ -394,7 +394,7 @@
             <xs:enumeration value="category"/>
             <xs:enumeration value="promotion"/>
             <xs:enumeration value="customer"/>
-            <xs:enumeration value="cms_page"/>
+            <xs:enumeration value="content_layout"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="option-collection">

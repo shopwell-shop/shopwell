@@ -17,7 +17,7 @@ modulesToCreate.set('sw-mail-template', {
     icon: 'regular-cog',
     entity: 'mail_template',
 });
-modulesToCreate.set('sw-cms', { icon: 'regular-image-text', entity: 'cms_page' });
+modulesToCreate.set('sw-experience-studio', { icon: 'regular-image-text', entity: 'content_layout' });
 
 Array.from(modulesToCreate.keys()).forEach((moduleName) => {
     const currentModuleValues = modulesToCreate.get(moduleName);
@@ -58,7 +58,7 @@ async function createWrapper(defaultFolderId, privileges = []) {
                     };
                 case ID_CONTENT_FOLDER:
                     return {
-                        entity: 'cms_page',
+                        entity: 'content_layout',
                         isNew: () => false,
                     };
                 case ID_MAILTEMPLATE_FOLDER:
@@ -80,7 +80,7 @@ async function createWrapper(defaultFolderId, privileges = []) {
                 defaultFolderId: defaultFolderId,
                 parentId: null,
                 childCount: 0,
-                name: 'Cms Page Media',
+                name: 'Content Layout Media',
                 customFields: null,
                 createdAt: '2020-06-03T09:44:51+00:00',
                 updatedAt: null,
@@ -172,7 +172,7 @@ describe('components/media/sw-media-folder-item', () => {
     it.each([
         ['product module', ID_PRODUCTS_FOLDER],
         ['mail template module', ID_MAILTEMPLATE_FOLDER],
-        ['cms module', ID_CONTENT_FOLDER],
+        ['content layout module', ID_CONTENT_FOLDER],
         ['fallback', undefined],
     ])('should use the blue folder thumbnail for %s', async (_, defaultFolderId) => {
         const wrapper = await createWrapper(defaultFolderId);

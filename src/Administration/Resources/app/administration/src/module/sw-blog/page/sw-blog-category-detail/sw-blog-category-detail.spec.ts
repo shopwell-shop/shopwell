@@ -15,7 +15,7 @@ const category = {
     slug: 'guides',
     description: null,
     active: true,
-    cmsPageId: 'page-1',
+    contentLayoutId: 'page-1',
 };
 
 const entries = [
@@ -41,7 +41,7 @@ async function createWrapper(
     getCategory: jest.Mock;
     saveCategory: jest.Mock;
     deleteCategory: jest.Mock;
-    getCmsPage: jest.Mock;
+    getContentLayout: jest.Mock;
     push: jest.Mock;
 }> {
     const { can = () => true, entry = category, hasChanges = false } = options;
@@ -49,7 +49,7 @@ async function createWrapper(
     const getCategory = jest.fn(() => Promise.resolve({ ...entry }));
     const saveCategory = jest.fn(() => Promise.resolve());
     const deleteCategory = jest.fn(() => Promise.resolve());
-    const getCmsPage = jest.fn(() => Promise.resolve({ id: 'page-1', versionId: 'version-1' }));
+    const getContentLayout = jest.fn(() => Promise.resolve({ id: 'page-1', versionId: 'version-1' }));
     const push = jest.fn(() => Promise.resolve());
 
     const categoryRepository = {
@@ -62,9 +62,9 @@ async function createWrapper(
         },
     };
 
-    const cmsPageRepository = {
-        get: getCmsPage,
-        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'cms_page'>>([]))),
+    const contentLayoutRepository = {
+        get: getContentLayout,
+        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'content_layout'>>([]))),
     };
 
     const blogRepository = {
@@ -112,8 +112,8 @@ async function createWrapper(
             provide: {
                 repositoryFactory: {
                     create: (entityName: string) => {
-                        if (entityName === 'cms_page') {
-                            return cmsPageRepository;
+                        if (entityName === 'content_layout') {
+                            return contentLayoutRepository;
                         }
 
                         if (entityName === 'blog') {
@@ -142,7 +142,7 @@ async function createWrapper(
         getCategory,
         saveCategory,
         deleteCategory,
-        getCmsPage,
+        getContentLayout,
         push,
     };
 }
@@ -162,7 +162,7 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
 
         expect(criteria.ids).toEqual(['category-1']);
         expect((wrapper.get('.sw-blog-category-detail__name').element as HTMLInputElement).value).toBe('Guides');
-        expect((wrapper.get('.sw-blog-category-detail__cms-page').element as HTMLInputElement).value).toBe('page-1');
+        expect((wrapper.get('.sw-blog-category-detail__content-layout').element as HTMLInputElement).value).toBe('page-1');
         expect(wrapper.find('.sw-blog-category-detail__loading').exists()).toBe(false);
     });
 
@@ -173,9 +173,7 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         await wrapper.get('.sw-blog-category-detail__action-save').trigger('click');
         await flushPromises();
 
-        expect(saveCategory).toHaveBeenCalledWith(
-            expect.objectContaining({ id: 'category-1', cmsPageVersionId: 'version-1' }),
-        );
+        expect(saveCategory).toHaveBeenCalledWith(expect.objectContaining({ id: 'category-1', contentLayoutId: 'page-1' }));
 
         // the page reloads the saved state instead of returning to the list
         expect(getCategory).toHaveBeenCalledTimes(2);

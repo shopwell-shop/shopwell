@@ -16,8 +16,7 @@ async function createWrapper() {
             homeMetaTitle: '',
             homeMetaDescription: '',
             homeKeywords: '',
-            homeCmsPageId: '',
-            homeCmsPage: null,
+
             translated: {
                 name: '',
             },
@@ -43,35 +42,10 @@ async function createWrapper() {
                     'sw-single-select': true,
                     'sw-textarea-field': true,
                     'mt-textarea': true,
-                    'sw-cms-list-item': true,
 
-                    'sw-cms-layout-modal': true,
                     'sw-discard-changes-modal': true,
                 },
-                provide: {
-                    cmsPageTypeService: {
-                        getTypes: () => {
-                            return [
-                                {
-                                    name: 'page',
-                                    title: 'page',
-                                },
-                                {
-                                    name: 'landingpage',
-                                    title: 'landingpage',
-                                },
-                                {
-                                    name: 'product_list',
-                                    title: 'product_list',
-                                },
-                                {
-                                    name: 'product_detail',
-                                    title: 'product_detail',
-                                },
-                            ];
-                        },
-                    },
-                },
+                provide: {},
             },
             props: {
                 salesChannelCollection,
@@ -93,7 +67,6 @@ describe('src/module/sw-category/component/sw-category-entry-point-modal', () =>
         expect(
             wrapper.find('.sw-category-entry-point-modal__show-in-main-navigation').attributes().disabled,
         ).toBeUndefined();
-        expect(wrapper.find('.sw-category-entry-point-modal__layout-item').attributes().disabled).toBeUndefined();
         expect(wrapper.find('.sw-category-entry-point-modal__meta-title').attributes().disabled).toBeUndefined();
         expect(wrapper.find('.sw-category-entry-point-modal__meta-description').attributes().disabled).toBeUndefined();
         expect(wrapper.find('.sw-category-entry-point-modal__seo-keywords').attributes().disabled).toBeUndefined();
@@ -103,7 +76,6 @@ describe('src/module/sw-category/component/sw-category-entry-point-modal', () =>
         const wrapper = await createWrapper();
 
         expect(wrapper.findComponent('.sw-category-entry-point-modal__name-in-main-navigation').props().disabled).toBe(true);
-        expect(wrapper.find('.sw-category-entry-point-modal__layout-item').attributes().disabled).toBe('true');
         expect(wrapper.findComponent('.sw-category-entry-point-modal__meta-title').props().disabled).toBe(true);
         expect(wrapper.find('.sw-category-entry-point-modal__meta-description').attributes().disabled).toBe('true');
         expect(wrapper.findComponent('.sw-category-entry-point-modal__seo-keywords').props().disabled).toBe(true);

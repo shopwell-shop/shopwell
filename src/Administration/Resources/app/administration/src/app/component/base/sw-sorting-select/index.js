@@ -38,27 +38,27 @@ export default {
             return [
                 {
                     value: 'name:ASC',
-                    name: this.$t('sw-cms.sorting.labelSortByNameAsc'),
+                    name: this.$t('sw-sorting-select.labelSortByNameAsc'),
                 },
                 {
                     value: 'name:DESC',
-                    name: this.$t('sw-cms.sorting.labelSortByNameDesc'),
+                    name: this.$t('sw-sorting-select.labelSortByNameDesc'),
                 },
                 {
                     value: 'createdAt:DESC',
-                    name: this.$t('sw-cms.sorting.labelSortByCreatedDsc'),
+                    name: this.$t('sw-sorting-select.labelSortByCreatedDsc'),
                 },
                 {
                     value: 'createdAt:ASC',
-                    name: this.$t('sw-cms.sorting.labelSortByCreatedAsc'),
+                    name: this.$t('sw-sorting-select.labelSortByCreatedAsc'),
                 },
                 {
                     value: 'updatedAt:DESC',
-                    name: this.$t('sw-cms.sorting.labelSortByUpdatedDsc'),
+                    name: this.$t('sw-sorting-select.labelSortByUpdatedDsc'),
                 },
                 {
                     value: 'updatedAt:ASC',
-                    name: this.$t('sw-cms.sorting.labelSortByUpdatedAsc'),
+                    name: this.$t('sw-sorting-select.labelSortByUpdatedAsc'),
                 },
                 ...this.additionalSortOptions,
             ];

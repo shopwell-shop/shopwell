@@ -4,12 +4,10 @@ namespace Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Test\Product\ProductBuilder;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
@@ -168,45 +166,28 @@ class VersionManagerTest extends TestCase
     public function testMergeKeepsInsertOperationForEntityCreatedAndUpdatedInVersion(): void
     {
         $context = Context::createDefaultContext();
-
-        $pageRepository = static::getContainer()->get('cms_page.repository');
-        $versionRepository = static::getContainer()->get('version.repository');
-
         $versionId = Uuid::randomHex();
-        $pageId = Uuid::randomHex();
-
-        $versionRepository->create([['id' => $versionId]], $context);
+        $id = Uuid::randomHex();
+        static::getContainer()->get('version.repository')->create([['id' => $versionId]], $context);
         $versionContext = $context->createWithVersionId($versionId);
-
-        $pageRepository->create([[
-            'id' => $pageId,
-            'type' => 'landingpage',
-        ]], $versionContext);
-
-        $pageRepository->update([[
-            'id' => $pageId,
-            'cssClass' => 'updated',
-        ]], $versionContext);
-
-        $pageWriteResult = null;
-
+        $product = (new ProductBuilder($this->ids, 'version-insert-product'))->price(10)->build();
+        $product['id'] = $id;
+        $this->productRepository->create([$product], $versionContext);
+        $this->productRepository->update([['id' => $id, 'name' => 'Updated product']], $versionContext);
+        $writeResult = null;
         EventHookDispatcher::fromContainer(static::getContainer())->on(
-            'cms_page.written',
-            static function (EntityWrittenEvent $event) use (&$pageWriteResult, $pageId): void {
-                foreach ($event->getWriteResults() as $writeResult) {
-                    if ($writeResult->getPrimaryKey() !== $pageId) {
-                        continue;
+            'product.written',
+            static function (EntityWrittenEvent $event) use (&$writeResult, $id): void {
+                foreach ($event->getWriteResults() as $result) {
+                    if ($result->getPrimaryKey() === $id) {
+                        $writeResult = $result;
                     }
-
-                    $pageWriteResult = $writeResult;
                 }
-            }
+            },
         );
-
-        $pageRepository->merge($versionId, $context);
-
-        static::assertInstanceOf(EntityWriteResult::class, $pageWriteResult);
-        static::assertSame(EntityWriteResult::OPERATION_INSERT, $pageWriteResult->getOperation());
+        $this->productRepository->merge($versionId, $context);
+        static::assertInstanceOf(EntityWriteResult::class, $writeResult);
+        static::assertSame(EntityWriteResult::OPERATION_INSERT, $writeResult->getOperation());
     }
 
     public function testWhenNotAddingFKThenItShouldNotBeAvailable(): void
@@ -229,88 +210,6 @@ class VersionManagerTest extends TestCase
         static::assertInstanceOf(EntityWriteResult::class, $clonedProduct);
         $clonedManyToOne = $clonedProduct->getPayload();
         static::assertArrayNotHasKey('manyToOneId', $clonedManyToOne);
-    }
-
-    public function testMergeActionCleansUpSlotsReferencingDeletedBlocks(): void
-    {
-        $context = Context::createDefaultContext();
-        $versionManager = static::getContainer()->get(VersionManager::class);
-
-        $pageRepository = static::getContainer()->get('cms_page.repository');
-        $sectionRepository = static::getContainer()->get('cms_section.repository');
-        $blockRepository = static::getContainer()->get('cms_block.repository');
-        $slotRepository = static::getContainer()->get('cms_slot.repository');
-
-        $pageId = Uuid::randomHex();
-        $sectionId = Uuid::randomHex();
-        $blockId = Uuid::randomHex();
-        $slotId = Uuid::randomHex();
-
-        // Create CMS Page
-        $pageRepository->upsert([[
-            'id' => $pageId,
-            'type' => 'landingpage',
-        ]], $context);
-
-        // Create a draft version for the CMS Page
-        $pageDefinition = static::getContainer()
-            ->get(DefinitionInstanceRegistry::class)
-            ->getByEntityName('cms_page');
-        $writeContext = WriteContext::createFromContext($context);
-
-        $draftVersionId = $versionManager->createVersion($pageDefinition, $pageId, $writeContext);
-        $draftContext = $context->createWithVersionId($draftVersionId);
-
-        // Create a CMS Section in the draft version
-        $sectionRepository->upsert([[
-            'id' => $sectionId,
-            'pageId' => $pageId,
-            'cmsPageVersionId' => $draftVersionId,
-            'type' => 'default',
-            'position' => 1,
-        ]], $draftContext);
-
-        // Create a CMS Block in the draft version with a slot
-        $blockRepository->upsert([[
-            'id' => $blockId,
-            'type' => 'default',
-            'position' => 1,
-            'sectionId' => $sectionId,
-            'sectionVersionId' => $draftVersionId,
-            'slots' => [[
-                'id' => $slotId,
-                'type' => 'text',
-                'slot' => 'content',
-                'position' => 1,
-            ]],
-        ]], $draftContext);
-
-        // Verify draft version
-        $criteria = (new Criteria([$blockId]))->addAssociation('slots');
-        $draftBlock = $blockRepository->search($criteria, $draftContext)->getEntities()->first();
-
-        static::assertInstanceOf(CmsBlockEntity::class, $draftBlock);
-        static::assertNotNull($draftBlock->getSlots(), 'Block should have slots in draft version.');
-        static::assertNotCount(0, $draftBlock->getSlots(), 'Block should have slots in draft version.');
-
-        // Delete block to trigger cleanupSlotsReferencingDeletedBlocks()
-        $blockRepository->delete([['id' => $blockId, 'versionId' => $draftVersionId]], $draftContext);
-
-        $slotsInDraft = $slotRepository->search(new Criteria([$slotId]), $draftContext);
-        static::assertCount(0, $slotsInDraft->getEntities(), 'Slots should be removed when block is deleted.');
-
-        $versionManager->merge($draftVersionId, WriteContext::createFromContext($context));
-
-        // Verify that deleted block is not in the live version
-        $mergedBlock = $blockRepository->search(
-            (new Criteria([$blockId]))->addAssociation('slots'),
-            $context
-        )->getEntities()->first();
-
-        static::assertNull($mergedBlock, 'Deleted block should not exist in the live version.');
-
-        $slotsInLive = $slotRepository->search(new Criteria([$slotId]), $context);
-        static::assertCount(0, $slotsInLive->getEntities(), 'Deleted block’s slots should also be removed in live version.');
     }
 
     private function registerEntityDefinitionAndInitDatabase(): void

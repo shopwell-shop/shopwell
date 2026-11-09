@@ -208,25 +208,17 @@
                 >
                     {% block sw_blog_detail_content_layout_select %}
                     <sw-entity-single-select
-                        v-model:value="blog.cmsPageId"
-                        class="sw-blog-detail__cms-page"
-                        entity="cms_page"
-                        :criteria="cmsPageOptionsCriteria"
+                        v-model:value="blog.contentLayoutId"
+                        class="sw-blog-detail__content-layout"
+                        entity="content_layout"
+                        :criteria="contentLayoutOptionsCriteria"
                         :disabled="!canEdit"
-                        :label="$t('sw-blog.detail.labelCmsPage')"
-                        :placeholder="$t('sw-blog.detail.placeholderCmsPage')"
-                        :help-text="$t('sw-blog.detail.helpTextCmsPage')"
-                        @update:value="onCmsPageChanged"
+                        :label="$t('sw-blog.detail.labelContentLayout')"
+                        :placeholder="$t('sw-blog.detail.placeholderContentLayout')"
+                        :help-text="$t('sw-blog.detail.helpTextContentLayout')"
                     />
                     {% endblock %}
 
-                    {% block sw_blog_detail_content_layout_form %}
-                    <sw-cms-page-form
-                        v-if="cmsPage"
-                        class="sw-blog-detail__cms-page-form"
-                        :page="cmsPage"
-                    />
-                    {% endblock %}
                 </mt-card>
                 {% endblock %}
             </div>

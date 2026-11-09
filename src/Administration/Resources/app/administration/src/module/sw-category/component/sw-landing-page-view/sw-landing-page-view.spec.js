@@ -17,14 +17,6 @@ async function createWrapper({
         id: landingPageIdMock,
     };
 
-    Shopwell.Store.unregister('cmsPage');
-    Shopwell.Store.register({
-        id: 'cmsPage',
-        state: () => ({
-            currentPage: undefined,
-        }),
-    });
-
     return mount(await wrapTestComponent('sw-landing-page-view', { sync: true }), {
         global: {
             stubs: {
@@ -126,28 +118,28 @@ describe('src/module/sw-category/component/sw-landing-page-view', () => {
     it('should keep the fallback tab route contract', async () => {
         const wrapper = await createWrapper();
         const generalTab = wrapper.getComponent('.sw-category-detail__tab-base');
-        const cmsTab = wrapper.getComponent('.sw-landing-page-detail__tab-cms');
+        const layoutTab = wrapper.getComponent('.sw-landing-page-detail__tab-layout');
 
         expect(generalTab.props('route')).toStrictEqual({ name: 'sw.category.landingPageDetail.base' });
         expect(generalTab.props('title')).toBe('sw-landing-page.view.general');
         expect(generalTab.text()).toBe('sw-landing-page.view.general');
 
-        expect(cmsTab.props('route')).toStrictEqual({ name: 'sw.category.landingPageDetail.cms' });
-        expect(cmsTab.props('title')).toBe('sw-landing-page.view.cms');
-        expect(cmsTab.props('disabled')).toBe(false);
-        expect(cmsTab.text()).toBe('sw-landing-page.view.cms');
+        expect(layoutTab.props('route')).toStrictEqual({ name: 'sw.category.landingPageDetail.layout' });
+        expect(layoutTab.props('title')).toBe('sw-landing-page.view.layout');
+        expect(layoutTab.props('disabled')).toBe(false);
+        expect(layoutTab.text()).toBe('sw-landing-page.view.layout');
     });
 
     it('should render meteor tabs when the major feature flag is active', async () => {
         const wrapper = await createWrapper({
             featureActive: true,
-            routeName: 'sw.category.landingPageDetail.cms',
+            routeName: 'sw.category.landingPageDetail.layout',
         });
 
         const tabs = wrapper.getComponent({ name: 'mt-tabs' });
 
         expect(tabs.props('positionIdentifier')).toBe('sw-landing-page-view');
-        expect(tabs.props('defaultItem')).toBe('sw.category.landingPageDetail.cms');
+        expect(tabs.props('defaultItem')).toBe('sw.category.landingPageDetail.layout');
         expect(tabs.props('items')).toEqual([
             expect.objectContaining({
                 label: 'sw-landing-page.view.general',
@@ -155,8 +147,8 @@ describe('src/module/sw-category/component/sw-landing-page-view', () => {
                 onClick: expect.any(Function),
             }),
             expect.objectContaining({
-                label: 'sw-landing-page.view.cms',
-                name: 'sw.category.landingPageDetail.cms',
+                label: 'sw-landing-page.view.layout',
+                name: 'sw.category.landingPageDetail.layout',
                 disabled: false,
                 onClick: expect.any(Function),
             }),
@@ -164,39 +156,39 @@ describe('src/module/sw-category/component/sw-landing-page-view', () => {
         expect(wrapper.find('.sw-tabs').exists()).toBe(false);
     });
 
-    it('should pass the cms tab disabled state to meteor tabs', async () => {
+    it('should pass the layout tab disabled state to meteor tabs', async () => {
         const wrapper = await createWrapper({
             featureActive: true,
             canEditLandingPage: false,
         });
         const tabs = wrapper.getComponent({ name: 'mt-tabs' });
-        const cmsTab = tabs.props('items').find((item) => item.name === 'sw.category.landingPageDetail.cms');
+        const layoutTab = tabs.props('items').find((item) => item.name === 'sw.category.landingPageDetail.layout');
 
-        expect(cmsTab).toEqual(
+        expect(layoutTab).toEqual(
             expect.objectContaining({
                 disabled: true,
             }),
         );
     });
 
-    it('should render a cms permission warning banner for meteor tabs without landing page editor permission', async () => {
+    it('should render a layout permission warning banner for meteor tabs without landing page editor permission', async () => {
         const wrapper = await createWrapper({
             featureActive: true,
             canEditLandingPage: false,
         });
-        const banner = wrapper.get('.sw-landing-page-view__cms-permission-warning');
+        const banner = wrapper.get('.sw-landing-page-view__layout-permission-warning');
 
         expect(banner.text()).toBe('sw-privileges.tooltip.warning');
         expect(wrapper.getComponent({ name: 'mt-banner' }).props('variant')).toBe('attention');
     });
 
-    it('should not render a cms permission warning banner for meteor tabs with landing page editor permission', async () => {
+    it('should not render a layout permission warning banner for meteor tabs with landing page editor permission', async () => {
         const wrapper = await createWrapper({
             featureActive: true,
             canEditLandingPage: true,
         });
 
-        expect(wrapper.find('.sw-landing-page-view__cms-permission-warning').exists()).toBe(false);
+        expect(wrapper.find('.sw-landing-page-view__layout-permission-warning').exists()).toBe(false);
     });
 
     it('should navigate when a meteor tab item is clicked', async () => {
@@ -206,10 +198,10 @@ describe('src/module/sw-category/component/sw-landing-page-view', () => {
             routerPush,
         });
         const tabs = wrapper.getComponent({ name: 'mt-tabs' });
-        const cmsTab = tabs.props('items').find((item) => item.name === 'sw.category.landingPageDetail.cms');
+        const layoutTab = tabs.props('items').find((item) => item.name === 'sw.category.landingPageDetail.layout');
 
-        cmsTab.onClick();
+        layoutTab.onClick();
 
-        expect(routerPush).toHaveBeenCalledWith({ name: 'sw.category.landingPageDetail.cms' });
+        expect(routerPush).toHaveBeenCalledWith({ name: 'sw.category.landingPageDetail.layout' });
     });
 });

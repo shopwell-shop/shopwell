@@ -15,8 +15,6 @@ declare namespace EntitySchema {
 
     interface generic_custom_entity {
         id: EntityKey<'generic_custom_entity'>;
-        swCmsPageId?: EntityKey<'cms_page'> | null;
-        swSlotConfig?: { [key: string]: unknown } | null;
         swSeoMetaTitle?: string | null;
         swSeoMetaDescription?: string | null;
         swSeoUrl?: string | null;

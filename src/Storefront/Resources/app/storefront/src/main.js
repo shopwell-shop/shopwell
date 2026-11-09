@@ -109,16 +109,14 @@ PluginManager.register('ListingPagination', () => import('src/plugin/listing/lis
 PluginManager.register('ListingSorting', () => import('src/plugin/listing/listing-sorting.plugin'), '[data-listing-sorting]');
 PluginManager.register('CrossSelling', () => import('src/plugin/cross-selling/cross-selling.plugin'), '[data-cross-selling]');
 PluginManager.register('DatePicker', () => import('src/plugin/date-picker/date-picker.plugin'), '[data-date-picker]'); // Not used in core, but implemented for plugins
-PluginManager.register('FormCmsHandler', () => import('src/plugin/forms/form-cms-handler.plugin'), '.cms-element-form form');
+PluginManager.register('ContentFormHandler', () => import('src/plugin/forms/content-form-handler.plugin'), '[data-content-form-handler]');
 PluginManager.register('CountryStateSelect', () => import('src/plugin/forms/form-country-state-select.plugin'), '[data-country-state-select]');
 PluginManager.register('CountryCitySelect', () => import('src/plugin/forms/form-country-city-select.plugin'), '[data-country-city-select]');
 PluginManager.register('ClearInput', () => import('src/plugin/clear-input-button/clear-input.plugin'), '[data-clear-input]'); // Not used in core, but implemented for plugins
-PluginManager.register('CmsVideo', () => import('src/plugin/cms-video/cms-video.plugin'), '[data-cms-video-element]');
 PluginManager.register('BuyBox', () => import('src/plugin/buy-box/buy-box.plugin'), '[data-buy-box]');
 PluginManager.register('BasicCaptcha', () => import('src/plugin/captcha/basic-captcha.plugin'), '[data-basic-captcha]');
 PluginManager.register('QuantitySelector', () => import('src/plugin/quantity-selector/quantity-selector.plugin'), '[data-quantity-selector]');
 PluginManager.register('AjaxModal', () => import('src/plugin/ajax-modal/ajax-modal.plugin'), '[data-ajax-modal][data-url]');
-PluginManager.register('CmsGdprVideoElement', () => import('src/plugin/cms-gdpr-video-element/cms-gdpr-video-element.plugin'), '[data-cms-gdpr-video-element]');
 PluginManager.register('AlertAria', AlertAriaPlugin, '[data-alert-aria]'); // Plugin not async to prevent unreliable load time for the screenreader.
 
 /**

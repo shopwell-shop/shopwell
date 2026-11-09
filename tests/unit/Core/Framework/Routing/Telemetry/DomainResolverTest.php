@@ -40,6 +40,8 @@ class DomainResolverTest extends TestCase
     public static function routeProvider(): \Generator
     {
         // functional groups, first matching prefix wins
+        yield 'content storefront maps to content' => ['frontend.content.page.full', [], 'content'];
+        yield 'content store API maps to content' => ['store-api.content.layout', [], 'content'];
         yield 'frontend.detail maps to product' => ['frontend.detail.page', [], 'product'];
         yield 'store-api product maps to product' => ['store-api.product.list', [], 'product'];
         yield 'cart prefix precedes checkout' => ['frontend.checkout.cart', [], 'cart'];

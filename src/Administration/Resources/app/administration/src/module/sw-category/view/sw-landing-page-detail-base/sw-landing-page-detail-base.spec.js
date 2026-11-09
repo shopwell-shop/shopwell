@@ -3,12 +3,7 @@
  */
 import { mount } from '@vue/test-utils';
 
-async function createWrapper({
-    landingPage = {
-        cmsPageId: null,
-    },
-    customFieldSets = [],
-} = {}) {
+async function createWrapper({ landingPage = {}, customFieldSets = [] } = {}) {
     Shopwell.Store.get('swCategoryDetail').$reset();
     Shopwell.Store.get('swCategoryDetail').category = {
         media: [],
@@ -73,22 +68,6 @@ describe('module/sw-category/view/sw-landing-page-detail-base.spec', () => {
         // meta title and keywords, the url field has no limit here
         expect(maxLengths.filter((maxLength) => maxLength === '255')).toHaveLength(2);
         expect(seoForm.get('mt-textarea-stub').attributes('max-length')).toBe('255');
-    });
-
-    it('should return true if a layout is set', async () => {
-        const wrapper = await createWrapper({
-            landingPage: {
-                cmsPageId: '123456789',
-            },
-        });
-
-        expect(wrapper.vm.isLayoutSet).toBe(true);
-    });
-
-    it('should return false if no layout is set', async () => {
-        const wrapper = await createWrapper();
-
-        expect(wrapper.vm.isLayoutSet).toBe(false);
     });
 
     it('should disable the custom field renderer without landing page edit permissions', async () => {

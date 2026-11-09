@@ -196,24 +196,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
                                 'related' => \sprintf('%s/media/%s/order-line-items', $baseUrl, self::MEDIA_ID_1),
                             ],
                         ],
-                        'cmsBlocks' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-blocks', $baseUrl, self::MEDIA_ID_1),
-                            ],
-                        ],
-                        'cmsSections' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-sections', $baseUrl, self::MEDIA_ID_1),
-                            ],
-                        ],
-                        'cmsPages' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-pages', $baseUrl, self::MEDIA_ID_1),
-                            ],
-                        ],
                         'documents' => [
                             'data' => [],
                             'links' => [
@@ -346,24 +328,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
                             'data' => [],
                             'links' => [
                                 'related' => \sprintf('%s/media/%s/order-line-items', $baseUrl, self::MEDIA_ID_2),
-                            ],
-                        ],
-                        'cmsBlocks' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-blocks', $baseUrl, self::MEDIA_ID_2),
-                            ],
-                        ],
-                        'cmsSections' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-sections', $baseUrl, self::MEDIA_ID_2),
-                            ],
-                        ],
-                        'cmsPages' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-pages', $baseUrl, self::MEDIA_ID_2),
                             ],
                         ],
                         'documents' => [
@@ -516,9 +480,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
                 'paymentMethods' => null,
                 'productConfiguratorSettings' => null,
                 'orderLineItems' => null,
-                'cmsBlocks' => null,
-                'cmsSections' => null,
-                'cmsPages' => null,
                 'documents' => null,
                 '_uniqueIdentifier' => self::MEDIA_ID_1,
                 'versionId' => null,
@@ -584,9 +545,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
                 'paymentMethods' => null,
                 'productConfiguratorSettings' => null,
                 'orderLineItems' => null,
-                'cmsBlocks' => null,
-                'cmsSections' => null,
-                'cmsPages' => null,
                 'documents' => null,
                 '_uniqueIdentifier' => self::MEDIA_ID_2,
                 'versionId' => null,
@@ -622,9 +580,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
             $fixtures['data'][0]['relationships']['paymentMethods'],
             $fixtures['data'][0]['relationships']['productConfiguratorSettings'],
             $fixtures['data'][0]['relationships']['orderLineItems'],
-            $fixtures['data'][0]['relationships']['cmsBlocks'],
-            $fixtures['data'][0]['relationships']['cmsSections'],
-            $fixtures['data'][0]['relationships']['cmsPages'],
             $fixtures['data'][0]['relationships']['documents'],
             $fixtures['data'][0]['relationships']['tags'],
 
@@ -644,9 +599,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
             $fixtures['data'][1]['relationships']['paymentMethods'],
             $fixtures['data'][1]['relationships']['productConfiguratorSettings'],
             $fixtures['data'][1]['relationships']['orderLineItems'],
-            $fixtures['data'][1]['relationships']['cmsBlocks'],
-            $fixtures['data'][1]['relationships']['cmsSections'],
-            $fixtures['data'][1]['relationships']['cmsPages'],
             $fixtures['data'][1]['relationships']['documents'],
             $fixtures['data'][1]['relationships']['tags'],
 
@@ -680,9 +632,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
             $fixtures[0]['paymentMethods'],
             $fixtures[0]['productConfiguratorSettings'],
             $fixtures[0]['orderLineItems'],
-            $fixtures[0]['cmsBlocks'],
-            $fixtures[0]['cmsSections'],
-            $fixtures[0]['cmsPages'],
             $fixtures[0]['documents'],
             $fixtures[0]['tags'],
 
@@ -702,9 +651,6 @@ class TestCollectionWithToOneRelationship extends SerializationFixture
             $fixtures[1]['paymentMethods'],
             $fixtures[1]['productConfiguratorSettings'],
             $fixtures[1]['orderLineItems'],
-            $fixtures[1]['cmsBlocks'],
-            $fixtures[1]['cmsSections'],
-            $fixtures[1]['cmsPages'],
             $fixtures[1]['tags'],
             $fixtures[1]['documents']
         );

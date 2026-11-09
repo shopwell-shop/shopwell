@@ -89,7 +89,7 @@ class MaintenanceController extends StorefrontController
     }
 
     /**
-     * Route for standalone cms pages during maintenance
+     * Route for standalone content pages during maintenance
      */
     #[Route(
         path: '/maintenance/singlepage/{id}',
@@ -106,13 +106,13 @@ class MaintenanceController extends StorefrontController
             throw RoutingException::missingRequestParameter('id');
         }
 
-        $cmsPage = $this->maintenancePageLoader->load($id, $request, $salesChannelContext);
+        $contentPage = $this->maintenancePageLoader->load($id, $request, $salesChannelContext);
 
-        $this->hook(new MaintenancePageLoadedHook($cmsPage, $salesChannelContext));
+        $this->hook(new MaintenancePageLoadedHook($contentPage, $salesChannelContext));
 
         $response = $this->renderStorefront(
-            '@Storefront/storefront/page/content/single-cms-page.html.twig',
-            ['page' => $cmsPage]
+            '@Storefront/storefront/page/content/single-page.html.twig',
+            ['page' => $contentPage]
         );
 
         $this->addAllowlistIpHeader($request, $response);

@@ -24,7 +24,6 @@ use Shopwell\Core\Content\Blog\Service\BlogVisibilityGuard;
 use Shopwell\Core\Content\Blog\Service\PostTypeHandler;
 use Shopwell\Core\Content\Blog\Service\VideoTypeHandler;
 use Shopwell\Core\Content\Blog\Sitemap\BlogUrlProvider;
-use Shopwell\Core\Content\Cms\DataResolver\Element\BlogListingCmsElementResolver;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
@@ -156,15 +155,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(BlogReadingTimeEstimator::class),
             service(HtmlSanitizer::class),
         ]);
-
-    // The element renders the same listing as the page, so it reads through the same reader. The tag
-    // is the one CmsSlotsDataResolver collects, which is why the resolver is registered here and not
-    // in cms.php - the blog owns its element, the cms only reads the tag.
-    $services->set(BlogListingCmsElementResolver::class)
-        ->args([
-            service(BlogListingReader::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
 
     // ---- writing a comment ----
     // The route is the single validation surface: the storefront form and the store-api endpoint both

@@ -8,12 +8,15 @@ use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingDefinition;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationDefinition;
 use Shopwell\Core\System\Currency\Api\CurrencyIsoCodeFkResolver;
+use Shopwell\Core\System\Currency\ContentSystem\DataLoader\CurrencyDataLoader;
+use Shopwell\Core\System\Currency\ContentSystem\DataLoader\CurrencyLoaderConfigSerializer;
 use Shopwell\Core\System\Currency\CurrencyDefinition;
 use Shopwell\Core\System\Currency\CurrencyExceptionHandler;
 use Shopwell\Core\System\Currency\CurrencyFormatter;
 use Shopwell\Core\System\Currency\CurrencyLoadSubscriber;
 use Shopwell\Core\System\Currency\CurrencyValidator;
 use Shopwell\Core\System\Currency\Rule\CurrencyRule;
+use Shopwell\Core\System\Currency\SalesChannel\AbstractCurrencyRoute;
 use Shopwell\Core\System\Currency\SalesChannel\CurrencyRoute;
 use Shopwell\Core\System\Currency\SalesChannel\SalesChannelCurrencyDefinition;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
@@ -68,4 +71,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('shopwell.sync.fk_resolver');
+
+    // Content System
+    $services->alias(AbstractCurrencyRoute::class, CurrencyRoute::class);
+
+    $services->set(CurrencyDataLoader::class)
+        ->args([
+            service(AbstractCurrencyRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(CurrencyLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
 };

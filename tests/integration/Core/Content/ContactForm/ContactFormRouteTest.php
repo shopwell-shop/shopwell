@@ -5,16 +5,13 @@ namespace Shopwell\Tests\Integration\Core\Content\ContactForm;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
 use Shopwell\Core\Content\MailTemplate\Service\Event\MailSentEvent;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\MailTemplateTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
-use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
-use Shopwell\Core\Test\TestDefaults;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 /**
@@ -71,9 +68,9 @@ class ContactFormRouteTest extends TestCase
         static::assertStringContainsString('Lorem ipsum dolor sit amet', $html);
     }
 
-    public function testContactFormSendMailWithLandingPageContext(): void
+    public function testContactFormUsesSalesChannelRecipient(): void
     {
-        [$navigationId, $slotId] = $this->createLandingPageData();
+        static::getContainer()->get(SystemConfigService::class)->set('core.basicInformation.email', 'h.mac@example.com', $this->ids->get('sales-channel'));
 
         $mail = null;
         $this->catchEvent(MailSentEvent::class, $mail);
@@ -83,9 +80,6 @@ class ContactFormRouteTest extends TestCase
             '/store-api/contact-form',
             [
                 'gender' => $this->getValidGender(),
-                'navigationId' => $navigationId,
-                'slotId' => $slotId,
-                'entityName' => LandingPageDefinition::ENTITY_NAME,
                 'name' => 'Firstname Lastname',
                 'email' => 'test@shopwell.cn',
                 'phone' => '12345/6789',
@@ -165,39 +159,5 @@ class ContactFormRouteTest extends TestCase
                 static::assertContains('/name', $errors);
             },
         ];
-    }
-
-    /**
-     * @return array{0: string, 1: string}
-     */
-    private function createLandingPageData(): array
-    {
-        $landingPageId = $this->ids->get('contact-landingpage-test');
-        $slotId = $this->ids->create('form-slot');
-
-        static::getContainer()->get('landing_page.repository')->create([
-            [
-                'id' => $landingPageId,
-                'name' => Uuid::randomHex(),
-                'url' => Uuid::randomHex(),
-                'salesChannels' => [
-                    ['id' => TestDefaults::SALES_CHANNEL],
-                ],
-                'slotConfig' => [
-                    $slotId => [
-                        'mailReceiver' => [
-                            'source' => 'static',
-                            'value' => ['h.mac@example.com'],
-                        ],
-                        'confirmationText' => [
-                            'source' => 'static',
-                            'value' => '',
-                        ],
-                    ],
-                ],
-            ],
-        ], Context::createDefaultContext());
-
-        return [$landingPageId, $slotId];
     }
 }

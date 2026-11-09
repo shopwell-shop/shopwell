@@ -37,11 +37,6 @@ class ProductTranslationEntity extends TranslationEntity
 
     protected ?ProductEntity $product = null;
 
-    /**
-     * @var array<string, array<string, array<string, mixed>>|null>|null
-     */
-    protected ?array $slotConfig = null;
-
     protected ?string $ogTitle = null;
 
     protected ?string $ogDescription = null;
@@ -139,22 +134,6 @@ class ProductTranslationEntity extends TranslationEntity
     public function setProduct(ProductEntity $product): void
     {
         $this->product = $product;
-    }
-
-    /**
-     * @return array<string, array<string, array<string, mixed>>|null>|null
-     */
-    public function getSlotConfig(): ?array
-    {
-        return $this->slotConfig;
-    }
-
-    /**
-     * @param array<string, array<string, array<string, mixed>>|null> $slotConfig
-     */
-    public function setSlotConfig(array $slotConfig): void
-    {
-        $this->slotConfig = $slotConfig;
     }
 
     public function getMetaDescription(): ?string

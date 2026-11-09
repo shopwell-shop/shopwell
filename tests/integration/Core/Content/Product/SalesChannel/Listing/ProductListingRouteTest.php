@@ -879,25 +879,6 @@ class ProductListingRouteTest extends TestCase
             'id' => $this->ids->create('category'),
             'name' => 'Test',
             'productAssignmentType' => $productAssignmentType,
-            'cmsPage' => [
-                'id' => $this->ids->create('cms-page'),
-                'type' => 'product_list',
-                'sections' => [
-                    [
-                        'position' => 0,
-                        'type' => 'sidebar',
-                        'blocks' => [
-                            [
-                                'type' => 'product-listing',
-                                'position' => 1,
-                                'slots' => [
-                                    ['type' => 'product-listing', 'slot' => 'content'],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
             'products' => $products,
         ];
 

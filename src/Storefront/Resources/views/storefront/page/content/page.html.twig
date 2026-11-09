@@ -1,0 +1,90 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_head %}
+    {% if page.product is defined %}
+        {% sw_include '@Storefront/storefront/page/product-detail/meta.html.twig' %}
+    {% elseif page is defined %}
+        {% sw_include '@Storefront/storefront/page/content/meta.html.twig' %}
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
+
+{% block base_esi_header %}
+    {% set headerParameters = headerParameters|merge({ isNewContentStructure: true }) %}
+    {{ parent() }}
+{% endblock %}
+
+{% block base_main_inner %}
+    {% set product = page.product ?? null %}
+    <div class="container-main content-page"{% if product and not feature('JSON_LD_DATA') %} itemscope itemtype="https://schema.org/Product"{% endif %}>
+        {% block page_content_breadcrumb %}
+            {% if page is defined %}
+                <div class="content-breadcrumb container">
+                    {% if feature('BREADCRUMB_REWORK') %}
+                        {% sw_include '@Storefront/storefront/layout/breadcrumb.html.twig' with {
+                            context: context,
+                            themeIconConfig: themeIconConfig,
+                            breadcrumb: page.breadcrumb
+                        } only %}
+                    {% else %}
+                        {% sw_include '@Storefront/storefront/layout/breadcrumb.html.twig' with {
+                            context: context,
+                            themeIconConfig: themeIconConfig,
+                            category: page.product.seoCategory,
+                            categoryId: shopwell.navigation.id
+                        } only %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endblock %}
+
+        {% if product and not feature('JSON_LD_DATA') %}
+            {% block page_content_product_metadata %}
+                <meta itemprop="name" content="{{ product.translated.name }}">
+                <meta itemprop="description" content="{{ product.translated.description|striptags }}">
+                <meta itemprop="sku" content="{{ product.productNumber }}">
+                {% if product.cover.media.url is defined %}
+                    <link itemprop="image" href="{{ product.cover.media.url }}">
+                {% endif %}
+
+                {% sw_include '@Storefront/storefront/component/product/metadata.html.twig' with { product: product } only %}
+
+                {% set prices = product.calculatedPrices %}
+                <div itemprop="offers" itemscope itemtype="https://schema.org/{{ prices|length > 1 ? 'AggregateOffer' : 'Offer' }}">
+                    <meta itemprop="url" content="{{ seoUrl('frontend.detail.page', { productId: product.id }) }}">
+                    <meta itemprop="priceCurrency" content="{{ context.currency.isoCode }}">
+                    {% if prices|length > 1 %}
+                        {% set priceValues = prices|map(price => price.unitPrice) %}
+                        <meta itemprop="lowPrice" content="{{ min(priceValues) }}">
+                        <meta itemprop="highPrice" content="{{ max(priceValues) }}">
+                        <meta itemprop="offerCount" content="{{ prices|length }}">
+                        {% for price in prices %}
+                            <div itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                                <meta itemprop="price" content="{{ price.unitPrice }}">
+                                <meta itemprop="priceCurrency" content="{{ context.currency.isoCode }}">
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        {% set price = prices|length == 1 ? prices.first : product.calculatedPrice %}
+                        <meta itemprop="price" content="{{ price.unitPrice }}">
+                    {% endif %}
+
+                    {% set availability = 'InStock' %}
+                    {% if not product.active %}
+                        {% set availability = 'LimitedAvailability' %}
+                    {% elseif product.releaseDate and product.releaseDate|date('U') > 'now'|date('U') %}
+                        {% set availability = 'PreOrder' %}
+                    {% elseif product.isCloseout and product.stock < product.minPurchase %}
+                        {% set availability = 'OutOfStock' %}
+                    {% elseif product.stock < product.minPurchase and product.deliveryTime and product.restockTime %}
+                        {% set availability = 'LimitedAvailability' %}
+                    {% endif %}
+                    <link itemprop="availability" href="https://schema.org/{{ availability }}">
+                </div>
+            {% endblock %}
+        {% endif %}
+
+        <twig:Sw:Content:Page :page="contentPage" />
+    </div>
+{% endblock %}

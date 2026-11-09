@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\Exception\SalesChannelRepositoryNotFoundException;
+use Shopwell\Core\System\SalesChannel\SalesChannelException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 #[Package('discovery')]
@@ -53,7 +54,7 @@ class SalesChannelDefinitionInstanceRegistry extends DefinitionInstanceRegistry
     }
 
     /**
-     * @return array<SalesChannelDefinitionInterface>
+     * @return array<EntityDefinition&SalesChannelDefinitionInterface>
      */
     public function getSalesChannelDefinitions(): array
     {
@@ -75,7 +76,7 @@ class SalesChannelDefinitionInstanceRegistry extends DefinitionInstanceRegistry
     private function getSalesChannelRepositoryClassByEntityName(string $entityName): string
     {
         if (!isset($this->repositoryMap[$entityName])) {
-            throw new SalesChannelRepositoryNotFoundException($entityName);
+            throw SalesChannelException::salesChannelRepositoryNotFound($entityName);
         }
 
         return $this->repositoryMap[$entityName];

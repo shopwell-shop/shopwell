@@ -4,7 +4,6 @@ namespace Shopwell\Core\Content\Category;
 
 use Shopwell\Core\Content\Category\Aggregate\CategoryTag\CategoryTagDefinition;
 use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCategory\ProductCategoryDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCategoryTree\ProductCategoryTreeDefinition;
@@ -21,7 +20,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Choice;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Deprecated;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ReverseInherited;
@@ -43,7 +41,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\TreeLevelField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TreePathField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\CustomEntity\CustomEntityDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
@@ -71,8 +68,6 @@ class CategoryDefinition extends EntityDefinition
     final public const PRODUCT_ASSIGNMENT_TYPE_PRODUCT = 'product';
 
     final public const PRODUCT_ASSIGNMENT_TYPE_PRODUCT_STREAM = 'product_stream';
-
-    final public const CONFIG_KEY_DEFAULT_CMS_PAGE_CATEGORY = 'core.cms.default_category_cms_page';
 
     public function getEntityName(): string
     {
@@ -143,7 +138,6 @@ class CategoryDefinition extends EntityDefinition
 
             (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
-            new TranslatedField('slotConfig'),
             (new TranslatedField('linkType'))->addFlags(new ApiAware()),
             (new TranslatedField('internalLink'))->addFlags(new ApiAware()),
             (new TranslatedField('externalLink'))->addFlags(new ApiAware()),
@@ -162,9 +156,6 @@ class CategoryDefinition extends EntityDefinition
             (new ManyToManyAssociationField('nestedProducts', ProductDefinition::class, ProductCategoryTreeDefinition::class, 'category_id', 'product_id'))->addFlags(new CascadeDelete(), new WriteProtected()),
             (new ManyToManyAssociationField('tags', TagDefinition::class, CategoryTagDefinition::class, 'category_id', 'tag_id'))->addFlags(new ApiAware(), new CascadeDelete())->setDescription('Tags for organizing and filtering categories'),
 
-            (new FkField('cms_page_id', 'cmsPageId', CmsPageDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of CMS page.'),
-            (new ReferenceVersionField(CmsPageDefinition::class))->addFlags(new Required(), new ApiAware()),
-            (new ManyToOneAssociationField('cmsPage', 'cms_page_id', CmsPageDefinition::class, 'id', false))->addFlags(new ApiAware())->setDescription('CMS page layout for the category'),
             (new FkField('product_stream_id', 'productStreamId', ProductStreamDefinition::class))->setDescription('Unique identity of product stream.'),
             new ManyToOneAssociationField('productStream', 'product_stream_id', ProductStreamDefinition::class, 'id', false),
 
@@ -178,12 +169,6 @@ class CategoryDefinition extends EntityDefinition
             (new OneToManyAssociationField('mainCategories', MainCategoryDefinition::class, 'category_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('seoUrls', SeoUrlDefinition::class, 'foreign_key'))->addFlags(new ApiAware())->setDescription('SEO-friendly URLs for the category across different sales channels'),
         ]);
-
-        if (!Feature::isActive('v6.8.0.0')) {
-            $fields->add(
-                (new BoolField('cms_page_id_switched', 'cmsPageIdSwitched'))->addFlags(new Runtime(), new ApiAware(), new Deprecated('v6.7.9.0', 'v6.8.0.0')),
-            );
-        }
 
         return $fields;
     }

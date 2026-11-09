@@ -28,7 +28,6 @@ use Shopwell\Elasticsearch\Admin\AdminSearchController;
 use Shopwell\Elasticsearch\Admin\AdminSearcher;
 use Shopwell\Elasticsearch\Admin\AdminSearchRegistry;
 use Shopwell\Elasticsearch\Admin\Indexer\CategoryAdminSearchIndexer;
-use Shopwell\Elasticsearch\Admin\Indexer\CmsPageAdminSearchIndexer;
 use Shopwell\Elasticsearch\Admin\Indexer\CustomerAdminSearchIndexer;
 use Shopwell\Elasticsearch\Admin\Indexer\CustomerGroupAdminSearchIndexer;
 use Shopwell\Elasticsearch\Admin\Indexer\LandingPageAdminSearchIndexer;
@@ -638,16 +637,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('kernel.event_subscriber')
         ->tag('messenger.message_handler');
-
-    $services->set(CmsPageAdminSearchIndexer::class)
-        ->args([
-            service(Connection::class),
-            service(IteratorFactory::class),
-            service('cms_page.repository'),
-            service(ElasticsearchFieldBuilder::class),
-            param('elasticsearch.administration.indexing_batch_size'),
-        ])
-        ->tag('shopwell.elastic.admin-searcher-index', ['key' => 'cms_page']);
 
     $services->set(CustomerAdminSearchIndexer::class)
         ->args([

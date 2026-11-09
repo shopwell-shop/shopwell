@@ -87,7 +87,6 @@ Module.register('sw-order-return', {
             icon: 'regular-undo',
             // between the customers (40) and the content modules (50): a return belongs to the
             // fulfilment half of the menu - orders (30), customers (40), returns (45) - and not to
-            // the catalogue half that starts with the CMS (50)
             position: 45,
             // deliberately no privilege: the settings page of the module lives outside this menu, so a
             // role that may only maintain reasons still has to find its way in

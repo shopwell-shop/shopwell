@@ -181,22 +181,22 @@
     </router-link>
     {% endblock %}
 
-    {% block sw_search_bar_item_cms_page %}
+    {% block sw_search_bar_item_content_layout %}
     <router-link
-        v-else-if="type === 'cms_page'"
+        v-else-if="type === 'content_layout'"
         ref="routerLink"
         v-slot="{ href, navigate }"
         class="sw-search-bar-item__link"
-        :to="{ name: 'sw.cms.detail', params: { id: item.id } }"
+        :to="{ name: 'sw.experience.studio.detail', params: { id: item.id } }"
         custom
     >
         <!-- eslint-disable-next-line vuejs-accessibility/anchor-has-content -->
         <a
             :href="href"
             class="sw-search-bar-item__link"
-            @click="onClickSearchResult('cms_page', item.id) && navigate($event)"
+            @click="onClickSearchResult('content_layout', item.id) && navigate($event)"
         >
-            {% block sw_search_bar_item_cms_page_label %}
+            {% block sw_search_bar_item_content_layout_label %}
             <span class="sw-search-bar-item__label">
                 <sw-highlight-text
                     :search-term="searchTerm"
@@ -223,7 +223,7 @@
             class="sw-search-bar-item__link"
             @click="onClickSearchResult('landing_page', item.id) && navigate($event)"
         >
-            {% block sw_search_bar_item_cms_landing_page_label %}
+            {% block sw_search_bar_item_landing_page_label %}
             <span class="sw-search-bar-item__label">
                 <sw-highlight-text
                     :search-term="searchTerm"

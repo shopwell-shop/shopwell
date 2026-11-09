@@ -3,9 +3,9 @@
 namespace Shopwell\Core\Content\ContactForm\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
-use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
 use Shopwell\Core\Content\ContactForm\Event\ContactFormEvent;
 use Shopwell\Core\Content\ContactForm\Extension\ContactFormRouteExtension;
+use Shopwell\Core\Content\ContactForm\Service\FormConfigResolver;
 use Shopwell\Core\Framework\Event\EventData\MailRecipientStruct;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -36,7 +36,7 @@ class ContactFormRoute extends AbstractContactFormRoute
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly RequestStack $requestStack,
         private readonly RateLimiter $rateLimiter,
-        private readonly CmsFormSlotConfigResolver $cmsFormSlotConfigResolver,
+        private readonly FormConfigResolver $formConfigResolver,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -66,7 +66,7 @@ class ContactFormRoute extends AbstractContactFormRoute
             $this->rateLimiter->ensureAccepted(RateLimiter::CONTACT_FORM, $request->getClientIp());
         }
 
-        $mailConfigs = $this->cmsFormSlotConfigResolver->resolve($context, $data->get('slotId'), $data->get('navigationId'), $data->get('entityName'));
+        $mailConfigs = $this->formConfigResolver->resolve($context);
 
         $event = new ContactFormEvent(
             $context->getContext(),

@@ -128,7 +128,7 @@ class RobotsControllerTest extends TestCase
         Disallow: {$domainPath}/account/
         Disallow: {$domainPath}/checkout/
         Disallow: {$domainPath}/widgets/
-        Allow: {$domainPath}/widgets/cms/
+        Allow: {$domainPath}/widgets/content/
         Allow: {$domainPath}/widgets/menu/offcanvas
         TXT;
 

@@ -1,0 +1,90 @@
+{# @deprecated tag:v6.8.0 - Product microdata replaced by JSON-LD in json-ld-product.html.twig. Will be removed. #}
+{% if not feature('JSON_LD_DATA') %}
+    {% block buy_widget_rich_snippets_brand %}
+        {% if product.manufacturer %}
+            <div itemprop="brand" itemtype="https://schema.org/Brand" itemscope>
+                <meta itemprop="name" content="{{ product.manufacturer.translated.name }}">
+            </div>
+        {% endif %}
+    {% endblock %}
+
+    {% block buy_widget_rich_snippets_gtin13 %}
+        {% if product.ean %}
+            <meta itemprop="gtin13"
+                  content="{{ product.ean }}">
+        {% endif %}
+    {% endblock %}
+
+    {% block buy_widget_rich_snippets_mpn %}
+        {% if product.manufacturerNumber %}
+            <meta itemprop="mpn"
+                  content="{{ product.manufacturerNumber }}">
+        {% endif %}
+    {% endblock %}
+
+    {% block buy_widget_rich_snippets_weight %}
+        {% if product.measurements.type('weight') %}
+            {% set weightUnit = product.measurements.type('weight').unit %}
+            {% set weightValue = product.measurements.type('weight').value %}
+        {% else %}
+            {% set weightUnit = 'kg' %}
+            {% set weightValue = product.weight %}
+        {% endif %}
+        {% if weightValue and weightValue > 0 %}
+            <meta itemprop="weight"
+                  content="{{ weightValue }} {{ weightUnit }}">
+        {% endif %}
+    {% endblock %}
+
+    {% block buy_widget_rich_snippets_height %}
+        {% if product.measurements.type('height') %}
+            {% set heightUnit = product.measurements.type('height').unit %}
+            {% set heightValue = product.measurements.type('height').value %}
+        {% else %}
+            {% set heightUnit = 'mm' %}
+            {% set heightValue = product.height %}
+        {% endif %}
+
+        {% if heightValue and heightValue > 0 %}
+            <meta itemprop="height"
+                  content="{{ heightValue }} {{ heightUnit }}">
+        {% endif %}
+    {% endblock %}
+
+    {% block buy_widget_rich_snippets_width %}
+        {% if product.measurements.type('width') %}
+            {% set widthUnit = product.measurements.type('width').unit %}
+            {% set widthValue = product.measurements.type('width').value %}
+        {% else %}
+            {% set widthUnit = 'mm' %}
+            {% set widthValue = product.width %}
+        {% endif %}
+
+        {% if widthValue and widthValue > 0 %}
+            <meta itemprop="width"
+                  content="{{ widthValue }} {{ widthUnit }}">
+        {% endif %}
+    {% endblock %}
+
+    {% block buy_widget_rich_snippets_depth %}
+        {% if product.measurements.type('length') %}
+            {% set lengthUnit = product.measurements.type('length').unit %}
+            {% set lengthValue = product.measurements.type('length').value %}
+        {% else %}
+            {% set lengthUnit = 'mm' %}
+            {% set lengthValue = product.length %}
+        {% endif %}
+
+        {% if lengthValue and lengthValue > 0 %}
+            <meta itemprop="depth"
+                  content="{{ lengthValue }} {{ lengthUnit }}">
+        {% endif %}
+    {% endblock %}
+
+    {% block buy_widget_rich_snippets_release_date %}
+        {% if product.releaseDate %}
+            <meta itemprop="releaseDate"
+                  content="{{ product.releaseDate|format_date(pattern='Y-MM-dd') }}">
+        {% endif %}
+    {% endblock %}
+{% endif %}

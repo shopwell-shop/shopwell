@@ -2,23 +2,23 @@
 
 namespace Shopwell\Storefront\Page\Navigation\Error;
 
-use Shopwell\Core\Content\Cms\CmsPageEntity;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Storefront\Page\Page;
 
 #[Package('discovery')]
 class ErrorPage extends Page
 {
-    protected ?CmsPageEntity $cmsPage = null;
+    protected ?ContentPage $contentPage = null;
 
-    public function getCmsPage(): ?CmsPageEntity
+    public function getContentPage(): ?ContentPage
     {
-        return $this->cmsPage;
+        return $this->contentPage;
     }
 
-    public function setCmsPage(CmsPageEntity $cmsPage): void
+    public function setContentPage(ContentPage $contentPage): void
     {
-        $this->cmsPage = $cmsPage;
+        $this->contentPage = $contentPage;
     }
 
     public function isErrorPage(): bool

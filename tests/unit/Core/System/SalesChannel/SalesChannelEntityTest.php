@@ -16,7 +16,6 @@ use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSalesChannel\PromotionSa
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Content\Category\CategoryEntity;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\LandingPage\LandingPageCollection;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter\MailHeaderFooterEntity;
 use Shopwell\Core\Content\MeasurementSystem\MeasurementUnits;
@@ -108,8 +107,6 @@ class SalesChannelEntityTest extends TestCase
         $salesChannel->setMaintenance(true);
         $salesChannel->setTypeId('type-id');
         $salesChannel->setNavigationCategoryId('navigation-category-id');
-        $salesChannel->setHomeSlotConfig(['slot-id' => ['content' => 'home']]);
-        $salesChannel->setHomeCmsPageId('home-cms-page-id');
         $salesChannel->setHomeEnabled(true);
         $salesChannel->setHomeName('home-name');
         $salesChannel->setHomeMetaTitle('home-meta-title');
@@ -125,7 +122,6 @@ class SalesChannelEntityTest extends TestCase
         $salesChannel->setAnalyticsId('analytics-id');
         $salesChannel->setTaxCalculationType('tax-calculation-type');
         $salesChannel->setNavigationCategoryVersionId('navigation-category-version-id');
-        $salesChannel->setHomeCmsPageVersionId('home-cms-page-version-id');
         $salesChannel->setFooterCategoryVersionId('footer-category-version-id');
         $salesChannel->setServiceCategoryVersionId('service-category-version-id');
         $salesChannel->setBusinessTimeZone('business-time-zone');
@@ -144,8 +140,6 @@ class SalesChannelEntityTest extends TestCase
         static::assertTrue($salesChannel->isMaintenance());
         static::assertSame('type-id', $salesChannel->getTypeId());
         static::assertSame('navigation-category-id', $salesChannel->getNavigationCategoryId());
-        static::assertSame(['slot-id' => ['content' => 'home']], $salesChannel->getHomeSlotConfig());
-        static::assertSame('home-cms-page-id', $salesChannel->getHomeCmsPageId());
         static::assertTrue($salesChannel->getHomeEnabled());
         static::assertSame('home-name', $salesChannel->getHomeName());
         static::assertSame('home-meta-title', $salesChannel->getHomeMetaTitle());
@@ -161,7 +155,6 @@ class SalesChannelEntityTest extends TestCase
         static::assertSame('analytics-id', $salesChannel->getAnalyticsId());
         static::assertSame('tax-calculation-type', $salesChannel->getTaxCalculationType());
         static::assertSame('navigation-category-version-id', $salesChannel->getNavigationCategoryVersionId());
-        static::assertSame('home-cms-page-version-id', $salesChannel->getHomeCmsPageVersionId());
         static::assertSame('footer-category-version-id', $salesChannel->getFooterCategoryVersionId());
         static::assertSame('service-category-version-id', $salesChannel->getServiceCategoryVersionId());
         static::assertSame('business-time-zone', $salesChannel->getBusinessTimeZone());
@@ -189,7 +182,6 @@ class SalesChannelEntityTest extends TestCase
         $domains = new SalesChannelDomainCollection();
         $systemConfigs = new SystemConfigCollection();
         $navigationCategory = new CategoryEntity();
-        $homeCmsPage = new CmsPageEntity();
         $productVisibilities = new ProductVisibilityCollection();
         $customerGroup = new CustomerGroupEntity();
         $newsletterRecipients = new NewsletterRecipientCollection();
@@ -230,7 +222,6 @@ class SalesChannelEntityTest extends TestCase
         $salesChannel->setDomains($domains);
         $salesChannel->setSystemConfigs($systemConfigs);
         $salesChannel->setNavigationCategory($navigationCategory);
-        $salesChannel->setHomeCmsPage($homeCmsPage);
         $salesChannel->setProductVisibilities($productVisibilities);
         $salesChannel->setCustomerGroup($customerGroup);
         $salesChannel->setNewsletterRecipients($newsletterRecipients);
@@ -271,7 +262,6 @@ class SalesChannelEntityTest extends TestCase
         static::assertSame($domains, $salesChannel->getDomains());
         static::assertSame($systemConfigs, $salesChannel->getSystemConfigs());
         static::assertSame($navigationCategory, $salesChannel->getNavigationCategory());
-        static::assertSame($homeCmsPage, $salesChannel->getHomeCmsPage());
         static::assertSame($productVisibilities, $salesChannel->getProductVisibilities());
         static::assertSame($customerGroup, $salesChannel->getCustomerGroup());
         static::assertSame($newsletterRecipients, $salesChannel->getNewsletterRecipients());

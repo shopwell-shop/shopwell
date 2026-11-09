@@ -9,7 +9,7 @@
                     "Endpoints supporting Criteria "
                 ],
                 "summary": "Fetch a list of categories",
-                "description": "Perform a filtered search for categories.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
+                "description": "Perform a filtered search for categories.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
                 "operationId": "readCategoryList",
                 "parameters": [
                     {
@@ -65,7 +65,7 @@
                     "Endpoints supporting Criteria "
                 ],
                 "summary": "Fetch a list of categories",
-                "description": "Perform a filtered search for categories.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
+                "description": "Perform a filtered search for categories.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
                 "operationId": "readCategoryListGet",
                 "parameters": [
                     {
@@ -100,7 +100,7 @@
                     "Endpoints supporting Criteria "
                 ],
                 "summary": "Fetch a single category",
-                "description": "This endpoint returns information about the category, as well as a fully resolved (hydrated with mapping values) CMS page, if one is assigned to the category. You can pass slots which should be resolved exclusively.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
+                "description": "Returns the category data. Page layouts are rendered through the Content System routes.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
                 "operationId": "readCategory",
                 "parameters": [
                     {
@@ -137,14 +137,6 @@
                         }
                     },
                     {
-                        "name": "slots",
-                        "in": "query",
-                        "description": "Resolves only the given slot identifiers. The identifiers have to be seperated by a '|' character",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
                         "$ref": "#/components/parameters/swLanguageId"
                     }
                 ],
@@ -159,7 +151,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "The loaded category with cms page",
+                        "description": "The loaded category",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -189,7 +181,7 @@
                     "Endpoints supporting Criteria "
                 ],
                 "summary": "Fetch a single category",
-                "description": "This endpoint returns information about the category, as well as a fully resolved (hydrated with mapping values) CMS page, if one is assigned to the category. You can pass slots which should be resolved exclusively.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
+                "description": "Returns the category data. Page layouts are rendered through the Content System routes.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
                 "operationId": "readCategoryGet",
                 "parameters": [
                     {
@@ -212,14 +204,6 @@
                         }
                     },
                     {
-                        "name": "slots",
-                        "in": "query",
-                        "description": "Resolves only the given slot identifiers. The identifiers have to be seperated by a '|' character",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
                         "x-parameter-group": "productListingCriteria"
                     },
                     {
@@ -228,7 +212,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "The loaded category with cms page",
+                        "description": "The loaded category",
                         "content": {
                             "application/json": {
                                 "schema": {

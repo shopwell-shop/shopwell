@@ -421,10 +421,6 @@ describe('app/plugins/shortcut.plugin', () => {
         const onSaveMock = jest.fn();
         let testString = 'foo';
 
-        Shopwell.Store.register({
-            id: 'cmsPage',
-        });
-
         Shopwell.Component.register('base-component', {
             name: 'base-component',
             template: `

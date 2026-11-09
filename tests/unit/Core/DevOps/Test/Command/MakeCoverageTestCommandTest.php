@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
-use Shopwell\Core\Content\Cms\Subscriber\UnusedMediaSubscriber;
+use Shopwell\Core\Content\Media\Subscriber\CustomFieldsUnusedMediaSubscriber;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductEntity;
@@ -84,7 +84,7 @@ class MakeCoverageTestCommandTest extends TestCase
                 'src/Core/DevOps/NotAClass.php', // pass a string that is a php file not existing
                 ShopwellHttpException::class, // is not instantiable
                 OpenApiValidationCommandTest::class, // code coverage ignore because its a test
-                UnusedMediaSubscriber::class, // code coverage ignore,
+                CustomFieldsUnusedMediaSubscriber::class, // code coverage ignore,
                 ProductCollection::class, // code coverage ignore because its a collection, mentioned in phpunit.xml.dist
                 ProductDefinition::class, // code coverage ignore because its a definition, mentioned in phpunit.xml.dist
                 ProductEntity::class, // code coverage ignore because its an entity, mentioned in phpunit.xml.dist
@@ -105,7 +105,7 @@ class MakeCoverageTestCommandTest extends TestCase
         static::assertSame($this->getMigrationTestTemplate(), $migrationTest);
 
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/DevOps/Test/Command/not-a-classTest.php'));
-        static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/Content/Cms/Subscriber/UnusedMediaSubscriberTest.php'));
+        static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/Content/Media/Subscriber/CustomFieldsUnusedMediaSubscriberTest.php'));
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/Framework/ShopwellExceptionTest.php'));
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/DevOps/NotAClassTest.php'));
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/DevOps/System/Command/OpenApiValidationCommandTest.php'));
@@ -128,7 +128,7 @@ class MakeCoverageTestCommandTest extends TestCase
                 'src/Core/DevOps/NotAClass.php', // pass a string that is a php file not existing
                 ShopwellHttpException::class, // is not instantiable
                 OpenApiValidationCommandTest::class, // code coverage ignore because its a test
-                UnusedMediaSubscriber::class, // code coverage ignore
+                CustomFieldsUnusedMediaSubscriber::class, // code coverage ignore
             ],
         ]);
 
@@ -138,7 +138,7 @@ class MakeCoverageTestCommandTest extends TestCase
         static::assertTrue($this->filesystem->exists($this->projectDir . '/tests/migration/Tests/Unit/Core/DevOps/Test/Command/Fixture/Migration1763996000DummyTest.php'));
 
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/DevOps/Test/Command/not-a-classTest.php'));
-        static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/Content/Cms/Subscriber/UnusedMediaSubscriberTest.php'));
+        static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/Content/Media/Subscriber/CustomFieldsUnusedMediaSubscriberTest.php'));
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/Framework/ShopwellExceptionTest.php'));
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/DevOps/NotAClassTest.php'));
         static::assertFalse($this->filesystem->exists($this->projectDir . '/tests/unit/Core/DevOps/System/Command/OpenApiValidationCommandTest.php'));

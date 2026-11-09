@@ -18,7 +18,7 @@ test(
 
         await TestDataService.clearCaches();
 
-        await test.step('Verify if folder category has a sub category and the folder category in breadcrumb is a div element.', async () => {
+        await test.step('Verify if folder category has a sub category and the folder category in breadcrumb is not a link.', async () => {
             const mainCategoryLocators = await StorefrontHome.getMenuItemByCategoryName(category1.name);
             const subCategoryLocators = await StorefrontHome.getMenuItemByCategoryName(subCategory1.name);
 
@@ -32,13 +32,9 @@ test(
 
             await ShopCustomer.expects(mainCategoryLocators.breadcrumbNavigationItem).toHaveText(category1.name);
             await ShopCustomer.expects(mainCategoryLocators.breadcrumbNavigationLinkItem).not.toBeVisible();
-            const breadcrumbNavigationItemTagName = await mainCategoryLocators.breadcrumbNavigationItem.evaluate((el) =>
-                el.tagName.toLowerCase(),
-            );
-            await ShopCustomer.expects(breadcrumbNavigationItemTagName).toBe('div');
         });
 
-        await test.step('Verify if page category has a sub category and the page category in breadcrumb is a link element.', async () => {
+        await test.step('Verify if page category has a sub category and the page category in breadcrumb is a link.', async () => {
             const mainCategoryLocators = await StorefrontHome.getMenuItemByCategoryName(category2.name);
             const subCategoryLocators = await StorefrontHome.getMenuItemByCategoryName(subCategory2.name);
 
@@ -53,12 +49,8 @@ test(
 
             await ShopCustomer.expects(mainCategoryLocators.breadcrumbNavigationItem).toHaveText(category2.name);
             await ShopCustomer.expects(mainCategoryLocators.breadcrumbNavigationLinkItem).toBeVisible();
-            const breadcrumbNavigationItemTagName = await mainCategoryLocators.breadcrumbNavigationItem.evaluate((el) =>
-                el.tagName.toLowerCase(),
-            );
-            await ShopCustomer.expects(breadcrumbNavigationItemTagName).toBe('span');
 
-            const breadcrumbItems = StorefrontHome.page.locator('.cms-breadcrumb .breadcrumb-item');
+            const breadcrumbItems = StorefrontHome.page.locator('.sw-breadcrumb .breadcrumb-item');
             await ShopCustomer.expects(breadcrumbItems.filter({ hasText: category2.name })).not.toHaveAttribute(
                 'aria-current',
             );
@@ -68,7 +60,7 @@ test(
             );
         });
 
-        await test.step('Verify if link category has a sub category and the link category in breadcrumb is a link element.', async () => {
+        await test.step('Verify if link category has a sub category and the link category in breadcrumb is a link.', async () => {
             const mainCategoryLocators = await StorefrontHome.getMenuItemByCategoryName(category3.name);
             const subCategoryLocators = await StorefrontHome.getMenuItemByCategoryName(subCategory3.name);
 
@@ -83,10 +75,6 @@ test(
 
             await ShopCustomer.expects(mainCategoryLocators.breadcrumbNavigationItem).toHaveText(category3.name);
             await ShopCustomer.expects(mainCategoryLocators.breadcrumbNavigationLinkItem).toBeVisible();
-            const breadcrumbNavigationItemTagName = await mainCategoryLocators.breadcrumbNavigationItem.evaluate((el) =>
-                el.tagName.toLowerCase(),
-            );
-            await ShopCustomer.expects(breadcrumbNavigationItemTagName).toBe('span');
         });
     },
 );

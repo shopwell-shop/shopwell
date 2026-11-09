@@ -1,0 +1,23 @@
+{% props
+    title = null,
+    genders = [],
+    slots = [],
+%}
+
+{% set attributeDefaults = { class: 'sw-content-form' } %}
+
+<div {{ attributes.defaults(attributeDefaults) }}>
+    {% block content %}
+        {% if title %}
+            <h2 class="sw-content-form__title">{{ title }}</h2>
+        {% endif %}
+
+        {% sw_include '@Storefront/storefront/component/form/form-types/online-revocation-request-form.html.twig' with {
+            formTitle: title,
+            genders: genders,
+            formViolations: app.request.get('errors'),
+            action: 'frontend.form.revocation.request',
+            submitText: 'revocationRequest.formSubmit',
+        } %}
+    {% endblock %}
+</div>
