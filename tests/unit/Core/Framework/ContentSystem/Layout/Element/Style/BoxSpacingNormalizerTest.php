@@ -129,7 +129,7 @@ class BoxSpacingNormalizerTest extends TestCase
     #[DataProvider('matchLimitProvider')]
     public function testMatchLimitFailureIsRejectedInsteadOfTreatedAsANonMatch(string $value, int $backtrackLimit): void
     {
-        // Temporarily disable JIT so the interpreter's match limit is deterministic in the shared process.
+        // Disable JIT before recompiling the patterns so the interpreter's match limit is deterministic.
         $jit = ini_get('pcre.jit');
         $limit = ini_get('pcre.backtrack_limit');
         static::assertNotFalse($jit);
@@ -138,6 +138,13 @@ class BoxSpacingNormalizerTest extends TestCase
         ini_set('pcre.backtrack_limit', (string) $backtrackLimit);
 
         try {
+            // Changing pcre.jit does not invalidate an already JIT-compiled pattern. Fill PHP's 4096-entry
+            // cache with unique patterns so the normalizer's patterns are recompiled without JIT.
+            $cacheKey = bin2hex(random_bytes(8));
+            for ($i = 0; $i < 4096; ++$i) {
+                preg_match('/(?#box-spacing-' . $cacheKey . '-' . $i . ')/', '');
+            }
+
             $this->expectExceptionObject(ContentSystemException::boxSpacingInvalidValue('match', $value));
             (new BoxSpacingNormalizer())->normalizeCssValue($value);
         } finally {
