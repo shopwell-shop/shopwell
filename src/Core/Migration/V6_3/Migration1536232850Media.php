@@ -19,30 +19,32 @@ class Migration1536232850Media extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `media` (
-              `id`              BINARY(16)                                  NOT NULL,
-              `user_id`         BINARY(16)                                  NULL,
-              `media_folder_id` BINARY(16)                                  NULL,
-              `mime_type`       VARCHAR(255)    COLLATE utf8mb4_unicode_ci  NULL,
-              `file_extension`  VARCHAR(50)     COLLATE utf8mb4_unicode_ci  NULL,
-              `file_size`       INT(10)         unsigned                    NULL,
-              `meta_data`       JSON                                        NULL,
-              `file_name`       LONGTEXT        COLLATE utf8mb4_unicode_ci  NULL,
-              `media_type`      LONGBLOB                                    NULL,
-              `thumbnails_ro`   LONGBLOB                                    NULL,
-              `private`         TINYINT(1)                                  NOT NULL DEFAULT 0,
-              `uploaded_at`     DATETIME(3)                                 NULL,
-              `created_at`      DATETIME(3)                                 NOT NULL,
-              `updated_at`      DATETIME(3)                                 NULL,
-               PRIMARY KEY (`id`),
-               CONSTRAINT `json.media.meta_data` CHECK (JSON_VALID(`meta_data`)),
-               CONSTRAINT `fk.media.user_id` FOREIGN KEY (`user_id`)
-                 REFERENCES `user` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-               CONSTRAINT `fk.media.media_folder_id` FOREIGN KEY (`media_folder_id`)
-                 REFERENCES `media_folder` (`id`) ON DELETE SET NULL
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `media` (
+                `id` BINARY(16) NOT NULL,
+                `user_id` BINARY(16) NULL,
+                `media_folder_id` BINARY(16) NULL,
+                `mime_type` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+                `file_extension` VARCHAR(50) COLLATE utf8mb4_unicode_ci NULL,
+                `file_size` INT(10) unsigned NULL,
+                `meta_data` JSON NULL,
+                `file_name` LONGTEXT COLLATE utf8mb4_unicode_ci NULL,
+                `media_type` LONGBLOB NULL,
+                `thumbnails_ro` LONGBLOB NULL,
+                `private` TINYINT(1) NOT NULL DEFAULT 0,
+                `uploaded_at` DATETIME(3) NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `config` JSON DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                KEY `fk.media.user_id` (`user_id`),
+                KEY `idx.media.uploaded_at_created_at_id` (`uploaded_at`,`created_at`,`id`),
+                KEY `idx.media.media_folder_id_created_at_id` (`media_folder_id`,`created_at`,`id`),
+                CONSTRAINT `fk.media.media_folder_id` FOREIGN KEY (`media_folder_id`) REFERENCES `media_folder` (`id`) ON DELETE SET NULL,
+                CONSTRAINT `fk.media.user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `json.media.meta_data` CHECK (JSON_VALID(`meta_data`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
 
         $connection->executeStatement('
             CREATE TABLE `media_translation` (

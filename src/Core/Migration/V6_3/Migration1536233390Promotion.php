@@ -19,40 +19,50 @@ class Migration1536233390Promotion extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-        CREATE TABLE IF NOT EXISTS `promotion` (
-              `id` BINARY(16) NOT NULL,
-              `active` TINYINT(1) NOT NULL DEFAULT 0,
-              `valid_from` DATETIME NULL,
-              `valid_until` DATETIME NULL,
-              `max_redemptions_global` INT NOT NULL DEFAULT 1,
-              `max_redemptions_per_customer` INT NOT NULL DEFAULT 1,
-              `order_count` INT NOT NULL DEFAULT 0,
-              `orders_per_customer_count` JSON NULL,
-              `exclusive` TINYINT(1) NOT NULL DEFAULT 0,
-              `code` VARCHAR(255) NULL UNIQUE,
-              `use_codes` TINYINT(1) NOT NULL DEFAULT 0,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) NULL,
-              PRIMARY KEY (`id`)
-          ) ENGINE = InnoDB');
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `promotion` (
+                `id` BINARY(16) NOT NULL,
+                `active` TINYINT(1) NOT NULL DEFAULT 0,
+                `valid_from` DATETIME NULL,
+                `valid_until` DATETIME NULL,
+                `max_redemptions_global` INT NOT NULL DEFAULT 1,
+                `max_redemptions_per_customer` INT NOT NULL DEFAULT 1,
+                `priority` INT NOT NULL DEFAULT '1',
+                `order_count` INT NOT NULL DEFAULT 0,
+                `orders_per_customer_count` JSON NULL,
+                `exclusive` TINYINT(1) NOT NULL DEFAULT 0,
+                `code` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                `use_codes` TINYINT(1) NOT NULL DEFAULT 0,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `customer_restriction` TINYINT(1) NOT NULL DEFAULT '0',
+                `prevent_combination` TINYINT(1) NOT NULL DEFAULT '0',
+                `exclusion_ids` JSON DEFAULT NULL,
+                `use_individual_codes` TINYINT(1) NOT NULL DEFAULT '0',
+                `individual_code_pattern` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                `use_setgroups` TINYINT(1) NOT NULL DEFAULT '0',
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `code` (`code`),
+                UNIQUE KEY `individual_code_pattern` (`individual_code_pattern`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SQL);
 
-        $connection->executeStatement('
-        CREATE TABLE `promotion_translation` (
-            `name` VARCHAR(255) NULL,
-            `promotion_id` BINARY(16) NOT NULL,
-            `language_id` BINARY(16) NOT NULL,
-            `created_at` DATETIME(3) NOT NULL,
-            `updated_at` DATETIME(3) NULL,
-            PRIMARY KEY (`promotion_id`,`language_id`),
-            KEY `fk.promotion_translation.promotion_id` (`promotion_id`),
-            KEY `fk.promotion_translation.language_id` (`language_id`),
-            CONSTRAINT `fk.promotion_translation.promotion_id` FOREIGN KEY (`promotion_id`)
-              REFERENCES `promotion` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-            CONSTRAINT `fk.promotion_translation.language_id` FOREIGN KEY (`language_id`)
-              REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `promotion_translation` (
+                `name` VARCHAR(255) NULL,
+                `promotion_id` BINARY(16) NOT NULL,
+                `language_id` BINARY(16) NOT NULL,
+                `custom_fields` JSON DEFAULT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`promotion_id`,`language_id`),
+                KEY `fk.promotion_translation.promotion_id` (`promotion_id`),
+                KEY `fk.promotion_translation.language_id` (`language_id`),
+                CONSTRAINT `fk.promotion_translation.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.promotion_translation.promotion_id` FOREIGN KEY (`promotion_id`) REFERENCES `promotion` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `json.promotion_translation.custom_fields` CHECK (JSON_VALID(`custom_fields`))
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

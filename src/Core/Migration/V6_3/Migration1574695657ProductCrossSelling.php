@@ -22,25 +22,26 @@ class Migration1574695657ProductCrossSelling extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `product_cross_selling` (
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `product_cross_selling` (
                 `id` BINARY(16) NOT NULL,
                 `position` INT(11) NOT NULL,
                 `sort_by` VARCHAR(255) NOT NULL,
                 `sort_direction` VARCHAR(255) NOT NULL,
-                `active` TINYINT(1) NULL DEFAULT \'0\',
+                `active` TINYINT(1) NULL DEFAULT '0',
+                `limit` INT NOT NULL DEFAULT '24',
                 `product_id` BINARY(16) NOT NULL,
                 `product_version_id` BINARY(16) NOT NULL,
                 `product_stream_id` BINARY(16) NOT NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
-                CONSTRAINT `fk.product_cross_selling.product_id`
-                    FOREIGN KEY (`product_id`,`product_version_id`) REFERENCES `product` (`id`,`version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.product_cross_selling.product_stream_id`
-                    FOREIGN KEY (`product_stream_id`) REFERENCES `product_stream` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                KEY `fk.product_cross_selling.product_id` (`product_id`,`product_version_id`),
+                KEY `fk.product_cross_selling.product_stream_id` (`product_stream_id`),
+                CONSTRAINT `fk.product_cross_selling.product_id` FOREIGN KEY (`product_id`,`product_version_id`) REFERENCES `product` (`id`,`version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.product_cross_selling.product_stream_id` FOREIGN KEY (`product_stream_id`) REFERENCES `product_stream` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
 
         $connection->executeStatement('
             CREATE TABLE `product_cross_selling_translation` (

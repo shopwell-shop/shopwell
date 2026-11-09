@@ -62,24 +62,25 @@ class Migration1536233330MailTemplate extends MigrationStep
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
 
-        $connection->executeStatement('
-            CREATE TABLE `mail_template_translation` (
-              `mail_template_id` BINARY(16) NOT NULL,
-              `language_id` BINARY(16) NOT NULL,
-              `sender_name` VARCHAR(255) DEFAULT NULL,
-              `subject` VARCHAR(255) DEFAULT NULL,
-              `description` LONGTEXT DEFAULT NULL,
-              `content_html` LONGTEXT DEFAULT NULL,
-              `content_plain` LONGTEXT DEFAULT NULL,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) DEFAULT NULL,
-              PRIMARY KEY (`mail_template_id`, `language_id`),
-              CONSTRAINT `fk.mail_template_translation.mail_template_id` FOREIGN KEY (`mail_template_id`)
-                REFERENCES `mail_template` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-              CONSTRAINT `fk.mail_template_translation.language_id` FOREIGN KEY (`language_id`)
-                REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `mail_template_translation` (
+                `mail_template_id` BINARY(16) NOT NULL,
+                `language_id` BINARY(16) NOT NULL,
+                `sender_name` VARCHAR(255) DEFAULT NULL,
+                `subject` VARCHAR(255) DEFAULT NULL,
+                `description` LONGTEXT DEFAULT NULL,
+                `content_html` LONGTEXT DEFAULT NULL,
+                `content_plain` LONGTEXT DEFAULT NULL,
+                `custom_fields` JSON DEFAULT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) DEFAULT NULL,
+                PRIMARY KEY (`mail_template_id`, `language_id`),
+                KEY `fk.mail_template_translation.language_id` (`language_id`),
+                CONSTRAINT `fk.mail_template_translation.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.mail_template_translation.mail_template_id` FOREIGN KEY (`mail_template_id`) REFERENCES `mail_template` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `json.mail_template_translation.custom_fields` CHECK (JSON_VALID(`custom_fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
 
         $connection->executeStatement('
             CREATE TABLE `mail_template_sales_channel` (

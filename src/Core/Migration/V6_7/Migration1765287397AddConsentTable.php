@@ -19,7 +19,7 @@ class Migration1765287397AddConsentTable extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `consent_state` (
                 `id` BINARY(16) NOT NULL,
                 `name` VARCHAR(100) NOT NULL,
@@ -27,9 +27,10 @@ class Migration1765287397AddConsentTable extends MigrationStep
                 `state` VARCHAR(20) NOT NULL,
                 `actor` VARCHAR(255) NOT NULL,
                 `updated_at` DATETIME(3) NOT NULL,
+                `revision` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq.consent_state` (`name`, `identifier`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 }

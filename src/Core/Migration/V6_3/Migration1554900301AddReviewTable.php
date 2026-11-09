@@ -24,8 +24,8 @@ class Migration1554900301AddReviewTable extends MigrationStep
         $connection->executeStatement('
             DROP TABLE IF EXISTS `product_review`;
         ');
-        $connection->executeStatement('
-            CREATE TABLE `product_review` (
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `product_review` (
                 `id` BINARY(16) NOT NULL,
                 `product_id` BINARY(16) NOT NULL,
                 `customer_id` BINARY(16) NULL,
@@ -36,8 +36,9 @@ class Migration1554900301AddReviewTable extends MigrationStep
                 `title` VARCHAR(255) NULL,
                 `content` LONGTEXT NULL,
                 `points` DOUBLE NULL,
-                `status` TINYINT(1) NULL DEFAULT \'0\',
+                `status` TINYINT(1) NULL DEFAULT '0',
                 `comment` LONGTEXT NULL,
+                `custom_fields` JSON DEFAULT NULL,
                 `updated_at` DATETIME(3) NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `product_version_id` BINARY(16) NOT NULL,
@@ -46,12 +47,13 @@ class Migration1554900301AddReviewTable extends MigrationStep
                 KEY `fk.product_review.customer_id` (`customer_id`),
                 KEY `fk.product_review.sales_channel_id` (`sales_channel_id`),
                 KEY `fk.product_review.language_id` (`language_id`),
-                CONSTRAINT `fk.product_review.product_id` FOREIGN KEY (`product_id`,`product_version_id`) REFERENCES `product` (`id`,`version_id`)  ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.product_review.customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`),
+                CONSTRAINT `fk.product_review.customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `fk.product_review.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.product_review.product_id` FOREIGN KEY (`product_id`,`product_version_id`) REFERENCES `product` (`id`,`version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.product_review.sales_channel_id` FOREIGN KEY (`sales_channel_id`) REFERENCES `sales_channel` (`id`),
-                CONSTRAINT `fk.product_review.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`)
+                CONSTRAINT `json.product_review.custom_fields` CHECK (JSON_VALID(`custom_fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

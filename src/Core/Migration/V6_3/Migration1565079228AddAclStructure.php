@@ -19,15 +19,17 @@ class Migration1565079228AddAclStructure extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `acl_role` (
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `acl_role` (
                 `id` BINARY(16) NOT NULL,
                 `name` VARCHAR(255) NOT NULL,
+                `description` LONGTEXT CHARACTER SET UTF8MB4 COLLATE UTF8MB4_UNICODE_CI,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
+                `deleted_at` DATETIME(3) DEFAULT NULL,
                 PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ');
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SQL);
         $connection->executeStatement('
             CREATE TABLE `acl_resource` (
                 `resource` VARCHAR(255) NOT NULL,

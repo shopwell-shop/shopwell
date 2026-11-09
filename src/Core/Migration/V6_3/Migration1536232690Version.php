@@ -19,15 +19,16 @@ class Migration1536232690Version extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `version` (
-              `id`          BINARY(16)                              NOT NULL,
-              `name`        VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `created_at`  DATETIME(3)                             NOT NULL,
-              `updated_at`  DATETIME(3)                             NULL,
-              PRIMARY KEY (`id`)
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `version` (
+                `id` BINARY(16) NOT NULL,
+                `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                KEY `idx.version.created_at` (`created_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

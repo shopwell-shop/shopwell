@@ -19,14 +19,15 @@ class Migration1536232670Unit extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `unit` (
-              `id`          BINARY(16)  NOT NULL,
-              `created_at`  DATETIME(3) NOT NULL,
-              `updated_at`  DATETIME(3) NULL,
-              PRIMARY KEY (`id`)
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `unit` (
+                `id` BINARY(16) NOT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `unece_code` VARCHAR(3) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
 
         $connection->executeStatement('
             CREATE TABLE `unit_translation` (

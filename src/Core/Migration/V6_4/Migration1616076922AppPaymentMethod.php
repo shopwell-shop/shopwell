@@ -32,41 +32,31 @@ class Migration1616076922AppPaymentMethod extends MigrationStep
 
     private function addAppPaymentMethod(Connection $connection): void
     {
-        $connection->executeStatement('
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `app_payment_method` (
-                `id`                        BINARY(16)          NOT NULL,
-                `app_id`                    BINARY(16)          NULL,
-                `payment_method_id`         BINARY(16)          NOT NULL,
-                `app_name`                  VARCHAR(255)        NOT NULL,
-                `identifier`                VARCHAR(255)        NOT NULL,
-                `pay_url`                   VARCHAR(255)        NULL,
-                `finalize_url`              VARCHAR(255)        NULL,
-                `original_media_id`         BINARY(16)          NULL,
-                `created_at`                DATETIME(3)         NOT NULL,
-                `updated_at`                DATETIME(3)         NULL,
+                `id` BINARY(16) NOT NULL,
+                `app_id` BINARY(16) NULL,
+                `payment_method_id` BINARY(16) NOT NULL,
+                `app_name` VARCHAR(255) NOT NULL,
+                `identifier` VARCHAR(255) NOT NULL,
+                `pay_url` VARCHAR(255) NULL,
+                `finalize_url` VARCHAR(255) NULL,
+                `validate_url` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                `capture_url` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                `refund_url` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                `original_media_id` BINARY(16) NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `recurring_url` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
                 PRIMARY KEY (`id`),
-                CONSTRAINT `uniq.app_payment_method.payment_method_id`
-                    UNIQUE (`payment_method_id`),
-                CONSTRAINT `fk.app_payment_method.app_id`
-                    FOREIGN KEY (`app_id`)
-                    REFERENCES `app` (`id`)
-                    ON DELETE SET NULL
-                    ON UPDATE CASCADE,
-                CONSTRAINT `fk.app_payment_method.payment_method_id`
-                    FOREIGN KEY (`payment_method_id`)
-                    REFERENCES `payment_method` (`id`)
-                    ON DELETE CASCADE
-                    ON UPDATE CASCADE,
-                CONSTRAINT `fk.app_payment_method.original_media_id`
-                    FOREIGN KEY (`original_media_id`)
-                    REFERENCES `media` (`id`)
-                    ON DELETE SET NULL
-                    ON UPDATE CASCADE
-            )
-            ENGINE=InnoDB
-            DEFAULT CHARSET=utf8mb4
-            COLLATE=utf8mb4_unicode_ci;
-        ');
+                UNIQUE KEY `uniq.app_payment_method.payment_method_id` (`payment_method_id`),
+                KEY `fk.app_payment_method.app_id` (`app_id`),
+                KEY `fk.app_payment_method.original_media_id` (`original_media_id`),
+                CONSTRAINT `fk.app_payment_method.app_id` FOREIGN KEY (`app_id`) REFERENCES `app` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `fk.app_payment_method.original_media_id` FOREIGN KEY (`original_media_id`) REFERENCES `media` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `fk.app_payment_method.payment_method_id` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_method` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SQL);
     }
 
     private function addDefaultMediaFolder(Connection $connection): void

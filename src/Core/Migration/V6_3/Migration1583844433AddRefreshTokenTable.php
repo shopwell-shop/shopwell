@@ -19,17 +19,21 @@ class Migration1583844433AddRefreshTokenTable extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `refresh_token` (
-              `id`                  BINARY(16)                              NOT NULL,
-              `user_id`             BINARY(16)                              NOT NULL,
-              `token_id`            VARCHAR(80)                             NOT NULL,
-              `issued_at`           DATETIME(3)                             NOT NULL,
-              `expires_at`          DATETIME(3)                             NOT NULL,
-              PRIMARY KEY (`id`),
-              UNIQUE `uniq.token_id` (token_id)
+                `id` BINARY(16) NOT NULL,
+                `user_id` BINARY(16) NOT NULL,
+                `token_id` VARCHAR(80) NOT NULL,
+                `issued_at` DATETIME(3) NOT NULL,
+                `expires_at` DATETIME(3) NOT NULL,
+                `family_id` BINARY(16) DEFAULT NULL,
+                `revoked_at` DATETIME(3) DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE `uniq.token_id` (token_id),
+                KEY `idx.refresh_token.family_id` (`family_id`),
+                KEY `idx.refresh_token.user_id` (`user_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

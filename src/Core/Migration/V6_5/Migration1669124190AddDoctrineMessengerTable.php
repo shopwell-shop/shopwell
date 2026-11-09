@@ -40,6 +40,5 @@ class Migration1669124190AddDoctrineMessengerTable extends MigrationStep
 
     public function updateDestructive(Connection $connection): void
     {
-        $this->dropTableIfExists($connection, 'dead_message');
     }
 }

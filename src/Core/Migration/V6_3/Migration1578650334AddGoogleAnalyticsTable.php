@@ -22,12 +22,15 @@ class Migration1578650334AddGoogleAnalyticsTable extends MigrationStep
         $connection->executeStatement(
             <<<'SQL'
             CREATE TABLE IF NOT EXISTS `sales_channel_analytics` (
-                `id` BINARY(16)  NOT NULL,
+                `id` BINARY(16) NOT NULL,
                 `tracking_id` VARCHAR(50) NOT NULL,
                 `active` TINYINT(1) NOT NULL DEFAULT '0',
                 `track_orders` TINYINT(1) NOT NULL DEFAULT '0',
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
+                `anonymize_ip` TINYINT(1) NOT NULL DEFAULT '1',
+                `track_offcanvas_cart` TINYINT(1) NOT NULL DEFAULT '0',
+                `enhanced_conversions` TINYINT(1) NOT NULL DEFAULT '0',
                 PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL

@@ -49,42 +49,40 @@ class Migration1572193798TaxRule extends MigrationStep
                 UNIQUE KEY `uniq.technical_name` (`technical_name`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
-        $connection->executeStatement('
-            CREATE TABLE `tax_rule_type_translation`
-            (
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `tax_rule_type_translation` (
                 `tax_rule_type_id` BINARY(16) NOT NULL,
                 `language_id` BINARY(16) NOT NULL,
                 `type_name` VARCHAR(255) NOT NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`tax_rule_type_id`, `language_id`),
-                CONSTRAINT `fk.tax_rule_type_translation.tax_rule_type_id`
-                    FOREIGN KEY (`tax_rule_type_id`) REFERENCES `tax_rule_type` (`id`),
-                CONSTRAINT `fk.tax_rule_type_translation.language_id`
-                    FOREIGN KEY (`language_id`) REFERENCES `language` (`id`)
+                KEY `fk.tax_rule_type_translation.language_id` (`language_id`),
+                CONSTRAINT `fk.tax_rule_type_translation.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.tax_rule_type_translation.tax_rule_type_id` FOREIGN KEY (`tax_rule_type_id`) REFERENCES `tax_rule_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
-        $connection->executeStatement('
-            CREATE TABLE `tax_rule`
-            (
+SQL);
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `tax_rule` (
                 `id` BINARY(16) NOT NULL,
                 `tax_id` BINARY(16) NOT NULL,
                 `tax_rule_type_id` BINARY(16) NOT NULL,
                 `country_id` BINARY(16) NOT NULL,
-                `tax_rate` DOUBLE(10,2) NOT NULL,
+                `tax_rate` DOUBLE(10,3) DEFAULT NULL,
                 `data` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
+                `active_from` DATETIME(3) DEFAULT NULL,
                 PRIMARY KEY (`id`),
-                CONSTRAINT `json.tax_rule.data` CHECK(JSON_VALID(`data`)),
-                CONSTRAINT `fk.tax_rule.tax_id`
-                    FOREIGN KEY (`tax_id`) REFERENCES `tax` (`id`),
-                CONSTRAINT `fk.tax_rule.tax_area_rule_type_id`
-                    FOREIGN KEY (`tax_rule_type_id`) REFERENCES `tax_rule_type` (`id`),
-                CONSTRAINT `fk.tax_rule.country_id`
-                    FOREIGN KEY (`country_id`) REFERENCES `country` (`id`)
+                KEY `fk.tax_rule.tax_id` (`tax_id`),
+                KEY `fk.tax_rule.tax_area_rule_type_id` (`tax_rule_type_id`),
+                KEY `fk.tax_rule.country_id` (`country_id`),
+                CONSTRAINT `fk.tax_rule.country_id` FOREIGN KEY (`country_id`) REFERENCES `country` (`id`),
+                CONSTRAINT `fk.tax_rule.tax_area_rule_type_id` FOREIGN KEY (`tax_rule_type_id`) REFERENCES `tax_rule_type` (`id`),
+                CONSTRAINT `fk.tax_rule.tax_id` FOREIGN KEY (`tax_id`) REFERENCES `tax` (`id`),
+                CONSTRAINT `json.tax_rule.data` CHECK(JSON_VALID(`data`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     private function addTaxRuleTypes(Connection $connection): void

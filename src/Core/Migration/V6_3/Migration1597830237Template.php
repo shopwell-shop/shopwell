@@ -19,20 +19,22 @@ class Migration1597830237Template extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `app_template` (
-              `id` BINARY(16) NOT NULL,
-              `template` LONGTEXT NOT NULL,
-              `path` VARCHAR(1024) NOT NULL,
-              `active` TINYINT(1) NOT NULL,
-              `app_id` BINARY(16) NOT NULL,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) NULL,
-              PRIMARY KEY (`id`),
-              INDEX `idx.template.path` (`path`(256)),
-              CONSTRAINT `fk.template.app_id` FOREIGN KEY (`app_id`) REFERENCES `app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                `id` BINARY(16) NOT NULL,
+                `template` LONGTEXT NOT NULL,
+                `path` VARCHAR(1024) NOT NULL,
+                `active` TINYINT(1) NOT NULL,
+                `app_id` BINARY(16) NOT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `hash` VARCHAR(32) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                INDEX `idx.template.path` (`path`(256)),
+                KEY `fk.template.app_id` (`app_id`),
+                CONSTRAINT `fk.template.app_id` FOREIGN KEY (`app_id`) REFERENCES `app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

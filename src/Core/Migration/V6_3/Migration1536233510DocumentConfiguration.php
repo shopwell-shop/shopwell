@@ -20,24 +20,27 @@ class Migration1536233510DocumentConfiguration extends MigrationStep
     public function update(Connection $connection): void
     {
         $sql = <<<'SQL'
-    CREATE TABLE `document_base_config` (
-      `id` BINARY(16) NOT NULL,
-      `name` VARCHAR(64) NOT NULL,
-      `filename_prefix` VARCHAR(64) DEFAULT '',
-      `filename_suffix` VARCHAR(64) DEFAULT '',
-      `document_number` VARCHAR(64) DEFAULT '',
-      `global` TINYINT(1) DEFAULT 0,
-      `document_type_id` BINARY(16) NOT NULL,
-      `logo_id` BINARY(16) NULL,
-      `config` JSON NULL,
-      `created_at` DATETIME(3) NOT NULL,
-      `updated_at` DATETIME(3) NULL,
-      PRIMARY KEY (`id`),
-      KEY `idx.document_base_config.type_id` (`document_type_id`),
-      CONSTRAINT `json.config` CHECK (JSON_VALID(`config`)),
-      CONSTRAINT `fk.document_base_config.type_id` FOREIGN KEY (`document_type_id`) REFERENCES `document_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-      CONSTRAINT `fk.document_base_config.logo_id` FOREIGN KEY (`logo_id`) REFERENCES `media` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            CREATE TABLE IF NOT EXISTS `document_base_config` (
+                `id` BINARY(16) NOT NULL,
+                `name` VARCHAR(64) NOT NULL,
+                `filename_prefix` VARCHAR(64) DEFAULT '',
+                `filename_suffix` VARCHAR(64) DEFAULT '',
+                `document_number` VARCHAR(64) DEFAULT '',
+                `global` TINYINT(1) DEFAULT 0,
+                `document_type_id` BINARY(16) NOT NULL,
+                `logo_id` BINARY(16) NULL,
+                `config` JSON NULL,
+                `custom_fields` JSON DEFAULT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                KEY `idx.document_base_config.type_id` (`document_type_id`),
+                KEY `fk.document_base_config.logo_id` (`logo_id`),
+                CONSTRAINT `fk.document_base_config.logo_id` FOREIGN KEY (`logo_id`) REFERENCES `media` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `fk.document_base_config.type_id` FOREIGN KEY (`document_type_id`) REFERENCES `document_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `json.config` CHECK (JSON_VALID(`config`)),
+                CONSTRAINT `json.document_base_config.custom_fields` CHECK (JSON_VALID(`custom_fields`))
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
         $connection->executeStatement($sql);
 

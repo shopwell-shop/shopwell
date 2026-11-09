@@ -21,21 +21,21 @@ class Migration1558505525Logging extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `log_entry` (
-              `id` BINARY(16) NOT NULL,
-              `message` VARCHAR(255) NOT NULL,
-              `level` SMALLINT NOT NULL,
-              `channel` VARCHAR(255) NOT NULL,
-              `context` JSON NULL,
-              `extra` JSON NULL,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) ,
-              PRIMARY KEY (`id`),
-              CONSTRAINT `json.log_entry.context` CHECK (JSON_VALID(`context`)),
-              CONSTRAINT `json.log_entry.extra` CHECK (JSON_VALID(`extra`))
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `log_entry` (
+                `id` BINARY(16) NOT NULL,
+                `message` LONGTEXT COLLATE UTF8MB4_UNICODE_CI NOT NULL,
+                `level` SMALLINT NOT NULL,
+                `channel` VARCHAR(255) NOT NULL,
+                `context` JSON NULL,
+                `extra` JSON NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3),
+                PRIMARY KEY (`id`),
+                CONSTRAINT `json.log_entry.context` CHECK (JSON_VALID(`context`)),
+                CONSTRAINT `json.log_entry.extra` CHECK (JSON_VALID(`extra`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
 
         $connection->insert('system_config', [
             'id' => Uuid::randomBytes(),

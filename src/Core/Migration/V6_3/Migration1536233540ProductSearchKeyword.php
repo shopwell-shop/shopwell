@@ -19,8 +19,8 @@ class Migration1536233540ProductSearchKeyword extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `product_search_keyword` (
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `product_search_keyword` (
                 `id` BINARY(16) NOT NULL,
                 `version_id` BINARY(16) NOT NULL,
                 `language_id` BINARY(16) NOT NULL,
@@ -33,12 +33,10 @@ class Migration1536233540ProductSearchKeyword extends MigrationStep
                 PRIMARY KEY (`id`,`version_id`,`language_id`),
                 KEY `idx.product_search_keyword.product_id` (`product_id`,`product_version_id`),
                 KEY `idx.product_search_keyword.language_id` (`language_id`),
-                CONSTRAINT `fk.product_search_keyword.product_id` FOREIGN KEY (`product_id`,`product_version_id`)
-                  REFERENCES `product` (`id`,`version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.product_search_keyword.language_id` FOREIGN KEY (`language_id`)
-                  REFERENCES `language` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+                CONSTRAINT `fk.product_search_keyword.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.product_search_keyword.product_id` FOREIGN KEY (`product_id`,`product_version_id`) REFERENCES `product` (`id`,`version_id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-');
+SQL);
 
         $connection->executeStatement('
             CREATE TABLE `product_keyword_dictionary` (

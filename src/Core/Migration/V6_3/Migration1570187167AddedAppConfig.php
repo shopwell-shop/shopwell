@@ -20,13 +20,13 @@ class Migration1570187167AddedAppConfig extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `app_config` (
-              `key` varchar(50) NOT NULL,
-              `value` LONGTEXT NOT NULL,
-               PRIMARY KEY (`key`)
-            );
-        ');
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `app_config` (
+                `key` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI NOT NULL,
+                `value` LONGTEXT NOT NULL,
+                PRIMARY KEY (`key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SQL);
 
         $connection->insert('app_config', [
             '`key`' => 'cache-id',

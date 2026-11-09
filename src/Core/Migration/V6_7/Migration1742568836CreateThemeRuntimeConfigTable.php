@@ -28,9 +28,10 @@ class Migration1742568836CreateThemeRuntimeConfigTable extends MigrationStep
                 `script_files` JSON NULL,
                 `icon_sets` JSON NOT NULL,
                 `updated_at` DATETIME(3) NOT NULL,
+                `import_map` JSON DEFAULT NULL,
                 PRIMARY KEY (`theme_id`),
                 INDEX `idx.technical_name` (`technical_name`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        SQL);
+SQL);
     }
 }

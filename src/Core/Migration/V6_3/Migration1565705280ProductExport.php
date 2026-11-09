@@ -21,8 +21,8 @@ class Migration1565705280ProductExport extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `product_export` (
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `product_export` (
                 `id` BINARY(16) NOT NULL,
                 `product_stream_id` BINARY(16) NOT NULL,
                 `storefront_sales_channel_id` BINARY(16) NULL,
@@ -32,8 +32,8 @@ class Migration1565705280ProductExport extends MigrationStep
                 `access_key` VARCHAR(255) NOT NULL,
                 `encoding` VARCHAR(255) NOT NULL,
                 `file_format` VARCHAR(255) NOT NULL,
-                `include_variants` TINYINT(1) NULL DEFAULT \'0\',
-                `generate_by_cronjob` TINYINT(1) NOT NULL DEFAULT \'0\',
+                `include_variants` TINYINT(1) NULL DEFAULT '0',
+                `generate_by_cronjob` TINYINT(1) NOT NULL DEFAULT '0',
                 `generated_at` DATETIME(3) NULL,
                 `interval` INT(11) NOT NULL,
                 `header_template` LONGTEXT NULL,
@@ -41,18 +41,24 @@ class Migration1565705280ProductExport extends MigrationStep
                 `footer_template` LONGTEXT NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
+                `currency_id` BINARY(16) NOT NULL,
+                `paused_schedule` TINYINT(1) DEFAULT '0',
+                `is_running` TINYINT(1) NOT NULL DEFAULT '0',
+                `provider` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                `next_generation_at` DATETIME(3) DEFAULT NULL,
+                `feed_label` VARCHAR(20) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `file_name` (`file_name`),
                 KEY `fk.product_export.product_stream_id` (`product_stream_id`),
                 KEY `fk.product_export.storefront_sales_channel_id` (`storefront_sales_channel_id`),
                 KEY `fk.product_export.sales_channel_id` (`sales_channel_id`),
                 KEY `fk.product_export.sales_channel_domain_id` (`sales_channel_domain_id`),
-                CONSTRAINT `fk.product_export.product_stream_id` FOREIGN KEY (`product_stream_id`) REFERENCES `product_stream` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.product_export.storefront_sales_channel_id` FOREIGN KEY (`storefront_sales_channel_id`) REFERENCES `sales_channel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.product_export.product_stream_id` FOREIGN KEY (`product_stream_id`) REFERENCES `product_stream` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+                CONSTRAINT `fk.product_export.sales_channel_domain_id` FOREIGN KEY (`sales_channel_domain_id`) REFERENCES `sales_channel_domain` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.product_export.sales_channel_id` FOREIGN KEY (`sales_channel_id`) REFERENCES `sales_channel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.product_export.sales_channel_domain_id` FOREIGN KEY (`sales_channel_domain_id`) REFERENCES `sales_channel_domain` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                CONSTRAINT `fk.product_export.storefront_sales_channel_id` FOREIGN KEY (`storefront_sales_channel_id`) REFERENCES `sales_channel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
 
         $this->createSalesChannelType($connection);
     }

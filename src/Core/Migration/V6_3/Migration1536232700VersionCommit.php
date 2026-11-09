@@ -19,20 +19,22 @@ class Migration1536232700VersionCommit extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `version_commit` (
-              `id`              BINARY(16) NOT NULL,
-              `auto_increment`  BIGINT NOT NULL AUTO_INCREMENT UNIQUE,
-              `is_merge`        TINYINT(1) NOT NULL DEFAULT 0,
-              `message`         VARCHAR(5000) NULL,
-              `user_id`         BINARY(16) NULL,
-              `integration_id`  BINARY(16) NULL,
-              `version_id`      BINARY(16) NOT NULL,
-              `created_at`      DATETIME(3) NOT NULL,
-              `updated_at`      DATETIME(3) NULL,
-              PRIMARY KEY (`id`)
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `version_commit` (
+                `id` BINARY(16) NOT NULL,
+                `auto_increment` BIGINT NOT NULL AUTO_INCREMENT,
+                `is_merge` TINYINT(1) NOT NULL DEFAULT 0,
+                `message` VARCHAR(5000) NULL,
+                `user_id` BINARY(16) NULL,
+                `integration_id` BINARY(16) NULL,
+                `version_id` BINARY(16) NOT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `auto_increment` (`auto_increment`),
+                KEY `idx.version_commit.created_at` (`created_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

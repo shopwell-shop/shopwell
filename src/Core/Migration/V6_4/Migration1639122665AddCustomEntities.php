@@ -19,21 +19,23 @@ class Migration1639122665AddCustomEntities extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `custom_entity` (
-              `id` binary(16) NOT NULL,
-              `name` varchar(255) NOT NULL,
-              `fields` json NOT NULL,
-              `app_id` binary(16) DEFAULT NULL,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) NULL,
-              PRIMARY KEY (`id`),
-              KEY `app_id` (`app_id`),
-              UNIQUE `name` (`name`),
-              CONSTRAINT `fk.custom_entity.app_id` FOREIGN KEY (`app_id`) REFERENCES `app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-              CONSTRAINT `json.custom_entity.fields` CHECK (JSON_VALID(`fields`))
+                `id` binary(16) NOT NULL,
+                `name` varchar(255) NOT NULL,
+                `fields` json NOT NULL,
+                `app_id` binary(16) DEFAULT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `flags` JSON DEFAULT NULL,
+                `deleted_at` DATETIME(3) DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE `name` (`name`),
+                KEY `app_id` (`app_id`),
+                CONSTRAINT `fk.custom_entity.app_id` FOREIGN KEY (`app_id`) REFERENCES `app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `json.custom_entity.fields` CHECK (JSON_VALID(`fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

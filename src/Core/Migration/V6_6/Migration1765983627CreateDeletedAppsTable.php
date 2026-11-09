@@ -19,11 +19,13 @@ class Migration1765983627CreateDeletedAppsTable extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE IF NOT EXISTS deleted_apps (
-                `name` varchar(255) NOT NULL PRIMARY KEY,
-                `app_secret` VARCHAR(255) NOT NULL
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `deleted_apps` (
+                `name` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI NOT NULL,
+                `app_secret` VARCHAR(255) NOT NULL,
+                `unconfirmed_app_secrets` JSON DEFAULT NULL,
+                PRIMARY KEY (`name`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 }

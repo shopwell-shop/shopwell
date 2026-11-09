@@ -19,31 +19,33 @@ class Migration1536233430NewsletterRecipient extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `newsletter_recipient` (
-              `id` BINARY(16) NOT NULL,
-              `email` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-              `zip_code` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-              `city` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-              `street` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-              `status` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `hash` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
-              `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-              `language_id` BINARY(16) NOT NULL,
-              `sales_channel_id` BINARY(16) NOT NULL,
-              `custom_fields` JSON NULL,
-              `confirmed_at` DATETIME(3) NULL,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) NULL,
-              PRIMARY KEY (`id`),
-              CONSTRAINT `json.newsletter_recipient.custom_fields` CHECK (JSON_VALID(`custom_fields`)),
-              CONSTRAINT `fk.newsletter_recipient.language_id` FOREIGN KEY (`language_id`)
-                REFERENCES `language` (`id`) ON DELETE RESTRICT,
-              CONSTRAINT `fk.newsletter_recipient.sales_channel_id` FOREIGN KEY (`sales_channel_id`)
-                REFERENCES `sales_channel` (`id`) ON DELETE RESTRICT
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `newsletter_recipient` (
+                `id` BINARY(16) NOT NULL,
+                `email` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+                `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+                `zip_code` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+                `city` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+                `street` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+                `status` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+                `hash` VARCHAR(255) CHARACTER SET UTF8MB4 COLLATE UTF8MB4_UNICODE_CI NOT NULL,
+                `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+                `language_id` BINARY(16) NOT NULL,
+                `sales_channel_id` BINARY(16) NOT NULL,
+                `custom_fields` JSON NULL,
+                `confirmed_at` DATETIME(3) NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `hash` (`hash`),
+                KEY `fk.newsletter_recipient.language_id` (`language_id`),
+                KEY `fk.newsletter_recipient.sales_channel_id` (`sales_channel_id`),
+                KEY `idx.newsletter_recipient.email` (`email`),
+                CONSTRAINT `fk.newsletter_recipient.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE RESTRICT,
+                CONSTRAINT `fk.newsletter_recipient.sales_channel_id` FOREIGN KEY (`sales_channel_id`) REFERENCES `sales_channel` (`id`) ON DELETE RESTRICT,
+                CONSTRAINT `json.newsletter_recipient.custom_fields` CHECK (JSON_VALID(`custom_fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
     }
 
     public function updateDestructive(Connection $connection): void

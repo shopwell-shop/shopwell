@@ -49,34 +49,36 @@ SQL;
         $connection->executeStatement($sql);
 
         $sql = <<<'SQL'
-            CREATE TABLE `document` (
-              `id` BINARY(16) NOT NULL,
-              `document_type_id` BINARY(16) NOT NULL,
-              `referenced_document_id` BINARY(16) NULL ,
-              `file_type` VARCHAR(255) NOT NULL,
-              `order_id` BINARY(16) NOT NULL,
-              `order_version_id` BINARY(16) NOT NULL,
-              `config` JSON NULL,
-              `sent` TINYINT(1) NOT NULL DEFAULT 0,
-              `static` TINYINT(1) NOT NULL DEFAULT 0,
-              `deep_link_code` VARCHAR(32) NOT NULL,
-              `document_media_file_id` BINARY(16) NULL,
-              `custom_fields` JSON NULL,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) NULL,
-              PRIMARY KEY (`id`),
-              UNIQUE `uniq.deep_link_code` (`deep_link_code`),
-              CONSTRAINT `json.document.custom_fields` CHECK (JSON_VALID(`custom_fields`)),
-              CONSTRAINT `json.document.config` CHECK (JSON_VALID(`config`)),
-              CONSTRAINT `fk.document.document_type_id` FOREIGN KEY (`document_type_id`)
-                REFERENCES `document_type` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-              CONSTRAINT `fk.document.referenced_document_id` FOREIGN  KEY (`referenced_document_id`)
-                REFERENCES `document` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-              CONSTRAINT `fk.document.order_id` FOREIGN KEY (`order_id`,`order_version_id`)
-                REFERENCES `order` (`id`,`version_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-              CONSTRAINT `fk.document.document_media_file_id` FOREIGN KEY (`document_media_file_id`)
-                REFERENCES `media` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            CREATE TABLE IF NOT EXISTS `document` (
+                `id` BINARY(16) NOT NULL,
+                `document_type_id` BINARY(16) NOT NULL,
+                `referenced_document_id` BINARY(16) NULL,
+                `file_type` VARCHAR(255) NOT NULL,
+                `order_id` BINARY(16) DEFAULT NULL,
+                `order_version_id` BINARY(16) DEFAULT NULL,
+                `config` JSON NULL,
+                `sent` TINYINT(1) NOT NULL DEFAULT 0,
+                `static` TINYINT(1) NOT NULL DEFAULT 0,
+                `deep_link_code` VARCHAR(32) NOT NULL,
+                `document_media_file_id` BINARY(16) NULL,
+                `custom_fields` JSON NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `document_number` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(`config`,'$.documentNumber'))) STORED,
+                PRIMARY KEY (`id`),
+                UNIQUE `uniq.deep_link_code` (`deep_link_code`),
+                KEY `fk.document.document_type_id` (`document_type_id`),
+                KEY `fk.document.document_media_file_id` (`document_media_file_id`),
+                KEY `idx.document.document_number` (`document_number`),
+                KEY `fk.document.referenced_document_id` (`referenced_document_id`),
+                KEY `fk.document.order_id` (`order_id`,`order_version_id`),
+                CONSTRAINT `fk.document.document_media_file_id` FOREIGN KEY (`document_media_file_id`) REFERENCES `media` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+                CONSTRAINT `fk.document.document_type_id` FOREIGN KEY (`document_type_id`) REFERENCES `document_type` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+                CONSTRAINT `fk.document.order_id` FOREIGN KEY (`order_id`,`order_version_id`) REFERENCES `order` (`id`,`version_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+                CONSTRAINT `fk.document.referenced_document_id` FOREIGN KEY (`referenced_document_id`) REFERENCES `document` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `json.document.config` CHECK (JSON_VALID(`config`)),
+                CONSTRAINT `json.document.custom_fields` CHECK (JSON_VALID(`custom_fields`))
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
         $connection->executeStatement($sql);
     }

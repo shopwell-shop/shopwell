@@ -51,18 +51,17 @@ class Migration1610448012LandingPage extends MigrationStep
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
 
-        $connection->executeStatement('
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `landing_page_tag` (
-              `landing_page_id` BINARY(16) NOT NULL,
-              `landing_page_version_id` BINARY(16) NOT NULL,
-              `tag_id` BINARY(16) NOT NULL,
-              PRIMARY KEY (`landing_page_id`, `landing_page_version_id`, `tag_id`),
-              CONSTRAINT `fk.landing_page_tag.landing_page_version_id__landing_page_id` FOREIGN KEY (`landing_page_id`, `landing_page_version_id`)
-                REFERENCES `landing_page` (`id`, `version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-              CONSTRAINT `fk.landing_page_tag.tag_id` FOREIGN KEY (`tag_id`)
-                REFERENCES `tag` (`id`)
+                `landing_page_id` BINARY(16) NOT NULL,
+                `landing_page_version_id` BINARY(16) NOT NULL,
+                `tag_id` BINARY(16) NOT NULL,
+                PRIMARY KEY (`landing_page_id`, `landing_page_version_id`, `tag_id`),
+                KEY `fk.landing_page_tag.tag_id` (`tag_id`),
+                CONSTRAINT `fk.landing_page_tag.landing_page_version_id__landing_page_id` FOREIGN KEY (`landing_page_id`, `landing_page_version_id`) REFERENCES `landing_page` (`id`, `version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.landing_page_tag.tag_id` FOREIGN KEY (`tag_id`) REFERENCES `tag` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+SQL);
 
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `landing_page_sales_channel` (

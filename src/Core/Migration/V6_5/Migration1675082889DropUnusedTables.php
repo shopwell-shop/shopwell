@@ -19,7 +19,6 @@ class Migration1675082889DropUnusedTables extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $this->dropTableIfExists($connection, 'message_queue_stats');
         $this->dropTableIfExists($connection, 'mail_template_sales_channel');
         $this->dropTableIfExists($connection, 'sales_channel_rule');
 

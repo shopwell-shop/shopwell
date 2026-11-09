@@ -20,16 +20,21 @@ class Migration1536233370EventAction extends MigrationStep
     public function update(Connection $connection): void
     {
         $sql = <<<'SQL'
-            CREATE TABLE `event_action` (
-              `id` BINARY(16) NOT NULL PRIMARY KEY,
-              `event_name` VARCHAR(500) NOT NULL,
-              `action_name` VARCHAR(500) NOT NULL,
-              `config` JSON NULL,
-              `created_at` DATETIME(3) NOT NULL,
-              `updated_at` DATETIME(3) NULL,
-              INDEX `idx.event_action.event_name` (`event_name`),
-              INDEX `idx.event_action.action_name` (`action_name`),
-              CONSTRAINT `json.event_action.config` CHECK(JSON_VALID(`config`))
+            CREATE TABLE IF NOT EXISTS `event_action` (
+                `id` BINARY(16) NOT NULL,
+                `title` VARCHAR(500) COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL,
+                `event_name` VARCHAR(500) NOT NULL,
+                `action_name` VARCHAR(500) NOT NULL,
+                `config` JSON NULL,
+                `custom_fields` JSON DEFAULT NULL,
+                `active` TINYINT(1) NOT NULL DEFAULT '1',
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                INDEX `idx.event_action.event_name` (`event_name`),
+                INDEX `idx.event_action.action_name` (`action_name`),
+                CONSTRAINT `json.event_action.config` CHECK(JSON_VALID(`config`)),
+                CONSTRAINT `json.event_action.custom_fields` CHECK (JSON_VALID(`custom_fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
 

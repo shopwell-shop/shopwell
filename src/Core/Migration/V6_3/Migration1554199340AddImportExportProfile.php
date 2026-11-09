@@ -21,21 +21,25 @@ class Migration1554199340AddImportExportProfile extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('
-            CREATE TABLE `import_export_profile` (
-              `id` binary(16) NOT NULL,
-              `name` varchar(255) NOT NULL,
-              `system_default` tinyint(1) unsigned NOT NULL DEFAULT \'0\',
-              `source_entity` varchar(255) NOT NULL,
-              `file_type` varchar(255) NOT NULL,
-              `delimiter` varchar(255),
-              `enclosure` varchar(255),
-              `mapping` LONGTEXT NULL,
-              `created_at` datetime(3) NOT NULL,
-              `updated_at` datetime(3),
-              PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ');
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `import_export_profile` (
+                `id` binary(16) NOT NULL,
+                `name` varchar(255) NOT NULL,
+                `system_default` tinyint(1) unsigned NOT NULL DEFAULT '0',
+                `source_entity` varchar(255) NOT NULL,
+                `file_type` varchar(255) NOT NULL,
+                `delimiter` varchar(255),
+                `enclosure` varchar(255),
+                `type` VARCHAR(255) COLLATE UTF8MB4_UNICODE_CI NOT NULL DEFAULT 'import-export',
+                `mapping` LONGTEXT NULL,
+                `update_by` JSON DEFAULT NULL,
+                `created_at` datetime(3) NOT NULL,
+                `updated_at` datetime(3),
+                `config` JSON DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                CONSTRAINT `json.import_export_profile.config` CHECK (JSON_VALID(`config`))
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SQL);
 
         $connection->insert('import_export_profile', $this->getDefaultCustomerProfile($connection));
     }

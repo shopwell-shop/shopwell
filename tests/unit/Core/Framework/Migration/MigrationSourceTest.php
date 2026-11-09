@@ -8,14 +8,14 @@ use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationSource;
+use Shopwell\Core\Migration\V6_3\Migration1536232600Language;
+use Shopwell\Core\Migration\V6_3\Migration1536232670Unit;
+use Shopwell\Core\Migration\V6_3\Migration1536232710Integration;
 use Shopwell\Core\Migration\V6_3\Migration1565270366PromotionSetGroupRule;
-use Shopwell\Core\Migration\V6_3\Migration1565346846Promotion;
 use Shopwell\Core\Migration\V6_3\Migration1566293076AddAutoIncrement;
 use Shopwell\Core\Migration\V6_3\Migration1566460168UpdateTexts;
 use Shopwell\Core\Migration\V6_3\Migration1566817701AddDisplayGroup;
 use Shopwell\Core\Migration\V6_3\Migration1567431050ContactFormTemplate;
-use Shopwell\Core\Migration\V6_3\Migration1568645037AddEnqueueDbal;
-use Shopwell\Core\Migration\V6_3\Migration1568901713PromotionDiscount;
 use Shopwell\Core\Migration\V6_3\Migration1569403146ProductVisibilityUnique;
 use Shopwell\Core\Migration\V6_3\Migration1570187167AddedAppConfig;
 use Shopwell\Core\Migration\V6_3\Migration1570621541UpdateDefaultMailTemplates;
@@ -125,13 +125,13 @@ class MigrationSourceTest extends TestCase
     {
         foreach ([
             [Migration1565270366PromotionSetGroupRule::class, true],
-            [Migration1565346846Promotion::class, true],
+            [Migration1536232670Unit::class, true],
             [Migration1566293076AddAutoIncrement::class, true],
             [Migration1566460168UpdateTexts::class, true],
             [Migration1566817701AddDisplayGroup::class, true],
             [Migration1567431050ContactFormTemplate::class, true],
-            [Migration1568645037AddEnqueueDbal::class, true],
-            [Migration1568901713PromotionDiscount::class, true],
+            [Migration1536232710Integration::class, true],
+            [Migration1536232600Language::class, true],
             [Migration1569403146ProductVisibilityUnique::class, true],
             [Migration1570187167AddedAppConfig::class, true],
             [Migration1570621541UpdateDefaultMailTemplates::class, true],
