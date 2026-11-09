@@ -3,10 +3,18 @@ import { test } from '@fixtures/AcceptanceTest';
 test(
     'Shop administrator should be able to create a landing page.',
     { tag: '@Categories' },
-    async ({ ShopAdmin, IdProvider, TestDataService, AdminCategories, CreateLandingPage, AdminLandingPageDetail }) => {
+    async ({
+        ShopAdmin,
+        IdProvider,
+        TestDataService,
+        AdminCategories,
+        CreateLandingPage,
+        AdminLandingPageDetail,
+        AdminExperienceStudio,
+    }) => {
         const layoutUuid = IdProvider.getIdPair().uuid;
         const layoutName = `00_addlandingpage_${layoutUuid}`;
-        const layoutType = 'landingpage';
+        const layoutType = 'landing_page';
         const landingPageData = {
             name: `00_addlandingpage_${IdProvider.getIdPair().uuid}`,
             salesChannel: 'Storefront',
@@ -18,7 +26,6 @@ test(
             await TestDataService.createBasicPageLayout(layoutType, {
                 name: layoutName,
                 id: layoutUuid,
-                type: layoutType,
             });
         });
 
@@ -40,20 +47,24 @@ test(
                 landingPageData.salesChannel,
             );
             await ShopAdmin.expects(AdminLandingPageDetail.seoUrlInput).toHaveValue(landingPageData.seoUrl);
-            // Verify layout tab detail
             await AdminLandingPageDetail.layoutTab.click();
-            await ShopAdmin.expects(AdminLandingPageDetail.layoutAssignmentCardTitle).toHaveText(layoutName);
-            await ShopAdmin.expects(AdminLandingPageDetail.layoutAssignmentCardHeadline).toHaveText(layoutName);
-            await ShopAdmin.expects(AdminLandingPageDetail.layoutAssignmentContentSection).toBeVisible();
-            await ShopAdmin.expects(AdminLandingPageDetail.changeLayoutButton).toBeVisible();
+            await ShopAdmin.expects(AdminLandingPageDetail.experienceStudioButton).toBeVisible();
+            await AdminLandingPageDetail.experienceStudioButton.click();
+            await AdminExperienceStudio.layoutLink(layoutName).click();
+            await ShopAdmin.expects(AdminExperienceStudio.layoutTitle).toHaveText(layoutName);
+            await ShopAdmin.expects(AdminExperienceStudio.saveButton).toBeVisible();
+            await AdminExperienceStudio.assignmentsButton.click();
+            const assignedPage = AdminExperienceStudio.assignmentModal
+                .locator('.sw-select-selection-list__item-holder')
+                .filter({ hasText: landingPageData.name });
+            await ShopAdmin.expects(assignedPage).toBeVisible();
 
-            await AdminLandingPageDetail.page.locator('.sw-category-layout-card__desc-actions-menu').click();
-
-            const editButton = ShopAdmin.page.locator('.sw-category-detail-layout__open-in-pagebuilder').first();
-            await ShopAdmin.expects(editButton).toBeVisible();
-
-            const deleteButton = ShopAdmin.page.locator('.sw-category-detail-layout__layout-reset').first();
-            await ShopAdmin.expects(deleteButton).toBeVisible();
+            await assignedPage.hover();
+            await assignedPage.locator('.sw-label__dismiss').click();
+            await AdminExperienceStudio.assignmentSaveButton.click();
+            await ShopAdmin.expects(AdminExperienceStudio.assignmentModal).not.toBeVisible();
+            await AdminExperienceStudio.assignmentsButton.click();
+            await ShopAdmin.expects(assignedPage).not.toBeVisible();
         });
     },
 );
@@ -65,49 +76,14 @@ test(
         const layoutUuid = IdProvider.getIdPair().uuid;
         const layoutName = `00_landingPageLayout_${layoutUuid}`;
         const landingPageName = `00_landingPage_${layoutUuid}`;
-        const sectionUuid = IdProvider.getIdPair().uuid;
-        const blockUuid = IdProvider.getIdPair().uuid;
-        const slotUuid = IdProvider.getIdPair().uuid;
-
-        const layout = await TestDataService.createBasicPageLayout('landingpage', {
+        const layout = await TestDataService.createBasicPageLayout('landing_page', {
             id: layoutUuid,
             name: layoutName,
-            type: 'landingpage',
-            sections: [
+            layout: [
                 {
-                    id: sectionUuid,
-                    pageId: layoutUuid,
-                    position: 0,
-                    type: 'default',
-                    blocks: [
-                        {
-                            id: blockUuid,
-                            sectionId: sectionUuid,
-                            type: 'text',
-                            position: 0,
-                            slots: [
-                                {
-                                    id: slotUuid,
-                                    type: 'text',
-                                    blockId: blockUuid,
-                                    slot: 'content',
-                                    config: {
-                                        content: {
-                                            source: 'static',
-                                            value: `<h1>${landingPageName}</h1>`,
-                                        },
-                                    },
-                                    translated: {
-                                        blockId: blockUuid,
-                                        cmsBlockVersionId: '',
-                                        slot: 'content',
-                                        type: 'text',
-                                        versionId: '',
-                                    },
-                                },
-                            ],
-                        },
-                    ],
+                    id: IdProvider.getIdPair().uuid,
+                    component: 'Sw:Content:Text',
+                    properties: { text: `<h1>${landingPageName}</h1>` },
                 },
             ],
         });

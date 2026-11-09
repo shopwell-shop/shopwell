@@ -3,77 +3,62 @@ import type { FixtureTypes, Task } from '@fixtures/AcceptanceTest';
 
 export const CreateLandingPage = base.extend<{ CreateLandingPage: Task }, FixtureTypes>({
     CreateLandingPage: async (
-        { ShopAdmin, AdminCategories, AdminLandingPageCreate, AdminLandingPageDetail, TestDataService, Translate },
+        {
+            ShopAdmin,
+            AdminCategories,
+            AdminLandingPageCreate,
+            AdminLandingPageDetail,
+            AdminExperienceStudio,
+            TestDataService,
+            Translate,
+        },
         use,
     ) => {
-        const task = (layoutName: string, landingPageData) => {
+        const task = (layoutName: string | null, landingPageData) => {
             return async function CreateLandingPage() {
                 await AdminCategories.landingPageHeadline.click();
                 await AdminCategories.addLandingPageButton.click();
-
                 await ShopAdmin.expects(AdminLandingPageDetail.saveLandingPageButton).toBeVisible();
                 await ShopAdmin.expects(AdminLandingPageDetail.saveLandingPageButton).toContainText(
                     Translate('administration:landingPage:general.save'),
                 );
 
-                //Fill details and save
                 await AdminLandingPageCreate.nameInput.fill(landingPageData.name);
                 await AdminLandingPageCreate.landingPageStatus.setChecked(landingPageData.status);
                 await AdminLandingPageCreate.salesChannelSelectionList.click();
                 await AdminLandingPageCreate.filtersResultPopoverItemList
                     .filter({ hasText: landingPageData.salesChannel })
                     .click();
-                // Filling the SEO URL does not click outside the select, so dismiss its popover before it can cover Save.
                 await AdminLandingPageCreate.page.keyboard.press('Escape');
                 await ShopAdmin.expects(
-                    AdminLandingPageCreate.filtersResultPopoverItemList.filter({
-                        hasText: landingPageData.salesChannel,
-                    }),
+                    AdminLandingPageCreate.filtersResultPopoverItemList.filter({ hasText: landingPageData.salesChannel }),
                 ).not.toBeVisible();
                 await ShopAdmin.fillsIn(AdminLandingPageCreate.seoUrlInput, landingPageData.seoUrl);
 
-                if (layoutName) {
-                    await AdminLandingPageCreate.layoutTab.click();
-                    // Verify empty layout state
-                    await ShopAdmin.expects(AdminLandingPageCreate.layoutEmptyState).toBeVisible();
-                    // Select existing layout
-                    await AdminLandingPageCreate.assignLayoutButton.click();
-                    // Search input need to delay press more than 300ms to mimic user typing in order to activate search action
-                    await AdminLandingPageCreate.searchLayoutInput.pressSequentially(layoutName.substring(0, 5), {
-                        delay: 500,
-                    });
-
-                    const gridLocator = AdminLandingPageCreate.page.locator('.sw-data-grid__cell-content').first();
-                    const gridVisible = await gridLocator.isVisible();
-                    if (gridVisible) {
-                        await AdminLandingPageCreate.page
-                            .getByLabel('Select layout')
-                            .locator('div')
-                            .filter({ hasText: 'Sort by: Name Type Created' })
-                            .getByRole('button')
-                            .nth(1)
-                            .click();
-                    }
-                    await AdminLandingPageCreate.page.getByTitle(layoutName).click();
-
-                    if (gridVisible) {
-                        await AdminLandingPageCreate.page.getByRole('button', { name: 'Add', exact: true }).click();
-                    } else {
-                        await AdminLandingPageCreate.layoutSaveButton.click();
-                    }
-                }
-                await AdminLandingPageCreate.saveLandingPageButton.click();
-                await AdminLandingPageCreate.loadingSpinner.waitFor({
-                    state: 'hidden',
-                });
-                // Wait until landing page is saved via API
-                const response = await AdminLandingPageCreate.page.waitForResponse(
-                    `${process.env['APP_URL']}api/search/landing-page`,
-                );
+                const [response] = await Promise.all([
+                    AdminLandingPageCreate.page.waitForResponse(
+                        (response) =>
+                            /\/api\/landing-page(?:\/[a-f0-9]{32})?$/.test(new URL(response.url()).pathname) &&
+                            ['POST', 'PATCH'].includes(response.request().method()),
+                    ),
+                    AdminLandingPageCreate.saveLandingPageButton.click(),
+                ]);
                 expect(response.ok()).toBeTruthy();
-                const url = AdminLandingPageDetail.page.url();
-                const landingPageId = url.split('/')[url.split('/').length - 2];
+                await AdminLandingPageDetail.page.waitForURL(/\/sw\/category\/landingPage\/[a-f0-9]{32}\/base/);
+                const landingPageId = AdminLandingPageDetail.page.url().match(/landingPage\/([a-f0-9]{32})/)[1];
                 TestDataService.addCreatedRecord('landing_page', landingPageId);
+
+                if (layoutName) {
+                    await ShopAdmin.goesTo(AdminExperienceStudio.url());
+                    await AdminExperienceStudio.layoutLink(layoutName).click();
+                    await AdminExperienceStudio.assignmentsButton.click();
+                    await AdminExperienceStudio.assignmentEntitiesInput.click();
+                    await AdminExperienceStudio.assignmentEntitiesInput.fill(landingPageData.name);
+                    await AdminExperienceStudio.assignmentOption(landingPageData.name).click();
+                    await AdminExperienceStudio.assignmentSaveButton.click();
+                    await ShopAdmin.expects(AdminExperienceStudio.assignmentModal).not.toBeVisible();
+                    await ShopAdmin.goesTo(AdminLandingPageDetail.url(landingPageId));
+                }
             };
         };
 
