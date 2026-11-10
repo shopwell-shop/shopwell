@@ -208,6 +208,7 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-blog',
                 title: 'sw-blog.general.mainMenuItemGeneral',
+                icon: 'regular-file-text',
                 parent: 'sw-content',
                 position: 40,
                 privilege: 'blog.viewer',

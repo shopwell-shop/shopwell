@@ -198,4 +198,75 @@ describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', ()
         // not attached below the settings and not pushed to the top level either
         expect(merged.some((entry) => entry.id === 'sw-settings-tax')).toBe(false);
     });
+    it('matches route keys to navigation declarations', () => {
+        const merged = mergeDatabaseNavigation(declared, [
+            node({ id: 'product', internalKey: 'sw.product.index', title: 'Inventory' }),
+        ]);
+        expect(merged.filter((entry) => entry.path === 'sw.product.index')).toHaveLength(1);
+        expect(merged.find((entry) => entry.path === 'sw.product.index')?.label).toEqual({
+            label: 'Inventory',
+            translated: true,
+        });
+    });
+
+    it('renders custom folders and external links', () => {
+        const tree = [
+            node({
+                id: 'resources',
+                type: 'folder',
+                title: 'Resources',
+                children: [
+                    node({ id: 'docs', type: 'link', title: 'Documentation', linkTarget: 'https://example.com/docs' }),
+                ],
+            }),
+        ];
+        const merged = mergeDatabaseNavigation([], tree);
+        expect(merged).toEqual([
+            expect.objectContaining({ id: 'resources', label: { label: 'Resources', translated: true } }),
+            expect.objectContaining({ id: 'docs', parent: 'resources', link: 'https://example.com/docs' }),
+        ]);
+    });
+
+    it('does not restore managed entries absent from the visible tree', () => {
+        const merged = mergeDatabaseNavigation(declared, [], (key) => key, [
+            'sw-dashboard',
+            'sw.product.index',
+            'sw-catalogue',
+        ]);
+        expect(merged.map((entry) => entry.id)).toEqual(['sw-order', 'custom-app-entry']);
+    });
+
+    it('keeps the declared route privilege when the menu specifies another privilege', () => {
+        const merged = mergeDatabaseNavigation(
+            [{ id: 'orders', path: 'sw.order.index', privilege: 'order.viewer' }],
+            [node({ id: 'order-row', internalKey: 'orders', privilege: 'product.viewer' })],
+        );
+        expect(merged[0].privilege).toBe('order.viewer');
+        expect(merged[0].menuPrivilege).toBe('product.viewer');
+    });
+});
+
+describe('menu refinements', () => {
+    it('projects group headings without adding navigation depth and carries ancestor restrictions', () => {
+        const result = mergeDatabaseNavigation(
+            [],
+            [
+                {
+                    id: 'group',
+                    type: 'group',
+                    title: 'Operations',
+                    privilege: 'system.viewer',
+                    children: [{ id: 'link', type: 'link', linkTarget: 'https://example.com', title: 'Help' }],
+                },
+            ],
+        );
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            id: 'link',
+            groupId: 'group',
+            groupTitle: 'Operations',
+            inheritedMenuPrivileges: ['system.viewer'],
+        });
+        expect(result[0].parent).toBeUndefined();
+    });
 });

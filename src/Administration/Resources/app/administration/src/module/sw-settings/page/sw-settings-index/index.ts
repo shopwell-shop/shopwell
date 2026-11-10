@@ -1,15 +1,13 @@
 /**
  * @sw-package framework
  */
-import { type SettingsItem } from 'src/app/store/settings-item.store';
+import { buildSettingsNavigation, type SettingsNavigationItem } from 'src/app/service/settings-menu.helper';
 import template from './sw-settings-index.html.twig';
 import './sw-settings-index.scss';
 
 const { hasOwnProperty } = Shopwell.Utils.object;
 
-type SettingsItemHere = Omit<SettingsItem, 'label'> & {
-    label?: string | { label: string; translated: boolean };
-} & { privilege?: string };
+type SettingsItemHere = SettingsNavigationItem;
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default Shopwell.Component.wrapComponentConfig({
@@ -31,6 +29,7 @@ export default Shopwell.Component.wrapComponentConfig({
      * @deprecated tag:v6.8.0 - Will be removed without replacement
      */
     created() {
+        void Shopwell.Store.get('adminMenuConfig').loadVisibleTree();
         if (!Shopwell.Feature.isActive('v6.8.0.0')) {
             void this.getUserConfig();
         }
@@ -55,6 +54,16 @@ export default Shopwell.Component.wrapComponentConfig({
                     deprecationVersion: 'v6.8.0.0',
                 },
             ];
+        },
+
+        configuredSettingsGroups(): Record<string, SettingsNavigationItem[]> {
+            const store = Shopwell.Store.get('adminMenuConfig');
+            return buildSettingsNavigation(
+                Shopwell.Store.get('settingsItems').settingsGroups,
+                store.visibleTree,
+                store.isVisibleLoadFailed ? [] : store.managedKeys,
+                Shopwell.Store.get('adminMenu').adminModuleNavigation,
+            );
         },
 
         settingsGroups() {
@@ -88,6 +97,12 @@ export default Shopwell.Component.wrapComponentConfig({
 
             const onlyPrivilegedSettings = mapSettings((settings) =>
                 settings.filter((setting) => {
+                    if (
+                        setting.inheritedMenuPrivileges?.some((privilege) => !this.acl.can(privilege)) ||
+                        (setting.menuPrivilege && !this.acl.can(setting.menuPrivilege))
+                    ) {
+                        return false;
+                    }
                     if (!setting.privilege) {
                         return true;
                     }
@@ -97,6 +112,9 @@ export default Shopwell.Component.wrapComponentConfig({
 
             const sortSettings = mapSettings((settings) =>
                 settings.sort((a, b) => {
+                    if (a.position !== undefined || b.position !== undefined) {
+                        return (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER);
+                    }
                     const labelA = labelOfSetting(a);
                     const labelB = labelOfSetting(b);
 
@@ -108,7 +126,7 @@ export default Shopwell.Component.wrapComponentConfig({
             const removeEmptyGroups = filterGroup((settings) => settings.length > 0);
 
             // Doing: Transform the settings
-            const settingsGroups = Shopwell.Store.get('settingsItems').settingsGroups;
+            const settingsGroups = this.configuredSettingsGroups;
 
             return Object.fromEntries(
                 Object.entries(settingsGroups)
@@ -194,8 +212,13 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         getGroupLabel(settingsGroup: string) {
+            const title = this.configuredSettingsGroups[settingsGroup]?.find((item) => item.groupTitle)?.groupTitle;
+            if (title) {
+                return this.$te(title) ? this.$t(title) : title;
+            }
             const upper = settingsGroup.charAt(0).toUpperCase() + settingsGroup.slice(1);
-            return this.$t(`sw-settings.index.tab${upper}`);
+            const key = `sw-settings.index.tab${upper}`;
+            return this.$te(key) ? this.$t(key) : settingsGroup;
         },
 
         itemIsQueried(label: string) {

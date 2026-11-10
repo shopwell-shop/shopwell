@@ -26,13 +26,15 @@ describe('module/sw-system/page/sw-system-menu-list (tree)', () => {
         expect(wrapper.find('.sw-system-menu-tree-stub').exists()).toBe(true);
     });
 
-    it('offers the menu items in the search bar of the page', async () => {
+    it('uses the standard top search bar and removes the tree search', async () => {
         wrapper = await createWrapper();
 
         const searchBar = wrapper.findComponent('.sw-search-bar-stub');
 
         expect(searchBar.exists()).toBe(true);
         expect(searchBar.props('initialSearchType')).toBe('admin_menu_item');
+        expect(searchBar.props('typeSearchAlwaysInContainer')).toBe(false);
+        expect(wrapper.find('.sw-system-menu-list__tree-search').exists()).toBe(false);
     });
 
     it('renders the top level entries without expanding them', async () => {

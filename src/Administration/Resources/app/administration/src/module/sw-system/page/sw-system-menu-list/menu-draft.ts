@@ -2,6 +2,28 @@
  * @sw-package fundamentals@framework
  */
 
+import type { AdminMenuItem, MenuTreeNode } from 'src/app/store/admin-menu-config.store';
+
+/** @private */
+export type MenuPageState = {
+    expandedIds: string[];
+    searchTerm: string;
+    selectedId: string | null;
+    languageId: string;
+    languages: Entity<'language'>[];
+    showDeleteModal: boolean;
+    showUnsavedModal: boolean;
+    pendingChange: (() => void) | null;
+    pendingCancel: (() => void) | null;
+    draft: MenuDraft | null;
+    draftBaseline: string | null;
+    deleteTarget: MenuTreeNode | null;
+    isSaving: boolean;
+    isDeleting: boolean;
+    isMoving: boolean;
+    fieldErrors: Record<string, { code: string; detail: string }>;
+};
+
 /**
  * The editable state of one menu item. The store is the source of truth for what is stored,
  * the draft for what the form shows, and the two only meet on save.
@@ -16,12 +38,14 @@ export type MenuDraft = {
     icon: string;
     type: string;
     internalKey: string | null;
+    routeKey: string;
     linkTarget: string;
     privilege: string | null;
     active: boolean;
     parentId: string | null;
     afterMenuItemId: string | null;
     roleIds: string[];
+    visibilityMode: 'all' | 'roles';
 };
 
 /**
@@ -48,12 +72,14 @@ export function createDraft(overrides: Partial<MenuDraft> = {}): MenuDraft {
         icon: '',
         type: 'menu',
         internalKey: null,
+        routeKey: overrides.type === 'menu' || !overrides.type ? (overrides.internalKey ?? '') : '',
         linkTarget: '',
         privilege: null,
         active: true,
         parentId: null,
         afterMenuItemId: null,
         roleIds: [],
+        visibilityMode: overrides.roleIds?.length ? 'roles' : 'all',
         ...overrides,
     };
 }
@@ -78,12 +104,14 @@ export function fingerprintDraft(draft: MenuDraft | null): string | null {
         icon: draft.icon,
         type: draft.type,
         internalKey: draft.internalKey,
+        routeKey: draft.routeKey,
         linkTarget: draft.linkTarget,
         privilege: draft.privilege,
         active: draft.active,
         parentId: draft.parentId,
         afterMenuItemId: draft.afterMenuItemId,
         roleIds: [...draft.roleIds].sort(),
+        visibilityMode: draft.visibilityMode,
     });
 }
 
@@ -107,10 +135,11 @@ export function buildPayload(draft: MenuDraft, languageId: string) {
         icon: draft.icon || null,
         type: draft.type,
         internalKey: draft.internalKey || null,
+        routeKey: draft.type === 'menu' ? draft.routeKey || null : null,
         linkTarget: draft.type === 'link' ? draft.linkTarget.trim() : null,
         privilege: draft.privilege || null,
         active: draft.active,
-        roles: draft.roleIds.map((id) => ({ id })),
+        roles: (draft.visibilityMode === 'roles' ? draft.roleIds : []).map((id) => ({ id })),
     };
 }
 
@@ -127,4 +156,62 @@ export function needsMove(draft: MenuDraft, storedItem: PlacedItem | null | unde
     }
 
     return storedItem?.parentId !== parentId || storedItem?.afterMenuItemId !== draft.afterMenuItemId;
+}
+
+/** @private */
+export function createPageState(languageId: string): MenuPageState {
+    return {
+        expandedIds: [],
+        searchTerm: '',
+        selectedId: null,
+        languageId: languageId,
+        languages: [],
+        showDeleteModal: false,
+        showUnsavedModal: false,
+        pendingChange: null,
+        pendingCancel: null,
+        isMoving: false,
+        fieldErrors: {},
+        draft: null,
+        draftBaseline: null,
+        deleteTarget: null,
+        isSaving: false,
+        isDeleting: false,
+    };
+}
+
+/** @private */
+export function validateDraft(draft: MenuDraft | null): string | null {
+    const prefix = 'sw-system.menu.notification.';
+    if (!draft?.title.trim()) return `${prefix}titleRequired`;
+    if (draft.type === 'menu' && !draft.routeKey) return `${prefix}targetRequired`;
+    if (draft.type === 'link' && !/^https?:\/\//i.test(draft.linkTarget.trim())) return `${prefix}linkRequired`;
+    if (draft.visibilityMode === 'roles' && !draft.roleIds.length) return `${prefix}rolesRequired`;
+    return null;
+}
+
+/** @private */
+export function draftFromItem(item: AdminMenuItem & { label: string }, languageId: string): MenuDraft {
+    const stored = item.translations?.[languageId] ?? {};
+
+    return createDraft({
+        ...item,
+        title: item.label,
+        routeKey: item.type === 'menu' ? (item.routeKey ?? item.internalKey ?? '') : '',
+        icon: item.icon ?? '',
+        linkTarget: item.linkTarget ?? '',
+        groupName: item.groupName ?? '',
+        groupTitle: stored.groupTitle ?? '',
+        roleIds: [...item.roleIds],
+    });
+}
+
+/** @private */
+export function changeDraftType(draft: MenuDraft, type: string): MenuDraft {
+    return {
+        ...draft,
+        type,
+        routeKey: type === 'menu' ? draft.routeKey : '',
+        linkTarget: type === 'link' ? draft.linkTarget : '',
+    };
 }

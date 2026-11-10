@@ -104,6 +104,7 @@ async function createWrapper({
     store.isLoading = false;
 
     jest.spyOn(store, 'load').mockResolvedValue(undefined);
+    jest.spyOn(store, 'refreshAfterWrite').mockResolvedValue(undefined);
     jest.spyOn(store, 'saveItem').mockResolvedValue('products');
     jest.spyOn(store, 'moveItem').mockResolvedValue(undefined);
     jest.spyOn(store, 'deleteItem').mockResolvedValue(undefined);
@@ -152,6 +153,11 @@ async function createWrapper({
                             <slot name="content"></slot>
                         </div>`,
                 },
+                'mt-search': {
+                    template:
+                        '<input class="search-bar-input" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+                    props: ['modelValue', 'placeholder', 'size'],
+                },
                 'sw-search-bar': {
                     // The real search bar only emits `search` when it is not in container mode:
                     // with `type-search-always-in-container` it loads its own dropdown and never
@@ -178,8 +184,10 @@ async function createWrapper({
                     },
                 },
                 'sw-language-switch': {
+                    name: 'sw-language-switch',
                     template: '<div class="sw-language-switch-stub"></div>',
                     props: [
+                        'disabled',
                         'saveChangesFunction',
                         'abortChangeFunction',
                     ],
@@ -228,6 +236,26 @@ async function createWrapper({
                         'suggestions',
                     ],
                 },
+                'sw-tree-select': {
+                    template:
+                        '<select :value="modelValue" @change="$emit(\'update:model-value\', $event.target.value)"><option v-for="option in flatOptions" :key="option.value" :value="option.value">{{ option.label }}</option></select>',
+                    props: [
+                        'modelValue',
+                        'options',
+                        'label',
+                        'disabled',
+                        'required',
+                        'helpText',
+                    ],
+                    computed: {
+                        flatOptions() {
+                            const walk = (options) => options.flatMap((option) => [option, ...walk(option.children ?? [])]);
+                            return walk(this.options);
+                        },
+                    },
+                },
+                'sw-icon-picker': true,
+                'mt-url-field': true,
                 'mt-select': {
                     template:
                         '<select class="mt-select-stub" :class="$attrs.class" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></select>',
@@ -269,6 +297,7 @@ async function createWrapper({
                         'helpText',
                     ],
                 },
+                'sw-system-menu-detail': await wrapTestComponent('sw-system-menu-detail', { sync: true }),
                 'sw-system-menu-tree': {
                     template: `
                         <div class="sw-system-menu-tree-stub">
@@ -289,6 +318,12 @@ async function createWrapper({
                         'deletable',
                     ],
                 },
+                'mt-modal-root': { template: '<div><slot></slot></div>' },
+                'mt-modal': {
+                    template: '<div class="sw-modal-stub">{{ title }}<slot></slot><slot name="footer"></slot></div>',
+                    props: ['title', 'width'],
+                },
+                'mt-skeleton-bar': true,
                 'sw-modal': {
                     template: '<div class="sw-modal-stub">{{ title }}<slot></slot><slot name="modal-footer"></slot></div>',
                     props: ['title', 'variant'],

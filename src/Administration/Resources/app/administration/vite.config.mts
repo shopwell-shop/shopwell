@@ -3,6 +3,7 @@
  */
 
 import type { UserConfig, UserConfigFnPromise } from 'vite';
+import { meteorIconNames } from './build/vite-plugins/meteor-icon-catalog';
 import svgLoader from 'vite-svg-loader';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -86,6 +87,7 @@ export default (async ({ command }) => {
 
     return {
         base,
+        define: { __METEOR_ICON_NAMES__: JSON.stringify(meteorIconNames()) },
 
         logLevel: isProd ? 'warn' : 'info',
 

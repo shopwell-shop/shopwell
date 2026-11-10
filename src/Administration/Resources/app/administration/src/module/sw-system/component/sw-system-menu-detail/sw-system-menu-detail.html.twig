@@ -1,0 +1,165 @@
+{% block sw_system_menu_list_detail_form %}
+<div class="sw-system-menu-list__form">
+    {% block sw_system_menu_list_detail_form_locked %}
+    <mt-banner
+        v-if="locked"
+        class="sw-system-menu-list__locked-hint"
+        variant="info"
+    >
+        {{ $t('sw-system.menu.hintLockedItem') }}
+    </mt-banner>
+    {% endblock %}
+    {% block sw_system_menu_list_detail_form_basics %}
+    <mt-card
+        class="sw-system-menu-list__card"
+        position-identifier="sw-system-menu-list-basics"
+        :title="$t('sw-system.menu.sectionBasics')"
+    >
+        <div class="sw-system-menu-list__form-grid">
+            {% block sw_system_menu_list_detail_form_title %}
+            <mt-text-field
+                :model-value="draft.title"
+                class="sw-system-menu-list__field-title"
+                name="sw-field--menu-item-title"
+                :label="$t('sw-system.menu.labelTitle')"
+                :placeholder="$t('sw-system.menu.placeholderTitle')"
+                :help-text="$t('sw-system.menu.helpTitle', { language: languageLabel })"
+                :disabled="disabled || undefined"
+                :error="fieldErrors.title"
+                required
+                @update:model-value="updateField('title', $event)"
+            />
+            {% endblock %}
+            {% block sw_system_menu_list_detail_form_icon %}
+            <sw-icon-picker
+                v-if="draft.type !== 'group'"
+                :model-value="draft.icon"
+                :label="$t('sw-system.menu.labelIcon')"
+                :disabled="disabled"
+                @update:model-value="updateField('icon', $event)"
+            />
+            {% endblock %}
+            {% block sw_system_menu_list_detail_form_type %}
+            <mt-select
+                class="sw-system-menu-list__field-type"
+                :label="$t('sw-system.menu.labelType')"
+                :model-value="draft.type"
+                :options="typeOptions"
+                :disabled="disabled || undefined"
+                required
+                @update:model-value="$emit('type-change', $event)"
+            />
+            {% endblock %}
+            {% block sw_system_menu_list_detail_form_target %}
+            {% block sw_system_menu_list_detail_form_target_fields %}
+            <sw-tree-select
+                v-if="draft.type === 'menu'"
+                class="sw-system-menu-list__field-target"
+                :label="$t('sw-system.menu.labelTarget')"
+                :placeholder="$t('sw-system.menu.placeholderTarget')"
+                :help-text="$t('sw-system.menu.helpTarget')"
+                :model-value="draft.routeKey ?? ''"
+                :options="routeOptions"
+                :disabled="disabled"
+                required
+                @update:model-value="updateField('routeKey', $event)"
+            />
+            <mt-url-field
+                v-else-if="draft.type === 'link'"
+                class="sw-system-menu-list__field-target"
+                :model-value="draft.linkTarget"
+                :label="$t('sw-system.menu.labelLinkTarget')"
+                :placeholder="$t('sw-system.menu.placeholderLinkTarget')"
+                :disabled="disabled || undefined"
+                required
+                @update:model-value="updateField('linkTarget', $event)"
+            />
+            {% endblock %}
+            {% endblock %}
+            {% block sw_system_menu_list_detail_form_parent %}
+            <sw-tree-select
+                class="sw-system-menu-list__field-parent sw-system-menu-list__field-wide"
+                :label="$t('sw-system.menu.labelParent')"
+                :model-value="draft.parentId ?? ''"
+                :options="parentOptions"
+                :disabled="disabled"
+                @update:model-value="$emit('parent-change', $event)"
+            />
+            {% endblock %}
+            {% block sw_system_menu_list_detail_form_access %}
+            <div class="sw-system-menu-list__section-label sw-system-menu-list__field-wide">
+                {{ $t('sw-system.menu.sectionAccess') }}
+            </div>
+            {% block sw_system_menu_list_detail_form_active %}
+            <mt-switch
+                :model-value="draft.active"
+                class="sw-system-menu-list__field-active"
+                :label="$t('sw-system.menu.labelActive')"
+                :help-text="$t('sw-system.menu.helpActive')"
+                :disabled="disabled || undefined"
+                :bordered="true"
+                @update:model-value="updateField('active', $event)"
+            />
+            {% endblock %}
+            <mt-select
+                class="sw-system-menu-list__field-visibility"
+                :model-value="draft.visibilityMode"
+                :options="visibilityOptions"
+                :label="$t('sw-system.menu.labelVisibility')"
+                :disabled="disabled || undefined"
+                @update:model-value="updateField('visibilityMode', $event)"
+            />
+            {% block sw_system_menu_list_detail_form_roles %}
+            <sw-entity-multi-id-select
+                v-if="draft.visibilityMode === 'roles'"
+                :value="draft.roleIds"
+                class="sw-system-menu-list__field-roles"
+                name="sw-field--menu-item-roles"
+                :label="$t('sw-system.menu.labelRoles')"
+                :help-text="$t('sw-system.menu.hintRoles')"
+                :repository="aclRoleRepository"
+                :criteria="roleCriteria"
+                :disabled="disabled || undefined"
+                required
+                @update:value="updateField('roleIds', $event)"
+            />
+            {% endblock %}
+            <p class="sw-system-menu-list__access-hint sw-system-menu-list__field-wide">
+                {{ $t('sw-system.menu.helpVisibility') }}
+            </p>
+            <mt-text-field
+                v-if="draft.type === 'menu'"
+                :model-value="targetPrivilege || $t('sw-system.menu.privilegeNone')"
+                :label="$t('sw-system.menu.labelPagePrivilege')"
+                disabled
+            />
+            <mt-text-field
+                v-if="provenance"
+                :model-value="provenance"
+                :label="$t('sw-system.menu.labelSource')"
+                disabled
+            />
+            {% block sw_system_menu_list_detail_form_privilege %}
+            <details
+                v-if="draft.privilege"
+                class="sw-system-menu-list__field-wide"
+            >
+                <summary>{{ $t('sw-system.menu.advancedRestrictions') }}</summary>
+                <mt-select
+                    enable-search
+                    class="sw-system-menu-list__field-privilege"
+                    :label="$t('sw-system.menu.labelPrivilege')"
+                    :help-text="$t('sw-system.menu.helpPrivilege')"
+                    :model-value="draft.privilege ?? ''"
+                    :options="privilegeOptions"
+                    :disabled="disabled || undefined"
+                    @update:model-value="updateField('privilege', $event || null)"
+                />
+            </details>
+            {% endblock %}
+            {% endblock %}
+        </div>
+    </mt-card>
+    {% endblock %}
+</div>
+{% endblock %}

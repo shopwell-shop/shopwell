@@ -2,7 +2,7 @@ import { createFocusTrap } from 'focus-trap';
 import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
 import template from './sw-admin-menu.html.twig';
 import { getActiveRouteNames, isEntryOnActiveRoute } from '../sw-admin-menu-item/menu-item-active.helper';
-import { mergeDatabaseNavigation } from './merge-navigation.helper';
+import { mergeDatabaseNavigation, prepareNavigationGroups } from './merge-navigation.helper';
 import './sw-admin-menu.scss';
 
 const { Mixin } = Shopwell;
@@ -149,17 +149,20 @@ The admin menu only supports up to three levels of nesting.`,
         databaseNavigation() {
             const store = Shopwell.Store.get('adminMenuConfig');
 
-            return mergeDatabaseNavigation(this.navigationEntries, store?.visibleTree ?? [], (key) => {
-                return this.tWithFallback(key);
-            });
+            return mergeDatabaseNavigation(
+                this.navigationEntries,
+                store?.visibleTree ?? [],
+                (key) => this.tWithFallback(key),
+                store?.isVisibleLoadFailed ? [] : (store?.managedKeys ?? []),
+            );
         },
 
         mainMenuEntries() {
             const tree = new Shopwell.Helper.FlatTreeHelper((first, second) => first.position - second.position);
 
-            this.databaseNavigation.forEach((module) => tree.add(module));
+            this.databaseNavigation.forEach((module) => tree.add({ ...module }));
 
-            return tree.convertToTree();
+            return prepareNavigationGroups(tree.convertToTree(), (privilege) => this.acl.can(privilege));
         },
 
         flyoutModuleColor() {

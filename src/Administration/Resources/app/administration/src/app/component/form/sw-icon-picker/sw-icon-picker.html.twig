@@ -1,0 +1,99 @@
+{% block sw_icon_picker %}
+<div class="sw-icon-picker">
+    <span
+        :id="fieldId + '-label'"
+        class="sw-icon-picker__label"
+    >{{ label }}</span>
+    <mt-button
+        :id="fieldId"
+        class="sw-icon-picker__trigger"
+        variant="secondary"
+        size="default"
+        :disabled="disabled || undefined"
+        :aria-labelledby="fieldId + '-label'"
+        @click="open"
+    >
+        <mt-icon
+            :name="modelValue || 'regular-image'"
+            size="20px"
+        />
+        <span>{{ modelValue || $t('global.sw-icon-picker.choose') }}</span>
+    </mt-button>
+    <mt-modal-root
+        :is-open="isOpen"
+        @change="isOpen = $event"
+    >
+        <mt-modal
+            :title="$t('global.sw-icon-picker.title')"
+            width="l"
+        >
+            <div class="sw-icon-picker__filters">
+                <mt-search
+                    v-model="term"
+                    :placeholder="$t('global.sw-icon-picker.search')"
+                />
+                <mt-select
+                    v-model="style"
+                    class="sw-icon-picker__style"
+                    :options="styleOptions"
+                    :label="$t('global.sw-icon-picker.style')"
+                />
+            </div>
+            <p class="sw-icon-picker__count">
+                {{ $t('global.sw-icon-picker.count', { count: filteredIcons.length }) }}
+            </p>
+            <div
+                class="sw-icon-picker__grid"
+                role="group"
+                :aria-label="$t('global.sw-icon-picker.title')"
+            >
+                <mt-button
+                    v-for="icon in visibleIcons"
+                    :key="icon"
+                    variant="secondary"
+                    size="default"
+                    class="sw-icon-picker__icon"
+                    :class="{ 'is--selected': icon === modelValue }"
+                    :title="icon"
+                    :aria-label="icon"
+                    :aria-pressed="icon === modelValue"
+                    @click="choose(icon)"
+                >
+                    <mt-icon
+                        :name="icon"
+                        size="24px"
+                    />
+                    <small>{{ icon.replace(/^(regular|solid)-/, '') }}</small>
+                </mt-button>
+            </div>
+            <mt-button
+                v-if="visibleIcons.length < filteredIcons.length"
+                class="sw-icon-picker__more"
+                variant="secondary"
+                size="small"
+                @click="limit += 96"
+            >
+                {{ $t('global.sw-icon-picker.more') }}
+            </mt-button>
+            <template #footer>
+                <div class="sw-icon-picker__footer">
+                    <mt-button
+                        variant="secondary"
+                        size="small"
+                        @click="isOpen = false"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-button>
+                    <mt-button
+                        variant="primary"
+                        size="small"
+                        @click="choose('')"
+                    >
+                        {{ $t('global.sw-icon-picker.clear') }}
+                    </mt-button>
+                </div>
+            </template>
+        </mt-modal>
+    </mt-modal-root>
+</div>
+{% endblock %}

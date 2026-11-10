@@ -19,6 +19,7 @@ use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
 use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
+use Shopwell\Core\System\AdminMenu\MenuGroupNormalizer;
 use Shopwell\Core\System\AdminMenu\Service\VisibleMenuTreeBuilder;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
@@ -50,6 +51,69 @@ class VisibleMenuTreeBuilderTest extends TestCase
         $tree = $this->createBuilder($items, $this->createRegistry(...$this->definitionsFor('sw-content', 'first', 'second', 'third')))->build($this->context);
 
         static::assertSame(['sw-content', 'first', 'second', 'third'], $this->flatten($tree));
+    }
+
+    public function testIncludesGroupMetadataForStoredAndSynthesizedSettings(): void
+    {
+        $item = $this->createItem('tax', internalKey: 'sw-settings-tax');
+        $item->setGroupName('localization');
+        $item->setGroupTitle('Regional settings');
+        $registry = $this->createRegistry(
+            new AdminMenuDefinitionStruct('sw-settings-tax', groupName: 'localization'),
+            new AdminMenuDefinitionStruct('sw-settings-currency', groupName: 'localization')
+        );
+
+        $tree = $this->createBuilder([$item], $registry)->build($this->context);
+
+        static::assertSame('localization', $tree[0]['groupName']);
+        static::assertSame('Regional settings', $tree[0]['groupTitle']);
+        static::assertSame('group', $tree[1]['type']);
+        static::assertSame('sw-system.menu.groups.localization', $tree[1]['title']);
+        static::assertSame('sw-settings-currency', $tree[1]['children'][0]['internalKey']);
+    }
+
+    public function testStoredGroupsUseDeclaredLabelsAndLegacyIdentityWhenTranslationsAreMissing(): void
+    {
+        $key = MenuGroupNormalizer::key('sw-settings', 'customer', null);
+        $settings = $this->createItem('settings', type: 'folder', internalKey: 'sw-settings');
+        $group = $this->createItem('customer-group', type: 'group', internalKey: $key, parentId: 'settings');
+        $group->setTitle(null);
+        $page = $this->createItem('customer', internalKey: 'customer', parentId: 'customer-group');
+        $registry = $this->createRegistry(
+            new AdminMenuDefinitionStruct('sw-settings', type: 'folder'),
+            new AdminMenuDefinitionStruct('customer', parent: 'sw-settings', groupName: 'customer')
+        );
+        $builder = $this->createBuilder([$settings, $group, $page], $registry);
+
+        $tree = $builder->build($this->context);
+
+        static::assertSame('sw-system.menu.groups.customer', $tree[0]['children'][0]['title']);
+        static::assertSame('customer', $tree[0]['children'][0]['groupName']);
+
+        $group->setTitle('Customer tools');
+        $tree = $this->createBuilder([$settings, $group, $page], $registry)->build($this->context);
+
+        static::assertSame('Customer tools', $tree[0]['children'][0]['title']);
+    }
+
+    public function testEmptyGroupsAreOmittedAndGroupChildrenRemainNested(): void
+    {
+        $empty = $this->createItem('empty', type: AdminMenuItemDefinition::TYPE_GROUP);
+        $group = $this->createItem('group', type: AdminMenuItemDefinition::TYPE_GROUP);
+        $page = $this->createItem('page', internalKey: 'product', parentId: 'group');
+        $tree = $this->createBuilder([$empty, $group, $page], $this->createRegistry(new AdminMenuDefinitionStruct('product')))->build($this->context);
+        static::assertCount(1, $tree);
+        static::assertSame('group', $tree[0]['id']);
+        static::assertSame('page', $tree[0]['children'][0]['id']);
+    }
+
+    public function testCustomTargetDoesNotChangeTheDeclarationIdentity(): void
+    {
+        $page = $this->createItem('page', internalKey: 'identity');
+        $page->setRouteKey('target');
+        $tree = $this->createBuilder([$page], $this->createRegistry(new AdminMenuDefinitionStruct('target')))->build($this->context);
+        static::assertSame('identity', $tree[0]['internalKey']);
+        static::assertSame('target', $tree[0]['routeKey']);
     }
 
     public function testHidesEntriesOfDeactivatedPlugin(): void

@@ -63,6 +63,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('admin_menu_item.repository'),
             service('acl_role.repository'),
+            service('admin_menu_item_role.repository'),
         ]);
 
     $services->set(PluginMenuSynchronizer::class)

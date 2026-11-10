@@ -56,10 +56,18 @@
                       "items": {
                         "$ref": "#/components/schemas/adminVisibleMenuNode"
                       }
+                    },
+                    "managedKeys": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Provider-owned internal keys, including entries hidden from the current user. Clients use these to suppress declaration fallbacks."
                     }
                   },
                   "required": [
-                    "menu"
+                    "menu",
+                    "managedKeys"
                   ]
                 }
               }
@@ -75,7 +83,7 @@
         ],
         "operationId": "getAdminMenuRouteWhitelist",
         "summary": "Read registered administration menu routes",
-        "description": "Requires admin_menu_item:read. Lists declared core routes available for menu configuration.",
+        "description": "Requires admin_menu_item:read. Lists declared core and plugin routes available for menu configuration.",
         "responses": {
           "200": {
             "description": "The requested administration navigation data.",
@@ -278,7 +286,8 @@
             "type": "string"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "description": "group: non-navigable section heading; folder: collapsible container; menu: declared page; link: external URL; hidden: legacy hidden entry."
           },
           "groupName": {
             "type": [
@@ -340,6 +349,13 @@
                 "groupTitle"
               ]
             }
+          },
+          "routeKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Target page declaration, independent of internalKey identity. Null falls back to internalKey for legacy records."
           }
         },
         "required": [
@@ -419,13 +435,33 @@
             "type": "string"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "description": "group: non-navigable section heading; folder: collapsible container; menu: declared page; link: external URL; hidden: legacy hidden entry."
           },
           "children": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/adminVisibleMenuNode"
             }
+          },
+          "groupName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "groupTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "routeKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Target page declaration, independent of internalKey identity. Null falls back to internalKey for legacy records."
           }
         },
         "required": [
@@ -439,7 +475,9 @@
           "privilege",
           "id",
           "type",
-          "children"
+          "children",
+          "groupName",
+          "groupTitle"
         ]
       }
     }

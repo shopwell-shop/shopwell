@@ -143,20 +143,30 @@
                     @focusout="onNavigationListMouseLeave"
                 >
                     {% block sw_admin_menu_navigation_main_items %}
-                    <sw-admin-menu-item
+                    <template
                         v-for="entry in mainMenuEntries"
                         :key="entry.id || entry.path"
-                        :sidebar-expanded="isExpanded"
-                        :is-expanded="isNavigationEntryExpanded(entry)"
-                        :flyout-active="isFlyoutEntryActive(entry)"
-                        :entry="entry"
-                        @menu-item-hover="onMenuItemHover"
-                        @branch-toggle="onMenuBranchToggle"
-                        @flyout-focus-request="onFlyoutFocusRequest"
-                        @flyout-close-request="onFlyoutLeave"
-                        @flyout-navigate="onFlyoutNavigate"
-                        @navigation-link-click="onNavigationLinkClicked"
-                    />
+                    >
+                        <li
+                            v-if="isExpanded && entry.groupStart"
+                            class="sw-admin-menu-item__group-heading"
+                            role="presentation"
+                        >
+                            {{ entry.groupTitle }}
+                        </li>
+                        <sw-admin-menu-item
+                            :sidebar-expanded="isExpanded"
+                            :is-expanded="isNavigationEntryExpanded(entry)"
+                            :flyout-active="isFlyoutEntryActive(entry)"
+                            :entry="entry"
+                            @menu-item-hover="onMenuItemHover"
+                            @branch-toggle="onMenuBranchToggle"
+                            @flyout-focus-request="onFlyoutFocusRequest"
+                            @flyout-close-request="onFlyoutLeave"
+                            @flyout-navigate="onFlyoutNavigate"
+                            @navigation-link-click="onNavigationLinkClicked"
+                        />
+                    </template>
                     {% endblock %}
                 </ul>
                 {% endblock %}
@@ -307,17 +317,27 @@
             </mt-text>
 
             <ul class="sw-admin-menu__flyout-list">
-                <sw-admin-menu-item
+                <template
                     v-for="entry in flyoutEntries"
                     :key="entry.id || entry.path"
-                    :entry="entry"
-                    :menu-depth="2"
-                    :sidebar-expanded="isExpanded"
-                    :display-icon="false"
-                    :collapsible-text="false"
-                    @flyout-navigate="onFlyoutNavigate"
-                    @navigation-link-click="onNavigationLinkClicked"
-                />
+                >
+                    <li
+                        v-if="entry.groupStart"
+                        class="sw-admin-menu-item__group-heading"
+                        role="presentation"
+                    >
+                        {{ entry.groupTitle }}
+                    </li>
+                    <sw-admin-menu-item
+                        :entry="entry"
+                        :menu-depth="2"
+                        :sidebar-expanded="isExpanded"
+                        :display-icon="false"
+                        :collapsible-text="false"
+                        @flyout-navigate="onFlyoutNavigate"
+                        @navigation-link-click="onNavigationLinkClicked"
+                    />
+                </template>
             </ul>
         </div>
     </mt-floating-ui>

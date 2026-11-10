@@ -109,6 +109,29 @@ class PluginMenuSynchronizerTest extends TestCase
         static::assertSame([[['id' => 'retained-id']]], $purged->deletes);
     }
 
+    public function testMigratedCustomGroupSurvivesUpdatesAndFollowsPluginLifecycle(): void
+    {
+        $group = $this->item('group-id', 'admin-menu-group:custom');
+        $group->setType('group');
+        $group->setConfigOverridden(true);
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection([$group])]);
+        $this->synchronizer($repository)->syncUpdate($this->plugin());
+        static::assertSame([], $repository->updates);
+
+        $group->setActive(false);
+        $group->setArchived(true);
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection([$group])]);
+        $this->synchronizer($repository)->syncActivation($this->plugin());
+        static::assertSame([[['id' => 'group-id', 'active' => true, 'archived' => false]]], $repository->updates);
+
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection([$group])]);
+        $this->synchronizer($repository)->syncDeactivation($this->plugin());
+        static::assertSame([[['id' => 'group-id', 'active' => false]]], $repository->updates);
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection([$group])]);
+        $this->synchronizer($repository)->syncUninstall($this->plugin(), true);
+        static::assertSame([[['id' => 'group-id', 'archived' => true, 'active' => false]]], $repository->updates);
+    }
+
     /**
      * @param StaticEntityRepository<AdminMenuItemCollection> $repository
      */
@@ -133,7 +156,7 @@ class PluginMenuSynchronizerTest extends TestCase
     private function item(string $id, string $key): AdminMenuItemEntity
     {
         $item = new AdminMenuItemEntity();
-        $item->assign(['id' => $id, 'internalKey' => $key, 'active' => true, 'configOverridden' => false]);
+        $item->assign(['id' => $id, 'internalKey' => $key, 'active' => true, 'configOverridden' => false, 'type' => 'menu', 'archived' => false]);
 
         return $item;
     }

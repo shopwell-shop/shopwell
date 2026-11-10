@@ -1270,7 +1270,25 @@
     "sw-page": {
       "backButton": "Go back"
     },
-    "mediaUploadCaption": "Upload an image"
+    "mediaUploadCaption": "Upload an image",
+    "sw-tree-select": {
+      "search": "Search…",
+      "empty": "No matches",
+      "expand": "Expand branch",
+      "collapse": "Collapse branch"
+    },
+    "sw-icon-picker": {
+      "choose": "Choose an icon",
+      "title": "Choose a Meteor icon",
+      "search": "Search icons…",
+      "style": "Style",
+      "all": "All styles",
+      "regular": "Regular",
+      "solid": "Solid",
+      "count": "{count} icons",
+      "more": "Load more",
+      "clear": "Use default icon"
+    }
   },
   "sw-text-editor-toolbar": {
     "link": {

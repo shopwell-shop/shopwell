@@ -15,6 +15,7 @@
  * them and must not be able to hide them.
  */
 
+/** @private */
 export type NavigationEntryLike = {
     id?: string;
     label?: string | { label: string; translated?: boolean } | null;
@@ -25,6 +26,10 @@ export type NavigationEntryLike = {
     icon?: string | null;
     color?: string | null;
     params?: Record<string, unknown>;
+    menuPrivilege?: string | null;
+    inheritedMenuPrivileges?: string[];
+    groupId?: string;
+    groupTitle?: string;
     [key: string]: unknown;
 };
 
@@ -33,14 +38,19 @@ export type NavigationEntryLike = {
  * entries the current user may not see, with rows the database does not know yet synthesized
  * from their core declaration (`virtual:` prefixed ids).
  */
+/** @private */
 export type DatabaseMenuNode = {
     id: string;
     internalKey?: string | null;
+    routeKey?: string | null;
     title?: string | null;
     icon?: string | null;
     color?: string | null;
     privilege?: string | null;
     type?: string | null;
+    linkTarget?: string | null;
+    groupName?: string | null;
+    groupTitle?: string | null;
     children?: DatabaseMenuNode[];
 };
 
@@ -61,40 +71,77 @@ function nodeKey(node: DatabaseMenuNode): string {
     return node.internalKey ?? node.id.replace(/^virtual:/, '');
 }
 
+function navigationTarget(node: DatabaseMenuNode, source: NavigationEntryLike) {
+    return node.type === 'link'
+        ? { path: undefined, link: node.linkTarget }
+        : { path: node.type === 'folder' ? undefined : source.path, link: undefined };
+}
+
+function navigationIdentity(source: NavigationEntryLike, node: DatabaseMenuNode, matched: Set<string>): string {
+    return source.id && !matched.has(source.id) ? source.id : node.id;
+}
+
+function navigationMetadata(node: DatabaseMenuNode, source: NavigationEntryLike, translate: (key: string) => string) {
+    return {
+        label: node.title ? { label: translate(node.title), translated: true } : source.label,
+        icon: node.icon ?? source.icon,
+        color: node.color ?? source.color,
+        privilege: source.privilege ?? node.privilege ?? undefined,
+        menuPrivilege: node.privilege,
+    };
+}
+
+function resolveNavigationLabel(key: string, translate: (key: string) => string): string {
+    try {
+        return translate(key) || key;
+    } catch {
+        return key;
+    }
+}
+
+function findNavigationSource(
+    node: DatabaseMenuNode,
+    key: string,
+    byId: Map<string, NavigationEntryLike>,
+    byPath: Map<string | null | undefined, NavigationEntryLike>,
+) {
+    const targetKey = node.type === 'menu' ? (node.routeKey ?? key) : key;
+    return byId.get(targetKey) ?? byPath.get(targetKey);
+}
+
+function canRenderNode(node: DatabaseMenuNode, source: NavigationEntryLike | undefined): boolean {
+    return (
+        source !== undefined ||
+        node.type === 'folder' ||
+        (node.type === 'link' && /^https?:\/\//i.test(node.linkTarget ?? ''))
+    );
+}
+
 /**
  * @param declared flat list of the entries the modules declare
  * @param databaseTree nested tree as returned by the `visible` action, already ordered
  * @param translate resolves a stored title; a stored title is a snippet key for core entries
  *                  and plain text for entries an administrator created
  */
+/** @private */
 export function mergeDatabaseNavigation(
     declared: NavigationEntryLike[],
     databaseTree: DatabaseMenuNode[],
     translate: (key: string) => string = (key) => key,
+    managedKeys: string[] = [],
 ): NavigationEntryLike[] {
     const declaredById = new Map<string, NavigationEntryLike>();
 
     declared.forEach((entry) => {
-        if (entry.id !== undefined) {
-            declaredById.set(entry.id, entry);
-        }
+        if (entry.id !== undefined) declaredById.set(entry.id, entry);
     });
 
+    const declaredByPath = new Map(declared.filter((entry) => entry.path).map((entry) => [entry.path, entry]));
+    const managed = new Set(managedKeys);
     const matched = new Set<string>();
     const merged: NavigationEntryLike[] = [];
 
-    /**
-     * A stored title is resolved while the navigation renders, and a single unresolvable
-     * entry must not take the whole sidebar down with it: the raw value is the better
-     * fallback than no navigation at all.
-     */
-    const resolveLabel = (key: string): string => {
-        try {
-            return translate(key) || key;
-        } catch {
-            return key;
-        }
-    };
+    const resolveLabel = (key: string) => resolveNavigationLabel(key, translate);
 
     const collectKeys = (nodes: DatabaseMenuNode[]): void => {
         nodes.forEach((node) => {
@@ -103,32 +150,47 @@ export function mergeDatabaseNavigation(
         });
     };
 
-    const renderLevel = (nodes: DatabaseMenuNode[], parentId: string | null): void => {
-        nodes.forEach((node, index) => {
-            const key = nodeKey(node);
-            const source = declaredById.get(key);
-
-            // A row the code does not declare has no route to open and no privilege to guard
-            // it. Rendering it would produce a link to nowhere, so the subtree is dropped
-            // instead - the same way the server drops an entry whose internal key is unknown.
-            if (source === undefined) {
+    const positions = new Map<string | null, number>();
+    const renderLevel = (
+        nodes: DatabaseMenuNode[],
+        parentId: string | null,
+        inheritedMenuPrivileges: string[] = [],
+        group: { groupId: string; groupTitle: string } | null = null,
+    ): void => {
+        nodes.forEach((node) => {
+            const restrictions = [
+                ...inheritedMenuPrivileges,
+                ...[node.privilege].filter((value): value is string => !!value),
+            ];
+            if (node.type === 'group') {
+                matched.add(nodeKey(node));
+                renderLevel(node.children ?? [], parentId, restrictions, {
+                    groupId: node.id,
+                    groupTitle: resolveLabel(node.title ?? ''),
+                });
                 return;
             }
+            const key = nodeKey(node);
+            const source = findNavigationSource(node, key, declaredById, declaredByPath);
+            if (!canRenderNode(node, source)) return;
 
+            const declaration = source ?? {};
+            const id = navigationIdentity(declaration, node, matched);
             matched.add(key);
+            if (declaration.id) matched.add(declaration.id);
 
             const entry: NavigationEntryLike = {
-                ...source,
-                label: node.title ? { label: resolveLabel(node.title), translated: true } : source.label,
-                icon: node.icon ?? source.icon,
-                color: node.color ?? source.color,
-                privilege: node.privilege ?? source.privilege,
-                // `FlatTree` matches top-level entries against `undefined`, not against `null`:
-                // a `null` parent puts every root and its whole subtree outside the tree.
+                ...declaration,
+                ...navigationMetadata(node, declaration, resolveLabel),
+                id,
+                ...navigationTarget(node, declaration),
                 parent: parentId ?? undefined,
-                position: (index + 1) * POSITION_STEP,
+                position: (positions.get(parentId) ?? 0) + POSITION_STEP,
+                inheritedMenuPrivileges,
+                ...group,
             };
 
+            positions.set(parentId, entry.position ?? 0);
             merged.push(entry);
 
             if (SELF_NAVIGATING_KEYS.has(key)) {
@@ -139,14 +201,17 @@ export function mergeDatabaseNavigation(
                 return;
             }
 
-            renderLevel(node.children ?? [], entry.id ?? null);
+            renderLevel(node.children ?? [], entry.id ?? null, restrictions);
         });
     };
 
     renderLevel(databaseTree, null);
 
     declared.forEach((entry) => {
-        if (entry.id !== undefined && matched.has(entry.id)) {
+        if (
+            (entry.id !== undefined && (matched.has(entry.id) || managed.has(entry.id))) ||
+            (entry.path && (managed.has(entry.path) || matched.has(entry.path)))
+        ) {
             return;
         }
 
@@ -154,4 +219,25 @@ export function mergeDatabaseNavigation(
     });
 
     return merged;
+}
+
+/** Filters inherited restrictions before assigning headings, so an inaccessible first page cannot hide its heading. */
+/** @private */
+export function prepareNavigationGroups<T extends NavigationEntryLike & { children?: T[] }>(
+    entries: T[],
+    can: (privilege: string) => boolean,
+): T[] {
+    let previousGroup: unknown = null;
+    return entries
+        .filter(
+            (entry) =>
+                (!entry.privilege || can(entry.privilege)) &&
+                (!entry.menuPrivilege || can(entry.menuPrivilege)) &&
+                (entry.inheritedMenuPrivileges ?? []).every(can),
+        )
+        .map((entry) => {
+            const groupStart = !!entry.groupId && entry.groupId !== previousGroup;
+            previousGroup = entry.groupId;
+            return { ...entry, groupStart, children: prepareNavigationGroups(entry.children ?? [], can) };
+        });
 }

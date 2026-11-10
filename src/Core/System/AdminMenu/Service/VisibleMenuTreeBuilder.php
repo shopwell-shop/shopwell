@@ -77,13 +77,20 @@ class VisibleMenuTreeBuilder
                 continue;
             }
 
+            $groupDefinition = $item->getType() === AdminMenuItemDefinition::TYPE_GROUP && $item->getInternalKey() !== null
+                ? $this->routeRegistry->get($item->getInternalKey())
+                : null;
+
             $nodes[$item->getId()] = [
                 'id' => $item->getId(),
                 'parentId' => $item->getParentId(),
                 'afterMenuItemId' => $item->getAfterMenuItemId(),
                 'internalKey' => $item->getInternalKey(),
+                'routeKey' => $item->getRouteKey(),
                 'type' => $item->getType(),
-                'title' => $item->getTitle(),
+                'title' => $item->getTitle() ?? $groupDefinition?->title,
+                'groupName' => $item->getGroupName() ?? $groupDefinition?->groupName,
+                'groupTitle' => $item->getGroupTitle(),
                 'icon' => $item->getIcon(),
                 'color' => $item->getColor(),
                 'linkTarget' => $item->getLinkTarget(),
@@ -141,9 +148,9 @@ class VisibleMenuTreeBuilder
         }
 
         if ($item->getType() === AdminMenuItemDefinition::TYPE_MENU) {
-            $internalKey = $item->getInternalKey();
+            $internalKey = $item->getRouteKey() ?? $item->getInternalKey();
 
-            if ($internalKey === null || !$this->routeRegistry->has($internalKey)) {
+            if ($internalKey === null || $this->routeRegistry->get($internalKey)?->type !== AdminMenuItemDefinition::TYPE_MENU) {
                 return false;
             }
         }
@@ -211,6 +218,8 @@ class VisibleMenuTreeBuilder
                 'internalKey' => $definition->internalKey,
                 'type' => $definition->type,
                 'title' => $definition->title,
+                'groupName' => $definition->groupName,
+                'groupTitle' => null,
                 'icon' => $definition->icon,
                 'color' => $definition->color,
                 'linkTarget' => $definition->linkTarget,
@@ -268,7 +277,9 @@ class VisibleMenuTreeBuilder
             $node = $nodes[$nodeKey];
             $node['children'] = $this->renderLevel($nodeKey, $nodes);
 
-            $level[] = $node;
+            if ($node['type'] !== AdminMenuItemDefinition::TYPE_GROUP || $node['children'] !== []) {
+                $level[] = $node;
+            }
         }
 
         return $level;

@@ -65,7 +65,7 @@ class MenuDefinitionCollector
                 continue;
             }
 
-            $definitions = [...$definitions, ...$provider->getDefinitions()];
+            $definitions = [...$definitions, ...MenuGroupNormalizer::normalize($provider->getDefinitions(), $provider->getPluginTechnicalName())];
         }
 
         return $definitions;

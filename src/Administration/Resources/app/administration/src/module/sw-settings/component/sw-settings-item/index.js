@@ -20,6 +20,11 @@ export default {
                 return {};
             },
         },
+        href: {
+            type: String,
+            required: false,
+            default: null,
+        },
         disabled: {
             required: false,
             type: Boolean,

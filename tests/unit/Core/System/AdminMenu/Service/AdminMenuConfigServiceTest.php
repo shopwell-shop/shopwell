@@ -5,12 +5,16 @@ namespace Shopwell\Tests\Unit\Core\System\AdminMenu\Service;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
+use Shopwell\Core\Framework\Api\Acl\Role\AclRoleEntity;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\WriteConstraintViolationException;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemRole\AdminMenuItemRoleDefinition;
 use Shopwell\Core\System\AdminMenu\Service\AdminMenuConfigService;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
@@ -38,7 +42,8 @@ class AdminMenuConfigServiceTest extends TestCase
                 new AdminMenuItemCollection([$item]),
                 new AdminMenuItemCollection([$child]),
             ]),
-            $this->createAclRoleRepository([])
+            $this->createAclRoleRepository([]),
+            $this->createMappingRepository()
         );
 
         $this->assertRejectsWith(
@@ -46,6 +51,16 @@ class AdminMenuConfigServiceTest extends TestCase
             '/parentId',
             fn () => $service->move($this->context, 'x', 'y', null)
         );
+    }
+
+    public function testMovingBelowADeepGroupDescendantIsRejected(): void
+    {
+        $searches = [new AdminMenuItemCollection([$this->createItem('root')])];
+        for ($index = 0; $index < 6; ++$index) {
+            $searches[] = new AdminMenuItemCollection([$this->createItem('child-' . $index, parentId: $index === 5 ? 'root' : 'child-' . ($index + 1))]);
+        }
+        $service = new AdminMenuConfigService($this->createMenuItemRepository($searches), $this->createAclRoleRepository([]), $this->createMappingRepository());
+        $this->assertRejectsWith(AdminMenuConfigService::VIOLATION_MOVE_UNDER_DESCENDANT, '/parentId', fn () => $service->move($this->context, 'root', 'child-0', null));
     }
 
     public function testMoveAfterANonSiblingIsRejected(): void
@@ -60,7 +75,8 @@ class AdminMenuConfigServiceTest extends TestCase
                 new AdminMenuItemCollection([$level]),
                 new AdminMenuItemCollection([$foreignItem]),
             ]),
-            $this->createAclRoleRepository([])
+            $this->createAclRoleRepository([]),
+            $this->createMappingRepository()
         );
 
         $this->assertRejectsWith(
@@ -86,7 +102,7 @@ class AdminMenuConfigServiceTest extends TestCase
             new AdminMenuItemCollection([$followerOfTarget]),
         ]);
 
-        $service = new AdminMenuConfigService($repository, $this->createAclRoleRepository([]));
+        $service = new AdminMenuConfigService($repository, $this->createAclRoleRepository([]), $this->createMappingRepository());
 
         $service->move($this->context, 'x', 'level', 'b');
 
@@ -97,13 +113,40 @@ class AdminMenuConfigServiceTest extends TestCase
         ]], $repository->updates);
     }
 
+    public function testMovingToTheCurrentPositionDoesNotRewriteTheFollowingSibling(): void
+    {
+        $item = $this->createItem('x', afterMenuItemId: 'a');
+        $repository = $this->createMenuItemRepository([new AdminMenuItemCollection([$item]), new AdminMenuItemCollection([$item])]);
+        $service = new AdminMenuConfigService($repository, $this->createAclRoleRepository([]), $this->createMappingRepository());
+
+        $service->move($this->context, 'x', null, 'a');
+
+        static::assertSame([], $repository->updates);
+    }
+
+    public function testPlacingANewRootRepairsTheExistingHead(): void
+    {
+        $item = $this->createItem('new');
+        $head = $this->createItem('existing');
+        $repository = $this->createMenuItemRepository([
+            new AdminMenuItemCollection([$item]),
+            new AdminMenuItemCollection([$item, $head]),
+        ]);
+        $service = new AdminMenuConfigService($repository, $this->createAclRoleRepository([]), $this->createMappingRepository());
+
+        $service->move($this->context, 'new', null, null);
+
+        static::assertSame([[['id' => 'existing', 'afterMenuItemId' => 'new']]], $repository->updates);
+    }
+
     public function testAssignRolesRejectsUnknownRoles(): void
     {
         $item = $this->createItem('x');
 
         $service = new AdminMenuConfigService(
             $this->createMenuItemRepository([new AdminMenuItemCollection([$item])]),
-            $this->createAclRoleRepository(['role-a'])
+            $this->createAclRoleRepository(['role-a']),
+            $this->createMappingRepository()
         );
 
         $this->assertRejectsWith(
@@ -118,13 +161,39 @@ class AdminMenuConfigServiceTest extends TestCase
         $item = $this->createItem('x');
 
         $menuItemRepository = $this->createMenuItemRepository([new AdminMenuItemCollection([$item])]);
-        $service = new AdminMenuConfigService($menuItemRepository, $this->createAclRoleRepository(['role-a', 'role-b']));
+        $service = new AdminMenuConfigService($menuItemRepository, $this->createAclRoleRepository(['role-a', 'role-b']), $this->createMappingRepository());
 
         $service->assignRoles($this->context, 'x', ['role-b', 'role-a', 'role-b']);
 
         static::assertSame([[
-            ['id' => 'x', 'roles' => ['role-b', 'role-a']],
+            ['id' => 'x', 'roles' => [['id' => 'role-b'], ['id' => 'role-a']]],
         ]], $menuItemRepository->updates);
+    }
+
+    public function testAssigningNoRolesRemovesExistingMappings(): void
+    {
+        $item = $this->createItem('x');
+        $role = new AclRoleEntity();
+        $role->setId('role-a');
+        $item->setRoles(new AclRoleCollection([$role]));
+        $mappingRepository = $this->createMappingRepository();
+        $service = new AdminMenuConfigService(
+            $this->createMenuItemRepository([new AdminMenuItemCollection([$item])]),
+            $this->createAclRoleRepository([]),
+            $mappingRepository
+        );
+
+        $service->assignRoles($this->context, 'x', []);
+
+        static::assertSame([[['adminMenuItemId' => 'x', 'aclRoleId' => 'role-a']]], $mappingRepository->deletes);
+    }
+
+    /**
+     * @return StaticEntityRepository<EntityCollection<Entity>>
+     */
+    private function createMappingRepository(): StaticEntityRepository
+    {
+        return new StaticEntityRepository([new EntityCollection()], new AdminMenuItemRoleDefinition());
     }
 
     /**

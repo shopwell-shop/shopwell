@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionStruct;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
+use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
 
@@ -138,7 +139,7 @@ class PluginMenuSynchronizer
         }
 
         $this->linkLevels($declarations, $ids, $stored, $context);
-        $this->hideDroppedDeclarations($stored, $declarations, $context);
+        $this->hideDroppedDeclarations($stored, $declarations, $active, $context);
     }
 
     /**
@@ -233,13 +234,21 @@ class PluginMenuSynchronizer
      * @param array<string, AdminMenuItemEntity> $stored
      * @param list<AdminMenuDefinitionStruct> $declarations
      */
-    private function hideDroppedDeclarations(array $stored, array $declarations, Context $context): void
+    private function hideDroppedDeclarations(array $stored, array $declarations, bool $active, Context $context): void
     {
         $declared = array_column($declarations, 'internalKey');
 
         $updates = [];
 
         foreach ($stored as $internalKey => $item) {
+            if (!\in_array($internalKey, $declared, true) && $item->getType() === AdminMenuItemDefinition::TYPE_GROUP && $item->getDefaultMeta() === null && $item->isConfigOverridden()) {
+                if ($item->isActive() !== $active || $item->isArchived()) {
+                    $updates[] = ['id' => $item->getId(), 'active' => $active, 'archived' => false];
+                }
+
+                continue;
+            }
+
             if (\in_array($internalKey, $declared, true) || !$item->isActive()) {
                 continue;
             }

@@ -135,7 +135,10 @@ async function createWrapper(
                     'sw-tabs-item': await wrapTestComponent('sw-tabs-item'),
                     'sw-settings-item': await wrapTestComponent('sw-settings-item'),
                     'mt-search': {
-                        template: '<div class="mt-search"><slot></slot></div>',
+                        template:
+                            '<input class="mt-search" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
+                        props: ['modelValue', 'size'],
+                        emits: ['update:modelValue'],
                     },
                     'sw-highlight-text': await wrapTestComponent('sw-highlight-text'),
                     'router-link': {
@@ -167,6 +170,46 @@ describe('module/sw-settings/page/sw-settings-index', () => {
 
     afterEach(() => {
         jest.restoreAllMocks();
+    });
+
+    it('renders one configured section for managed and additional module settings', async () => {
+        const wrapper = await createWrapper();
+        const menu = Shopwell.Store.get('adminMenuConfig');
+        menu.visibleTree = [
+            {
+                id: 'settings',
+                internalKey: 'sw-settings',
+                children: [
+                    {
+                        id: 'configured-system',
+                        type: 'group',
+                        groupName: 'system',
+                        title: 'Configured tools',
+                        privilege: 'user.viewer',
+                        children: [{ id: 'configured-user', internalKey: 'sw-settings-user' }],
+                    },
+                ],
+            },
+        ];
+        menu.managedKeys = ['sw-settings-user'];
+        await flushPromises();
+
+        expect(wrapper.findAll('.sw-settings__content-group-title').map((heading) => heading.text())).toContain(
+            'Configured tools',
+        );
+        expect(wrapper.find('#sw-settings__content-group-system').exists()).toBe(false);
+        expect(wrapper.find('#sw-settings__content-group-configured-system').findAll('.sw-settings-item')).toHaveLength(3);
+
+        await wrapper.find('.mt-search').setValue('Configured tools');
+        await flushPromises();
+        expect(wrapper.findAll('.sw-settings__content-group')).toHaveLength(1);
+        expect(wrapper.findAll('.sw-settings-item')).toHaveLength(3);
+
+        menu.visibleTree[0].children[0].privilege = 'restricted.viewer';
+        await flushPromises();
+        expect(wrapper.findAll('.sw-settings-item')).toHaveLength(0);
+        wrapper.unmount();
+        menu.$reset();
     });
 
     it('should contain any settings items', async () => {

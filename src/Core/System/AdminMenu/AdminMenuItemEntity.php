@@ -23,6 +23,8 @@ class AdminMenuItemEntity extends Entity
 
     protected ?string $internalKey = null;
 
+    protected ?string $routeKey = null;
+
     protected ?string $groupName = null;
 
     protected ?string $title = null;
@@ -96,6 +98,16 @@ class AdminMenuItemEntity extends Entity
     public function setInternalKey(?string $internalKey): void
     {
         $this->internalKey = $internalKey;
+    }
+
+    public function getRouteKey(): ?string
+    {
+        return $this->routeKey;
+    }
+
+    public function setRouteKey(?string $routeKey): void
+    {
+        $this->routeKey = $routeKey;
     }
 
     public function getTitle(): ?string

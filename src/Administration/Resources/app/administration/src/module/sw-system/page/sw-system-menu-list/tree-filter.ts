@@ -21,16 +21,16 @@ export type MenuRenderNode = {
  *
  * @private
  */
-export function filterTreeByTerm(nodes: MenuRenderNode[], term: string): MenuRenderNode[] {
+export function filterTreeByTerm<T extends MenuRenderNode>(nodes: T[], term: string): T[] {
     const needle = term.trim().toLowerCase();
 
     if (!needle) {
         return nodes;
     }
 
-    const keep = (current: MenuRenderNode[]): MenuRenderNode[] => {
-        return current.reduce<MenuRenderNode[]>((kept, node) => {
-            const children = keep(node.children);
+    const keep = (current: T[]): T[] => {
+        return current.reduce<T[]>((kept, node) => {
+            const children = keep(node.children as T[]);
 
             if (children.length > 0 || matchesTerm(node, needle)) {
                 kept.push({ ...node, children });
@@ -76,7 +76,7 @@ export function collectBranchIds(nodes: MenuRenderNode[]): string[] {
  *
  * @private
  */
-export function findNode(nodes: MenuRenderNode[], id: string | null): MenuRenderNode | null {
+export function findNode<T extends MenuRenderNode>(nodes: T[], id: string | null): T | null {
     if (!id) {
         return null;
     }
@@ -86,7 +86,7 @@ export function findNode(nodes: MenuRenderNode[], id: string | null): MenuRender
             return node;
         }
 
-        const found = findNode(node.children, id);
+        const found = findNode(node.children as T[], id);
 
         if (found) {
             return found;

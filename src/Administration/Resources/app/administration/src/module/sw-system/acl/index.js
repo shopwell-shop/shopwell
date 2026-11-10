@@ -68,6 +68,8 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
         editor: {
             privileges: [
                 'admin_menu_item:update',
+                'admin_menu_item_role:create',
+                'admin_menu_item_role:delete',
             ],
             dependencies: ['admin_menu.viewer'],
         },

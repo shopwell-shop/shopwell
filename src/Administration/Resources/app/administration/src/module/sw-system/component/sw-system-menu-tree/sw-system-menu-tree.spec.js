@@ -1,6 +1,14 @@
 /**
  * @sw-package fundamentals@framework
  */
+import {
+    MtButton,
+    MtDropdownMenuRoot,
+    MtDropdownMenuTrigger,
+    MtDropdownMenuPortal,
+    MtActionMenu,
+    MtActionMenuItem,
+} from '@shopwell-ag/meteor-component-library';
 import { mount } from '@vue/test-utils';
 
 function createNode(overrides) {
@@ -55,14 +63,16 @@ function mockHeight(element, height = 40) {
     };
 }
 
-async function createWrapper(props = {}) {
+async function createWrapper(props = {}, realActions = false) {
     return mount(await wrapTestComponent('sw-system-menu-tree', { sync: true }), {
+        attachTo: realActions ? document.body : undefined,
         props: {
             items: createItems(),
             expandedIds: [],
             selectedId: null,
             sortable: true,
             editable: true,
+            creatable: true,
             deletable: true,
             ...props,
         },
@@ -71,24 +81,21 @@ async function createWrapper(props = {}) {
                 $t: (key) => key,
             },
             stubs: {
+                'mt-dropdown-menu-root': realActions
+                    ? MtDropdownMenuRoot
+                    : { template: '<span class="mt-dropdown-menu-root-stub"><slot /></span>' },
+                'mt-dropdown-menu-trigger': realActions ? MtDropdownMenuTrigger : { template: '<span><slot /></span>' },
+                'mt-dropdown-menu-portal': realActions ? MtDropdownMenuPortal : { template: '<span><slot /></span>' },
+                'mt-action-menu': realActions ? MtActionMenu : { template: '<span><slot /></span>' },
+                'mt-action-menu-item': realActions
+                    ? MtActionMenuItem
+                    : {
+                          template:
+                              '<button class="mt-action-menu-item-stub" :data-variant="variant" @click="$emit(\'click\')"><slot /></button>',
+                          props: ['variant'],
+                      },
                 'mt-icon': { template: '<span class="mt-icon-stub"></span>', props: ['name', 'size'] },
-                'mt-button': {
-                    template: '<button class="mt-button-stub" @click="$emit(\'click\')"><slot></slot></button>',
-                    props: [
-                        'size',
-                        'variant',
-                        'square',
-                        'title',
-                        'disabled',
-                    ],
-                },
-                'sw-context-button': { template: '<span class="sw-context-button-stub"><slot></slot></span>' },
-                'sw-context-menu-item': {
-                    template:
-                        '<button class="sw-context-menu-item-stub" :data-variant="variant" :disabled="disabled" @click="$emit(\'click\')"><slot></slot></button>',
-                    props: ['disabled', 'variant'],
-                },
-                'sw-context-menu-divider': { template: '<hr class="sw-context-menu-divider-stub" />' },
+                'mt-button': MtButton,
             },
         },
     });
@@ -151,10 +158,10 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
 
         const row = rowByLabel(wrapper, 'Orders');
 
-        expect(row.attributes('tabindex')).toBe('0');
+        expect(row.attributes('tabindex')).toBe('-1');
 
-        await row.trigger('keydown.enter');
-        await row.trigger('keydown.space');
+        await row.trigger('keydown', { key: 'Enter' });
+        await row.trigger('keydown', { key: ' ' });
 
         expect(wrapper.emitted('select')).toHaveLength(2);
     });
@@ -188,10 +195,25 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
         expect(row.find('.sw-system-menu-tree__badge--group').exists()).toBe(false);
     });
 
+    it('opens the registered Meteor row menu and emits its action', async () => {
+        wrapper = await createWrapper({}, true);
+        await rowByLabel(wrapper, 'Catalog')
+            .get('.sw-system-menu-tree__action-trigger')
+            .trigger('keydown', { key: 'Enter' });
+        await flushPromises();
+        const action = [...document.querySelectorAll('[role="menuitem"]')].find((item) =>
+            item.textContent.includes('sw-system.menu.addChild'),
+        );
+        expect(action).toBeDefined();
+        action.click();
+        await flushPromises();
+        expect(wrapper.emitted('add-child')[0][0].id).toBe('catalog');
+    });
+
     it('emits an edit intent from the row action', async () => {
         wrapper = await createWrapper();
 
-        await rowByLabel(wrapper, 'Orders').findAll('.sw-context-menu-item-stub')[0].trigger('click');
+        await rowByLabel(wrapper, 'Orders').findAll('.mt-action-menu-item-stub')[0].trigger('click');
 
         expect(wrapper.emitted('edit')[0][0].id).toBe('orders');
     });
@@ -199,8 +221,8 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
     it('offers the official five actions for a folder and four for a menu entry', async () => {
         wrapper = await createWrapper();
 
-        const folderActions = rowByLabel(wrapper, 'Catalog').findAll('.sw-context-menu-item-stub');
-        const menuActions = rowByLabel(wrapper, 'Orders').findAll('.sw-context-menu-item-stub');
+        const folderActions = rowByLabel(wrapper, 'Catalog').findAll('.mt-action-menu-item-stub');
+        const menuActions = rowByLabel(wrapper, 'Orders').findAll('.mt-action-menu-item-stub');
 
         expect(folderActions).toHaveLength(5);
         expect(menuActions).toHaveLength(4);
@@ -215,7 +237,7 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
     it('offers adding a child only for folders', async () => {
         wrapper = await createWrapper({ expandedIds: ['catalog'] });
 
-        await rowByLabel(wrapper, 'Catalog').findAll('.sw-context-menu-item-stub')[3].trigger('click');
+        await rowByLabel(wrapper, 'Catalog').findAll('.mt-action-menu-item-stub')[3].trigger('click');
 
         expect(wrapper.emitted('add-child')[0][0].id).toBe('catalog');
     });
@@ -223,9 +245,9 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
     it('emits a delete intent from the danger action', async () => {
         wrapper = await createWrapper();
 
-        const deleteAction = rowByLabel(wrapper, 'Orders').findAll('.sw-context-menu-item-stub')[3];
+        const deleteAction = rowByLabel(wrapper, 'Orders').findAll('.mt-action-menu-item-stub')[3];
 
-        expect(deleteAction.attributes('data-variant')).toBe('danger');
+        expect(deleteAction.attributes('data-variant')).toBe('critical');
 
         await deleteAction.trigger('click');
 
@@ -233,9 +255,9 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
     });
 
     it('hides the row actions when the operator may not edit', async () => {
-        wrapper = await createWrapper({ editable: false, deletable: false });
+        wrapper = await createWrapper({ editable: false, creatable: false, deletable: false });
 
-        expect(wrapper.find('.sw-system-menu-tree__context').exists()).toBe(false);
+        expect(wrapper.find('.mt-dropdown-menu-root-stub').exists()).toBe(false);
     });
 
     it('never offers to delete an entry of a core module', async () => {
@@ -243,17 +265,36 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
             items: [createNode({ id: 'orders', label: 'Orders', sysLocked: true })],
         });
 
-        const actions = rowByLabel(wrapper, 'Orders').findAll('.sw-context-menu-item-stub');
+        const actions = rowByLabel(wrapper, 'Orders').findAll('.mt-action-menu-item-stub');
 
         expect(actions).toHaveLength(3);
         expect(actions.some((action) => action.text() === 'global.default.delete')).toBe(false);
+    });
+
+    it('only starts a drag from the dedicated handle', async () => {
+        wrapper = await createWrapper();
+        const row = rowByLabel(wrapper, 'Orders');
+        expect(row.attributes('draggable')).not.toBe('true');
+        expect(row.get('.sw-system-menu-tree__drag-handle').attributes('draggable')).toBe('true');
+    });
+
+    it('moves keyboard focus through the visible tree', async () => {
+        wrapper = await createWrapper();
+        await rowByLabel(wrapper, 'Catalog').trigger('keydown', { key: 'ArrowDown' });
+        expect(rowByLabel(wrapper, 'Orders').attributes('tabindex')).toBe('0');
+        expect(rowByLabel(wrapper, 'Catalog').attributes('tabindex')).toBe('-1');
+    });
+
+    it('does not offer creation actions to editors without create permission', async () => {
+        wrapper = await createWrapper({ creatable: false, deletable: false });
+        expect(rowByLabel(wrapper, 'Catalog').findAll('.mt-action-menu-item-stub')).toHaveLength(1);
     });
 
     it('appends a dropped item to the last child of a folder', async () => {
         wrapper = await createWrapper({ expandedIds: ['catalog'] });
 
         const products = rowByLabel(wrapper, 'Products');
-        await products.trigger('dragstart');
+        await products.get('.sw-system-menu-tree__drag-handle').trigger('dragstart');
         mockHeight(rowByLabel(wrapper, 'Catalog').element);
         await rowByLabel(wrapper, 'Catalog').trigger('dragover');
         await rowByLabel(wrapper, 'Catalog').trigger('drop');
@@ -265,10 +306,10 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
         });
     });
 
-    it('places a dropped item after the row it was dropped on', async () => {
+    it('ignores a drop at the existing position', async () => {
         wrapper = await createWrapper();
 
-        await rowByLabel(wrapper, 'Orders').trigger('dragstart');
+        await rowByLabel(wrapper, 'Orders').get('.sw-system-menu-tree__drag-handle').trigger('dragstart');
         mockHeight(rowByLabel(wrapper, 'Catalog').element);
 
         // the lower quarter of a folder row means "after it", the middle means "into it"
@@ -276,20 +317,65 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
         await target.trigger('dragover', { clientY: 39 });
         await target.trigger('drop', { clientY: 39 });
 
-        expect(wrapper.emitted('move')[0][0]).toEqual({
-            id: 'orders',
-            parentId: null,
-            afterMenuItemId: 'catalog',
-        });
+        expect(wrapper.emitted('move')).toBeUndefined();
     });
 
     it('refuses to drop an entry into its own subtree', async () => {
         wrapper = await createWrapper({ expandedIds: ['catalog'] });
 
-        await rowByLabel(wrapper, 'Catalog').trigger('dragstart');
+        await rowByLabel(wrapper, 'Catalog').get('.sw-system-menu-tree__drag-handle').trigger('dragstart');
         await rowByLabel(wrapper, 'Products').trigger('dragover');
         await rowByLabel(wrapper, 'Products').trigger('drop');
 
         expect(wrapper.emitted('move')).toBeUndefined();
+    });
+    it('allows reordering explicit settings groups with different legacy names', async () => {
+        const wrapper = await createWrapper({
+            items: [
+                createNode({
+                    id: 'settings',
+                    internalKey: 'sw-settings',
+                    children: [
+                        createNode({
+                            id: 'general',
+                            parentId: 'settings',
+                            type: 'group',
+                            groupName: 'general',
+                            label: 'General',
+                        }),
+                        createNode({
+                            id: 'customer',
+                            parentId: 'settings',
+                            afterMenuItemId: 'general',
+                            type: 'group',
+                            groupName: 'customer',
+                            label: 'Customer',
+                        }),
+                    ],
+                }),
+            ],
+            expandedIds: ['settings'],
+        });
+        await rowByLabel(wrapper, 'Customer').get('.sw-system-menu-tree__drag-handle').trigger('dragstart');
+        mockHeight(rowByLabel(wrapper, 'General').element);
+        await rowByLabel(wrapper, 'General').trigger('drop', { clientY: 1 });
+        expect(wrapper.emitted('move')[0][0]).toEqual({ id: 'customer', parentId: 'settings', afterMenuItemId: null });
+        wrapper.unmount();
+    });
+
+    it('does not mislabel explicit settings groups as ungrouped', async () => {
+        const wrapper = await createWrapper({
+            items: [
+                createNode({
+                    id: 'settings',
+                    internalKey: 'sw-settings',
+                    children: [createNode({ id: 'general', type: 'group', groupName: 'general', label: 'General' })],
+                }),
+            ],
+            expandedIds: ['settings'],
+        });
+        expect(wrapper.text()).toContain('General');
+        expect(wrapper.find('.sw-system-menu-tree__group').exists()).toBe(false);
+        wrapper.unmount();
     });
 });

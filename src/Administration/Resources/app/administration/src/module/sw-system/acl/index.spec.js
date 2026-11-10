@@ -58,7 +58,11 @@ describe('src/module/sw-system/acl/index.js', () => {
         const roles = addPrivilegeMappingEntryMock.mock.calls[1][0].roles;
 
         expect(roles.viewer.privileges).toEqual(['admin_menu_item:read', 'acl_role:read']);
-        expect(roles.editor.privileges).toEqual(['admin_menu_item:update']);
+        expect(roles.editor.privileges).toEqual([
+            'admin_menu_item:update',
+            'admin_menu_item_role:create',
+            'admin_menu_item_role:delete',
+        ]);
         expect(roles.creator.privileges).toEqual(['admin_menu_item:create']);
         expect(roles.deleter.privileges).toEqual(['admin_menu_item:delete']);
         expect(roles.editor.dependencies).toEqual(['admin_menu.viewer']);

@@ -130,7 +130,7 @@ class AdminMenuControllerTest extends TestCase
     public function testWhitelistExposesTheDeclaredRouteContract(): void
     {
         $registry = static::createStub(AdminMenuRouteRegistry::class);
-        $registry->method('getCoreDefinitions')->willReturn([
+        $registry->method('getDefinitions')->willReturn([
             new AdminMenuDefinitionStruct('sw.customer.index', title: 'customer.title', parent: 'sw-customer', privilege: 'customer.viewer'),
         ]);
         $controller = new AdminMenuController(
@@ -161,7 +161,7 @@ class AdminMenuControllerTest extends TestCase
             $builder
         );
 
-        static::assertSame(json_encode(['menu' => $tree], \JSON_THROW_ON_ERROR), $controller->visible($context)->getContent());
+        static::assertSame(json_encode(['menu' => $tree, 'managedKeys' => []], \JSON_THROW_ON_ERROR), $controller->visible($context)->getContent());
         $route = (new AttributeRouteControllerLoader())->load(AdminMenuController::class)->get('api.action.admin-menu.visible');
         static::assertNotNull($route);
         static::assertTrue($route->getDefault('auth_required'));

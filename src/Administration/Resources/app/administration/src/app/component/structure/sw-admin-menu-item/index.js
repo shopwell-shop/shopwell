@@ -149,6 +149,12 @@ export default {
         },
 
         showMenuItem() {
+            if (this.entry.menuPrivilege && !this.acl.can(this.entry.menuPrivilege)) {
+                return false;
+            }
+            if (this.entry.link) {
+                return true;
+            }
             // special case for settings module, children are stored in a global state store
             if (this.entry.path === 'sw.settings.index') {
                 return this.acl.hasActiveSettingModules();
@@ -177,11 +183,10 @@ export default {
 
         children() {
             return this.entry.children.filter((child) => {
-                if (!child.privilege) {
-                    return true;
-                }
-
-                return this.acl.can(child.privilege);
+                return (
+                    (!child.privilege || this.acl.can(child.privilege)) &&
+                    (!child.menuPrivilege || this.acl.can(child.menuPrivilege))
+                );
             });
         },
 

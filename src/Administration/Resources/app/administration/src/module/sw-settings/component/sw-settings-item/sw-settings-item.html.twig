@@ -1,6 +1,7 @@
 {% block sw_settings_item %}
-<router-link
-    :to="to"
+<component
+    :is="href ? 'mt-link' : 'router-link'"
+    v-bind="href ? { href } : { to }"
     class="sw-settings-item"
     :class="classes"
 >
@@ -17,5 +18,5 @@
         </slot>
     </div>
     {% endblock %}
-</router-link>
+</component>
 {% endblock %}

@@ -1270,7 +1270,25 @@
     "sw-page": {
       "backButton": "返回"
     },
-    "mediaUploadCaption": "上传图片"
+    "mediaUploadCaption": "上传图片",
+    "sw-tree-select": {
+      "search": "搜索…",
+      "empty": "暂无匹配结果",
+      "expand": "展开节点",
+      "collapse": "收起节点"
+    },
+    "sw-icon-picker": {
+      "choose": "选择图标",
+      "title": "选择 Meteor 图标",
+      "search": "搜索图标…",
+      "style": "样式",
+      "all": "全部样式",
+      "regular": "线性",
+      "solid": "实心",
+      "count": "共 {count} 个图标",
+      "more": "加载更多",
+      "clear": "使用默认图标"
+    }
   },
   "mt-text-editor-toolbar-button-link": {
     "label": "链接"

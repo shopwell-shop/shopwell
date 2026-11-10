@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
+use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
 use Shopwell\Core\System\AdminMenu\CoreMenuRow;
@@ -155,7 +156,7 @@ class CoreMenuSynchronizer
         foreach ($stored as $internalKey => $item) {
             // rows a plugin synced are removed by the plugin lifecycle, rows an administrator
             // created carry no internal key and are never a core row
-            if ($item->getPluginId() !== null || $item->getInternalKey() === null) {
+            if ($item->getPluginId() !== null || $item->getInternalKey() === null || ($item->getType() === AdminMenuItemDefinition::TYPE_GROUP && !$item->isSysLocked())) {
                 continue;
             }
 

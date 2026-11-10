@@ -4,6 +4,8 @@ namespace Shopwell\Core\System\AdminMenu\Service;
 
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -36,20 +38,16 @@ class AdminMenuConfigService
     final public const VIOLATION_UNKNOWN_ROLE = 'admin-menu-unknown-role-violation';
 
     /**
-     * The administration renders three levels of navigation; walking further up than that
-     * means the chain is already broken.
-     */
-    private const MAX_LEVELS = 3;
-
-    /**
      * @internal
      *
      * @param EntityRepository<AdminMenuItemCollection> $menuItemRepository
      * @param EntityRepository<AclRoleCollection> $aclRoleRepository
+     * @param EntityRepository<EntityCollection<Entity>> $menuItemRoleRepository
      */
     public function __construct(
         private readonly EntityRepository $menuItemRepository,
         private readonly EntityRepository $aclRoleRepository,
+        private readonly EntityRepository $menuItemRoleRepository,
     ) {
     }
 
@@ -58,7 +56,7 @@ class AdminMenuConfigService
      */
     public function assignRoles(Context $context, string $itemId, array $roleIds): void
     {
-        $this->requireItem($context, $itemId);
+        $item = $this->requireItem($context, $itemId);
 
         $roleIds = array_values(array_unique($roleIds));
 
@@ -75,15 +73,37 @@ class AdminMenuConfigService
             }
         }
 
-        $this->menuItemRepository->update([[
-            'id' => $itemId,
-            'roles' => $roleIds,
-        ]], $context);
+        $existing = $item->getRoles()?->getIds() ?? [];
+        $added = array_values(array_diff($roleIds, $existing));
+        if ($added !== []) {
+            $this->menuItemRepository->update([[
+                'id' => $itemId,
+                'roles' => array_map(static fn (string $id): array => ['id' => $id], $added),
+            ]], $context);
+        }
+
+        $removed = array_values(array_diff($existing, $roleIds));
+        if ($removed !== []) {
+            $this->menuItemRoleRepository->delete(array_map(
+                static fn (string $id): array => ['adminMenuItemId' => $itemId, 'aclRoleId' => $id],
+                $removed
+            ), $context);
+        }
     }
 
     public function move(Context $context, string $itemId, ?string $parentId, ?string $afterMenuItemId): void
     {
         $item = $this->requireItem($context, $itemId);
+
+        if ($item->getParentId() === $parentId && $item->getAfterMenuItemId() === $afterMenuItemId) {
+            // A newly created root shares its initial position with the old head.
+            $updates = $this->takePositionInLevel($context, $itemId, $parentId, $afterMenuItemId);
+            if ($updates !== []) {
+                $this->menuItemRepository->update($updates, $context);
+            }
+
+            return;
+        }
 
         if ($parentId === $itemId) {
             throw $this->violation(
@@ -130,7 +150,7 @@ class AdminMenuConfigService
     private function requireItem(Context $context, string $itemId): AdminMenuItemEntity
     {
         $item = $this->menuItemRepository
-            ->search(new Criteria([$itemId]), $context)
+            ->search((new Criteria([$itemId]))->addAssociation('roles'), $context)
             ->getEntities()
             ->get($itemId);
 
@@ -153,10 +173,10 @@ class AdminMenuConfigService
     private function assertNotDescendant(Context $context, string $itemId, string $newParentId): void
     {
         $cursor = $newParentId;
-        $depth = 0;
+        $visited = [];
 
-        while ($cursor !== null && $depth <= self::MAX_LEVELS) {
-            if ($cursor === $itemId) {
+        while ($cursor !== null) {
+            if ($cursor === $itemId || isset($visited[$cursor])) {
                 throw $this->violation(
                     \sprintf('A menu item cannot be moved below one of its own children (%s).', $newParentId),
                     self::VIOLATION_MOVE_UNDER_DESCENDANT,
@@ -167,7 +187,7 @@ class AdminMenuConfigService
 
             $parent = $this->requireItem($context, $cursor);
             $cursor = $parent->getParentId();
-            ++$depth;
+            $visited[$parent->getId()] = true;
         }
     }
 

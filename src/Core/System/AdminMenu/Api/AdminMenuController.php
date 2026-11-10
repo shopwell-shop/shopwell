@@ -66,6 +66,7 @@ class AdminMenuController extends AbstractController
                 'parentId' => $item->getParentId(),
                 'afterMenuItemId' => $item->getAfterMenuItemId(),
                 'internalKey' => $item->getInternalKey(),
+                'routeKey' => $item->getRouteKey(),
                 'title' => $item->getTitle(),
                 'groupName' => $item->getGroupName(),
                 'translations' => self::translationsOf($item),
@@ -144,7 +145,7 @@ class AdminMenuController extends AbstractController
                 'type' => $definition->type,
                 'parent' => $definition->parent,
                 'privilege' => $definition->privilege,
-            ], $this->routeRegistry->getCoreDefinitions()),
+            ], $this->routeRegistry->getDefinitions()),
         ]);
     }
 
@@ -165,6 +166,10 @@ class AdminMenuController extends AbstractController
     {
         return new JsonResponse([
             'menu' => $this->treeBuilder->build($context),
+            'managedKeys' => array_map(
+                static fn ($definition): string => $definition->internalKey,
+                $this->routeRegistry->getDefinitions()
+            ),
         ]);
     }
 

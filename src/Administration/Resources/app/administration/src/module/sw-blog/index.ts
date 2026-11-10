@@ -95,7 +95,7 @@ Module.register('sw-blog', {
     targetVersion: '1.0.0',
     color: '#d9406b',
     // `regular-newspaper` and `regular-pen` do not exist in the icon set of this administration,
-    icon: 'regular-image-text',
+    icon: 'regular-file-text',
     entity: 'blog',
 
     routes: {
@@ -235,6 +235,7 @@ Module.register('sw-blog', {
         {
             id: 'sw-blog',
             label: 'sw-blog.general.mainMenuItemGeneral',
+            icon: 'regular-file-text',
             // a navigation entry points at the *name* of a route - the router resolves it to build the
             // link of the menu item
             path: 'sw.blog.list',

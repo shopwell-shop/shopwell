@@ -44,6 +44,14 @@ class AdminMenuRouteRegistry
     /**
      * @return list<AdminMenuDefinitionStruct>
      */
+    public function getDefinitions(): array
+    {
+        return array_values($this->getIndex());
+    }
+
+    /**
+     * @return list<AdminMenuDefinitionStruct>
+     */
     public function getCoreDefinitions(): array
     {
         return $this->collector->collectCore();

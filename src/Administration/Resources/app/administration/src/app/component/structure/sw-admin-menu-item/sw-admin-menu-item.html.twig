@@ -104,19 +104,29 @@
         as="ul"
         class="sw-admin-menu__sub-navigation-list"
     >
-        <sw-admin-menu-item
+        <template
             v-for="(childEntry, subMenuIndex) in children"
             :key="childEntry.id ?? childEntry.path ?? subMenuIndex"
-            :entry="childEntry"
-            :menu-depth="menuDepth + 1"
-            :display-icon="false"
-            :sidebar-expanded="sidebarExpanded"
-            :collapsible-text="collapsibleText"
-            :icon-size="iconSize"
-            @menu-item-hover="forwardMenuItemHover"
-            @flyout-navigate="forwardFlyoutNavigate"
-            @navigation-link-click="forwardNavigationLinkClick"
-        />
+        >
+            <li
+                v-if="childEntry.groupStart"
+                class="sw-admin-menu-item__group-heading"
+                role="presentation"
+            >
+                {{ childEntry.groupTitle }}
+            </li>
+            <sw-admin-menu-item
+                :entry="childEntry"
+                :menu-depth="menuDepth + 1"
+                :display-icon="false"
+                :sidebar-expanded="sidebarExpanded"
+                :collapsible-text="collapsibleText"
+                :icon-size="iconSize"
+                @menu-item-hover="forwardMenuItemHover"
+                @flyout-navigate="forwardFlyoutNavigate"
+                @navigation-link-click="forwardNavigationLinkClick"
+            />
+        </template>
     </mt-collapsible-content>
     {% endblock %}
 </mt-collapsible>

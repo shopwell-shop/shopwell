@@ -30,6 +30,19 @@ class AdminMenuRouteRegistryTest extends TestCase
         static::assertNull($registry->get('not-declared'));
     }
 
+    public function testListsCoreAndPluginDefinitionsForNavigationConsumers(): void
+    {
+        $registry = new AdminMenuRouteRegistry(new MenuDefinitionCollector([
+            new CoreMenuProvider(['sw-product']),
+            new PluginMenuProvider('SwagExample', ['swag-example-route']),
+        ]));
+
+        static::assertSame(
+            ['sw-product', 'swag-example-route'],
+            array_map(static fn (AdminMenuDefinitionStruct $definition): string => $definition->internalKey, $registry->getDefinitions())
+        );
+    }
+
     public function testCoreDefinitionsDoNotContainPluginDeclarations(): void
     {
         $registry = new AdminMenuRouteRegistry(new MenuDefinitionCollector([

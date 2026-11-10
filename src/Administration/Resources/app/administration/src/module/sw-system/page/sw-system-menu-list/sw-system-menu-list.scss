@@ -1,93 +1,139 @@
 .sw-system-menu-list {
-    &__content {
-        width: 100%;
-        height: 100%;
-        position: absolute;
-
-        &:has(.mt-empty-state) {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-    }
-
-    .sw-system-menu-list__collapse-headline {
-        font-size: var(--font-size-m);
-    }
-
-    .sw-sidebar-collapse__actions {
-        text-align: right;
-        padding: 0 10px;
+    .sw-page__content.has--side-content {
+        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr) auto;
     }
 
     .sw-page__side-content {
         background: var(--color-elevation-surface-raised);
+        border-right: 1px solid var(--color-border-primary-default);
     }
 
-    .sw-sidebar-collapse__header {
+    .sw-page__side-content-inner {
+        height: 100%;
+    }
+
+    &__navigation {
+        display: flex;
+        height: 100%;
+        min-height: 0;
+        flex-direction: column;
+    }
+
+    &__tree-header {
+        display: grid;
+        gap: var(--scale-size-8);
+        padding: var(--scale-size-16);
+        border-bottom: 1px solid var(--color-border-primary-default);
+    }
+
+    &__tree-heading {
+        display: flex;
         align-items: center;
+        justify-content: space-between;
+
+        h3 {
+            font-size: var(--font-size-xs);
+            margin: 0;
+            font-weight: var(--font-weight-semibold);
+        }
     }
 
-    .sw-page__main-content .sw-skeleton {
-        margin-top: 80px;
+    &__tree-content {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: var(--scale-size-8);
     }
 
-    &__tree-empty {
-        margin: var(--scale-size-32) var(--scale-size-16);
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs);
-        text-align: center;
+    &__content {
+        width: 100%;
+        padding: var(--scale-size-32);
     }
 
     &__form {
         max-width: 960px;
+        margin: 0 auto;
     }
 
     &__form-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--scale-size-24) var(--scale-size-32);
+        gap: var(--scale-size-24);
         align-items: start;
     }
 
     &__icon-field {
         display: flex;
-        gap: var(--scale-size-8);
-        align-items: flex-start;
+        gap: var(--scale-size-12);
+        align-items: center;
         grid-column: span 2;
     }
 
     &__field-icon {
-        flex: 1 1 auto;
+        flex: 1;
     }
 
-    &__icon-preview {
-        margin-top: var(--scale-size-24);
-        color: var(--color-icon-primary-default);
-    }
-
-    &__field-active {
-        margin-top: 0;
-    }
-
+    &__field-wide,
     &__field-roles {
         grid-column: span 2;
     }
 
-    &__card {
-        margin-bottom: var(--scale-size-16);
-
-        .mt-card__toolbar {
-            padding-bottom: 0;
-        }
+    &__card,
+    &__locked-hint {
+        margin-bottom: var(--scale-size-24);
     }
 
-    &__locked-hint {
-        margin-bottom: var(--scale-size-16);
+    &__section-label {
+        border-top: 1px solid var(--color-border-primary-default);
+        padding-top: var(--scale-size-24);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__access-hint {
+        margin: 0;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__empty-state {
+        min-height: 400px;
     }
 
     &__delete-confirm {
         margin: 0;
+    }
+
+    @media screen and (max-width: 1100px) {
+        .sw-page__content.has--side-content {
+            grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) auto;
+        }
+
+        &__content {
+            padding: var(--scale-size-16);
+        }
+
+        &__form-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__icon-field,
+        &__field-wide,
+        &__field-roles {
+            grid-column: auto;
+        }
+    }
+
+    @media screen and (max-width: 700px) {
+        .sw-page__content.has--side-content {
+            grid-template-columns: minmax(0, 1fr);
+            overflow: auto;
+        }
+
+        .sw-page__side-content {
+            max-height: 320px;
+            border-right: 0;
+            border-bottom: 1px solid var(--color-border-primary-default);
+        }
     }
 }

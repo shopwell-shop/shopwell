@@ -1,0 +1,99 @@
+.sw-tree-select {
+    min-width: 0;
+
+    &__label {
+        display: block;
+        margin-bottom: var(--scale-size-8);
+        font-size: var(--font-size-xs);
+    }
+
+    .mt-floating-ui,
+    .mt-floating-ui__trigger {
+        display: block;
+        width: 100%;
+    }
+
+    &__trigger.mt-button {
+        width: 100%;
+        text-align: start;
+    }
+
+    &__trigger .mt-button__content {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    &__value {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+
+    &__popup {
+        padding: var(--scale-size-8);
+        background: var(--color-elevation-surface-raised);
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: var(--border-radius-s);
+        box-shadow: var(--shadow-default);
+    }
+
+    &__tree {
+        max-height: 300px;
+        overflow: auto;
+        padding: 0;
+        margin: var(--scale-size-8) 0 0;
+        list-style: none;
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        min-height: 36px;
+        padding-inline-end: var(--scale-size-8);
+        border-radius: var(--border-radius-s);
+    }
+
+    &__row.is--focused {
+        background: var(--color-background-brand-default);
+    }
+
+    @for $depth from 0 through 20 {
+        &__row--depth-#{$depth} {
+            padding-inline-start: $depth * 16px;
+        }
+    }
+
+    &__spacer {
+        flex: 0 0 24px;
+    }
+
+    &__option {
+        flex: 1;
+        min-width: 0;
+        padding: var(--scale-size-8);
+        background: transparent;
+        border: 0;
+        text-align: start;
+        color: inherit;
+        font: inherit;
+        font-size: var(--font-size-xs);
+        cursor: pointer;
+    }
+
+    &__option small {
+        display: block;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+    }
+
+    &__help {
+        display: block;
+        margin-top: var(--scale-size-8);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__empty {
+        padding: var(--scale-size-16);
+        font-size: var(--font-size-xs);
+    }
+}

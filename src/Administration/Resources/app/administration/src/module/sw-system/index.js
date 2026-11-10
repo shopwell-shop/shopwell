@@ -7,6 +7,7 @@ import './acl';
 Shopwell.Component.register('sw-system-user-list', () => import('./page/sw-system-user-list'));
 Shopwell.Component.register('sw-system-role-list', () => import('./page/sw-system-role-list'));
 Shopwell.Component.register('sw-system-menu-list', () => import('./page/sw-system-menu-list'));
+Shopwell.Component.register('sw-system-menu-detail', () => import('./component/sw-system-menu-detail'));
 Shopwell.Component.register('sw-system-menu-tree', () => import('./component/sw-system-menu-tree'));
 Shopwell.Component.register(
     'sw-system-additional-permissions',

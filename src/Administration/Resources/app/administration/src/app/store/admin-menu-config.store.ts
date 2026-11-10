@@ -11,11 +11,13 @@ type AdminMenuItemTranslation = {
     groupTitle: string | null;
 };
 
-type AdminMenuItem = {
+/** @private */
+export type AdminMenuItem = {
     id: string;
     parentId: string | null;
     afterMenuItemId: string | null;
     internalKey: string | null;
+    routeKey?: string | null;
     title: string | null;
     groupName: string | null;
     translations: Record<string, AdminMenuItemTranslation>;
@@ -33,7 +35,8 @@ type AdminMenuItem = {
     roleIds: Array<string>;
 };
 
-type RouteAllowlistEntry = {
+/** @private */
+export type RouteAllowlistEntry = {
     internalKey: string;
     title: string;
     type: string;
@@ -41,7 +44,8 @@ type RouteAllowlistEntry = {
     privilege: string | null;
 };
 
-type MenuTreeNode = AdminMenuItem & {
+/** @private */
+export type MenuTreeNode = AdminMenuItem & {
     children: Array<MenuTreeNode>;
 };
 
@@ -50,13 +54,17 @@ type MenuTreeNode = AdminMenuItem & {
  * archived, hidden and role-restricted entries, with entries the database does not know yet
  * synthesized from their core declaration (`virtual:` ids).
  */
+/** @private */
 type VisibleMenuNode = {
     id: string;
     parentId: string | null;
     afterMenuItemId: string | null;
     internalKey: string | null;
+    routeKey?: string | null;
     type: string;
     title: string | null;
+    groupName?: string | null;
+    groupTitle?: string | null;
     icon: string | null;
     color: string | null;
     linkTarget: string | null;
@@ -66,7 +74,7 @@ type VisibleMenuNode = {
 
 type AdminMenuApi = {
     getTree: () => Promise<Array<AdminMenuItem>>;
-    getVisibleTree: () => Promise<Array<VisibleMenuNode>>;
+    getNavigation: () => Promise<{ menu: VisibleMenuNode[]; managedKeys: string[] }>;
     getRouteAllowlist: () => Promise<Array<RouteAllowlistEntry>>;
     move: (move: { id: string; parentId: string | null; afterMenuItemId: string | null }) => Promise<unknown>;
     createItem: (payload: Record<string, unknown>) => Promise<string>;
@@ -158,7 +166,9 @@ const adminMenuConfigStore = Shopwell.Store.register({
         items: [] as Array<AdminMenuItem>,
         routeAllowlist: [] as Array<RouteAllowlistEntry>,
         visibleTree: [] as Array<VisibleMenuNode>,
+        managedKeys: [] as string[],
         isVisibleLoaded: false,
+        isLoadFailed: false,
         isVisibleLoadFailed: false,
         isLoading: false,
         isLoaded: false,
@@ -205,6 +215,10 @@ const adminMenuConfigStore = Shopwell.Store.register({
                 this.items = items;
                 this.routeAllowlist = routeAllowlist;
                 this.isLoaded = true;
+                this.isLoadFailed = false;
+            } catch (error) {
+                this.isLoadFailed = true;
+                throw error;
             } finally {
                 this.isLoading = false;
             }
@@ -225,10 +239,13 @@ const adminMenuConfigStore = Shopwell.Store.register({
             }
 
             try {
-                this.visibleTree = await this.api().getVisibleTree();
+                const navigation = await this.api().getNavigation();
+                this.visibleTree = navigation.menu;
+                this.managedKeys = navigation.managedKeys;
                 this.isVisibleLoadFailed = false;
             } catch {
                 this.visibleTree = [];
+                this.managedKeys = [];
                 this.isVisibleLoadFailed = true;
             } finally {
                 this.isVisibleLoaded = true;
@@ -250,9 +267,37 @@ const adminMenuConfigStore = Shopwell.Store.register({
 
             const itemId = id ? await this.api().updateItem(id, rest) : await this.api().createItem(rest);
 
-            await this.refreshAfterWrite();
-
             return itemId;
+        },
+
+        async saveGroupTitle({
+            itemId,
+            groupName,
+            parentId,
+            languageId,
+            groupTitle,
+        }: {
+            itemId: string;
+            groupName: string;
+            parentId: string | null;
+            languageId: string;
+            groupTitle: string;
+        }) {
+            if (!groupName) return;
+            const members = this.items.filter(
+                (item) =>
+                    item.id !== itemId &&
+                    item.groupName === groupName &&
+                    item.parentId === parentId &&
+                    item.translations[languageId]?.groupTitle !== (groupTitle.trim() || null),
+            );
+            await Promise.all(
+                members.map((item) =>
+                    this.api().updateItem(item.id, {
+                        translations: [{ languageId, groupTitle: groupTitle.trim() || null }],
+                    }),
+                ),
+            );
         },
 
         async deleteItem(id: string) {
@@ -275,4 +320,5 @@ const adminMenuConfigStore = Shopwell.Store.register({
  */
 export type AdminMenuConfigStore = ReturnType<typeof adminMenuConfigStore>;
 
+/** @private */
 export default adminMenuConfigStore;

@@ -41,11 +41,14 @@ class AdminMenuApiService {
      * @returns {Promise<Array>}
      */
     getVisibleTree() {
-        const headers = this.getHeaders();
+        return this.getNavigation().then((navigation) => navigation.menu);
+    }
 
-        return this.httpClient.get('/_action/admin-menu/visible', { headers }).then((response) => {
-            return response.data.menu ?? [];
-        });
+    getNavigation() {
+        return this.httpClient.get('/_action/admin-menu/visible', { headers: this.getHeaders() }).then((response) => ({
+            menu: response.data.menu ?? [],
+            managedKeys: response.data.managedKeys ?? [],
+        }));
     }
 
     /**
@@ -61,44 +64,51 @@ class AdminMenuApiService {
         });
     }
 
-    /**
-     * Writes a new item through the generated DAL route and returns its id: the caller has
-     * to position it afterwards, and positioning is a move of the stored row.
-     *
-     * `_response=detail` is what makes the id readable - the plain write answers with an
-     * empty body and a `Location` header only.
-     *
-     * @param {object} payload
-     * @returns {Promise<string>}
-     */
     createItem(payload) {
-        const headers = this.getHeaders();
-
-        return this.httpClient.post('/admin-menu-item?_response=detail', payload, { headers }).then((response) => {
-            return response.data.data.id;
-        });
+        return this.writeItem(null, payload);
     }
 
-    /**
-     * @param {string} id
-     * @param {object} payload
-     * @returns {Promise<string>}
-     */
     updateItem(id, payload) {
-        const headers = this.getHeaders();
-
-        return this.httpClient.patch(`/admin-menu-item/${id}`, payload, { headers }).then(() => {
-            return id;
-        });
+        return this.writeItem(id, payload);
     }
 
-    /**
-     * @param {string} id
-     */
     deleteItem(id) {
-        const headers = this.getHeaders();
+        return this.repositories().create('admin_menu_item').delete(id, Shopwell.Context.api);
+    }
 
-        return this.httpClient.delete(`/admin-menu-item/${id}`, { headers });
+    repositories() {
+        return Shopwell.Service('repositoryFactory');
+    }
+
+    async writeItem(id, payload) {
+        const { translations = [], roles, ...fields } = payload;
+        const translation = translations[0];
+        const context = { ...Shopwell.Context.api, languageId: translation?.languageId ?? Shopwell.Context.api.languageId };
+        const repository = this.repositories().create('admin_menu_item');
+        const criteria = new Shopwell.Data.Criteria();
+        criteria.addAssociation('roles');
+        const entity = id ? await repository.get(id, context, criteria) : repository.create(context);
+
+        // The repository owns the identity, including the generated id of a new draft.
+        delete fields.id;
+        Object.assign(entity, fields);
+        if (translation) {
+            if ('title' in translation) entity.title = translation.title;
+            if ('groupTitle' in translation) entity.groupTitle = translation.groupTitle;
+        }
+        if (roles) {
+            const selected = new Set(roles.map((role) => role.id));
+            const existing = new Set(entity.roles.map((role) => role.id));
+            [...existing].filter((roleId) => !selected.has(roleId)).forEach((roleId) => entity.roles.remove(roleId));
+            const roleRepository = this.repositories().create('acl_role');
+            const additions = await Promise.all(
+                [...selected].filter((roleId) => !existing.has(roleId)).map((roleId) => roleRepository.get(roleId, context)),
+            );
+            additions.forEach((role) => entity.roles.add(role));
+        }
+
+        await repository.save(entity, context);
+        return entity.id;
     }
 
     /**

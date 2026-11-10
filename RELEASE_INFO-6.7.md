@@ -4,6 +4,15 @@
 
 ## Administration
 
+### Configurable administration menus
+
+Menu sections can now be managed as independent `group` nodes in both navigation and settings.
+Legacy provider `groupName` declarations and translated group titles are migrated automatically.
+The optional `routeKey` field selects a page without changing a system or plugin node’s `internalKey` identity.
+Settings overview groups now follow the visible administration menu configuration, including translated group titles and custom links.
+The visible menu endpoint returns `groupName`, `groupTitle`, and `managedKeys` so clients can apply stored groups without restoring hidden provider entries from module declarations.
+The route whitelist includes installed plugin providers alongside core declarations.
+
 ### Organization settings layout
 
 Organization settings now open a shared tree workspace, with organizations as independent roots and their units nested below them.

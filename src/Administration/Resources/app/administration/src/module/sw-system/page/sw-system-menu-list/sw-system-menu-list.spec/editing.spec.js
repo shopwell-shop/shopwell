@@ -135,13 +135,14 @@ describe('module/sw-system/page/sw-system-menu-list (editing)', () => {
         expect(wrapper.find('.sw-system-menu-list__field-title').element.value).toBe('产品目录');
     });
 
-    it('shows the group fields of a top level entry only', async () => {
+    it('creates a group as a node instead of editing per-child group metadata', async () => {
         wrapper = await createWrapper();
 
         await wrapper.find('.tree-select-root').trigger('click');
 
-        expect(wrapper.find('.sw-system-menu-list__field-group').exists()).toBe(true);
-        expect(wrapper.find('.sw-system-menu-list__field-group-title').exists()).toBe(true);
+        expect(wrapper.find('.sw-system-menu-list__field-type option[value="group"]').exists()).toBe(true);
+        expect(wrapper.find('.sw-system-menu-list__field-group').exists()).toBe(false);
+        expect(wrapper.find('.sw-system-menu-list__field-group-title').exists()).toBe(false);
 
         await wrapper.find('.sw-system-menu-list__button-cancel').trigger('click');
         await flushPromises();

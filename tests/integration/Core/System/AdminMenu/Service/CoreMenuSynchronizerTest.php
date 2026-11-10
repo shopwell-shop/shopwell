@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Integration\Core\System\AdminMenu\Service;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -11,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Migration\V6_7\Migration1794287381AdminMenuGroups;
 use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionProviderInterface;
 use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionStruct;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
@@ -19,6 +21,7 @@ use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
 use Shopwell\Core\System\AdminMenu\CoreAdminMenuProvider;
 use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
+use Shopwell\Core\System\AdminMenu\MenuGroupNormalizer;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuRowsBuilder;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuSynchronizer;
 
@@ -79,6 +82,25 @@ class CoreMenuSynchronizerTest extends TestCase
             static::assertSame($declaration->groupName, $item->getGroupName());
             static::assertNotNull($item->getDefaultMeta());
         }
+    }
+
+    public function testMigratedDefaultsStillReceiveProviderChanges(): void
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        $date = (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $settingsId = Uuid::randomBytes();
+        $pageId = Uuid::randomBytes();
+        $connection->insert('admin_menu_item', ['id' => $settingsId, 'internal_key' => 'sw-settings', 'type' => 'menu', 'config_overridden' => 0, 'created_at' => $date]);
+        $connection->insert('admin_menu_item', ['id' => $pageId, 'internal_key' => 'sw-settings-basic-information', 'type' => 'menu', 'parent_id' => $settingsId, 'group_name' => 'general', 'config_overridden' => 0, 'created_at' => $date]);
+        (new Migration1794287381AdminMenuGroups())->update($connection);
+        $this->createSynchronizer($this->providerWith('sw-settings-basic-information', ['icon' => 'regular-star', 'privilege' => 'updated.viewer', 'groupName' => 'system', 'position' => 5]))->synchronize();
+        $items = $this->coreItems();
+        $page = $items['sw-settings-basic-information'];
+        static::assertFalse($page->isConfigOverridden());
+        static::assertSame('regular-star', $page->getIcon());
+        static::assertSame('updated.viewer', $page->getPrivilege());
+        static::assertNotNull($page->getParentId());
+        static::assertSame($items[MenuGroupNormalizer::key('sw-settings', 'system', null)]->getId(), $page->getParentId());
     }
 
     public function testMaterializesTheDeclaredHierarchyAndOrder(): void
@@ -333,7 +355,7 @@ class CoreMenuSynchronizerTest extends TestCase
      */
     private function coreDefinitions(): array
     {
-        return (new CoreAdminMenuProvider())->getDefinitions();
+        return (new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider()])))->getCoreDefinitions();
     }
 
     /**
@@ -400,10 +422,10 @@ class CoreMenuSynchronizerTest extends TestCase
                         icon: $this->overrides['icon'] ?? $declaration->icon,
                         color: $declaration->color,
                         parent: $declaration->parent,
-                        position: $declaration->position,
-                        privilege: $declaration->privilege,
+                        position: $this->overrides['position'] ?? $declaration->position,
+                        privilege: $this->overrides['privilege'] ?? $declaration->privilege,
                         linkTarget: $declaration->linkTarget,
-                        groupName: $declaration->groupName,
+                        groupName: $this->overrides['groupName'] ?? $declaration->groupName,
                     );
                 }
 

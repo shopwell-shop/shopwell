@@ -49,6 +49,8 @@ class AdminMenuValidator implements EventSubscriberInterface
      */
     private const CUSTOMIZABLE_FIELDS = [
         'internal_key',
+        'route_key',
+        'group_name',
         'icon',
         'color',
         'type',
@@ -270,9 +272,9 @@ class AdminMenuValidator implements EventSubscriberInterface
                 continue;
             }
 
-            $internalKey = $command->getPayload()['internal_key'] ?? null;
+            $internalKey = $command->getPayload()['route_key'] ?? $command->getPayload()['internal_key'] ?? null;
 
-            if (!\is_string($internalKey) || $this->routeRegistry->has($internalKey)) {
+            if (($command->getPayload()['type'] ?? null) === AdminMenuItemDefinition::TYPE_GROUP || !\is_string($internalKey) || ($this->routeRegistry->has($internalKey) && (!isset($command->getPayload()['route_key']) || $this->routeRegistry->get($internalKey)?->type === AdminMenuItemDefinition::TYPE_MENU))) {
                 continue;
             }
 

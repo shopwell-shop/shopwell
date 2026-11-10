@@ -106,8 +106,7 @@ $nesting-line-indent: 36px;
 
 // Shorten the tree line when the last visible row is a closed leaf
 .navigation-list-item--nested:last-child > .sw-admin-menu__sub-navigation-list:has(
-> .sw-admin-menu__navigation-list-item:last-child:not(.is--entry-expanded)
-)::before {
+> .sw-admin-menu__navigation-list-item:last-child:not(.is--entry-expanded))::before {
     bottom: var(--scale-size-12);
 }
 
@@ -272,4 +271,12 @@ $nesting-line-indent: 36px;
             opacity 0.05s ease-out,
             visibility 0.05s ease-out;
     }
+}
+
+.sw-admin-menu-item__group-heading {
+    padding: var(--scale-size-16) var(--scale-size-16) var(--scale-size-4);
+    font-size: var(--font-size-2xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary-default);
+    list-style: none;
 }

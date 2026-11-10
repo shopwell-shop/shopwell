@@ -43,6 +43,8 @@ class AdminMenuItemDefinition extends EntityDefinition
 {
     final public const ENTITY_NAME = 'admin_menu_item';
 
+    final public const TYPE_GROUP = 'group';
+
     final public const TYPE_FOLDER = 'folder';
     final public const TYPE_MENU = 'menu';
     final public const TYPE_LINK = 'link';
@@ -82,13 +84,14 @@ class AdminMenuItemDefinition extends EntityDefinition
             (new ParentFkField(self::class))->setDescription('Unique identity of the parent menu item. Top level items have no parent.'),
             (new FkField('after_menu_item_id', 'afterMenuItemId', self::class))->setDescription('Unique identity of the sibling this item is positioned after within the same parent.'),
             (new StringField('internal_key', 'internalKey'))->setDescription('Module navigation id or admin route name this item points to. Validated against the route whitelist for `menu` type items.'),
+            (new StringField('route_key', 'routeKey'))->setDescription('Declared target page, independent of the identity of a system or plugin menu item. Falls back to internalKey for legacy records.'),
             (new StringField('group_name', 'groupName'))->setDescription('Group the item is listed under (`general`, `customer`, …). Entries without a group are listed on their own.'),
             new TranslatedField('title'),
             // the group *key* above is untranslated, the label a language shows for it is not
             new TranslatedField('groupTitle'),
             (new StringField('icon', 'icon'))->setDescription('Meteor icon name shown next to the label.'),
             (new StringField('color', 'color'))->setDescription('Module theme color of the item.'),
-            (new StringField('type', 'type'))->addFlags(new Required())->setDescription('Item type: `folder` groups children, `menu` links to an admin route, `link` opens an external URL, `hidden` is kept but not rendered.'),
+            (new StringField('type', 'type'))->addFlags(new Required())->setDescription('Item type: `group` is a non-navigable section heading, `folder` groups children, `menu` links to an admin route, `link` opens an external URL, `hidden` is kept but not rendered.'),
             (new StringField('link_target', 'linkTarget'))->setDescription('External URL for `link` type items.'),
             (new StringField('privilege', 'privilege'))->setDescription('Admin ACL privilege required to see and open this item, in addition to the role bindings.'),
             (new BoolField('active', 'active'))->setDescription('When `false`, the item is not rendered in the administration navigation.'),

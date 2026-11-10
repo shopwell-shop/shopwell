@@ -1,0 +1,117 @@
+{% block sw_tree_select %}
+<div class="sw-tree-select">
+    <span
+        :id="fieldId + '-label'"
+        class="sw-tree-select__label"
+    >{{ label }}<span v-if="required"> *</span></span>
+    <mt-floating-ui
+        :is-opened="isOpen"
+        :match-reference-width="true"
+        :floating-ui-options="{ placement: 'bottom-start' }"
+        @close="isOpen = false"
+    >
+        <template #trigger>
+            <mt-button
+                :id="fieldId"
+                ref="trigger"
+                class="sw-tree-select__trigger"
+                variant="secondary"
+                size="default"
+                :disabled="disabled || undefined"
+                role="combobox"
+                aria-haspopup="tree"
+                :aria-expanded="isOpen"
+                :aria-controls="fieldId + '-tree'"
+                :aria-labelledby="fieldId + '-label'"
+                :aria-required="required"
+                @click="open"
+                @keydown.down.prevent="!isOpen && open()"
+            >
+                <span class="sw-tree-select__value">{{ selectedPath || placeholder }}</span>
+                <mt-icon
+                    name="regular-chevron-down-xs"
+                    size="12px"
+                />
+            </mt-button>
+        </template>
+        <template #default>
+            <div
+                ref="popup"
+                class="sw-tree-select__popup"
+            >
+                <mt-search
+                    v-model="term"
+                    :placeholder="$t('global.sw-tree-select.search')"
+                    size="small"
+                    @keydown="onSearchKeydown"
+                />
+                <ul
+                    :id="fieldId + '-tree'"
+                    ref="tree"
+                    class="sw-tree-select__tree"
+                    role="tree"
+                    tabindex="0"
+                    :aria-activedescendant="rows[focusedIndex] ? fieldId + '-option-' + focusedIndex : undefined"
+                    :aria-labelledby="fieldId + '-label'"
+                    @keydown="onKeydown"
+                >
+                    <li
+                        v-for="(row, index) in rows"
+                        :id="fieldId + '-option-' + index"
+                        :key="row.value"
+                        class="sw-tree-select__row"
+                        :class="['sw-tree-select__row--depth-' + row.depth, { 'is--focused': index === focusedIndex }]"
+                        role="treeitem"
+                        :aria-level="row.depth + 1"
+                        :aria-selected="row.selectable !== false && row.value === modelValue"
+                        :aria-expanded="row.children?.length ? expanded.includes(row.value) || !!term : undefined"
+                        :data-focused="index === focusedIndex"
+                    >
+                        <mt-button
+                            v-if="row.children?.length"
+                            class="sw-tree-select__expand"
+                            variant="tertiary"
+                            size="x-small"
+                            square
+                            :aria-label="$t(expanded.includes(row.value) ? 'global.sw-tree-select.collapse' : 'global.sw-tree-select.expand')"
+                            @click="toggle(row)"
+                        >
+                            <mt-icon
+                                :name="expanded.includes(row.value) || term ? 'regular-chevron-down-xs' : 'regular-chevron-right-xs'"
+                                size="10px"
+                            />
+                        </mt-button>
+                        <span
+                            v-else
+                            class="sw-tree-select__spacer"
+                        ></span>
+                        <button
+                            type="button"
+                            class="sw-tree-select__option"
+                            @click="choose(row)"
+                            @focus="focusedIndex = index"
+                        >
+                            <span>{{ row.label }}</span><small v-if="row.description">{{ row.description }}</small>
+                        </button>
+                        <mt-icon
+                            v-if="row.selectable !== false && row.value === modelValue"
+                            name="regular-checkmark-xs"
+                            size="12px"
+                        />
+                    </li>
+                </ul>
+                <p
+                    v-if="!rows.length"
+                    class="sw-tree-select__empty"
+                >
+                    {{ $t('global.sw-tree-select.empty') }}
+                </p>
+            </div>
+        </template>
+    </mt-floating-ui>
+    <small
+        v-if="helpText"
+        class="sw-tree-select__help"
+    >{{ helpText }}</small>
+</div>
+{% endblock %}
