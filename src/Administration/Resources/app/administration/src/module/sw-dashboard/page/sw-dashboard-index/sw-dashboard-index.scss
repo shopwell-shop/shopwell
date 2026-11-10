@@ -1,36 +1,109 @@
 .sw-dashboard-index {
-    .sw-dashboard__before-content,
-    .sw-dashboard__after-content {
-        margin-bottom: var(--scale-size-24);
+    .sw-card-view__content {
+        padding: var(--scale-size-32);
     }
 
-    // The dashboard reads as a radar, not as a report: KPIs run the full
-    // width, everything below pairs a primary block with its companion so
-    // trend and todo, states and top products, orders and members sit side
-    // by side and can be compared without scrolling.
-    &__row {
-        display: grid;
+    &__content .sw-card-view__content > * {
+        max-width: 1440px;
+        margin-inline: auto;
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         gap: var(--scale-size-24);
         margin-bottom: var(--scale-size-24);
-        align-items: start;
 
-        &--main {
-            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-        }
-
-        &--half {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        @media screen and (max-width: 62rem) {
-            &--main,
-            &--half {
-                grid-template-columns: minmax(0, 1fr);
-            }
+        h1 {
+            color: var(--color-text-primary-default);
+            font-size: var(--font-size-xl);
+            line-height: var(--font-line-height-xl);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: 0;
         }
     }
 
-    &__row-cell {
+    .sw-dashboard__before-content:empty,
+    .sw-dashboard__after-content:empty {
+        display: none;
+    }
+
+    .mt-card {
+        margin-bottom: 0;
+    }
+
+    .mt-card .mt-card__header {
+        min-height: 64px;
+        align-items: center;
+        padding-block: var(--scale-size-16);
+    }
+
+    .sw-dashboard-index__summary > .mt-card__content {
+        padding: 0;
+    }
+
+    .mt-card__header .mt-card__title {
+        margin: 0;
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.85fr) minmax(18rem, 1fr);
+        gap: var(--scale-size-24);
+        margin-top: var(--scale-size-24);
+        align-items: stretch;
+
+        > .mt-card__wrapper {
+            display: flex;
+            min-width: 0;
+        }
+
+        &:has(> :only-child) {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    &__row-cell.mt-card {
         min-width: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+
+        > .mt-card__content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 348px;
+        }
+
+        .mt-empty-state {
+            flex: 1;
+            width: 100%;
+            max-width: none;
+            justify-content: center;
+        }
+    }
+
+    @media screen and (max-width: 65rem) {
+        &__row {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @media screen and (max-width: 40rem) {
+        .sw-card-view__content {
+            padding: var(--scale-size-16);
+        }
+
+        &__header {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: var(--scale-size-16);
+        }
     }
 }

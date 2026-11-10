@@ -87,6 +87,7 @@ class Migration1792600011CreateMembershipTables extends MigrationStep
                 KEY `idx.membership_purchase.currency_id` (`currency_id`),
                 KEY `idx.membership_purchase.payment_no` (`payment_no`),
                 KEY `idx.membership_purchase.state` (`state`),
+                KEY `idx.membership_purchase.state_activated_at` (`state`, `activated_at`),
                 CONSTRAINT `fk.membership_purchase.customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.membership_purchase.membership_plan_id` FOREIGN KEY (`membership_plan_id`) REFERENCES `membership_plan` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
                 CONSTRAINT `fk.membership_purchase.loyalty_tier_id` FOREIGN KEY (`loyalty_tier_id`) REFERENCES `loyalty_tier` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,

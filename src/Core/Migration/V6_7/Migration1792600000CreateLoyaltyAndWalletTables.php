@@ -138,6 +138,7 @@ class Migration1792600000CreateLoyaltyAndWalletTables extends MigrationStep
                 PRIMARY KEY (`id`),
                 KEY `idx.customer_wallet_transaction.customer_wallet_id` (`customer_wallet_id`),
                 KEY `idx.customer_wallet_transaction.order_id` (`order_id`, `order_version_id`),
+                KEY `idx.customer_wallet_transaction.type_created_at` (`type`, `created_at`),
                 KEY `idx.customer_wallet_transaction.currency_id` (`currency_id`),
                 CONSTRAINT `fk.customer_wallet_transaction.customer_wallet_id` FOREIGN KEY (`customer_wallet_id`) REFERENCES `customer_wallet` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.customer_wallet_transaction.order_id` FOREIGN KEY (`order_id`, `order_version_id`) REFERENCES `order` (`id`, `version_id`) ON DELETE SET NULL ON UPDATE CASCADE,

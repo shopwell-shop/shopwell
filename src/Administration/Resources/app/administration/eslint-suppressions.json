@@ -5676,16 +5676,6 @@
       "count": 1
     }
   },
-  "src/module/sw-dashboard/page/sw-dashboard-index/index.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-dashboard/page/sw-dashboard-index/sw-dashboard-index.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 2
-    }
-  },
   "src/module/sw-experience-studio/component/sw-experience-studio-assignment-modal/index.ts": {
     "no-restricted-syntax": {
       "count": 1

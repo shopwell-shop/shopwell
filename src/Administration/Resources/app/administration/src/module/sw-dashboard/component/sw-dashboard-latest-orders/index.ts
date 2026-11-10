@@ -1,3 +1,5 @@
+import type { PropType } from 'vue';
+import { getDashboardPeriod, getPeriodBounds, type DashboardPeriod } from '../../helper/dashboard-period';
 import template from './sw-dashboard-latest-orders.html.twig';
 import './sw-dashboard-latest-orders.scss';
 
@@ -34,6 +36,8 @@ export default Shopwell.Component.wrapComponentConfig({
 
     inject: ['repositoryFactory', 'stateStyleDataProviderService', 'acl'],
 
+    props: { period: { type: Object as PropType<DashboardPeriod>, default: () => getDashboardPeriod() } },
+
     data(): {
         orders: OrderCollection | null;
         sortBy: string;
@@ -66,6 +70,12 @@ export default Shopwell.Component.wrapComponentConfig({
         void this.loadOrders();
     },
 
+    watch: {
+        period() {
+            void this.loadOrders();
+        },
+    },
+
     methods: {
         async loadOrders(): Promise<void> {
             if (!this.canViewOrders) {
@@ -82,6 +92,8 @@ export default Shopwell.Component.wrapComponentConfig({
             // unnecessary COUNT query and keeps the listing's pager hidden.
             criteria.setTotalCountMode(0);
 
+            const bounds = getPeriodBounds(this.period);
+            criteria.addFilter(Criteria.range('orderDateTime', { gte: bounds.from, lte: bounds.to }));
             criteria.addAssociation('orderCustomer');
             criteria.addAssociation('currency');
             criteria.addAssociation('stateMachineState');

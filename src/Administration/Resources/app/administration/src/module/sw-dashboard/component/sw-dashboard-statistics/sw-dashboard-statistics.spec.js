@@ -1,263 +1,100 @@
 import { shallowMount } from '@vue/test-utils';
-import dictionary from 'src/module/sw-dashboard/snippet/en.json';
 
-let statisticResponse = {
-    paid: [],
-    all: [],
-};
+const hours = [
+    { hour: 0, amount: 150, count: 2 },
+    { hour: 1, amount: null, count: null },
+];
 
-let requestedUrls = [];
-
-async function createWrapper(privileges = ['order.viewer'], repository = {}) {
-    const repositoryMock = {
-        buildHeaders: () => ({ Authorization: 'Bearer test' }),
-        ...repository,
-    };
-
-    Shopwell.Store.get('session').setCurrentUser({});
-
+async function createWrapper(props = {}, privileges = ['order.viewer']) {
     return shallowMount(await wrapTestComponent('sw-dashboard-statistics', { sync: true }), {
+        props: {
+            hours,
+            ...props,
+        },
         global: {
             stubs: {
-                'mt-card': {
-                    template:
-                        '<div class="mt-card"><slot name="title"></slot><slot name="headerRight"></slot><slot /></div>',
-                    props: [
-                        'title',
-                        'subtitle',
-                        'helpText',
-                        'isLoading',
-                        'positionIdentifier',
-                    ],
+                'mt-empty-state': {
+                    props: { headline: String, description: String, icon: String, centered: Boolean },
+                    template: '<div class="mt-empty-state">{{ headline }}</div>',
                 },
-                'mt-select': {
-                    name: 'mt-select',
-                    props: ['modelValue', 'options'],
-                    emits: ['update:modelValue'],
-                    template: `<select class="mt-select" :value="modelValue" @change="$emit('update:modelValue', $event.target.value)"><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></select>`,
-                },
-                'mt-icon': true,
-                'sw-chart': {
+                'mt-chart': {
+                    name: 'mt-chart',
                     props: [
-                        'type',
                         'series',
                         'options',
-                        'fillEmptyValues',
+                        'type',
                         'height',
-                        'sort',
                     ],
-                    template:
-                        '<div class="sw-chart" :data-series="JSON.stringify(series)" :data-axes="JSON.stringify(options.yaxis)" :data-aggregation="fillEmptyValues"></div>',
+                    template: '<div class="mt-chart" />',
                 },
-                'sw-extension-component-section': true,
-            },
-            directives: {
-                tooltip: (element, binding) => {
-                    element.setAttribute('title', binding.value);
+                'mt-card': {
+                    template: '<div><slot name="title"/><slot name="headerRight"/><slot/></div>',
+                    props: ['isLoading'],
                 },
             },
-            mocks: {
-                $t: (key) => key,
-            },
-            provide: {
-                repositoryFactory: {
-                    create: () => repositoryMock,
-                },
-                acl: {
-                    can: (identifier) => {
-                        if (!identifier) {
-                            return true;
-                        }
-
-                        return privileges.includes(identifier);
-                    },
-                },
-            },
+            mocks: { $t: (key) => key },
+            provide: { acl: { can: (privilege) => privileges.includes(privilege) } },
         },
     });
 }
 
-/**
- * @sw-package after-sales
- */
-describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
-    beforeAll(() => {
-        Shopwell.Context.app.systemCurrencyISOCode = 'EUR';
-
-        Shopwell.Application.addInitializer('httpClient', () => {
-            return {
-                get: (url) => {
-                    requestedUrls.push(url);
-
-                    return Promise.resolve({
-                        data: {
-                            statistic: url.includes('paid=true') ? statisticResponse.paid : statisticResponse.all,
-                        },
-                    });
-                },
-            };
-        });
-
-        jest.useFakeTimers('modern');
-    });
-
+describe('dashboard sales trend', () => {
     beforeEach(() => {
-        jest.setSystemTime(new Date('2026-06-15T10:00:00.000Z'));
-        statisticResponse = { paid: [], all: [] };
-        requestedUrls = [];
+        Shopwell.Context.app.systemCurrencyISOCode = 'EUR';
     });
 
-    afterAll(() => {
-        jest.useRealTimers();
-    });
-
-    it('does not render the chart without order permission', async () => {
-        const wrapper = await createWrapper([]);
-        await flushPromises();
-
-        expect(wrapper.find('.sw-chart').exists()).toBe(false);
-    });
-
-    it('renders a single chart', async () => {
+    it('shows hourly sales and paid orders together with separate axes', async () => {
         const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(wrapper.findAll('.sw-chart')).toHaveLength(1);
-    });
-
-    it('plots the revenue and the order count as two series', async () => {
-        statisticResponse = {
-            paid: [{ date: '2026-06-14', count: 2, amount: 150 }],
-            all: [{ date: '2026-06-14', count: 9, amount: 900 }],
-        };
-
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        const today = { x: new Date(2026, 5, 15).getTime(), y: 0 };
-        const series = JSON.parse(wrapper.get('.sw-chart').attributes('data-series'));
-
-        expect(series[0].name).toBe('sw-dashboard.statistics.metricTurnover');
+        const charts = wrapper.findAllComponents({ name: 'mt-chart' });
+        expect(charts).toHaveLength(1);
+        const series = charts[0].props('series');
+        expect(series).toHaveLength(2);
         expect(series[0].data).toEqual([
-            { x: new Date(2026, 5, 14).getTime(), y: 150 },
-            today,
+            { x: '00:00', y: 150 },
+            { x: '01:00', y: null },
         ]);
-
-        expect(series[1].name).toBe('sw-dashboard.statistics.metricOrderCount');
         expect(series[1].data).toEqual([
-            { x: new Date(2026, 5, 14).getTime(), y: 9 },
-            today,
+            { x: '00:00', y: 2 },
+            { x: '01:00', y: null },
         ]);
+        const options = charts[0].props('options');
+        expect(options.yaxis[1].opposite).toBe(true);
+        expect(options.yaxis[0].seriesName).toBe(series[0].name);
+        expect(options.yaxis[1].seriesName).toBe(series[1].name);
+        expect(options.stroke.dashArray).toEqual([0, 5]);
+        expect(wrapper.find('.sw-dashboard-statistics__caption').exists()).toBe(false);
     });
 
-    it('formats both y axes, currency left and counts right', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        const axes = JSON.parse(wrapper.get('.sw-chart').attributes('data-axes'));
-        expect(axes).toHaveLength(2);
-        expect(axes[0].opposite).toBeFalsy();
-        expect(axes[1].opposite).toBe(true);
-    });
-
-    it('offers all supported ranges', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(wrapper.findAll('option').map((option) => option.attributes('value'))).toEqual([
-            '30Days',
-            '14Days',
-            '7Days',
-            '24Hours',
-            'yesterday',
-        ]);
-        expect(wrapper.get('select').element.value).toBe('30Days');
-        expect(wrapper.get('.sw-chart').attributes('data-aggregation')).toBe('day');
-    });
-
-    it('requests both the paid and the overall revenue', async () => {
-        await createWrapper();
-        await flushPromises();
-
-        expect(requestedUrls).toHaveLength(2);
-        expect(requestedUrls[0]).toContain('paid=true');
-        expect(requestedUrls[1]).toContain('paid=false');
-    });
-
-    it('plots the paid amount when the revenue metric is selected', async () => {
-        statisticResponse = {
-            paid: [{ date: '2026-06-14', count: 2, amount: 150 }],
-            all: [{ date: '2026-06-14', count: 9, amount: 900 }],
-        };
-
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        const today = { x: new Date(2026, 5, 15).getTime(), y: 0 };
-        const series = JSON.parse(wrapper.get('.sw-chart').attributes('data-series'));
-
-        expect(series[0].data).toEqual([
-            { x: new Date(2026, 5, 14).getTime(), y: 150 },
-            today,
-        ]);
-    });
-
-    it('appends a zero point for today when there is no data yet', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(JSON.parse(wrapper.get('.sw-chart').attributes('data-series'))[0].data).toEqual([
-            { x: new Date(2026, 5, 15).getTime(), y: 0 },
-        ]);
-    });
-
-    it('does not plot buckets after today', async () => {
-        statisticResponse = {
-            paid: [
-                { date: '2026-06-14', count: 1, amount: 10 },
-                { date: '2026-06-16', count: 1, amount: 99 },
+    it('shows an empty state instead of plotting zero activity', async () => {
+        const wrapper = await createWrapper({
+            hours: [
+                { hour: 0, amount: 0, count: 0 },
+                { hour: 1, amount: null, count: null },
             ],
-            all: [],
-        };
-
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(JSON.parse(wrapper.get('.sw-chart').attributes('data-series'))[0].data).toEqual([
-            { x: new Date(2026, 5, 14).getTime(), y: 10 },
-            { x: new Date(2026, 5, 15).getTime(), y: 0 },
-        ]);
-    });
-
-    it('reloads the data when the range changes', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(requestedUrls).toHaveLength(2);
-
-        await wrapper.get('select').setValue('7Days');
-        await flushPromises();
-
-        expect(requestedUrls).toHaveLength(4);
-        expect(wrapper.get('select').element.value).toBe('7Days');
-        expect(requestedUrls[2]).toContain('2026-06-08');
-    });
-
-    it('explains the paid only revenue', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(wrapper.get('.sw-dashboard-statistics__title-help-text').attributes('title')).toBe(
-            'sw-dashboard.statistics.helpText',
-        );
-    });
-
-    it('ships the labels of every range', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        wrapper.findAll('option').forEach((option) => {
-            expect(dictionary['sw-dashboard'].statistics.dateRanges[option.attributes('value')]).toBeDefined();
         });
+        expect(wrapper.find('.mt-chart').exists()).toBe(false);
+        expect(wrapper.getComponent('.mt-empty-state').props('centered')).toBe(true);
+        expect(wrapper.find('.sw-dashboard-statistics__legend').exists()).toBe(false);
+    });
+
+    it('keeps a zero amount with a successful order in the trend', async () => {
+        const wrapper = await createWrapper({ hours: [{ hour: 0, amount: 0, count: 1 }] });
+        expect(wrapper.find('.mt-chart').exists()).toBe(true);
+    });
+
+    it('does not show an empty state while loading', async () => {
+        const wrapper = await createWrapper({ hours: [], isLoading: true });
+        expect(wrapper.find('.mt-empty-state').exists()).toBe(false);
+    });
+
+    it('does not render without order permission', async () => {
+        const wrapper = await createWrapper({}, []);
+        expect(wrapper.find('.mt-chart').exists()).toBe(false);
+    });
+
+    it('shows an error instead of plotting failed data as zero', async () => {
+        const wrapper = await createWrapper({ salesError: true });
+        expect(wrapper.find('.mt-chart').exists()).toBe(false);
+        expect(wrapper.text()).toContain('sw-dashboard.general.loadError');
     });
 });

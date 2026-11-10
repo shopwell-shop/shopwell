@@ -1,33 +1,60 @@
 .sw-dashboard-statistics {
-    &__title {
-        display: flex;
-        align-items: center;
-        gap: var(--scale-size-8);
-    }
-
-    &__title-help-text {
-        color: var(--color-icon-secondary-default);
+    .sw-dashboard-statistics__title {
+        margin: 0;
     }
 
     &__header {
         display: flex;
         align-items: center;
-        gap: var(--scale-size-8);
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--scale-size-12);
+        padding: var(--scale-size-24) var(--scale-size-24) 0;
     }
 
-    &__metric-select {
-        min-width: 9rem;
+    &__legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-16);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+
+        span {
+            display: flex;
+            gap: var(--scale-size-8);
+            align-items: center;
+        }
     }
 
-    &__range-select {
-        min-width: 10rem;
+    &__key {
+        width: var(--scale-size-16);
+        height: 2px;
+        background: var(--color-text-brand-default);
+
+        &--orders {
+            background:
+                repeating-linear-gradient(
+                    to right,
+                    var(--color-text-positive-default) 0 4px,
+                    transparent 4px 6px
+                );
+        }
     }
 
     &__chart {
-        min-height: 255px;
+        min-height: 250px;
+        display: grid;
+
+        > .mt-empty-state {
+            place-self: center;
+        }
+
+        padding: var(--scale-size-8) var(--scale-size-16) var(--scale-size-12);
     }
 
-    .sw-block-field__block {
-        height: auto;
+    &__error {
+        color: var(--color-text-secondary-default);
+        padding: var(--scale-size-32) var(--scale-size-8);
+        font-size: var(--font-size-s);
     }
 }

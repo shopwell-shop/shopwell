@@ -15,9 +15,9 @@ use Shopwell\Administration\Controller\AdministrationController;
 use Shopwell\Administration\Controller\AdminProductStreamController;
 use Shopwell\Administration\Controller\AdminSearchController;
 use Shopwell\Administration\Controller\AdminTagController;
-use Shopwell\Administration\Controller\DashboardController;
+use Shopwell\Administration\Controller\TodayDashboardController;
 use Shopwell\Administration\Controller\UserConfigController;
-use Shopwell\Administration\Dashboard\OrderAmountService;
+use Shopwell\Administration\Dashboard\TodayStatisticsService;
 use Shopwell\Administration\Framework\Adapter\Cache\Http\AdministrationCacheControlListener;
 use Shopwell\Administration\Framework\Routing\KnownIps\KnownIpsCollector;
 use Shopwell\Administration\Service\AdminSearcher;
@@ -28,7 +28,6 @@ use Shopwell\Administration\Snippet\AppLifecycleSubscriber;
 use Shopwell\Administration\Snippet\CachedSnippetFinder;
 use Shopwell\Administration\Snippet\SnippetFinder;
 use Shopwell\Administration\System\SalesChannel\Subscriber\SalesChannelUserConfigSubscriber;
-use Shopwell\Core\Checkout\Cart\Price\CashRounding;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerEmailUniqueChecker;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
@@ -241,19 +240,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('kernel.event_subscriber');
 
-    $services->set(OrderAmountService::class)
+    $services->set(TodayStatisticsService::class)
         ->args([
-            service(Connection::class),
-            service(CashRounding::class),
-            param('shopwell.dbal.time_zone_support_enabled'),
+            service('payment_order.repository'),
+            service('payment_refund.repository'),
+            service('state_machine_history.repository'),
+            service('order.repository'),
+            service('order_transaction_capture_refund.repository'),
+            service('membership_purchase.repository'),
+            service('customer_wallet_transaction.repository'),
+            service('currency.repository'),
+            service('clock'),
         ]);
 
-    $services->set(DashboardController::class)
+    $services->set(TodayDashboardController::class)
         ->public()
-        ->args([
-            service(OrderAmountService::class),
-        ])
-        ->call('setContainer', [service('service_container')]);
+        ->args([service(TodayStatisticsService::class), service('user.repository')])
+        ->tag('controller.service_arguments');
 
     $services->set(AdministrationCacheControlListener::class)
         ->tag('kernel.event_listener', ['event' => BeforeCacheControlEvent::class])

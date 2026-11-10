@@ -1,52 +1,60 @@
 {% block sw_dashboard_statistics %}
-<mt-card
+<section
     v-if="canViewOrders"
-    class="sw-dashboard-statistics mt-card--future-ignore-max-width"
-    :is-loading="isLoading"
+    class="sw-dashboard-statistics"
     position-identifier="sw-dashboard-statistics"
 >
     {% block sw_dashboard_statistics_title %}
-    <template #title>
-        <div class="sw-dashboard-statistics__title">
+    <div class="sw-dashboard-statistics__header">
+        <mt-text
+            as="h3"
+            size="m"
+            weight="semibold"
+            class="sw-dashboard-statistics__title"
+        >
             {{ $t('sw-dashboard.statistics.headline') }}
-
-            <mt-icon
-                v-if="helpText"
-                v-tooltip="helpText"
-                class="sw-dashboard-statistics__title-help-text"
-                name="solid-question-circle"
-                size="16px"
-            />
+        </mt-text>
+        <div
+            v-if="hasData && !salesError"
+            class="sw-dashboard-statistics__legend"
+            aria-hidden="true"
+        >
+            <span><i class="sw-dashboard-statistics__key"></i>{{ $t('sw-dashboard.statistics.metricTurnover') }}</span>
+            <span><i class="sw-dashboard-statistics__key sw-dashboard-statistics__key--orders"></i>{{ $t('sw-dashboard.statistics.metricOrderCount') }}</span>
         </div>
-    </template>
+    </div>
     {% endblock %}
 
-    {% block sw_dashboard_statistics_header %}
-    <template #headerRight>
-        <div class="sw-dashboard-statistics__header">
-            <mt-select
-                v-model="selectedRange"
-                class="sw-dashboard-statistics__range-select"
-                name="sw-field--selectedRange"
-                small
-                :options="rangeOptions"
-                hide-clearable-button
-            />
-        </div>
-    </template>
-    {% endblock %}
+    {% block sw_dashboard_statistics_header %}{% endblock %}
 
     {% block sw_dashboard_statistics_chart %}
-    <div class="sw-dashboard-statistics__chart">
-        <sw-chart
+    <div
+        class="sw-dashboard-statistics__chart"
+        role="img"
+        :aria-label="$t('sw-dashboard.statistics.chartLabel')"
+    >
+        <p
+            v-if="salesError"
+            class="sw-dashboard-statistics__error"
+            role="status"
+        >
+            {{ $t('sw-dashboard.general.loadError') }}
+        </p>
+        <mt-empty-state
+            v-else-if="!isLoading && !hasData"
+            centered
+            icon="regular-chart-line"
+            :headline="$t('sw-dashboard.statistics.empty')"
+            description=""
+        />
+        <mt-chart
+            v-else-if="hasData"
             type="line"
             :series="series"
-            :options="options"
-            :fill-empty-values="activeRange.aggregate"
-            :height="255"
-            sort
+            :options="chartOptions"
+            :height="250"
         />
     </div>
     {% endblock %}
-</mt-card>
+</section>
 {% endblock %}

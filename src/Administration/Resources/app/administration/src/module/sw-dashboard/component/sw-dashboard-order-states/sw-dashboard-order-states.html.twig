@@ -1,31 +1,59 @@
 {% block sw_dashboard_order_states %}
 <mt-card
     v-if="canViewOrders"
-    class="sw-dashboard-order-states mt-card--future-ignore-max-width"
+    class="sw-dashboard-order-states mt-card--future-ignore-max-width mt-card--future-remove-default-margin"
     :title="$t('sw-dashboard.orderStates.headline')"
     :is-loading="isLoading"
     position-identifier="sw-dashboard-order-states"
 >
+    <template #headerRight>
+        <span
+            v-if="hasData"
+            class="sw-dashboard-order-states__total"
+        >
+            {{ totalOrders.toLocaleString() }} {{ $t('sw-dashboard.orderStates.totalOrders') }}
+        </span>
+    </template>
     {% block sw_dashboard_order_states_chart %}
     <div
         v-if="hasData"
         class="sw-dashboard-order-states__chart"
     >
-        <sw-chart
-            type="donut"
-            :series="series"
-            :options="chartOptions"
-            :height="240"
+        <v-chart
+            class="sw-dashboard-order-states__plot"
+            :option="chartOptions"
+            :init-options="{ renderer: 'svg' }"
+            :style="{ height: `${chartHeight}px` }"
+            autoresize
+            aria-hidden="true"
         />
+        <ul class="sw-dashboard-order-states__list">
+            <li
+                v-for="state in stateRows"
+                :key="state.key"
+                class="sw-dashboard-order-states__row"
+            >
+                <span
+                    class="sw-dashboard-order-states__dot"
+                    :style="{ backgroundColor: state.color }"
+                    aria-hidden="true"
+                ></span>
+                <span class="sw-dashboard-order-states__name">{{ state.name }}</span>
+                <span class="sw-dashboard-order-states__count">{{ state.count.toLocaleString() }}</span>
+                <span class="sw-dashboard-order-states__percentage">{{ state.percentage.toFixed(1) }}%</span>
+            </li>
+        </ul>
     </div>
 
     {% block sw_dashboard_order_states_empty %}
-    <div
+    <mt-empty-state
         v-else-if="!isLoading"
         class="sw-dashboard-order-states__empty"
-    >
-        {{ $t('sw-dashboard.orderStates.empty') }}
-    </div>
+        centered
+        icon="regular-shopping-bag"
+        :headline="$t(loadError ? 'sw-dashboard.general.loadError' : 'sw-dashboard.orderStates.empty')"
+        description=""
+    />
     {% endblock %}
     {% endblock %}
 </mt-card>

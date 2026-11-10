@@ -1,0 +1,188 @@
+{
+    "openapi": "3.2.0",
+    "info": {
+        "title": "Today dashboard statistics",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/_admin/dashboard/today": {
+            "get": {
+                "summary": "Get today’s product sales statistics",
+                "description": "Uses the authenticated user’s configured timezone and first successful product payment time. Orders and customers are distinct. Revenue and successful refunds use the system currency and the order exchange factor. Product sales exclude wallet top-ups and membership purchases. Posted wallet top-ups are reported separately in system currency using current currency factors and are null without wallet transaction read permission. Previous metrics end at the same local time yesterday. Future hourly values are null. Requires a logged-in user and order, order transaction, order customer and state machine history read privileges.",
+                "operationId": "getTodayDashboardStatistics",
+                "tags": [
+                    "Order Management"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Today dashboard statistics",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "date",
+                                        "today",
+                                        "previous",
+                                        "hours"
+                                    ],
+                                    "properties": {
+                                        "date": {
+                                            "type": "string",
+                                            "format": "date"
+                                        },
+                                        "today": {
+                                            "type": "object",
+                                            "required": [
+                                                "revenue",
+                                                "orders",
+                                                "customers",
+                                                "refundAmount",
+                                                "refundCount",
+                                                "memberships",
+                                                "walletTopUpAmount",
+                                                "walletTopUpCount"
+                                            ],
+                                            "properties": {
+                                                "revenue": {
+                                                    "type": "number",
+                                                    "minimum": 0
+                                                },
+                                                "orders": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "customers": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "refundAmount": {
+                                                    "type": "number",
+                                                    "minimum": 0
+                                                },
+                                                "refundCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "memberships": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Distinct customers whose membership purchase activated in the period, including renewals; null without membership purchase read permission."
+                                                },
+                                                "walletTopUpAmount": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ],
+                                                    "description": "Posted top-up amount in system currency using current exchange factors; null without wallet transaction read permission or currency data."
+                                                },
+                                                "walletTopUpCount": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Posted top-up count; null when the top-up metric is unavailable."
+                                                }
+                                            }
+                                        },
+                                        "previous": {
+                                            "type": "object",
+                                            "required": [
+                                                "revenue",
+                                                "orders",
+                                                "customers",
+                                                "refundAmount",
+                                                "refundCount",
+                                                "memberships",
+                                                "walletTopUpAmount",
+                                                "walletTopUpCount"
+                                            ],
+                                            "properties": {
+                                                "revenue": {
+                                                    "type": "number",
+                                                    "minimum": 0
+                                                },
+                                                "orders": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "customers": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "refundAmount": {
+                                                    "type": "number",
+                                                    "minimum": 0
+                                                },
+                                                "refundCount": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "memberships": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Distinct customers whose membership purchase activated in the period, including renewals; null without membership purchase read permission."
+                                                },
+                                                "walletTopUpAmount": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ],
+                                                    "description": "Posted top-up amount in system currency using current exchange factors; null without wallet transaction read permission or currency data."
+                                                },
+                                                "walletTopUpCount": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Posted top-up count; null when the top-up metric is unavailable."
+                                                }
+                                            }
+                                        },
+                                        "hours": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "hour",
+                                                    "amount",
+                                                    "count"
+                                                ],
+                                                "properties": {
+                                                    "hour": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 23
+                                                    },
+                                                    "amount": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "count": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing order read privileges"
+                    }
+                }
+            }
+        }
+    }
+}

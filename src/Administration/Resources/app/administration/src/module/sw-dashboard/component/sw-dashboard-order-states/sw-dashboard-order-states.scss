@@ -1,9 +1,42 @@
 .sw-dashboard-order-states {
-    &__empty {
-        padding: var(--scale-size-32) 0;
+    --dashboard-state-progress:
+        color-mix(
+            in srgb,
+            var(--color-icon-brand-default) 28%,
+            var(--color-background-primary-default)
+        );
+    --dashboard-state-completed:
+        color-mix(
+            in srgb,
+            var(--color-icon-positive-default) 38%,
+            var(--color-background-primary-default)
+        );
+
+    &__total {
         color: var(--color-text-secondary-default);
-        font-size: var(--font-size-s);
-        line-height: var(--font-line-height-s);
-        text-align: center;
+        font-size: var(--font-size-xs);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    &__chart {
+        display: grid;
+        gap: var(--scale-size-12);
+    }
+
+    &__plot {
+        width: 100%;
+        min-height: 300px;
+    }
+
+    &__list {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
     }
 }

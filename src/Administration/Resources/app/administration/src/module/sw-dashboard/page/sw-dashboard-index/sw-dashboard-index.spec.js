@@ -1,18 +1,25 @@
 import { mount } from '@vue/test-utils';
 
-async function createWrapper() {
+const httpGet = jest.fn();
+
+async function createWrapper(privileges = ['order.viewer']) {
     return mount(await wrapTestComponent('sw-dashboard-index', { sync: true }), {
         global: {
             stubs: {
+                'mt-card': { template: '<article><slot/></article>' },
                 'sw-page': await wrapTestComponent('sw-page'),
                 'sw-card-view': await wrapTestComponent('sw-card-view'),
-                'sw-dashboard-metrics': true,
+                'sw-dashboard-metrics': {
+                    name: 'sw-dashboard-metrics',
+                    props: [
+                        'summary',
+                        'salesLoading',
+                        'salesError',
+                    ],
+                    template: '<div />',
+                },
                 'sw-dashboard-statistics': true,
-                'sw-dashboard-todos': true,
                 'sw-dashboard-order-states': true,
-                'sw-dashboard-top-products': true,
-                'sw-dashboard-loyalty-distribution': true,
-                'sw-dashboard-wallet': true,
                 'sw-dashboard-latest-orders': true,
                 'sw-extension-component-section': true,
                 'sw-search-bar': true,
@@ -35,9 +42,8 @@ async function createWrapper() {
                 },
             },
             provide: {
-                acl: {
-                    can: () => true,
-                },
+                acl: { can: (privilege) => privileges.includes(privilege) },
+                repositoryFactory: { create: () => ({ buildHeaders: () => ({}) }) },
             },
         },
     });
@@ -47,69 +53,43 @@ async function createWrapper() {
  * @sw-package after-sales
  */
 describe('module/sw-dashboard/page/sw-dashboard-index', () => {
-    it('renders the business overview sections', async () => {
+    beforeAll(() => {
+        Shopwell.Application.addInitializer('httpClient', () => ({ get: httpGet }));
+    });
+
+    beforeEach(() => {
+        Shopwell.Store.get('session').setCurrentUser({ timeZone: 'Asia/Shanghai' });
+        httpGet.mockReset().mockResolvedValue({ data: { date: '2026-11-09', today: {}, previous: {}, hours: [] } });
+    });
+
+    it('loads one today summary and shares it with metrics and chart', async () => {
+        const summary = { date: '2026-11-09', today: { revenue: 100, orders: 2 }, hours: [] };
+        httpGet.mockResolvedValue({ data: summary });
         const wrapper = await createWrapper();
         await flushPromises();
-
-        expect(wrapper.find('sw-dashboard-metrics-stub').exists()).toBe(true);
-        expect(wrapper.find('sw-dashboard-statistics-stub').exists()).toBe(true);
+        expect(httpGet).toHaveBeenCalledTimes(1);
+        expect(httpGet.mock.calls[0][0]).toBe('/_admin/dashboard/today');
+        expect(wrapper.getComponent({ name: 'sw-dashboard-metrics' }).props('summary')).toEqual(summary);
+        expect(wrapper.find('select').exists()).toBe(false);
+        expect(wrapper.find('sw-dashboard-loyalty-distribution-stub').exists()).toBe(false);
+        expect(wrapper.findAll('.sw-dashboard-index__row')).toHaveLength(1);
         expect(wrapper.find('sw-dashboard-latest-orders-stub').exists()).toBe(true);
-    });
-
-    it('renders the new radar sections', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(wrapper.find('sw-dashboard-todos-stub').exists()).toBe(true);
         expect(wrapper.find('sw-dashboard-order-states-stub').exists()).toBe(true);
-        expect(wrapper.find('sw-dashboard-top-products-stub').exists()).toBe(true);
-        expect(wrapper.find('sw-dashboard-loyalty-distribution-stub').exists()).toBe(true);
-        expect(wrapper.find('sw-dashboard-wallet-stub').exists()).toBe(true);
     });
 
-    it('pairs the sections in two-column rows', async () => {
-        const wrapper = await createWrapper();
+    it('does not query sales without order access', async () => {
+        await createWrapper([]);
         await flushPromises();
-
-        expect(wrapper.findAll('.sw-dashboard-index__row--main')).toHaveLength(2);
-        expect(wrapper.findAll('.sw-dashboard-index__row--half')).toHaveLength(1);
+        expect(httpGet).not.toHaveBeenCalled();
     });
 
-    it('keeps the extension points around the content', async () => {
+    it('shows unavailable data after an unsuccessful load', async () => {
+        httpGet.mockRejectedValue(new Error('Unavailable'));
         const wrapper = await createWrapper();
         await flushPromises();
-
-        const sections = wrapper.findAll('sw-extension-component-section-stub');
-
-        expect(sections).toHaveLength(2);
-        expect(sections[0].attributes('position-identifier')).toBe('sw-dashboard__before-content');
-        expect(sections[1].attributes('position-identifier')).toBe('sw-dashboard__after-content');
-    });
-
-    it('does not render the removed greeting, help or feedback blocks', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        [
-            '.sw-dashboard-index__welcome-text',
-            '.sw-dashboard-index__welcome-title',
-            '.sw-dashboard-index__welcome-message',
-            '.sw-dashboard-index__card-grid',
-            '.sw-dashboard-index__card',
-        ].forEach((selector) => {
-            expect(wrapper.find(selector).exists()).toBe(false);
-        });
-
-        expect(wrapper.find('mt-link-stub').exists()).toBe(false);
-    });
-
-    it('builds the page title from the module title', async () => {
-        const wrapper = await createWrapper();
-        await flushPromises();
-
-        expect(typeof wrapper.vm.$options.metaInfo).toBe('function');
-        expect(wrapper.vm.$options.metaInfo.call({ $createTitle: () => 'Dashboard' })).toEqual({
-            title: 'Dashboard',
-        });
+        const metrics = wrapper.getComponent({ name: 'sw-dashboard-metrics' });
+        expect(metrics.props('salesError')).toBe(true);
+        expect(metrics.props('salesLoading')).toBe(false);
+        expect(metrics.props('summary')).toBeNull();
     });
 });

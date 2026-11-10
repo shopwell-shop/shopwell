@@ -11,49 +11,61 @@
                 class="sw-dashboard__before-content"
             />
 
-            {% block sw_dashboard_index_content_metrics %}
-            <sw-dashboard-metrics />
+            {% block sw_dashboard_index_content_header %}
+            <div class="sw-dashboard-index__header">
+                <h1>{{ $t('sw-dashboard.general.headline') }}</h1>
+            </div>
             {% endblock %}
 
-            {% block sw_dashboard_index_content_main %}
-            <div class="sw-dashboard-index__row sw-dashboard-index__row--main">
+            <mt-card
+                v-if="canViewOrders"
+                class="sw-dashboard-index__summary mt-card--future-ignore-max-width mt-card--future-remove-default-margin"
+                :is-loading="isLoading"
+                position-identifier="sw-dashboard-metrics"
+            >
+                {% block sw_dashboard_index_content_metrics %}
+                <sw-dashboard-metrics
+                    :summary="summary"
+                    :sales-loading="isLoading"
+                    :sales-error="salesError"
+                />
+                {% endblock %}
+
+                {% block sw_dashboard_index_content_main %}
                 {% block sw_dashboard_index_content_statistics %}
-                <sw-dashboard-statistics class="sw-dashboard-index__row-cell" />
+                <sw-dashboard-statistics
+                    :hours="summary?.hours ?? []"
+                    :is-loading="isLoading"
+                    :sales-error="salesError"
+                />
                 {% endblock %}
-
-                {% block sw_dashboard_index_content_todos %}
-                <sw-dashboard-todos class="sw-dashboard-index__row-cell" />
+                {% block sw_dashboard_index_content_loyalty %}{% endblock %}
+                {% block sw_dashboard_index_content_todos %}{% endblock %}
                 {% endblock %}
-            </div>
-            {% endblock %}
-
-            {% block sw_dashboard_index_content_charts %}
-            <div class="sw-dashboard-index__row sw-dashboard-index__row--half">
-                {% block sw_dashboard_index_content_order_states %}
-                <sw-dashboard-order-states class="sw-dashboard-index__row-cell" />
-                {% endblock %}
-
-                {% block sw_dashboard_index_content_top_products %}
-                <sw-dashboard-top-products class="sw-dashboard-index__row-cell" />
-                {% endblock %}
-            </div>
-            {% endblock %}
+            </mt-card>
 
             {% block sw_dashboard_index_content_orders_and_loyalty %}
             <div class="sw-dashboard-index__row sw-dashboard-index__row--main">
                 {% block sw_dashboard_index_content_latest_orders %}
-                <sw-dashboard-latest-orders class="sw-dashboard-index__row-cell" />
+                <sw-dashboard-latest-orders
+                    class="sw-dashboard-index__row-cell"
+                    :period="period"
+                />
                 {% endblock %}
 
-                {% block sw_dashboard_index_content_loyalty %}
-                <sw-dashboard-loyalty-distribution class="sw-dashboard-index__row-cell" />
+                {% block sw_dashboard_index_content_charts %}
+                {% block sw_dashboard_index_content_order_states %}
+                <sw-dashboard-order-states
+                    class="sw-dashboard-index__row-cell"
+                    :period="period"
+                />
+                {% endblock %}
                 {% endblock %}
             </div>
             {% endblock %}
 
-            {% block sw_dashboard_index_content_wallet %}
-            <sw-dashboard-wallet />
-            {% endblock %}
+            {% block sw_dashboard_index_content_top_products %}{% endblock %}
+            {% block sw_dashboard_index_content_wallet %}{% endblock %}
 
             <sw-extension-component-section
                 position-identifier="sw-dashboard__after-content"

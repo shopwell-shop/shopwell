@@ -1,441 +1,120 @@
+import type { PropType } from 'vue';
+import type { TodayStatistics, TodayTotals } from '../../helper/today-statistics';
 import template from './sw-dashboard-metrics.html.twig';
 import './sw-dashboard-metrics.scss';
-import {
-    ORDER_PAYMENT_FILTER,
-    ORDER_PAYMENT_PROPERTY,
-    buildFilteredOrderListLink,
-    getDayBounds,
-    getDayKeys,
-    getMonthStart,
-    getPreviousDay,
-    type StateSelection,
-} from '../../helper/order-list-filter';
-
-const { Criteria } = Shopwell.Data;
-
-type OrderAmountBucket = {
-    date: string;
-    count: number;
-    amount: number;
-};
-
-type Metrics = {
-    revenue: number;
-    paidOrders: number;
-    orders: number;
-    newCustomers: number;
-    walletBalance: number;
-    monthlyPoints: number;
-};
-
-type Delta = {
-    direction: 'up' | 'down' | 'flat';
-    text: string;
-};
-
-type OrderListLink = {
-    name: string;
-    query: Record<string, string>;
-};
 
 type MetricCard = {
     key: string;
     label: string;
     value: string;
     unit: string;
-    delta: Delta | null;
-    link: OrderListLink | null;
-    /**
-     * Stock-level cards have no meaningful "compared to yesterday" baseline,
-     * so they suppress the comparison hint entirely.
-     */
-    showComparison?: boolean;
-};
-
-const EMPTY_METRICS: Metrics = {
-    revenue: 0,
-    paidOrders: 0,
-    orders: 0,
-    newCustomers: 0,
-    walletBalance: 0,
-    monthlyPoints: 0,
+    footnote: string;
+    delta: { tone: string; text: string } | null;
 };
 
 /**
  * @sw-package after-sales
- *
  * @private
  */
 export default Shopwell.Component.wrapComponentConfig({
     template,
-
-    inject: ['repositoryFactory', 'acl'],
-
-    data(): {
-        currentMetrics: Metrics;
-        previousMetrics: Metrics;
-        paidState: StateSelection | null;
-        isLoading: boolean;
-    } {
-        return {
-            currentMetrics: { ...EMPTY_METRICS },
-            previousMetrics: { ...EMPTY_METRICS },
-            paidState: null,
-            isLoading: true,
-        };
+    inject: ['acl'],
+    props: {
+        summary: { type: Object as PropType<TodayStatistics | null>, default: null },
+        salesLoading: { type: Boolean, default: false },
+        salesError: { type: Boolean, default: false },
     },
-
     computed: {
-        orderRepository(): unknown {
-            return this.repositoryFactory.create('order');
-        },
-
-        customerRepository(): unknown {
-            return this.repositoryFactory.create('customer');
-        },
-
-        stateMachineStateRepository(): unknown {
-            return this.repositoryFactory.create('state_machine_state');
-        },
-
         canViewOrders(): boolean {
             return this.acl.can('order.viewer');
         },
-
-        canViewCustomers(): boolean {
-            return this.acl.can('customer.viewer');
-        },
-
         canViewWallet(): boolean {
             return this.acl.can('wallet.viewer');
         },
-
-        canViewLoyalty(): boolean {
+        canViewMemberships(): boolean {
             return this.acl.can('loyalty.viewer');
         },
-
-        walletRepository(): unknown {
-            return this.repositoryFactory.create('customer_wallet');
-        },
-
-        pointTransactionRepository(): unknown {
-            return this.repositoryFactory.create('loyalty_point_transaction');
-        },
-
         currencyFilter(): (value: number, isoCode: string, decimals: number) => string {
             return Shopwell.Filter.getByName('currency');
         },
-
-        systemCurrencyISOCode(): string {
-            return Shopwell.Context.app.systemCurrencyISOCode as string;
-        },
-
-        averageOrderValue(): number {
-            return this.calculateAverageOrderValue(this.currentMetrics);
-        },
-
-        previousAverageOrderValue(): number {
-            return this.calculateAverageOrderValue(this.previousMetrics);
-        },
-
         metricCards(): MetricCard[] {
-            const cards: MetricCard[] = [
-                {
-                    key: 'revenue',
-                    label: this.$t('sw-dashboard.metrics.revenue'),
-                    value: this.currencyFilter(this.currentMetrics.revenue, this.systemCurrencyISOCode, 2),
-                    unit: '',
-                    delta: this.buildDelta(this.currentMetrics.revenue, this.previousMetrics.revenue),
-                    link: this.buildTodayLink(true),
-                },
-                {
-                    key: 'orders',
-                    label: this.$t('sw-dashboard.metrics.orders'),
-                    value: this.currentMetrics.orders.toString(),
-                    unit: this.$t('sw-dashboard.metrics.ordersUnit'),
-                    delta: this.buildDelta(this.currentMetrics.orders, this.previousMetrics.orders),
-                    link: this.buildTodayLink(false),
-                },
-                {
-                    key: 'averageOrderValue',
-                    label: this.$t('sw-dashboard.metrics.averageOrderValue'),
-                    value: this.currencyFilter(this.averageOrderValue, this.systemCurrencyISOCode, 2),
-                    unit: '',
-                    delta: this.buildDelta(this.averageOrderValue, this.previousAverageOrderValue),
-                    link: this.buildTodayLink(true),
-                },
+            const current = this.summary?.today;
+            const previous = this.summary?.previous;
+            const definitions: Array<{ key: string; field: keyof TodayTotals; money: boolean }> = [
+                { key: 'revenue', field: 'revenue', money: true },
+                { key: 'refunds', field: 'refundAmount', money: true },
             ];
-
-            if (this.canViewCustomers) {
-                cards.push({
-                    key: 'newCustomers',
-                    label: this.$t('sw-dashboard.metrics.newCustomers'),
-                    value: this.currentMetrics.newCustomers.toString(),
-                    unit: this.$t('sw-dashboard.metrics.customersUnit'),
-                    delta: this.buildDelta(this.currentMetrics.newCustomers, this.previousMetrics.newCustomers),
-                    link: null,
-                });
-            }
-
             if (this.canViewWallet) {
-                cards.push({
-                    key: 'walletBalance',
-                    label: this.$t('sw-dashboard.metrics.walletBalance'),
-                    value: this.currencyFilter(this.currentMetrics.walletBalance, this.systemCurrencyISOCode, 2),
-                    unit: '',
-                    delta: null,
-                    link: { name: 'sw.finance.walletTransactions', query: {} },
-                    showComparison: false,
-                });
+                definitions.push({ key: 'walletTopUps', field: 'walletTopUpAmount', money: true });
             }
-
-            if (this.canViewLoyalty) {
-                cards.push({
-                    key: 'monthlyPoints',
-                    label: this.$t('sw-dashboard.metrics.monthlyPoints'),
-                    value: this.currentMetrics.monthlyPoints.toLocaleString(),
-                    unit: this.$t('sw-dashboard.metrics.pointsUnit'),
-                    delta: null,
-                    link: { name: 'sw.membership.purchases', query: {} },
-                    showComparison: false,
-                });
+            if (this.canViewMemberships) {
+                definitions.push({ key: 'memberships', field: 'memberships', money: false });
             }
-
-            return cards;
-        },
-
-        helpText(): string {
-            return this.$t('sw-dashboard.metrics.paidOnlyHint');
-        },
-    },
-
-    created() {
-        void this.loadMetrics();
-    },
-
-    methods: {
-        async loadMetrics(): Promise<void> {
-            if (!this.canViewOrders) {
-                this.isLoading = false;
-
-                return;
-            }
-
-            this.isLoading = true;
-
-            const dayKeys = getDayKeys();
-
-            const monthStart = getMonthStart();
-
-            try {
-                const [
-                    paidBuckets,
-                    allBuckets,
-                    newCustomers,
-                    previousNewCustomers,
-                    paidState,
-                    walletBalance,
-                    monthlyPoints,
-                ] = await Promise.all([
-                    this.fetchOrderAmount(dayKeys.yesterday, true),
-                    this.fetchOrderAmount(dayKeys.yesterday, false),
-                    this.fetchNewCustomerCount(getDayBounds(new Date()).from),
-                    // Yesterday only: bounded by the start of today, otherwise the
-                    // comparison would include today's customers as well.
-                    this.fetchNewCustomerCount(getDayBounds(getPreviousDay()).from, getDayBounds(new Date()).from),
-                    this.fetchPaidState(),
-                    this.fetchWalletBalance(),
-                    this.fetchMonthlyPoints(monthStart),
-                ]);
-
-                this.paidState = paidState;
-
-                this.currentMetrics = {
-                    revenue: this.getBucket(paidBuckets, dayKeys.today).amount,
-                    paidOrders: this.getBucket(paidBuckets, dayKeys.today).count,
-                    orders: this.getBucket(allBuckets, dayKeys.today).count,
-                    newCustomers,
-                    walletBalance,
-                    monthlyPoints,
+            return definitions.map(({ key, field, money }) => {
+                const value = current?.[field];
+                const previousValue = previous?.[field];
+                const metricAvailable =
+                    this.summary !== null &&
+                    !this.salesError &&
+                    !this.salesLoading &&
+                    value != null &&
+                    previousValue != null;
+                return {
+                    key,
+                    label: this.$t(`sw-dashboard.metrics.${key}`),
+                    value: this.formatMetricValue(current?.[field], money),
+                    unit: money ? '' : this.$t('sw-dashboard.metrics.customersUnit'),
+                    delta:
+                        metricAvailable && (value !== 0 || previousValue !== 0 || this.metricCount(key) > 0)
+                            ? this.buildDelta(value, previousValue, money, key === 'refunds')
+                            : null,
+                    footnote: this.metricFootnote(key),
                 };
-
-                this.previousMetrics = {
-                    ...EMPTY_METRICS,
-                    revenue: this.getBucket(paidBuckets, dayKeys.yesterday).amount,
-                    paidOrders: this.getBucket(paidBuckets, dayKeys.yesterday).count,
-                    orders: this.getBucket(allBuckets, dayKeys.yesterday).count,
-                    newCustomers: previousNewCustomers,
-                };
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        getBucket(buckets: OrderAmountBucket[], dayKey: string): { amount: number; count: number } {
-            const bucket = buckets.find((item) => item.date === dayKey);
-
-            return {
-                amount: bucket?.amount ?? 0,
-                count: bucket?.count ?? 0,
-            };
-        },
-
-        fetchOrderAmount(since: string, paid: boolean): Promise<OrderAmountBucket[]> {
-            const httpClient = Shopwell.Application.getContainer('init').httpClient as {
-                get: (url: string, config: { headers: unknown }) => Promise<{ data: { statistic: OrderAmountBucket[] } }>;
-            };
-
-            const headers = (this.orderRepository as { buildHeaders: () => unknown }).buildHeaders();
-            const timezone = Shopwell.Store.get('session').currentUser?.timeZone ?? 'Asia/Shanghai';
-            const url = `/_admin/dashboard/order-amount/${since}?timezone=${timezone}&paid=${paid.toString()}`;
-
-            return httpClient
-                .get(url, { headers })
-                .then((response) => response.data.statistic)
-                .catch(() => {
-                    // the dashboard is a read-only overview: a failed request shows zero for that day
-                    // instead of blocking the other three cards behind an error state
-                    return [] as OrderAmountBucket[];
-                });
-        },
-
-        fetchNewCustomerCount(since: string, until?: string): Promise<number> {
-            if (!this.canViewCustomers) {
-                return Promise.resolve(0);
-            }
-
-            const criteria = new Criteria(1, 1);
-            criteria.addFilter(Criteria.range('createdAt', until ? { gte: since, lte: until } : { gte: since }));
-            criteria.setTotalCountMode(1);
-
-            return (this.customerRepository as { search: (c: unknown) => Promise<{ total: number }> })
-                .search(criteria)
-                .then((result) => result.total)
-                .catch(() => {
-                    // without a count the card reads "0 new customers", which is also what an operator
-                    // without the customer privilege sees
-                    return 0;
-                });
-        },
-
-        /**
-         * The total balance the shop is holding for its customers, resolved as a
-         * single sum aggregation instead of reading the wallets themselves.
-         */
-        fetchWalletBalance(): Promise<number> {
-            if (!this.canViewWallet) {
-                return Promise.resolve(0);
-            }
-
-            const criteria = new Criteria(1, 1);
-            criteria.addAggregation(Criteria.sum('walletBalance', 'balance'));
-
-            return (
-                this.walletRepository as {
-                    search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
-                }
-            )
-                .search(criteria)
-                .then((result) => result.aggregations?.walletBalance?.sum ?? 0)
-                .catch(() => {
-                    // the card is a headline figure; an unreachable aggregation must not take the whole
-                    // dashboard down with it
-                    return 0;
-                });
-        },
-
-        /**
-         * Points granted since the start of the current month, so the card reads
-         * "issued this month so far" in the user timezone.
-         */
-        fetchMonthlyPoints(since: string): Promise<number> {
-            if (!this.canViewLoyalty) {
-                return Promise.resolve(0);
-            }
-
-            const criteria = new Criteria(1, 1);
-            criteria.addFilter(Criteria.range('createdAt', { gte: since }));
-            criteria.addAggregation(Criteria.sum('monthlyPoints', 'points'));
-
-            return (
-                this.pointTransactionRepository as {
-                    search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
-                }
-            )
-                .search(criteria)
-                .then((result) => result.aggregations?.monthlyPoints?.sum ?? 0)
-                .catch(() => {
-                    // same as the wallet card: a failed sum reads as "0 points this month"
-                    return 0;
-                });
-        },
-
-        calculateAverageOrderValue(metrics: Metrics): number {
-            if (metrics.paidOrders <= 0) {
-                return 0;
-            }
-
-            return metrics.revenue / metrics.paidOrders;
-        },
-
-        /**
-         * Deep link into the order list for the current day. Paid metrics also
-         * narrow the list down to the paid transaction state, so the orders
-         * behind the number can be inspected directly.
-         */
-        buildTodayLink(paidOnly: boolean): OrderListLink {
-            return buildFilteredOrderListLink({
-                date: new Date(),
-                state: {
-                    filterName: ORDER_PAYMENT_FILTER,
-                    property: ORDER_PAYMENT_PROPERTY,
-                    state: paidOnly ? this.paidState : null,
-                },
             });
         },
-
-        fetchPaidState(): Promise<StateSelection | null> {
-            const criteria = new Criteria(1, 1);
-            criteria.addFilter(Criteria.equals('stateMachine.technicalName', 'order_transaction.state'));
-            criteria.addFilter(Criteria.equals('technicalName', 'paid'));
-
-            return (
-                this.stateMachineStateRepository as {
-                    search: (c: unknown) => Promise<Array<{ id: string; name: string; translated?: { name: string } }>>;
-                }
-            )
-                .search(criteria)
-                .then((result) => {
-                    const state = result?.[0];
-
-                    if (!state) {
-                        return null;
-                    }
-
-                    return {
-                        id: state.id,
-                        name: state.translated?.name ?? state.name,
-                    };
-                })
-                .catch(() => {
-                    // without a paid state the card falls back to all orders of the day, which is the
-                    // same view an operator without the payment privilege would get anyway
-                    return null;
-                });
-        },
-
-        buildDelta(current: number, previous: number): Delta | null {
-            if (previous <= 0) {
-                return null;
+    },
+    methods: {
+        formatMetricValue(value: number | null | undefined, money: boolean): string {
+            if (value == null || this.salesError || this.salesLoading) {
+                return '—';
             }
-
-            const percentage = ((current - previous) / previous) * 100;
-            const direction = percentage > 0 ? 'up' : percentage < 0 ? 'down' : 'flat';
-            const sign = percentage > 0 ? '↑' : percentage < 0 ? '↓' : '';
-
+            return money
+                ? this.currencyFilter(value, Shopwell.Context.app.systemCurrencyISOCode as string, 2)
+                : value.toLocaleString();
+        },
+        metricFootnote(key: string): string {
+            if (this.salesError) {
+                return this.$t('sw-dashboard.general.loadError');
+            }
+            if (!this.summary || this.salesLoading) {
+                return '';
+            }
+            const count = this.metricCount(key);
+            if (count <= 0) {
+                return '';
+            }
+            const snippet = { revenue: 'salesCount', walletTopUps: 'topUpCount', refunds: 'refundCount' }[key];
+            return snippet ? this.$t(`sw-dashboard.metrics.${snippet}`, { count }) : '';
+        },
+        metricCount(key: string): number {
+            const totals = this.summary?.today;
+            if (!totals) {
+                return 0;
+            }
+            return { revenue: totals.orders, walletTopUps: totals.walletTopUpCount, refunds: totals.refundCount }[key] ?? 0;
+        },
+        buildDelta(current: number, previous: number, money: boolean, reverse: boolean): MetricCard['delta'] {
+            if (current === previous) {
+                return { tone: 'neutral', text: '0' };
+            }
+            const increase = current > previous;
+            const change =
+                previous > 0
+                    ? `${((Math.abs(current - previous) / previous) * 100).toFixed(1)}%`
+                    : `${this.formatMetricValue(Math.abs(current - previous), money)}${money ? '' : this.$t('sw-dashboard.metrics.customersUnit')}`;
             return {
-                direction,
-                text: `${sign} ${Math.abs(percentage).toFixed(1)}% ${this.$t('sw-dashboard.metrics.comparedToYesterday')}`,
+                tone: increase !== reverse ? 'positive' : 'critical',
+                text: `${increase ? '↑' : '↓'} ${change}`,
             };
         },
     },

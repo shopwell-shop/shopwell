@@ -1,25 +1,18 @@
 {% block sw_dashboard_metrics %}
-<mt-card
+<div
     v-if="canViewOrders"
-    class="sw-dashboard-metrics mt-card--future-ignore-max-width"
-    :title="$t('sw-dashboard.metrics.headline')"
-    :help-text="helpText"
-    :is-loading="isLoading"
-    position-identifier="sw-dashboard-metrics"
+    class="sw-dashboard-metrics"
 >
     {% block sw_dashboard_metrics_grid %}
     <div class="sw-dashboard-metrics__grid">
         {% block sw_dashboard_metrics_grid_card %}
-        <component
-            :is="card.link ? 'router-link' : 'div'"
+        <div
             v-for="card in metricCards"
             :key="card.key"
-            v-bind="card.link ? { to: card.link } : {}"
             class="sw-dashboard-metrics__card"
-            :class="{ 'is-linked': !!card.link }"
+            :class="`sw-dashboard-metrics__card--${card.key}`"
         >
             <span class="sw-dashboard-metrics__label">{{ card.label }}</span>
-
             <span class="sw-dashboard-metrics__value">
                 {{ card.value }}
                 <span
@@ -27,26 +20,27 @@
                     class="sw-dashboard-metrics__unit"
                 >{{ card.unit }}</span>
             </span>
-
             {% block sw_dashboard_metrics_grid_card_delta %}
-            <span
-                v-if="card.delta"
-                class="sw-dashboard-metrics__delta"
-                :class="`is-${card.delta.direction}`"
-            >
-                {{ card.delta.text }}
-            </span>
-
-            <span
-                v-else-if="card.showComparison !== false"
-                class="sw-dashboard-metrics__delta is-none"
-            >
-                {{ $t('sw-dashboard.metrics.noComparison') }}
-            </span>
+            <div class="sw-dashboard-metrics__footnote">
+                <span
+                    v-if="card.footnote"
+                    class="sw-dashboard-metrics__detail"
+                >{{ card.footnote }}</span>
+                <span
+                    v-if="card.delta"
+                    class="sw-dashboard-metrics__comparison"
+                >
+                    <span
+                        class="sw-dashboard-metrics__delta"
+                        :class="`is-${card.delta.tone}`"
+                    >{{ card.delta.text }}</span>
+                    {{ $t('sw-dashboard.metrics.comparedToPrevious') }}
+                </span>
+            </div>
             {% endblock %}
-        </component>
+        </div>
         {% endblock %}
     </div>
     {% endblock %}
-</mt-card>
+</div>
 {% endblock %}

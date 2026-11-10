@@ -1,16 +1,31 @@
 {% block sw_dashboard_latest_orders %}
 <mt-card
     v-if="canViewOrders"
-    class="sw-dashboard-latest-orders mt-card--future-ignore-max-width"
+    class="sw-dashboard-latest-orders mt-card--future-ignore-max-width mt-card--future-remove-default-margin"
     :is-loading="isLoading"
     position-identifier="sw-dashboard-latest-orders"
 >
     {% block sw_dashboard_latest_orders_title %}
     <template #title>
-        {{ $t('sw-dashboard.latestOrders.headline') }}
+        <mt-text
+            as="h3"
+            size="m"
+            weight="semibold"
+            class="mt-card__title"
+        >
+            {{ $t('sw-dashboard.latestOrders.headline') }}
+        </mt-text>
     </template>
     {% endblock %}
 
+    <template #headerRight>
+        <router-link
+            class="sw-dashboard-latest-orders__view-all"
+            :to="{ name: 'sw.order.index' }"
+        >
+            {{ $t('sw-dashboard.latestOrders.viewAll') }}
+        </router-link>
+    </template>
     {% block sw_dashboard_latest_orders_listing %}
     <sw-entity-listing
         v-if="orders && orders.length > 0"
@@ -73,12 +88,14 @@
     </sw-entity-listing>
 
     {% block sw_dashboard_latest_orders_empty %}
-    <div
+    <mt-empty-state
         v-else-if="!isLoading"
         class="sw-dashboard-latest-orders__empty"
-    >
-        {{ $t('sw-dashboard.latestOrders.empty') }}
-    </div>
+        centered
+        icon="regular-shopping-bag"
+        :headline="$t('sw-dashboard.latestOrders.empty')"
+        description=""
+    />
     {% endblock %}
     {% endblock %}
 </mt-card>

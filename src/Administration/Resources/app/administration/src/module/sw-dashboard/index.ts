@@ -2,14 +2,7 @@
 
 Shopwell.Component.register('sw-dashboard-metrics', () => import('./component/sw-dashboard-metrics'));
 Shopwell.Component.register('sw-dashboard-statistics', () => import('./component/sw-dashboard-statistics'));
-Shopwell.Component.register('sw-dashboard-todos', () => import('./component/sw-dashboard-todos'));
 Shopwell.Component.register('sw-dashboard-order-states', () => import('./component/sw-dashboard-order-states'));
-Shopwell.Component.register('sw-dashboard-top-products', () => import('./component/sw-dashboard-top-products'));
-Shopwell.Component.register(
-    'sw-dashboard-loyalty-distribution',
-    () => import('./component/sw-dashboard-loyalty-distribution'),
-);
-Shopwell.Component.register('sw-dashboard-wallet', () => import('./component/sw-dashboard-wallet'));
 Shopwell.Component.register('sw-dashboard-latest-orders', () => import('./component/sw-dashboard-latest-orders'));
 Shopwell.Component.register('sw-dashboard-index', () => import('./page/sw-dashboard-index'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
@@ -26,7 +19,7 @@ Shopwell.Module.register('sw-dashboard', {
     description: 'sw-dashboard.general.descriptionTextModule',
     version: '1.0.0',
     targetVersion: '1.0.0',
-    color: 'var(--sw-color-module-brand-default)',
+    color: 'var(--color-text-brand-default)',
     icon: 'regular-dashboard',
     favicon: 'icon-module-dashboard.svg',
 
@@ -43,7 +36,7 @@ Shopwell.Module.register('sw-dashboard', {
         {
             id: 'sw-dashboard',
             label: 'sw-dashboard.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-brand-default)',
+            color: 'var(--color-text-brand-default)',
             icon: 'regular-dashboard',
             path: 'sw.dashboard.index',
             position: 10,

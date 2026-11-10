@@ -1,18 +1,13 @@
 import { stabilizeDashboardValues } from '@helpers/visual-dashboard-helpers';
-import { test, replaceElements, hideElements, setViewport, assertScreenshot } from '@fixtures/AcceptanceTest';
+import { test, hideElements, setViewport, assertScreenshot } from '@fixtures/AcceptanceTest';
 
 test('Administration dashboard', { tag: '@Visual' }, async ({ ShopAdmin, AdminDashboard }) => {
     await test.step('Creates a screenshot of the Administration dashboard.', async () => {
         await ShopAdmin.goesTo(AdminDashboard.url());
         await setViewport(AdminDashboard.page, {
-            contentHeight: 2646,
+            contentHeight: 1180,
         });
-        await replaceElements(AdminDashboard.page, [
-            AdminDashboard.welcomeHeadline,
-            AdminDashboard.welcomeMessage,
-            AdminDashboard.statisticsDateRange,
-        ]);
-        await hideElements(AdminDashboard.page, [AdminDashboard.statisticsChart]);
+        await hideElements(AdminDashboard.page, ['.sw-dashboard-statistics__chart']);
         await stabilizeDashboardValues(AdminDashboard.page);
         await assertScreenshot(AdminDashboard.page, 'Dashboard.png');
     });

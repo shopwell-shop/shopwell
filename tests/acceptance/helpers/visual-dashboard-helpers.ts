@@ -6,7 +6,7 @@ export async function stabilizeDashboardValues(page: Page): Promise<void> {
     await expect(metrics).toBeVisible();
     await expect(metrics.locator('.mt-loader')).toHaveCount(0);
     const values = metrics.locator('.sw-dashboard-metrics__value');
-    await expect(values).toHaveCount(6);
+    await expect(values).toHaveCount(4);
     await values.evaluateAll((elements) => {
         for (const element of elements) {
             const value = Array.from(element.childNodes).find((node) => node.nodeType === 3 && node.textContent?.trim());
@@ -16,11 +16,5 @@ export async function stabilizeDashboardValues(page: Page): Promise<void> {
             value.textContent = value.textContent.replace(/[+-]?\d[\d,. ]*/g, '***');
         }
     });
-    const wallet = page.locator('.sw-dashboard-wallet');
-    await expect(wallet).toBeVisible();
-    await expect(wallet.locator('.mt-loader')).toHaveCount(0);
-    await replaceElements(page, [
-        '.sw-dashboard-metrics__delta',
-        '.sw-dashboard-wallet__top-up-value',
-    ]);
+    await replaceElements(page, ['.sw-dashboard-metrics__footnote']);
 }

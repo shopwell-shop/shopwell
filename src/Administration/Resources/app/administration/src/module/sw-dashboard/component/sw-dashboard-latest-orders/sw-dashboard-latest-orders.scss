@@ -1,8 +1,17 @@
 .sw-dashboard-latest-orders {
-    &__empty {
-        padding: var(--scale-size-24) 0;
+    &__view-all {
+        color: var(--color-text-brand-default);
+        font-size: var(--font-size-xs);
+        text-decoration: none;
+    }
+
+    &__caption {
+        margin-bottom: var(--scale-size-16);
         color: var(--color-text-secondary-default);
-        font-size: var(--font-size-s);
-        text-align: center;
+        font-size: var(--font-size-xs);
+    }
+
+    &__listing {
+        overflow-x: auto;
     }
 }

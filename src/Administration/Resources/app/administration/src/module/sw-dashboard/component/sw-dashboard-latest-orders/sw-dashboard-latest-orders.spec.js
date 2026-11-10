@@ -44,6 +44,10 @@ async function createWrapper(privileges = ['order.viewer'], orders = ORDERS) {
     return shallowMount(await wrapTestComponent('sw-dashboard-latest-orders', { sync: true }), {
         global: {
             stubs: {
+                'mt-empty-state': {
+                    props: { headline: String, description: String, icon: String, centered: Boolean },
+                    template: '<div class="mt-empty-state">{{ headline }}</div>',
+                },
                 'mt-card': {
                     template:
                         '<div class="mt-card"><div class="mt-card__header">' +
@@ -131,6 +135,10 @@ describe('module/sw-dashboard/component/sw-dashboard-latest-orders', () => {
         expect(criteria.page).toBe(1);
         expect(criteria.limit).toBe(5);
         expect(criteria.totalCountMode).toBe(0);
+        expect(criteria.filters).toHaveLength(1);
+        expect(criteria.filters[0].field).toBe('orderDateTime');
+        const bounds = criteria.filters[0].parameters;
+        expect(Date.parse(bounds.lte) - Date.parse(bounds.gte)).toBeLessThanOrEqual(86400000);
         expect(criteria.sortings).toEqual([
             { field: 'orderDateTime', order: 'DESC', naturalSorting: false },
         ]);
@@ -190,12 +198,12 @@ describe('module/sw-dashboard/component/sw-dashboard-latest-orders', () => {
         expect(wrapper.get('[data-id="order-3"] .mt-badge').attributes('data-variant')).toBe('neutral');
     });
 
-    it('does not render a link to the full order list', async () => {
+    it('links to the full order list', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.find('.sw-dashboard-latest-orders__view-all').exists()).toBe(false);
-        expect(wrapper.find('.mt-card__header a').exists()).toBe(false);
+        expect(wrapper.find('.sw-dashboard-latest-orders__view-all').exists()).toBe(true);
+        expect(wrapper.find('.mt-card__header a').exists()).toBe(true);
     });
 
     it('shows the empty state without orders', async () => {
@@ -203,6 +211,7 @@ describe('module/sw-dashboard/component/sw-dashboard-latest-orders', () => {
         await flushPromises();
 
         expect(wrapper.find('.sw-entity-listing-stub').exists()).toBe(false);
-        expect(wrapper.find('.sw-dashboard-latest-orders__empty').text()).toBe('sw-dashboard.latestOrders.empty');
+        expect(wrapper.getComponent('.mt-empty-state').props('headline')).toBe('sw-dashboard.latestOrders.empty');
+        expect(wrapper.getComponent('.mt-empty-state').props('centered')).toBe(true);
     });
 });

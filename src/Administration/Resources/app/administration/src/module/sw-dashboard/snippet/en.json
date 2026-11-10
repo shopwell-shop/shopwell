@@ -2,75 +2,38 @@
     "sw-dashboard": {
         "general": {
             "mainMenuItemGeneral": "Dashboard",
-            "descriptionTextModule": "Business overview, sales trend, todos and latest orders"
+            "descriptionTextModule": "Today’s sales, trends and orders",
+            "headline": "Today’s overview",
+            "loadError": "Data is unavailable. Refresh to try again."
         },
         "metrics": {
-            "headline": "Today",
-            "revenue": "Revenue today",
-            "orders": "Orders today",
-            "newCustomers": "New customers",
-            "averageOrderValue": "Average order value",
-            "walletBalance": "Wallet balance",
-            "monthlyPoints": "Points issued this month",
-            "ordersUnit": "orders",
+            "revenue": "Product sales",
+            "memberships": "Membership activations",
             "customersUnit": "customers",
-            "pointsUnit": "pts",
-            "comparedToYesterday": "vs. yesterday",
-            "noComparison": "No data for yesterday",
-            "paidOnlyHint": "Revenue and average order value only count paid orders"
+            "comparedToPrevious": "vs yesterday",
+            "refunds": "Refunds",
+            "refundCount": "{count} refund | {count} refunds",
+            "salesCount": "{count} paid order | {count} paid orders",
+            "walletTopUps": "Wallet top-ups",
+            "topUpCount": "{count} top-up | {count} top-ups"
         },
         "statistics": {
+            "empty": "No sales today.",
             "headline": "Sales trend",
-            "metricTurnover": "Revenue",
-            "metricOrderCount": "Orders",
-            "helpText": "Revenue only counts paid orders.",
-            "dateRanges": {
-                "30Days": "Last 30 days",
-                "14Days": "Last 14 days",
-                "7Days": "Last 7 days",
-                "24Hours": "Last 24 hours",
-                "yesterday": "Since yesterday"
-            }
-        },
-        "todos": {
-            "headline": "Needs your attention",
-            "returnRequests": "Return requests to review",
-            "ordersToShip": "Orders waiting for shipment",
-            "reviewsWaiting": "Reviews to moderate",
-            "empty": "Nothing to do - everything is on track."
+            "metricTurnover": "Product sales",
+            "metricOrderCount": "Paid orders",
+            "chartLabel": "Hourly product sales and paid orders today"
         },
         "orderStates": {
-            "headline": "Order states (last 30 days)",
-            "empty": "No orders in this period."
-        },
-        "topProducts": {
-            "headline": "Top products (last 30 days)",
-            "seriesName": "Units sold",
-            "empty": "No product sales in this period.",
-            "viewOrders": "View orders"
-        },
-        "loyaltyDistribution": {
-            "headline": "Members by tier",
-            "seriesName": "Members",
-            "empty": "No loyalty members yet."
-        },
-        "wallet": {
-            "headline": "Wallet",
-            "topUpToday": "Topped up today",
-            "unknownCustomer": "Unknown customer",
-            "empty": "No wallet movements yet.",
-            "viewAll": "View all transactions",
-            "types": {
-                "top_up": "Top up",
-                "consume": "Spent",
-                "refund": "Refund",
-                "adjust": "Adjustment"
-            }
+            "headline": "Order status",
+            "empty": "No orders today.",
+            "totalOrders": "orders"
         },
         "latestOrders": {
             "headline": "Latest orders",
             "columnOrderTime": "Order time",
-            "empty": "There are no orders yet."
+            "empty": "No orders today.",
+            "viewAll": "View all orders"
         }
     }
 }

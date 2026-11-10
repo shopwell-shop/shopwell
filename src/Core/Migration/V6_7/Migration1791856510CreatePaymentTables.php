@@ -784,6 +784,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 UNIQUE KEY `uniq.payment_refund.order_out_refund_no` (`payment_order_id`, `out_refund_no`),
                 KEY `idx.payment_refund.state_id` (`state_id`),
                 KEY `idx.payment_refund.event_delivery` (`event_dispatched_at`, `refunded_at`),
+                KEY `idx.payment_refund.refunded_at` (`refunded_at`),
+                KEY `idx.payment_refund.out_refund_no` (`out_refund_no`),
                 CONSTRAINT `fk.payment_refund.payment_attempt_id` FOREIGN KEY (`payment_attempt_id`) REFERENCES `payment_attempt` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_refund.payment_order_id` FOREIGN KEY (`payment_order_id`) REFERENCES `payment_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_refund.state_id` FOREIGN KEY (`state_id`) REFERENCES `state_machine_state` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE

@@ -41,6 +41,7 @@ class Migration1536233260StateMachineHistory extends MigrationStep
                 KEY `fk.state_machine_history.to_state_id` (`to_state_id`),
                 KEY `fk.state_machine_history.user_id` (`user_id`),
                 KEY `idx.state_machine_history.referenced_entity` (`referenced_id`,`referenced_version_id`),
+                KEY `idx.state_machine_history.entity_created` (`entity_name`, `created_at`),
                 KEY `fk.state_machine_history.integration_id` (`integration_id`),
                 CONSTRAINT `fk.state_machine_history.from_state_id` FOREIGN KEY (`from_state_id`) REFERENCES `state_machine_state` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
                 CONSTRAINT `fk.state_machine_history.integration_id` FOREIGN KEY (`integration_id`) REFERENCES `integration` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
