@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Blog\Aggregate\BlogAuthor\BlogAuthorEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryCollection;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryEntity;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogSpecificationSource;
 use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\BlogException;
@@ -16,6 +17,7 @@ use Shopwell\Core\Content\Blog\Service\BlogDetailStruct;
 use Shopwell\Core\Content\Blog\Service\BlogListingReader;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
 use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\LayoutReference;
 use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
 use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
@@ -23,6 +25,7 @@ use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\ContentRouteResponse;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Shopwell\Storefront\Page\Blog\BlogDetailPageLoadedEvent;
 use Shopwell\Storefront\Page\Blog\BlogPageLoadedEvent;
 use Shopwell\Storefront\Page\Blog\BlogPageLoader;
@@ -265,10 +268,108 @@ class BlogPageLoaderTest extends TestCase
         $loader->loadDetail('missing', new Request(), Generator::generateSalesChannelContext());
     }
 
+    public function testBoundAssignmentWinsOverLegacyBodyLayout(): void
+    {
+        $blog = $this->blog('blog-id');
+        $blog->contentLayoutId = 'legacy-layout';
+        $detail = new BlogDetailStruct();
+        $detail->setBlog($blog);
+        $reader = static::createStub(BlogDetailReader::class);
+        $reader->method('read')->willReturn($detail);
+        $source = static::createStub(BlogSpecificationSource::class);
+        $source->method('findAssignedLayoutId')->willReturn('assigned-layout');
+        $route = $this->createMock(AbstractContentRoute::class);
+        $route->expects($this->once())->method('load')->with('/blog/blog-id', static::isInstanceOf(Request::class), static::anything())
+            ->willReturn(new ContentRouteResponse(new RenderResult([], LayoutReference::create('assigned-layout', 'Assigned layout', null), null)));
+        $loader = new BlogPageLoader(static::createStub(BlogListingReader::class), $reader, static::createStub(BlogSettings::class), $route, static::createStub(EventDispatcherInterface::class), $source);
+
+        $page = $loader->loadDetail('blog-id', new Request(), Generator::generateSalesChannelContext());
+
+        static::assertTrue($page->isEntityBoundLayout());
+        static::assertSame('assigned-layout', $page->getContentPage()?->id);
+    }
+
+    public function testLegacyBodyLayoutWinsOverSharedDefaultWhenUnassigned(): void
+    {
+        $blog = $this->blog('blog-id');
+        $blog->contentLayoutId = 'legacy-layout';
+        $detail = new BlogDetailStruct();
+        $detail->setBlog($blog);
+        $reader = static::createStub(BlogDetailReader::class);
+        $reader->method('read')->willReturn($detail);
+        $source = static::createStub(BlogSpecificationSource::class);
+        $source->method('findAssignedLayoutId')->willReturn(null);
+        $route = $this->createMock(AbstractContentRoute::class);
+        $route->expects($this->once())->method('load')->with('/layout/legacy-layout', static::anything(), static::anything())
+            ->willReturn(new ContentRouteResponse(new RenderResult([], LayoutReference::create('legacy-layout', 'Legacy', null), null)));
+        $loader = new BlogPageLoader(static::createStub(BlogListingReader::class), $reader, static::createStub(BlogSettings::class), $route, static::createStub(EventDispatcherInterface::class), $source);
+
+        $page = $loader->loadDetail('blog-id', new Request(), Generator::generateSalesChannelContext());
+
+        static::assertFalse($page->isEntityBoundLayout());
+        static::assertSame('legacy-layout', $page->getContentPage()?->id);
+    }
+
+    public function testMissingBoundDefaultFallsBackToThemeTemplate(): void
+    {
+        $blog = $this->blog('blog-id');
+        $detail = new BlogDetailStruct();
+        $detail->setBlog($blog);
+        $reader = static::createStub(BlogDetailReader::class);
+        $reader->method('read')->willReturn($detail);
+        $route = static::createStub(AbstractContentRoute::class);
+        $route->method('load')->willThrowException(ContentSystemException::layoutAssignmentNotFound('blog', 'blog-id', 'channel'));
+        $loader = new BlogPageLoader(static::createStub(BlogListingReader::class), $reader, static::createStub(BlogSettings::class), $route, static::createStub(EventDispatcherInterface::class), static::createStub(BlogSpecificationSource::class));
+
+        $page = $loader->loadDetail('blog-id', new Request(), Generator::generateSalesChannelContext());
+
+        static::assertNull($page->getContentPage());
+        static::assertFalse($page->isEntityBoundLayout());
+    }
+
+    public function testHomeUsesChannelListingDefaultAndPreservesRequest(): void
+    {
+        $context = Generator::generateSalesChannelContext();
+        $config = new StaticSystemConfigService();
+        $config->set('core.content_system.default_blog_listing_content_layout', 'global-listing');
+        $config->set('core.content_system.default_blog_listing_content_layout', 'channel-listing', $context->getSalesChannelId());
+        $reader = static::createStub(BlogListingReader::class);
+        $reader->method('listing')->willReturn(new BlogListingStruct());
+        $reader->method('categoriesInUse')->willReturn(new BlogCategoryCollection());
+        $request = new Request(['categoryId' => 'untrusted', 'p' => 2]);
+        $route = $this->createMock(AbstractContentRoute::class);
+        $route->expects($this->once())->method('load')->with('/layout/channel-listing', static::callback(static fn (Request $request): bool => $request->query->get('categoryId') === '' && $request->query->getInt('p') === 2), $context)
+            ->willReturn(new ContentRouteResponse(new RenderResult([], LayoutReference::create('channel-listing', 'Listing', null), null)));
+        $loader = new BlogPageLoader($reader, static::createStub(BlogDetailReader::class), static::createStub(BlogSettings::class), $route, static::createStub(EventDispatcherInterface::class), systemConfig: $config);
+
+        $page = $loader->load($request, $context);
+
+        static::assertSame('channel-listing', $page->getContentLayoutId());
+        static::assertSame('untrusted', $request->query->get('categoryId'));
+    }
+
+    public function testCategoryAssignmentWinsOverDefaultAndSuppliesRouteCategory(): void
+    {
+        $context = Generator::generateSalesChannelContext();
+        $config = new StaticSystemConfigService();
+        $config->set('core.content_system.default_blog_listing_content_layout', 'default-listing');
+        $reader = static::createStub(BlogListingReader::class);
+        $reader->method('listing')->willReturn(new BlogListingStruct());
+        $reader->method('categoriesInUse')->willReturn(new BlogCategoryCollection());
+        $reader->method('layoutOf')->willReturn('category-listing');
+        $route = $this->createMock(AbstractContentRoute::class);
+        $route->expects($this->once())->method('load')->with('/layout/category-listing', static::callback(static fn (Request $request): bool => $request->query->get('categoryId') === 'route-category'), $context)
+            ->willReturn(new ContentRouteResponse(new RenderResult([], LayoutReference::create('category-listing', 'Category', null), null)));
+        $loader = new BlogPageLoader($reader, static::createStub(BlogDetailReader::class), static::createStub(BlogSettings::class), $route, static::createStub(EventDispatcherInterface::class), systemConfig: $config);
+
+        static::assertSame('category-listing', $loader->load(new Request(['categoryId' => 'untrusted']), $context, 'route-category')->getContentLayoutId());
+    }
+
     private function blog(string $id): BlogEntity
     {
         $blog = new BlogEntity();
         $blog->id = $id;
+        $blog->title = 'A headline';
         $blog->setUniqueIdentifier($id);
 
         return $blog;

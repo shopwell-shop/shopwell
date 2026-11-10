@@ -110,7 +110,7 @@ class BlogControllerTest extends TestCase
     {
         $controller = new BlogController(
             static::createStub(BlogPageLoader::class),
-            new BlogTypeRegistry([]),
+            new BlogTypeRegistry(),
             $commentRoute,
             new ConstraintViolationTranslator(static::createStub(TranslatorInterface::class)),
         );

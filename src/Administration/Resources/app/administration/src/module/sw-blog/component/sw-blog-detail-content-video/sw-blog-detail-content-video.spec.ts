@@ -81,4 +81,12 @@ describe('src/module/sw-blog/component/sw-blog-detail-content-video', () => {
         expect(video.posterMediaId).toBeNull();
         expect(wrapper.get('output').text()).toBe('');
     });
+    it('ignores late media callbacks after editing has been disabled', async () => {
+        const video = { posterMediaId: 'existing-media', videoUrl: '', provider: 'youtube' };
+        const wrapper = await createWrapper(video);
+        await wrapper.setProps({ isDisabled: true });
+        await wrapper.get('.select-poster').trigger('click');
+        await wrapper.get('.remove-poster').trigger('click');
+        expect(video.posterMediaId).toBe('existing-media');
+    });
 });

@@ -372,9 +372,5 @@ export default defineComponent({
 
             void this.commentRepository.delete(id).then(() => this.getList());
         },
-
-        onOpenBlogList(): void {
-            void this.$router.push({ name: 'sw.blog.list' });
-        },
     },
 });

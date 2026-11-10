@@ -6,9 +6,9 @@ import type { VueWrapper } from '@vue/test-utils';
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(publishedAt: string | null): Promise<VueWrapper> {
+async function createWrapper(publishedAt: string | null, active?: boolean): Promise<VueWrapper> {
     const wrapper = shallowMount(await wrapTestComponent('sw-blog-status-badge', { sync: true }), {
-        props: { publishedAt },
+        props: { publishedAt, active },
         global: {
             stubs: {
                 'mt-badge': { props: ['variant'], template: '<span :data-variant="variant"><slot></slot></span>' },
@@ -29,6 +29,12 @@ describe('src/module/sw-blog/component/sw-blog-status-badge', () => {
     afterEach(() => {
         activeWrapper?.unmount();
         activeWrapper = null;
+    });
+
+    it('shows inactive entries as neutral drafts', async () => {
+        const wrapper = await createWrapper('2999-01-01T00:00:00.000Z', false);
+        expect(wrapper.text()).toBe('sw-blog.status.draft');
+        expect(wrapper.get('span').attributes('data-variant')).toBe('neutral');
     });
 
     it('shows a published entry as published', async () => {

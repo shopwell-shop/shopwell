@@ -38,15 +38,35 @@
     {% block sw_blog_list_smart_bar_actions %}
     <template #smart-bar-actions>
         {% block sw_blog_list_smart_bar_actions_add %}
-        <mt-button
-            class="sw-blog-list__button-create"
-            variant="primary"
-            size="default"
-            :disabled="!canCreate || undefined"
-            @click="onOpenCreateModal"
-        >
-            {{ $t('sw-blog.list.buttonCreate') }}
-        </mt-button>
+        <mt-popover :child-views="[{ name: 'base' }]">
+            <template #trigger="{ toggleFloatingUi }">
+                <mt-button
+                    class="sw-blog-list__button-create"
+                    variant="primary"
+                    size="default"
+                    :disabled="!canCreate || undefined"
+                    :aria-label="$t('sw-blog.list.buttonChooseType')"
+                    @click="toggleFloatingUi"
+                >
+                    {{ $t('sw-blog.list.buttonCreate') }}
+                    <mt-icon
+                        name="regular-chevron-down-xs"
+                        size="16"
+                    />
+                </mt-button>
+            </template>
+
+            <template #popover-items__base="{ toggleFloatingUi }">
+                <mt-popover-item
+                    v-for="type in typeFilterOptions"
+                    :key="type.id"
+                    :data-blog-type="type.id"
+                    :label="$t('sw-blog.list.buttonCreateType', { type: type.name })"
+                    :disabled="!canCreate || undefined"
+                    :on-label-click="() => onCreate(type.id, toggleFloatingUi)"
+                />
+            </template>
+        </mt-popover>
         {% endblock %}
     </template>
     {% endblock %}
@@ -81,167 +101,148 @@
             </div>
             {% endblock %}
 
-            {% block sw_blog_list_empty_state %}
-            {#
-            Two empty states: "nothing was written yet" is a shop without content, "nothing matches"
-            is the filter. Showing the first one after a filter would tell the merchant the shop is
-            empty when it only answered the question they asked.
-            #}
-            <mt-empty-state
-                v-if="!isLoading && !total && !hasActiveSearchOrFilter"
-                centered
-                class="sw-blog-list__empty-state"
-                icon="regular-image-text"
-                :headline="$t('sw-blog.list.messageEmpty')"
-                :description="$t('sw-blog.list.messageEmptySubline')"
-            />
-            {% endblock %}
-
-            {% block sw_blog_list_empty_state_filtered %}
-            <mt-empty-state
-                v-else-if="!isLoading && !total"
-                centered
-                class="sw-blog-list__empty-state"
-                icon="regular-search"
-                :headline="$t('sw-blog.list.messageEmptyFiltered')"
-                :description="$t('sw-blog.list.messageEmptyFilteredSubline')"
-            />
-            {% endblock %}
-
-            {% block sw_blog_list_grid %}
-            <sw-entity-listing
-                v-else
-                ref="listing"
-                class="sw-blog-list__grid"
-                identifier="sw-blog-list"
-                :data-source="blogs"
-                :columns="columns"
-                :repository="blogRepository"
-                :sort-by="sortBy"
-                :sort-direction="sortDirection"
-                :is-loading="isLoading"
-                :full-page="true"
-                :show-selection="false"
-                :show-settings="true"
-                :disable-data-fetching="true"
-                :allow-inline-edit="canEdit"
-                :allow-column-edit="true"
-                :allow-edit="canEdit"
-                :allow-delete="canDelete"
-                :allow-view="canEdit"
-                detail-route="sw.blog.detail"
-                @page-change="onPageChange"
-                @column-sort="onSortColumn"
-                @inline-edit-save="onInlineEditSave"
-            >
-                <template #delete-action="{ item }">
-                    <sw-context-menu-item
-                        :disabled="!canDelete || undefined"
-                        variant="danger"
-                        @click="onDelete(item)"
-                    >
-                        {{ $t('global.default.delete') }}
-                    </sw-context-menu-item>
-                </template>
-
-                {% block sw_blog_list_grid_column_cover %}
-                <template #column-coverMediaId="{ item }">
-                    <sw-media-preview-v2
-                        v-if="item.coverMediaId"
-                        class="sw-blog-list__cover"
-                        :source="item.coverMediaId"
-                    />
-
-                    <div
-                        v-else
-                        class="sw-blog-list__cover-placeholder"
-                    ></div>
-                </template>
+            <div class="sw-blog-list__results">
+                {% block sw_blog_list_empty_state %}
+                {#
+                Two empty states: "nothing was written yet" is a shop without content, "nothing matches"
+                is the filter. Showing the first one after a filter would tell the merchant the shop is
+                empty when it only answered the question they asked.
+                #}
+                <mt-empty-state
+                    v-if="!isLoading && !total && !hasActiveSearchOrFilter"
+                    centered
+                    class="sw-blog-list__empty-state"
+                    icon="regular-image-text"
+                    :headline="$t('sw-blog.list.messageEmpty')"
+                    :description="$t('sw-blog.list.messageEmptySubline')"
+                />
                 {% endblock %}
 
-                {% block sw_blog_list_grid_column_title %}
-                <template #column-title="{ item, isInlineEdit }">
-                    {#
-                    The two renderings live in one block on purpose: the rebuilt template wraps
-                    every block in its own component, and a v-else after a block boundary loses
-                    its v-if.
-                    #}
-                    <mt-text-field
-                        v-if="isInlineEdit"
-                        v-model="item.title"
-                    />
-
-                    <div
-                        v-else
-                        class="sw-blog-list__title-cell"
-                    >
-                        <span class="sw-blog-list__title-text">{{ item.title }}</span>
-
-                        <span class="sw-blog-list__title-subline">
-                            {{ item.author?.name || $t('sw-blog.detail.textNoAuthor') }} ·
-                            {{ item.publishedAt || $t('sw-blog.list.textUnscheduled') }}
-                        </span>
-                    </div>
-                </template>
+                {% block sw_blog_list_empty_state_filtered %}
+                <mt-empty-state
+                    v-else-if="!isLoading && !total"
+                    centered
+                    class="sw-blog-list__empty-state"
+                    icon="regular-search"
+                    :headline="$t('sw-blog.list.messageEmptyFiltered')"
+                    :description="$t('sw-blog.list.messageEmptyFilteredSubline')"
+                />
                 {% endblock %}
 
-                {% block sw_blog_list_grid_column_type %}
-                <template #column-type="{ item }">
-                    <mt-badge
-                        v-if="item.type"
-                        variant="neutral"
-                        size="small"
-                    >
-                        {{ typeLabel(item.type) }}
-                    </mt-badge>
-                </template>
-                {% endblock %}
+                {% block sw_blog_list_grid %}
+                <sw-entity-listing
+                    v-else
+                    ref="listing"
+                    class="sw-blog-list__grid"
+                    identifier="sw-blog-list"
+                    :data-source="blogs"
+                    :columns="columns"
+                    :repository="blogRepository"
+                    :sort-by="sortBy"
+                    :sort-direction="sortDirection"
+                    :is-loading="isLoading"
+                    :full-page="true"
+                    :show-selection="false"
+                    :show-settings="true"
+                    :disable-data-fetching="true"
+                    :allow-inline-edit="false"
+                    :allow-column-edit="true"
+                    :allow-edit="false"
+                    :allow-delete="canDelete"
+                    :allow-view="canView"
+                    detail-route="sw.blog.detail"
+                    @page-change="onPageChange"
+                    @column-sort="onSortColumn"
+                >
+                    <template #delete-action="{ item }">
+                        <sw-context-menu-item
+                            :disabled="!canDelete || undefined"
+                            variant="danger"
+                            @click="onDelete(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                    </template>
 
-                {% block sw_blog_list_grid_column_categories %}
-                <template #column-categories="{ item }">
-                    <div
-                        v-if="categoryNamesOf(item).length > 0"
-                        class="sw-blog-list__categories"
-                    >
+                    {% block sw_blog_list_grid_column_cover %}
+                    <template #column-coverMediaId="{ item }">
+                        <sw-media-preview-v2
+                            v-if="item.coverMediaId"
+                            class="sw-blog-list__cover"
+                            :source="item.coverMediaId"
+                        />
+
+                        <div
+                            v-else
+                            class="sw-blog-list__cover-placeholder"
+                        ></div>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_blog_list_grid_column_type %}
+                    <template #column-type="{ item }">
                         <mt-badge
-                            v-for="name in categoryNamesOf(item).slice(0, 2)"
-                            :key="name"
+                            v-if="item.type"
                             variant="neutral"
                             size="small"
                         >
-                            {{ name }}
+                            {{ typeLabel(item.type) }}
                         </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_blog_list_grid_column_categories %}
+                    <template #column-categories="{ item }">
+                        <div
+                            v-if="categoryNamesOf(item).length > 0"
+                            class="sw-blog-list__categories"
+                        >
+                            <mt-badge
+                                v-for="name in categoryNamesOf(item).slice(0, 2)"
+                                :key="name"
+                                variant="neutral"
+                                size="small"
+                            >
+                                {{ name }}
+                            </mt-badge>
+
+                            <span
+                                v-if="categoryNamesOf(item).length > 2"
+                                class="sw-blog-list__categories-more"
+                            >
+                                +{{ categoryNamesOf(item).length - 2 }}
+                            </span>
+                        </div>
 
                         <span
-                            v-if="categoryNamesOf(item).length > 2"
-                            class="sw-blog-list__categories-more"
+                            v-else
+                            class="sw-blog-list__categories-empty"
                         >
-                            +{{ categoryNamesOf(item).length - 2 }}
+                            {{ $t('sw-blog.list.textNoCategories') }}
                         </span>
-                    </div>
+                    </template>
+                    {% endblock %}
 
-                    <span
-                        v-else
-                        class="sw-blog-list__categories-empty"
-                    >
-                        {{ $t('sw-blog.list.textNoCategories') }}
-                    </span>
-                </template>
-                {% endblock %}
+                    {% block sw_blog_list_grid_column_status %}
+                    <template #column-status="{ item }">
+                        <sw-blog-status-badge
+                            :active="item.active"
+                            :published-at="item.publishedAt"
+                        />
+                    </template>
+                    {% endblock %}
 
-                {% block sw_blog_list_grid_column_status %}
-                <template #column-status="{ item }">
-                    <sw-blog-status-badge :published-at="item.publishedAt" />
-                </template>
+                    {% block sw_blog_list_grid_column_updated_at %}
+                    <template #column-updatedAt="{ item }">
+                        <sw-time-ago
+                            v-if="item.updatedAt"
+                            :date="item.updatedAt"
+                        />
+                    </template>
+                    {% endblock %}
+                </sw-entity-listing>
                 {% endblock %}
-
-                {% block sw_blog_list_grid_column_updated_at %}
-                <template #column-updatedAt="{ item }">
-                    <sw-time-ago :date="item.updatedAt" />
-                </template>
-                {% endblock %}
-            </sw-entity-listing>
-            {% endblock %}
+            </div>
         </div>
         {% endblock %}
 
@@ -302,13 +303,6 @@
             />
             {% endblock %}
 
-            {% block sw_blog_list_sidebar_categories %}
-            <sw-sidebar-item
-                icon="regular-image-text"
-                :title="$t('sw-blog.list.buttonManageCategories')"
-                @click="onOpenCategoryList"
-            />
-            {% endblock %}
         </sw-sidebar>
     </template>
     {% endblock %}

@@ -1,0 +1,34 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Blog types",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/_action/blog/types": {
+            "get": {
+                "tags": [
+                    "Content"
+                ],
+                "summary": "List registered blog types",
+                "description": "Returns the registered authoring types, including types registered by extensions. Requires blog:read.",
+                "operationId": "listBlogTypes",
+                "responses": {
+                    "200": {
+                        "description": "Registered type identifiers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

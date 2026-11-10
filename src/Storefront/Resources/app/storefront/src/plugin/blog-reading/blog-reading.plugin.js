@@ -28,6 +28,7 @@ export default class BlogReadingPlugin extends Plugin {
         tocLinkSelector: '[data-blog-toc-link]',
         sectionSelector: '[id^="section-"]',
         shareCopySelector: '[data-blog-share-copy]',
+        shareCopyUrlAttribute: 'data-blog-share-copy-url',
         copiedLabelAttribute: 'data-blog-share-copy-copied-label',
         activeClass: 'is-active',
         reducedClass: 'blog-detail--reduced-motion',
@@ -161,7 +162,7 @@ export default class BlogReadingPlugin extends Plugin {
     }
 
     _onShareCopy() {
-        const url = window.location.href;
+        const url = this._shareCopyElement.getAttribute(this.options.shareCopyUrlAttribute) || window.location.href;
         const restore = () => {
             const original = this._shareCopyElement.dataset.originalLabel;
             if (original !== undefined) {

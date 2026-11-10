@@ -169,7 +169,7 @@ class BlogUrlProvider extends AbstractUrlProvider
             INNER JOIN blog_translation t
                     ON t.blog_id = b.id
                    AND t.language_id = :languageId
-                 WHERE (b.published_at IS NULL OR b.published_at <= :now)
+                 WHERE b.active = 1 AND (b.published_at IS NULL OR b.published_at <= :now)
               ORDER BY b.published_at DESC, b.id ASC
                  LIMIT :limit OFFSET :offset';
 

@@ -53,7 +53,7 @@ export default defineComponent({
 
     methods: {
         onPosterSelected(media: Array<{ id: string }>): void {
-            if (!this.video) {
+            if (!this.video || this.isDisabled) {
                 return;
             }
 
@@ -61,7 +61,7 @@ export default defineComponent({
         },
 
         onPosterRemoved(): void {
-            if (!this.video) {
+            if (!this.video || this.isDisabled) {
                 return;
             }
 

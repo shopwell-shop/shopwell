@@ -87,6 +87,7 @@ class BlogListingReader
         $criteria = new Criteria();
         $criteria->addFilter($this->visibilityGuard->getVisibilityFilter());
         $criteria->addAssociation('author');
+        $criteria->addAssociation('tags');
         $criteria->addAssociation('categories.blogCategory');
         $criteria->addSorting(
             new FieldSorting('publishedAt', FieldSorting::DESCENDING),

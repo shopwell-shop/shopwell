@@ -8,18 +8,14 @@ use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\Service\BlogVisibilityGuard;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Clock\MockClock;
 
 /**
- * The guard is the only place that decides whether an entry may be read, and it has exactly one
- * dimension: the date. Every case of that dimension is pinned here, including the boundary - a
- * scheduled entry that leaks one second early is the bug this class exists to prevent.
- *
- * There is no "switched off" case because there is no switch. An article that must not be read yet
- * carries a date in the future, and an article that must disappear is deleted.
- *
  * @internal
  */
 #[Package('discovery')]
@@ -76,6 +72,28 @@ class BlogVisibilityGuardTest extends TestCase
         );
     }
 
+    public function testANewEntryIsADraft(): void
+    {
+        static::assertFalse($this->guard('2026-01-01 10:00:00')->isVisible(new BlogEntity(), $this->context));
+    }
+
+    public function testAnInactiveEntryRemainsInvisibleWithAPastDate(): void
+    {
+        $blog = $this->blog(publishedAt: $this->moment('2025-12-24 08:00:00'));
+        $blog->active = false;
+
+        static::assertFalse($this->guard('2026-01-01 10:00:00')->isVisible($blog, $this->context));
+    }
+
+    public function testTheVisibilityFilterRequiresActiveAndAnElapsedOrMissingDate(): void
+    {
+        $filter = $this->guard('2026-01-01 10:00:00')->getVisibilityFilter();
+
+        static::assertInstanceOf(AndFilter::class, $filter);
+        static::assertEquals(new EqualsFilter('active', true), $filter->getQueries()[0]);
+        static::assertInstanceOf(OrFilter::class, $filter->getQueries()[1]);
+    }
+
     private function guard(string $now): BlogVisibilityGuard
     {
         return new BlogVisibilityGuard(new MockClock($now, 'UTC'));
@@ -95,6 +113,7 @@ class BlogVisibilityGuardTest extends TestCase
         $blog->title = 'An entry';
         $blog->slug = 'an-entry';
         $blog->publishedAt = $publishedAt;
+        $blog->active = true;
 
         return $blog;
     }

@@ -1,20 +1,8 @@
 /**
  * @sw-package discovery
- *
- * The read shapes of the blog module.
- *
- * No controller of its own is needed: the five entities are exposed by the generic admin api, so a
- * page reads and writes through the repository. What a page does *not* do is build a criteria
- * itself - "the entries, newest publication first", "the approved comments of this entry" and "the
- * content layouts a blog may use" are asked in more than one place, and a page that answers them on its
- * own drifts away from the others.
- *
- * The one rule that lives here and nowhere else is {@see blogStatusOf}. The entity has no `active`
- * flag: whether an entry is live is derived from `publishedAt`, and that derivation is the single
- * thing the list, the detail page and the badge have to agree on. Writing the `if` twice is how the
- * list and the detail page start to disagree about an entry dated exactly now.
  */
 import type CriteriaType from 'src/core/data/criteria.data';
+import ApiService from 'src/core/service/api.service';
 import type { Component } from 'vue';
 
 const { Criteria } = Shopwell.Data;
@@ -30,11 +18,11 @@ const { Criteria } = Shopwell.Data;
 export const COMMENT_LIMIT = 250;
 
 /**
- * The two states an entry can be in, derived from its publication date.
+ * Publication states based on the active flag and publication date.
  *
  * @private
  */
-export type BlogStatus = 'published' | 'scheduled';
+export type BlogStatus = 'draft' | 'published' | 'scheduled';
 
 /**
  * Everything {@see blogStatusOf} needs. Structural on purpose: the list rows, the detail entity and
@@ -43,6 +31,7 @@ export type BlogStatus = 'published' | 'scheduled';
  * @private
  */
 export type BlogLike = {
+    active?: boolean | null;
     publishedAt?: string | Date | null;
 };
 
@@ -79,16 +68,15 @@ export type BlogComment = EntitySchema.Entity<'blog_comment'>;
 export type BlogCategoryAssignment = EntitySchema.Entity<'blog_category_assignment'>;
 
 /**
- * What an entry is, for the two questions the pages ask about `publishedAt`.
- *
- * An entry without a date is live: an editor who writes a page and saves it once expects to find it
- * on the storefront, not to learn that it is still a draft. A date in the future is scheduled. A
- * date in the past - and a date that can not be parsed - is published, because the alternative is to
- * hide content the shop already announced.
+ * Publication state, with omitted active preserved for legacy callers.
  *
  * @private
  */
 export function blogStatusOf(blog: BlogLike, now: Date = new Date()): BlogStatus {
+    if (blog.active === false) {
+        return 'draft';
+    }
+
     const publishedAt = blog.publishedAt ?? null;
 
     if (!publishedAt) {
@@ -110,6 +98,22 @@ export function blogStatusOf(blog: BlogLike, now: Date = new Date()): BlogStatus
  * @private
  */
 export default class BlogApiService {
+    constructor(private transport?: ApiService) {}
+
+    public async moveCategory(id: string, parentId: string | null, afterCategoryId: string | null): Promise<void> {
+        this.transport ??= new ApiService(
+            Shopwell.Application.getContainer('init').httpClient,
+            Shopwell.Service('loginService'),
+            'blog/category',
+        );
+
+        await this.transport.httpClient.post(
+            `${this.transport.getApiBasePath(encodeURIComponent(id), '_action')}/move`,
+            { parentId, afterCategoryId },
+            { headers: this.transport.getBasicHeaders() },
+        );
+    }
+
     /**
      * The list of entries: newest publication first, the creation date breaks the tie so two entries
      * dated the same day do not swap places between two requests.
@@ -158,6 +162,8 @@ export default class BlogApiService {
         criteria.addAssociation('author');
         criteria.addAssociation('categories.blogCategory');
         criteria.addAssociation('videos');
+        criteria.addAssociation('tags');
+        criteria.addAssociation('contentLayouts');
 
         return criteria;
     }
@@ -217,7 +223,7 @@ export default class BlogApiService {
 
     public contentLayoutOptionsCriteria(): CriteriaType {
         const criteria = new Criteria(1, 100);
-        criteria.addFilter(Criteria.equals('rootSource', 'none'));
+        criteria.addFilter(Criteria.equals('rootSource', 'blog'));
         criteria.addSorting(Criteria.sort('name', 'ASC'));
 
         return criteria;
@@ -523,6 +529,13 @@ export default class BlogApiService {
             return;
         }
 
+        if (status === 'draft') {
+            criteria.addFilter(Criteria.equals('active', false));
+
+            return;
+        }
+
+        criteria.addFilter(Criteria.equals('active', true));
         const now = new Date().toISOString();
 
         if (status === 'scheduled') {
@@ -548,10 +561,8 @@ export default class BlogApiService {
  * `inject` is not typed per key, so the pages read the service through this bridge instead of
  * widening the global component type for one module.
  *
- * The fallback is not a swallowed error: the service holds no state, every answer it gives is a
- * function of its arguments. A component that was mounted without the registration - a unit test, a
- * page that a plugin embedded - therefore gets the same criteria and the same derivation as one that
- * was wired through `index.ts`, and a container that hands out a different instance still wins.
+ * The fallback keeps criteria-only callers and embedded components working without module registration.
+ * HTTP actions resolve the authenticated transport lazily; an injected service still takes precedence.
  *
  * @private
  */

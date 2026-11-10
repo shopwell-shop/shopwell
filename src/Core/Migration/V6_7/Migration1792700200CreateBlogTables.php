@@ -3,15 +3,17 @@
 namespace Shopwell\Core\Migration\V6_7;
 
 use Doctrine\DBAL\Connection;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationStep;
+use Shopwell\Core\Framework\Util\Hasher;
+use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
  * Creates the model of the built-in blog: an article or video page, archived by categories,
  * written by an author and commented on by the reader.
  *
- * A `blog` is not disableable on purpose - visibility is only decided by `published_at`, where a
- * future date is a scheduled post and the absence of one means it goes live with the next save.
+ * Entries start as drafts; active entries with a future `published_at` are scheduled.
  * Every text a reader sees lives in the translation tables, the slug is unique per language.
  *
  * The type of a blog (`post` or `video`) decides which editor the administration shows and which
@@ -43,6 +45,10 @@ class Migration1792700200CreateBlogTables extends MigrationStep
         $this->createBlogCategoryAssignmentTable($connection);
         $this->createBlogVideoTable($connection);
         $this->createBlogCommentTable($connection);
+        $this->createBlogTagTable($connection);
+        $this->createBlogContentLayoutTable($connection);
+        $this->createBlogCategoryTreeLockTable($connection);
+        $this->seedDefaultLayouts($connection);
     }
 
     public function updateDestructive(Connection $connection): void
@@ -97,6 +103,7 @@ class Migration1792700200CreateBlogTables extends MigrationStep
             'CREATE TABLE IF NOT EXISTS `blog` (
                 `id` BINARY(16) NOT NULL,
                 `type` VARCHAR(32) NOT NULL DEFAULT \'post\',
+                `active` TINYINT(1) NOT NULL DEFAULT 0,
                 `published_at` DATETIME(3) NULL,
                 `author_id` BINARY(16) NULL,
                 `cover_media_id` BINARY(16) NULL,
@@ -147,6 +154,11 @@ class Migration1792700200CreateBlogTables extends MigrationStep
         $connection->executeStatement(
             'CREATE TABLE IF NOT EXISTS `blog_category` (
                 `id` BINARY(16) NOT NULL,
+                `parent_id` BINARY(16) NULL,
+                `after_category_id` BINARY(16) NULL,
+                `path` LONGTEXT NULL,
+                `level` INT NOT NULL DEFAULT 1,
+                `child_count` INT NOT NULL DEFAULT 0,
                 `active` TINYINT(1) NOT NULL DEFAULT 1,
                 `content_layout_id` BINARY(16) NULL,
                 `custom_fields` JSON NULL,
@@ -154,6 +166,8 @@ class Migration1792700200CreateBlogTables extends MigrationStep
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
                 KEY `idx.blog_category.content_layout_id` (`content_layout_id`),
+                CONSTRAINT `fk.blog_category.parent_id` FOREIGN KEY (`parent_id`) REFERENCES `blog_category` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+                CONSTRAINT `fk.blog_category.after_category_id` FOREIGN KEY (`after_category_id`) REFERENCES `blog_category` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
                 CONSTRAINT `fk.blog_category.content_layout_id` FOREIGN KEY (`content_layout_id`) REFERENCES `content_layout` (`id`) ON UPDATE CASCADE,
                 CONSTRAINT `json.blog_category.custom_fields` CHECK (json_valid(`custom_fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
@@ -259,5 +273,84 @@ class Migration1792700200CreateBlogTables extends MigrationStep
                 CONSTRAINT `fk.blog_comment.language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
+    }
+
+    private function createBlogTagTable(Connection $connection): void
+    {
+        $connection->executeStatement('
+            CREATE TABLE IF NOT EXISTS `blog_tag` (
+                `blog_id` BINARY(16) NOT NULL,
+                `tag_id` BINARY(16) NOT NULL,
+                PRIMARY KEY (`blog_id`, `tag_id`),
+                KEY `idx.blog_tag.tag_id` (`tag_id`),
+                CONSTRAINT `fk.blog_tag.blog_id` FOREIGN KEY (`blog_id`) REFERENCES `blog` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.blog_tag.tag_id` FOREIGN KEY (`tag_id`) REFERENCES `tag` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ');
+    }
+
+    private function createBlogContentLayoutTable(Connection $connection): void
+    {
+        $connection->executeStatement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `blog_content_layout` (
+                `id` BINARY(16) NOT NULL,
+                `blog_id` BINARY(16) NOT NULL,
+                `sales_channel_id` BINARY(16) NULL,
+                `content_layout_id` BINARY(16) NOT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE INDEX `uniq.blog_content_layout.blog_sc` (`blog_id`, `sales_channel_id`),
+                CONSTRAINT `fk.blog_content_layout.blog_id` FOREIGN KEY (`blog_id`)
+                    REFERENCES `blog` (`id`) ON DELETE CASCADE,
+                CONSTRAINT `fk.blog_content_layout.sales_channel_id` FOREIGN KEY (`sales_channel_id`)
+                    REFERENCES `sales_channel` (`id`) ON DELETE CASCADE,
+                CONSTRAINT `fk.blog_content_layout.content_layout_id` FOREIGN KEY (`content_layout_id`)
+                    REFERENCES `content_layout` (`id`) ON DELETE RESTRICT
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        SQL);
+    }
+
+    private function createBlogCategoryTreeLockTable(Connection $connection): void
+    {
+        $connection->executeStatement('CREATE TABLE IF NOT EXISTS `blog_category_tree_lock` (`id` TINYINT NOT NULL PRIMARY KEY) ENGINE=InnoDB');
+        $connection->executeStatement('INSERT IGNORE INTO `blog_category_tree_lock` (`id`) VALUES (1)');
+    }
+
+    private function seedDefaultLayouts(Connection $connection): void
+    {
+        $createdAt = (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+        foreach (['post' => 'article', 'video' => 'video', 'listing' => 'listing'] as $type => $label) {
+            $id = Hasher::hash('shopwell.content-system.default.blog-' . $type, 'md5');
+            $element = [
+                'id' => Hasher::hash('shopwell.content-system.element.blog-' . $type, 'md5'),
+                'component' => $type === 'listing' ? 'Sw:Blog:Feed' : 'Sw:Blog:Article',
+                'properties' => $type === 'listing' ? ['categoryId' => '{{categoryId}}'] : ['showTableOfContents' => $type === 'post'],
+            ];
+            if ($type === 'listing') {
+                $element['dataRequirements'] = ['listing' => ['key' => 'listing', 'source' => 'blog_listing', 'config' => ['property' => 'categoryId']]];
+            } else {
+                $element['acceptsContext'] = ['blogDetail' => ['type' => 'single', 'scope' => 'root', 'required' => true]];
+            }
+            $connection->executeStatement('INSERT IGNORE INTO content_layout (id, name, version, layout, root_source, created_at) VALUES (:id, :name, :version, :layout, :root, :created)', [
+                'id' => Uuid::fromHexToBytes($id),
+                'name' => 'Default blog ' . $label,
+                'version' => '1.0.0',
+                'layout' => json_encode([$element], \JSON_THROW_ON_ERROR),
+                'root' => $type === 'listing' ? 'none' : 'blog',
+                'created' => $createdAt,
+            ]);
+            $key = 'core.content_system.default_blog_' . $type . '_content_layout';
+            if ($connection->fetchOne('SELECT 1 FROM system_config WHERE configuration_key = :key AND sales_channel_id IS NULL', ['key' => $key])) {
+                continue;
+            }
+            $connection->insert('system_config', [
+                'id' => Uuid::randomBytes(),
+                'configuration_key' => $key,
+                'configuration_value' => json_encode(['_value' => $id], \JSON_THROW_ON_ERROR),
+                'created_at' => $createdAt,
+            ]);
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Content\Blog;
 
+use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,6 +21,7 @@ class BlogException extends HttpException
 {
     final public const BLOG_TYPE_UNKNOWN = 'CONTENT__BLOG_TYPE_UNKNOWN';
     final public const BLOG_NOT_FOUND = 'CONTENT__BLOG_NOT_FOUND';
+    final public const INVALID_FIELD_VALUE_TYPE = 'CONTENT__BLOG_INVALID_FIELD_VALUE_TYPE';
 
     final public const COMMENT_PARENT_NOT_FOUND = 'CONTENT__BLOG_COMMENT_PARENT_NOT_FOUND';
     final public const COMMENT_PARENT_FOREIGN_BLOG = 'CONTENT__BLOG_COMMENT_PARENT_FOREIGN_BLOG';
@@ -44,6 +46,36 @@ class BlogException extends HttpException
             self::BLOG_TYPE_UNKNOWN,
             'No handler is registered for the blog type "{{ type }}".',
             ['type' => $type]
+        );
+    }
+
+    public static function categoryCycle(string $id): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, 'CONTENT__BLOG_CATEGORY_CYCLE', 'The Blog category "{{ id }}" cannot become its own ancestor.', ['id' => $id]);
+    }
+
+    public static function categoryPositionInvalid(string $id): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, 'CONTENT__BLOG_CATEGORY_POSITION_INVALID', 'The predecessor "{{ id }}" must be a different category in the target sibling list.', ['id' => $id]);
+    }
+
+    public static function categoryNotFound(string $id): self
+    {
+        return new self(Response::HTTP_NOT_FOUND, 'CONTENT__BLOG_CATEGORY_NOT_FOUND', 'The Blog category "{{ id }}" does not exist.', ['id' => $id]);
+    }
+
+    public static function invalidLayoutConfiguration(ContentSystemException $exception): self
+    {
+        return new self($exception->getStatusCode(), $exception->getErrorCode(), $exception->getMessage(), $exception->getParameters(), $exception);
+    }
+
+    public static function invalidFieldValueType(string $fieldName, string $expectedType, string $actualType): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_FIELD_VALUE_TYPE,
+            'Invalid value for "{{ field }}": expected {{ expected }}, got {{ actual }}.',
+            ['field' => $fieldName, 'expected' => $expectedType, 'actual' => $actualType],
         );
     }
 

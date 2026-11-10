@@ -1,0 +1,85 @@
+<div
+    class="sw-blog-category-tree"
+    role="tree"
+    :aria-label="$t('sw-blog.category.navigationTitle')"
+>
+    <div
+        v-for="row in rows"
+        :key="row.item.id"
+        ref="rows"
+        class="sw-blog-category-tree__item"
+        :class="`sw-blog-category-tree__depth-${row.depth}`"
+        :data-item-id="row.item.id"
+        role="treeitem"
+        :aria-label="row.item.data.name"
+        :aria-level="row.depth + 1"
+        :aria-current="row.item.id === activeTreeItemId ? 'page' : undefined"
+        :aria-selected="row.item.id === activeTreeItemId"
+        :aria-expanded="row.hasChildren ? String(expandedIds.includes(row.item.id)) : undefined"
+        :tabindex="row.item.id === focusableId ? 0 : -1"
+        @click="onChangeRoute(row.item)"
+        @focus="focusedId = row.item.id"
+        @keydown="onRowKeydown($event, row)"
+        @dragover.prevent="onDragOver($event, row.item)"
+        @dragleave="onDragLeave"
+        @drop.prevent="onDrop($event, row.item)"
+        @dragend="resetDrag"
+    >
+        <div
+            class="sw-blog-category-tree__row"
+            :class="rowClasses(row.item.id)"
+        >
+            <mt-button
+                v-if="sortable"
+                class="sw-blog-category-navigation__drag-handle"
+                variant="tertiary"
+                size="x-small"
+                square
+                draggable="true"
+                :aria-label="$t('sw-blog.category.dragCategory', { name: row.item.data.name })"
+                @click.stop
+                @dragstart.stop="onDragStart($event, row.item)"
+                @dragend="resetDrag"
+            >
+                <mt-icon
+                    name="regular-grip-horizontal"
+                    size="16px"
+                />
+            </mt-button>
+            <mt-button
+                v-if="row.hasChildren"
+                class="sw-blog-category-tree__toggle"
+                variant="tertiary"
+                size="x-small"
+                square
+                :aria-label="$t(expandedIds.includes(row.item.id) ? 'sw-blog.category.collapse' : 'sw-blog.category.expand')"
+                @click.stop="toggle(row.item.id)"
+            >
+                <mt-icon
+                    :name="expandedIds.includes(row.item.id) ? 'regular-chevron-down-xs' : 'regular-chevron-right-xs'"
+                    size="12px"
+                />
+            </mt-button>
+            <span
+                v-else
+                class="sw-blog-category-navigation__toggle-spacer"
+            ></span>
+            <div class="sw-blog-category-tree__content">
+                <slot
+                    name="content"
+                    :item="row.item"
+                ></slot>
+            </div>
+            <div
+                class="sw-blog-category-tree__actions"
+                @click.stop
+                @keydown.stop
+            >
+                <slot
+                    name="actions"
+                    :item="row.item"
+                ></slot>
+            </div>
+        </div>
+    </div>
+</div>

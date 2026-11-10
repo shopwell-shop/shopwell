@@ -1,23 +1,14 @@
 /**
  * @sw-package discovery
  */
-import { defineComponent, markRaw } from 'vue';
+import { markRaw } from 'vue';
 import type { Component } from 'vue';
 import template from './sw-blog-detail-content.html.twig';
 import './sw-blog-detail-content.scss';
 import { getBlogTypeComponent } from '../../service/blog-type.registry';
 
-/**
- * The content tab, as the host of whatever edits `blog.type`.
- *
- * The component does not switch over the two types of the core. It asks the registry for a loader,
- * downloads it and renders the result - which is what makes a type a plugin registered editable in
- * the same tab as an article. Only when nobody registered the type does it fall back to the unknown
- * component, which keeps the entry from white-screening and from silently dropping the fields the
- * plugin owns.
- */
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inheritAttrs: false,
@@ -36,14 +27,14 @@ export default defineComponent({
     },
 
     data(): {
-        contentType: Component | null;
+        contentType: Component | string | null;
         isUnknownType: boolean;
-        isLoading: boolean;
+        loadRequest: number;
     } {
         return {
             contentType: null,
             isUnknownType: false,
-            isLoading: false,
+            loadRequest: 0,
         };
     },
 
@@ -64,7 +55,9 @@ export default defineComponent({
 
     methods: {
         async loadTypeComponent(): Promise<void> {
+            const request = ++this.loadRequest;
             const type = this.type;
+            this.contentType = null;
             const loader = getBlogTypeComponent(type);
 
             if (!loader) {
@@ -74,20 +67,22 @@ export default defineComponent({
                 return;
             }
 
-            this.isLoading = true;
             this.isUnknownType = false;
 
             try {
                 const module = await loader();
 
                 // the merchant may have switched the type while the download was running
-                if (this.type !== type) {
+                if (this.loadRequest !== request) {
                     return;
                 }
 
-                this.contentType = markRaw(module.default);
-            } finally {
-                this.isLoading = false;
+                this.contentType = typeof module === 'string' ? module : markRaw(module.default);
+            } catch {
+                if (this.loadRequest === request) {
+                    this.contentType = null;
+                    this.isUnknownType = true;
+                }
             }
         },
     },

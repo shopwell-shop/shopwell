@@ -15,10 +15,6 @@ export default {
     },
 
     methods: {
-        resetActiveItem(position = 0) {
-            this.$refs.swSelectResultList.setActiveItemIndex(position);
-        },
-
         search(searchTerm) {
             // Remove earlier "Add Tag" elements
             this.filterSearchGeneratedTags();
@@ -90,6 +86,10 @@ export default {
         },
 
         filterSearchGeneratedTags() {
+            if (!this.resultCollection) {
+                return;
+            }
+
             this.resultCollection = this.resultCollection.filter((entity) => {
                 return entity.id !== -1;
             });

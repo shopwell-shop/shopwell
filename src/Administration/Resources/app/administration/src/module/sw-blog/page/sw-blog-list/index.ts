@@ -1,20 +1,18 @@
 /**
  * @sw-package discovery
  */
-import { defineComponent } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-blog-list.html.twig';
 import './sw-blog-list.scss';
+import type { BlogStatus } from '../../service/blog.api.service';
 import { blogApi } from '../../service/blog.api.service';
-import { registeredBlogTypes } from '../../service/blog-type.registry';
+import { getBlogTypeDefinition, registeredBlogTypes } from '../../service/blog-type.registry';
 
 const { Criteria } = Shopwell.Data;
 const { Mixin } = Shopwell;
 
 type Blog = EntitySchema.Entity<'blog'>;
-type BlogCategory = EntitySchema.Entity<'blog_category'>;
-type BlogAuthor = EntitySchema.Entity<'blog_author'>;
 
 type DeleteTarget = {
     id: EntitySchema.EntityKey<'blog'>;
@@ -25,7 +23,7 @@ type FilterOption = { id: string; name: string };
 
 type FilterDefinition = {
     property: string;
-    type: string;
+    type?: string;
     label: string;
     placeholder: string;
     options?: FilterOption[];
@@ -41,7 +39,13 @@ interface FilterFactory {
  * The stored filter set of this grid. Declared once, because the sidebar panel renders the defaults in
  * this order and the stored selection refers to the names.
  */
-const DEFAULT_FILTERS: string[] = ['type-filter', 'category-filter', 'author-filter'];
+const DEFAULT_FILTERS: string[] = [
+    'status-filter',
+    'type-filter',
+    'category-filter',
+    'author-filter',
+    'tag-filter',
+];
 
 /**
  * The filter factory is injected but not part of the typed service container, so it is read through
@@ -51,20 +55,8 @@ function blogFilterFactory(vm: unknown): FilterFactory {
     return (vm as { filterFactory: FilterFactory }).filterFactory;
 }
 
-/**
- * Every entry of the blog.
- *
- * The list is the answer to "what does the shop publish, and when", so the state of an entry is
- * derived from its publication date instead of read from a column - the entity has no `active` flag,
- * and the same derivation is used by the badge of the detail page. A merchant therefore never sees a
- * row marked as published that the storefront hides.
- *
- * The filters live in the sidebar panel like they do on every other list: type, category and author
- * narrow the table, the state is a column and not a filter, because "published" is derived and a
- * derived state can not be a stored filter value.
- */
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: [
@@ -77,8 +69,6 @@ export default defineComponent({
 
     data(): {
         blogs: EntityCollection<'blog'> | null;
-        categories: BlogCategory[];
-        authors: BlogAuthor[];
         isLoading: boolean;
         sortBy: string;
         sortDirection: 'ASC' | 'DESC';
@@ -91,8 +81,6 @@ export default defineComponent({
     } {
         return {
             blogs: null,
-            categories: [],
-            authors: [],
             isLoading: false,
             sortBy: 'publishedAt',
             sortDirection: 'DESC',
@@ -116,14 +104,6 @@ export default defineComponent({
             return this.repositoryFactory.create('blog');
         },
 
-        categoryRepository(): RepositoryType<'blog_category'> {
-            return this.repositoryFactory.create('blog_category');
-        },
-
-        authorRepository(): RepositoryType<'blog_author'> {
-            return this.repositoryFactory.create('blog_author');
-        },
-
         /**
          * The columns in the order an editor reads them: what it looks like, what it is called, where
          * it is filed, whether it is live, and when it was touched last.
@@ -139,7 +119,7 @@ export default defineComponent({
                     property: 'title',
                     label: 'sw-blog.list.columnTitle',
                     primary: true,
-                    inlineEdit: 'string',
+                    routerLink: 'sw.blog.detail',
                     allowResize: true,
                 },
                 {
@@ -169,26 +149,24 @@ export default defineComponent({
 
         typeFilterOptions(): FilterOption[] {
             return registeredBlogTypes().map((type) => {
-                const key = blogApi(this).typeLabelKey(type);
-
-                return { id: type, name: this.$te(key) ? this.$t(key) : type };
-            });
-        },
-
-        categoryFilterOptions(): FilterOption[] {
-            return this.categories.map((category) => {
-                return { id: category.id, name: category.name ?? category.id };
-            });
-        },
-
-        authorFilterOptions(): FilterOption[] {
-            return this.authors.map((author) => {
-                return { id: author.id, name: author.name };
+                return { id: type, name: this.typeLabel(type) };
             });
         },
 
         listFilterOptions(): Record<string, FilterDefinition> {
             return {
+                'status-filter': {
+                    property: 'active',
+                    type: 'multi-select-filter',
+                    label: this.$t('sw-blog.list.filterStatus'),
+                    placeholder: this.$t('sw-blog.list.textAllStatuses'),
+                    options: ['draft', 'published', 'scheduled'].map((status) => ({
+                        id: status,
+                        name: this.$t(`sw-blog.status.${status}`),
+                    })),
+                    valueProperty: 'id',
+                    labelProperty: 'name',
+                },
                 'type-filter': {
                     property: 'type',
                     type: 'multi-select-filter',
@@ -199,22 +177,19 @@ export default defineComponent({
                     labelProperty: 'name',
                 },
                 'category-filter': {
-                    property: 'categories.blogCategoryId',
-                    type: 'multi-select-filter',
+                    property: 'categories.blogCategory',
                     label: this.$t('sw-blog.list.filterCategory'),
                     placeholder: this.$t('sw-blog.list.textAllCategories'),
-                    options: this.categoryFilterOptions,
-                    valueProperty: 'id',
-                    labelProperty: 'name',
                 },
                 'author-filter': {
-                    property: 'authorId',
-                    type: 'multi-select-filter',
+                    property: 'author',
                     label: this.$t('sw-blog.list.filterAuthor'),
                     placeholder: this.$t('sw-blog.list.textAllAuthors'),
-                    options: this.authorFilterOptions,
-                    valueProperty: 'id',
-                    labelProperty: 'name',
+                },
+                'tag-filter': {
+                    property: 'tags',
+                    label: this.$t('sw-blog.list.filterTags'),
+                    placeholder: this.$t('sw-blog.list.textAllTags'),
                 },
             };
         },
@@ -223,8 +198,8 @@ export default defineComponent({
             return blogFilterFactory(this).create('blog', this.listFilterOptions);
         },
 
-        canEdit(): boolean {
-            return this.acl.can('blog.editor');
+        canView(): boolean {
+            return this.acl.can('blog.viewer');
         },
 
         canCreate(): boolean {
@@ -264,14 +239,13 @@ export default defineComponent({
             const chips: Array<{ type: string; label: string }> = [];
 
             if (this.presetAuthorId !== null) {
-                const name = this.authors.find((author) => author.id === this.presetAuthorId)?.name ?? this.presetAuthorId;
+                const name = this.presetAuthorId;
 
                 chips.push({ type: 'author', label: `${this.$t('sw-blog.list.filterAuthor')}: ${name}` });
             }
 
             if (this.presetCategoryId !== null) {
-                const name =
-                    this.categories.find((category) => category.id === this.presetCategoryId)?.name ?? this.presetCategoryId;
+                const name = this.presetCategoryId;
 
                 chips.push({ type: 'category', label: `${this.$t('sw-blog.list.filterCategory')}: ${name}` });
             }
@@ -284,8 +258,6 @@ export default defineComponent({
         this.applyRouteQuery();
 
         void this.getList();
-        void this.loadCategories();
-        void this.loadAuthors();
     },
 
     methods: {
@@ -347,6 +319,29 @@ export default defineComponent({
                 criteria.addFilter(Criteria.equals('categories.blogCategoryId', this.presetCategoryId));
             }
 
+            // Stored status values use the native multi-select UI; resolve the relative publication
+            // date on each search so a scheduled entry moves to published without stale criteria.
+            criteria.filters = criteria.filters.map((filter) => {
+                if (filter.type !== 'equalsAny' || filter.field !== 'active') {
+                    return filter;
+                }
+
+                const statuses = filter.value
+                    .split('|')
+                    .filter((status): status is BlogStatus => ['draft', 'published', 'scheduled'].includes(status));
+
+                if (statuses.length === 0) {
+                    return filter;
+                }
+
+                return Criteria.multi(
+                    'OR',
+                    statuses.map((status) => {
+                        return Criteria.multi('AND', blogApi(this).listCriteria(1, 1, { status }).filters);
+                    }),
+                );
+            });
+
             this.activeFilterNumber = criteria.filters.length;
 
             return this.blogRepository
@@ -375,36 +370,17 @@ export default defineComponent({
             void this.getList();
         },
 
-        /**
-         * The categories and the authors feed the filters of this list, not the entries - they are
-         * read once and only again when the merchant reloads.
-         */
-        async loadCategories(): Promise<void> {
-            const criteria = blogApi(this).categoryListCriteria(1, 100);
-
-            await this.categoryRepository.search(criteria).then((result) => {
-                this.categories = [...result];
-            });
-        },
-
-        async loadAuthors(): Promise<void> {
-            const criteria = blogApi(this).authorListCriteria(1, 100);
-
-            await this.authorRepository.search(criteria).then((result) => {
-                this.authors = [...result];
-            });
-        },
-
         onRefresh(): void {
             void this.getList();
-            void this.loadCategories();
-            void this.loadAuthors();
         },
 
-        onOpenCreateModal(): void {
-            // creating does not ask for anything first: the entry page is where an entry is written,
-            // and the type is one select on that page, the way the product form does it
-            void this.$router.push({ name: 'sw.blog.create' });
+        onCreate(type: string, closeMenu?: () => void): void {
+            if (!this.canCreate) {
+                return;
+            }
+
+            closeMenu?.();
+            void this.$router.push({ name: 'sw.blog.create', query: { type } });
         },
 
         /**
@@ -417,13 +393,10 @@ export default defineComponent({
                 return '';
             }
 
-            const key = blogApi(this).typeLabelKey(type);
+            const label = getBlogTypeDefinition(type)?.label;
+            const key = label ?? blogApi(this).typeLabelKey(type);
 
-            return this.$te(key) ? this.$t(key) : type;
-        },
-
-        onInlineEditSave(blog: Blog): void {
-            void this.blogRepository.save(blog).then(() => this.getList());
+            return this.$te(key) ? this.$t(key) : (label ?? type);
         },
 
         onDelete(blog: Blog): void {
@@ -473,10 +446,6 @@ export default defineComponent({
             panel?.resetAll?.();
 
             void this.getList();
-        },
-
-        onOpenCategoryList(): void {
-            void this.$router.push({ name: 'sw.blog.category.list' });
         },
     },
 });

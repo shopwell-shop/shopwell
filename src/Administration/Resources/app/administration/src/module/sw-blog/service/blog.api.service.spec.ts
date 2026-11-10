@@ -72,6 +72,11 @@ describe('src/module/sw-blog/service/blog.api.service', () => {
     describe('blogStatusOf', () => {
         const now = new Date('2026-05-01T10:00:00.000Z');
 
+        it('treats inactive entries as drafts regardless of publication date', () => {
+            expect(blogStatusOf({ active: false, publishedAt: null }, now)).toBe('draft');
+            expect(blogStatusOf({ active: false, publishedAt: '2026-05-02T10:00:00.000Z' }, now)).toBe('draft');
+        });
+
         it('treats an entry without a publication date as published', () => {
             expect(blogStatusOf({ publishedAt: null }, now)).toBe('published');
             expect(blogStatusOf({}, now)).toBe('published');
@@ -130,27 +135,31 @@ describe('src/module/sw-blog/service/blog.api.service', () => {
             expect((criteria.filters as Filters).some((filter) => filter.field === 'languageId')).toBe(false);
         });
 
-        it('filters a scheduled entry by a date in the future', () => {
-            const filters = service.listCriteria(1, 25, { status: 'scheduled' }).filters as Filters;
-
-            expect(filters).toHaveLength(1);
-            expect(filters[0].type).toBe('range');
-            expect(filters[0].field).toBe('publishedAt');
-            expect(filters[0].value).toBeUndefined();
-            expect(JSON.stringify(filters[0])).toContain('gt');
+        it('filters drafts by their inactive flag', () => {
+            expect(service.listCriteria(1, 25, { status: 'draft' }).filters).toEqual([
+                expect.objectContaining({ type: 'equals', field: 'active', value: false }),
+            ]);
         });
 
-        it('filters a published entry as the union of the undated and the dated rows', () => {
-            const filters = service.listCriteria(1, 25, { status: 'published' }).filters as Filters;
+        it('filters scheduled entries by active flag and future date', () => {
+            expect(service.listCriteria(1, 25, { status: 'scheduled' }).filters).toEqual([
+                expect.objectContaining({ type: 'equals', field: 'active', value: true }),
+                expect.objectContaining({ type: 'range', field: 'publishedAt' }),
+            ]);
+        });
 
-            expect(filters).toHaveLength(1);
-            expect(filters[0].type).toBe('multi');
-            expect(filters[0].operator).toBe('OR');
-            expect(filters[0].queries).toHaveLength(2);
-            expect(filters[0].queries?.[0]).toEqual(
-                expect.objectContaining({ type: 'equals', field: 'publishedAt', value: null }),
-            );
-            expect(filters[0].queries?.[1]).toEqual(expect.objectContaining({ type: 'range', field: 'publishedAt' }));
+        it('filters published entries by active flag and an empty or elapsed date', () => {
+            expect(service.listCriteria(1, 25, { status: 'published' }).filters).toEqual([
+                expect.objectContaining({ type: 'equals', field: 'active', value: true }),
+                expect.objectContaining({
+                    type: 'multi',
+                    operator: 'OR',
+                    queries: [
+                        expect.objectContaining({ type: 'equals', field: 'publishedAt', value: null }),
+                        expect.objectContaining({ type: 'range', field: 'publishedAt' }),
+                    ],
+                }),
+            ]);
         });
 
         it('reads everything when no filter is set', () => {
@@ -169,6 +178,8 @@ describe('src/module/sw-blog/service/blog.api.service', () => {
                 'categories',
                 'categories.blogCategory',
                 'videos',
+                'tags',
+                'contentLayouts',
             ]);
         });
     });
@@ -200,9 +211,9 @@ describe('src/module/sw-blog/service/blog.api.service', () => {
     });
 
     describe('content layout criteria', () => {
-        it('offers standalone layouts for an article', () => {
+        it('offers blog layouts for an article', () => {
             expect(service.contentLayoutOptionsCriteria().filters as Filters).toEqual([
-                expect.objectContaining({ type: 'equals', field: 'rootSource', value: 'none' }),
+                expect.objectContaining({ type: 'equals', field: 'rootSource', value: 'blog' }),
             ]);
         });
 

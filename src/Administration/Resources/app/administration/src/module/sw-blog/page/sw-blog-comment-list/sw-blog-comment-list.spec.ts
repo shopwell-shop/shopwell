@@ -3,6 +3,7 @@
  */
 import { flushPromises, shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
+import MtTooltip from '@shopwell-ag/meteor-component-library/dist/esm/MtTooltip';
 import BlogApiService from '../../service/blog.api.service';
 
 type CommentRow = {
@@ -55,7 +56,10 @@ const customers = [{ id: 'customer-1', name: 'Grace Lee', email: 'grace@example.
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(can: (privilege: string) => boolean = () => true): Promise<{
+async function createWrapper(
+    can: (privilege: string) => boolean = () => true,
+    realTooltip = false,
+): Promise<{
     wrapper: VueWrapper;
     search: jest.Mock;
     customerSearch: jest.Mock;
@@ -99,13 +103,16 @@ async function createWrapper(can: (privilege: string) => boolean = () => true): 
     }) as unknown as typeof Shopwell.Service);
 
     const wrapper = shallowMount(await wrapTestComponent('sw-blog-comment-list', { sync: true }), {
+        ...(realTooltip ? { attachTo: document.body } : {}),
         global: {
             stubs: {
                 'sw-page': {
                     template:
-                        '<div><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/><slot name="sidebar"/></div>',
+                        '<div><slot name="search-bar"/><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/><slot name="sidebar"/></div>',
                 },
-                'sw-search-bar': true,
+                'sw-search-bar': {
+                    template: '<input class="search-input" @input="$emit(\'search\', $event.target.value)" />',
+                },
                 // the listing owns the selection in the real administration, so the stub has to own
                 // one too - the page reads it from the ref
                 'sw-entity-listing': {
@@ -142,7 +149,9 @@ async function createWrapper(can: (privilege: string) => boolean = () => true): 
                 'router-link': { template: '<a><slot></slot></a>' },
                 'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
                 'mt-badge': { props: ['variant'], template: '<span :data-variant="variant"><slot /></span>' },
-                'mt-tooltip': { template: '<span><slot></slot></span>', props: ['content'] },
+                'mt-tooltip': realTooltip
+                    ? MtTooltip
+                    : { template: '<span><slot :id="\'tooltip-trigger\'" /></span>', props: ['content'] },
                 'mt-empty-state': true,
             },
             provide: {
@@ -330,12 +339,35 @@ describe('src/module/sw-blog/page/sw-blog-comment-list', () => {
         expect(remove).not.toHaveBeenCalled();
     });
 
-    it('opens the entry list from the toolbar', async () => {
-        const { wrapper, push } = await createWrapper();
+    it('uses the Blog navigation without a duplicate return button', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.find('.sw-blog-comment-list__button-entries').exists()).toBe(false);
+    });
+    it('shows the list results without duplicating the main menu', async () => {
+        const { wrapper } = await createWrapper();
+        const content = wrapper.get('.sw-blog-comment-list__content');
+        expect(content.find('sw-blog-navigation-stub').exists()).toBe(false);
+        expect(content.find('.sw-blog-comment-list__results').exists()).toBe(true);
+        expect(content.find('.sw-blog-comment-list__results sw-blog-navigation-stub').exists()).toBe(false);
+    });
+    it('shows no matches after a search instead of the initial empty state', async () => {
+        const { wrapper, search } = await createWrapper();
         await flushPromises();
-
-        await wrapper.get('.sw-blog-comment-list__button-entries').trigger('click');
-
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.list' });
+        search.mockResolvedValue(collection<EntityCollection<'blog_comment'>>([]));
+        await wrapper.setData({ disableRouteParams: true });
+        await wrapper.get('.search-input').setValue('Missing');
+        await flushPromises();
+        expect(wrapper.get('mt-empty-state-stub').attributes('headline')).toBe('sw-empty-state.messageNoResultTitle');
+        expect(wrapper.get('mt-empty-state-stub').attributes('description')).toBe(
+            'sw-empty-state.messageNoResultSublineSimple',
+        );
+    });
+    it('binds the Meteor tooltip trigger and exposes the complete comment', async () => {
+        const { wrapper } = await createWrapper(() => true, true);
+        await flushPromises();
+        const trigger = wrapper.get('.content span[aria-describedby]');
+        expect(trigger.attributes('id')).toMatch(/^mt-tooltip--.+__trigger$/);
+        expect(wrapper.findComponent(MtTooltip).props('content')).toBe(comments[0].content);
     });
 });

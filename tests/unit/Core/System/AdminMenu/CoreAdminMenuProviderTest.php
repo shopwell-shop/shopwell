@@ -45,6 +45,31 @@ class CoreAdminMenuProviderTest extends TestCase
         );
     }
 
+    public function testBlogIsALocalizedFolderWithIndependentChildren(): void
+    {
+        $blogs = array_values(array_filter(
+            $this->definitions,
+            static fn (AdminMenuDefinitionStruct $definition): bool => $definition->internalKey === 'sw-blog',
+        ));
+
+        static::assertCount(1, $blogs);
+        static::assertNull($blogs[0]->parent);
+        static::assertSame(AdminMenuItemDefinition::TYPE_FOLDER, $blogs[0]->type);
+        static::assertSame('sw-blog.general.mainMenuItemGeneral', $blogs[0]->title);
+
+        $children = array_values(array_filter(
+            $this->definitions,
+            static fn (AdminMenuDefinitionStruct $definition): bool => $definition->parent === 'sw-blog',
+        ));
+        static::assertSame(['sw-blog-content', 'sw-blog-category', 'sw-blog-author', 'sw-blog-comment'], array_map(
+            static fn (AdminMenuDefinitionStruct $definition): string => $definition->internalKey,
+            $children,
+        ));
+        foreach ($children as $child) {
+            static::assertSame('blog.viewer', $child->privilege);
+        }
+    }
+
     public function testEveryParentIsDeclaredAsWell(): void
     {
         $internalKeys = $this->internalKeys();

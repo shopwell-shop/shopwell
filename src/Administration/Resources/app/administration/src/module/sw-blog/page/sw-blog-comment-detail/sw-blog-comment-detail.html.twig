@@ -44,7 +44,7 @@
             class="sw-blog-comment-detail__action-save"
             variant="primary"
             size="default"
-            :disabled="!canEdit || undefined"
+            :disabled="!canEdit || isSaving || isLoading"
             :is-loading="isSaving"
             @click="onSave"
         >
@@ -70,7 +70,7 @@
         The text is read-only on purpose - a comment is what a reader said, and an administration
         that rewrites it hands the author words they never wrote.
         #}
-        <div
+        <sw-card-view
             v-else-if="comment"
             class="sw-blog-comment-detail__body"
         >
@@ -183,7 +183,7 @@
                         required
                         show-clearable-button
                         :criteria="languageCriteria"
-                        :disabled="!canEdit"
+                        :disabled="!canEdit || isSaving || isLoading"
                         :label="$t('sw-blog.comment.labelLanguage')"
                     />
                     {% endblock %}
@@ -194,14 +194,14 @@
                         class="sw-blog-comment-detail__status"
                         name="sw-field--comment-status"
                         bordered
-                        :disabled="!canEdit"
+                        :disabled="!canEdit || isSaving || isLoading"
                         :label="$t('sw-blog.comment.labelStatus')"
                     />
                     {% endblock %}
                 </sw-container>
             </mt-card>
             {% endblock %}
-        </div>
+        </sw-card-view>
         {% endblock %}
     </template>
     {% endblock %}

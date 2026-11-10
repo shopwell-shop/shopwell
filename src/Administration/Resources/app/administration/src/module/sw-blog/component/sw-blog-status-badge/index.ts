@@ -6,22 +6,16 @@ import template from './sw-blog-status-badge.html.twig';
 import type { BlogStatus } from '../../service/blog.api.service';
 import { blogStatusOf } from '../../service/blog.api.service';
 
-/**
- * The publication state of an entry as a badge.
- *
- * The badge holds no logic of its own: it asks `blogStatusOf` for the state and only decides how the
- * two states look. It therefore can not disagree with the list, and the list can not disagree with
- * the sidebar of the detail page - the derivation exists once.
- *
- * The variants are the five of `mt-badge`, the same set every other status badge of the
- * administration maps onto: an entry that is live is `positive`, an entry waiting for its moment is
- * `attention` - the colour a pending transaction wears as well.
- */
 /** @private */
 export default defineComponent({
     template,
 
     props: {
+        active: {
+            type: Boolean,
+            required: false,
+            default: undefined,
+        },
         publishedAt: {
             type: [String, Date],
             required: false,
@@ -31,7 +25,7 @@ export default defineComponent({
 
     computed: {
         status(): BlogStatus {
-            return blogStatusOf({ publishedAt: this.publishedAt });
+            return blogStatusOf({ active: this.active, publishedAt: this.publishedAt });
         },
 
         labelKey(): string {
@@ -39,7 +33,7 @@ export default defineComponent({
         },
 
         variant(): string {
-            return this.status === 'scheduled' ? 'attention' : 'positive';
+            return { draft: 'neutral', scheduled: 'attention', published: 'positive' }[this.status];
         },
     },
 });

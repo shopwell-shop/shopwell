@@ -1,0 +1,29 @@
+{# @sw-package discovery #}
+{% props video = null, cover = null, title = '', slots = [] %}
+
+{% set videoCVA = cva({ base: 'sw-blog-video blog-detail__hero blog-detail__hero--video' }) %}
+{% set attributeDefaults = { class: videoCVA.apply({}) } %}
+
+{% if video %}
+    <figure {{ attributes.defaults(attributeDefaults) }}>
+        {% block media %}
+            <twig:Slot name="media">
+                {% if video.provider == 'youtube' %}
+                    <twig:Sw:Media:Youtube :videoId="video.videoUrl" :videoTitle="title" :previewMedia="cover" :advancedPrivacyMode="true" />
+                {% elseif video.provider == 'vimeo' %}
+                    <twig:Sw:Media:Vimeo :videoId="video.videoUrl" :videoTitle="title" :previewMedia="cover" :doNotTrack="true" />
+                {% else %}
+                    <video class="sw-blog-video__player blog-detail__video"
+                           controls
+                           preload="metadata"
+                           playsinline
+                           {% if cover %}poster="{{ cover.url }}"{% endif %}
+                           aria-label="{{ title }}">
+                        <source src="{{ video.videoUrl }}">
+                        {{ 'blog.video.unsupported'|trans|sw_sanitize }}
+                    </video>
+                {% endif %}
+            </twig:Slot>
+        {% endblock %}
+    </figure>
+{% endif %}

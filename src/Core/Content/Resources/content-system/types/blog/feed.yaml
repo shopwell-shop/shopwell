@@ -1,0 +1,18 @@
+meta:
+  label: "Blog listing"
+  description: "Published Blog entries for the current category, with pagination."
+  icon: "regular-file-text"
+  category: "content"
+  priority: 120
+
+properties:
+  listing:
+    type: Shopwell\Core\Content\Blog\SalesChannel\BlogListingStruct
+    required: true
+    title: "Blog listing"
+    description: "Prepared published entries, media and pagination."
+  categoryId:
+    type: string
+    title: "Blog category"
+    description: "The category from the current Blog listing route; empty for all entries."
+    default: "{{categoryId}}"

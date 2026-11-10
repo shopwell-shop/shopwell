@@ -2,10 +2,10 @@
 
 namespace Shopwell\Storefront\Controller;
 
+use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\BlogException;
 use Shopwell\Core\Content\Blog\SalesChannel\Review\BlogCommentRoute;
 use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
-use Shopwell\Core\Content\Blog\Service\PostTypeHandler;
 use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -27,7 +27,7 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * The controller holds no rule of its own: the page loader decides what a page contains and the guard
  * decides what may be seen. The one decision left here is which template renders an entry, and that is
- * asked from the type registry so a plugin type renders through its own handler.
+ * asked from the type registry so extensions can register their own templates.
  *
  * The comment action is a storefront action that calls the store-api route. A form without javascript
  * has to survive a redirect and a flash message, and the store-api route answers a plain request with
@@ -178,10 +178,9 @@ class BlogController extends StorefrontController
         $blog = $page->getBlog();
 
         if ($blog === null) {
-            return PostTypeHandler::DETAIL_TEMPLATE;
+            return BlogTypeRegistry::DEFAULT_TEMPLATE;
         }
 
-        return $this->typeRegistry->find($blog->type)?->getDetailTemplate()
-            ?? PostTypeHandler::DETAIL_TEMPLATE;
+        return $this->typeRegistry->getDetailTemplate($blog->type ?? BlogEntity::TYPE_POST);
     }
 }

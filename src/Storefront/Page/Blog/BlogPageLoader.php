@@ -4,6 +4,7 @@ namespace Shopwell\Storefront\Page\Blog;
 
 use Shopwell\Core\Content\Blog\Aggregate\BlogAuthor\BlogAuthorEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryCollection;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogSpecificationSource;
 use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\BlogException;
@@ -12,11 +13,14 @@ use Shopwell\Core\Content\Blog\Service\BlogDetailReader;
 use Shopwell\Core\Content\Blog\Service\BlogListingReader;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
 use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\ContentRouteResponse;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Controller\Exception\StorefrontException;
 use Shopwell\Storefront\Page\MetaInformation;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,6 +49,9 @@ class BlogPageLoader
         private readonly BlogSettings $settings,
         private readonly AbstractContentRoute $contentRoute,
         private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ?BlogSpecificationSource $blogSpecificationSource = null,
+        private readonly ?SystemConfigService $systemConfig = null,
+        private readonly ?CacheTagCollector $cacheTagCollector = null,
     ) {
     }
 
@@ -67,6 +74,16 @@ class BlogPageLoader
 
         $categories = $this->listingReader->categoriesInUse($salesChannelContext->getContext());
         $contentLayoutId = $this->listingReader->layoutOf($categoryId, $categories);
+        $defaultKey = 'core.content_system.default_blog_listing_content_layout';
+        $this->cacheTagCollector?->addTag(SystemConfigService::buildName($defaultKey));
+        if ($contentLayoutId === null) {
+            $defaultLayoutId = $this->systemConfig?->getString($defaultKey, $salesChannelContext->getSalesChannelId()) ?? '';
+            $contentLayoutId = $defaultLayoutId !== '' ? $defaultLayoutId : null;
+        }
+        // Route category wins over user-supplied placeholders, including on the category SEO route.
+        $contentRequest = clone $request;
+        $contentRequest->query = clone $request->query;
+        $contentRequest->query->set('categoryId', $categoryId ?? '');
 
         $page = new BlogPage();
         $page->setBlogs($listing->getBlogs() ?? new BlogCollection());
@@ -75,7 +92,7 @@ class BlogPageLoader
         $page->setReadingTimes($listing->getReadingTimes());
         $page->setActiveCategoryId($categoryId);
         $page->setContentLayoutId($contentLayoutId);
-        $page->setContentPage($this->contentPage($contentLayoutId, $request, $salesChannelContext));
+        $page->setContentPage($this->contentPage($contentLayoutId, $contentRequest, $salesChannelContext));
         $page->setLimit($this->settings->getPostsPerPage($salesChannelContext->getSalesChannelId()));
         $page->setPageNumber($listing->getPage());
         $page->setTotal($listing->getTotal());
@@ -101,7 +118,24 @@ class BlogPageLoader
 
         if ($blog instanceof BlogEntity) {
             $page->setBlog($blog);
-            $page->setContentPage($this->contentPage($blog->contentLayoutId, $request, $salesChannelContext));
+            $assignedLayoutId = $this->blogSpecificationSource?->findAssignedLayoutId($blog->id, $salesChannelContext);
+            if ($blog->contentLayoutId !== null && $assignedLayoutId === null) {
+                // Existing standalone layouts retain the body-only rendering contract.
+                $page->setContentPage($this->contentPage($blog->contentLayoutId, $request, $salesChannelContext));
+            } elseif ($this->blogSpecificationSource !== null) {
+                try {
+                    $response = $this->contentRoute->load('/blog/' . $blog->id, $request, $salesChannelContext);
+                    if (!$response instanceof ContentRouteResponse) {
+                        throw StorefrontException::contentRequiresTwigOutput();
+                    }
+                    $page->setContentPage($response->getContentPage());
+                    $page->setEntityBoundLayout(true);
+                } catch (ContentSystemException $exception) {
+                    if ($exception->getErrorCode() !== ContentSystemException::LAYOUT_ASSIGNMENT_NOT_FOUND) {
+                        throw $exception;
+                    }
+                }
+            }
         }
 
         $page->setAuthor($detail->getAuthor());

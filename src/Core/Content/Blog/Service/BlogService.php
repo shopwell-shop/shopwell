@@ -20,13 +20,7 @@ use Shopwell\Core\Framework\Log\Package;
  * scheduled entry must not rewrite its original go-live date, because the date is what a reader sees
  * next to the article.
  *
- * Scheduling is the same write with an explicit moment, and it is the only way to take an entry down
- * again: the domain has no `active` flag, so "not for the public yet" is expressed as a date in the
- * future instead of as a second state next to the date. That keeps exactly one field authoritative
- * and lets {@see BlogVisibilityGuard} stay a single comparison.
- *
- * The service is the only writer of `publishedAt`, which is what keeps the rule above true for the
- * administration, an import and a scheduled task alike.
+ * Scheduling activates an entry for its publication date; unpublishing preserves that date.
  *
  * @final
  */
@@ -45,7 +39,7 @@ class BlogService
     }
 
     /**
-     * Takes the entry live right now. An entry that has no go-live date yet gets the current moment,
+     * Activates the entry, preserving an existing publication date. An undated entry gets the current moment,
      * so it sorts like the newest article instead of like an undated one.
      *
      * @throws BlogException when the entry does not exist
@@ -56,11 +50,15 @@ class BlogService
 
         $payload = ['id' => $blogId];
 
+        if (!$blog->active) {
+            $payload['active'] = true;
+        }
+
         if ($blog->publishedAt === null) {
             $payload['publishedAt'] = $this->clock->now();
         }
 
-        // nothing to write when the entry already carries its date: an update without a changed field
+        // nothing to write when the entry is already active and dated: an update without a changed field
         // still bumps `updated_at` and still emits a written event for every listener to process
         if (\count($payload) === 1) {
             return;
@@ -84,8 +82,21 @@ class BlogService
             [
                 'id' => $blogId,
                 'publishedAt' => $publishedAt,
+                'active' => true,
             ],
         ], $context);
+    }
+
+    /**
+     * Returns an entry to draft without discarding its publication date.
+     */
+    public function unpublish(string $blogId, Context $context): void
+    {
+        if (!$this->load($blogId, $context)->active) {
+            return;
+        }
+
+        $this->blogRepository->update([['id' => $blogId, 'active' => false]], $context);
     }
 
     /**

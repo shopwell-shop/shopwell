@@ -1,5 +1,6 @@
 import type Repository from 'src/core/data/repository.data';
 import type CriteriaType from 'src/core/data/criteria.data';
+import { getContentLayoutNameKey } from 'src/app/utils/content-layout-label.util';
 
 import template from './sw-experience-studio-list.html.twig';
 import './sw-experience-studio-list.scss';
@@ -112,6 +113,11 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     methods: {
+        getLayoutName(layout: { id: string; name: string }): string {
+            const key = getContentLayoutNameKey(layout);
+            return key ? this.$t(key) : layout.name;
+        },
+
         async getList(): Promise<void> {
             this.isLoading = true;
 

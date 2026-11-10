@@ -9,7 +9,7 @@
         <h2>
             {% block sw_blog_author_detail_smart_bar_header_title_text %}
             <template v-if="author">
-                {{ name }}
+                {{ isNew ? $t('sw-blog.author.buttonCreate') : name }}
             </template>
             <sw-skeleton
                 v-else
@@ -25,7 +25,7 @@
     <template #language-switch>
         <sw-language-switch
             class="sw-blog-author-detail__language-switch"
-            :disabled="!author"
+            :disabled="!author || isNew || isSaving || isLoading"
             :save-changes-function="saveOnLanguageChange"
             :abort-change-function="abortOnLanguageChange"
             @on-change="onChangeLanguage"
@@ -40,6 +40,7 @@
             class="sw-blog-author-detail__action-cancel"
             variant="secondary"
             size="default"
+            :disabled="isSaving || isLoading"
             @click="onCancel"
         >
             {{ $t('global.default.cancel') }}
@@ -48,8 +49,9 @@
 
         {% block sw_blog_author_detail_actions_delete %}
         <mt-button
-            v-if="author && canDelete"
+            v-if="author && !isNew && canDelete"
             class="sw-blog-author-detail__action-delete"
+            :disabled="isSaving || isLoading || !entries"
             variant="critical"
             size="default"
             @click="onOpenDeleteModal"
@@ -64,7 +66,7 @@
             class="sw-blog-author-detail__action-save"
             variant="primary"
             size="default"
-            :disabled="!canEdit || undefined"
+            :disabled="!canEdit || isLoading || isSaving"
             :is-loading="isSaving"
             @click="onSave()"
         >
@@ -97,15 +99,12 @@
                 :is-loading="isLoading"
             >
                 {% block sw_blog_author_detail_content_general_fields %}
-                <sw-container
-                    columns="1fr 1fr"
-                    gap="0 var(--scale-size-32)"
-                >
+                <div class="sw-blog-author-detail__fields">
                     <mt-text-field
                         v-model="author.name"
                         class="sw-blog-author-detail__name"
                         required
-                        :disabled="!canEdit"
+                        :disabled="!canEdit || isSaving || isLoading"
                         :label="$t('sw-blog.author.labelName')"
                         :placeholder="$t('sw-blog.author.placeholderName')"
                     />
@@ -113,7 +112,7 @@
                     <mt-text-field
                         v-model="author.email"
                         class="sw-blog-author-detail__email"
-                        :disabled="!canEdit"
+                        :disabled="!canEdit || isSaving || isLoading"
                         :label="$t('sw-blog.author.labelEmail')"
                         :help-text="$t('sw-blog.author.helpTextEmail')"
                     />
@@ -122,18 +121,18 @@
                         v-model="author.active"
                         class="sw-blog-author-detail__active"
                         bordered
-                        :disabled="!canEdit"
+                        :disabled="!canEdit || isSaving || isLoading"
                         :label="$t('sw-blog.author.labelActive')"
                         :help-text="$t('sw-blog.author.helpTextActive')"
                     />
-                </sw-container>
+                </div>
                 {% endblock %}
 
                 {% block sw_blog_author_detail_content_general_description %}
                 <mt-textarea
                     v-model="author.description"
                     class="sw-blog-author-detail__description"
-                    :disabled="!canEdit"
+                    :disabled="!canEdit || isSaving || isLoading"
                     :label="$t('sw-blog.author.labelDescription')"
                     :placeholder="$t('sw-blog.author.placeholderDescription')"
                 />
@@ -146,7 +145,7 @@
                         :source="author.mediaId"
                         :upload-tag="mediaUploadTag"
                         :label="$t('sw-blog.author.labelAvatar')"
-                        :disabled="!canEdit"
+                        :disabled="!canEdit || isSaving || isLoading"
                         :allow-multi-select="false"
                         @selection-change="onAvatarSelected"
                         @delete-item="onAvatarRemoved"
@@ -158,6 +157,7 @@
 
             {% block sw_blog_author_detail_content_entries %}
             <mt-card
+                v-if="!isNew"
                 class="sw-blog-author-detail__entries"
                 position-identifier="sw-blog-author-detail-entries"
                 :title="$t('sw-blog.author.cardEntries')"
@@ -197,6 +197,7 @@
                     <template #column-publishedAt="{ item }">
                         <sw-blog-status-badge
                             v-if="item.publishedAt"
+                            :active="item.active"
                             :published-at="item.publishedAt"
                         />
                         <sw-time-ago

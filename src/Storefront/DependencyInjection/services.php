@@ -30,6 +30,7 @@ use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletRoute;
 use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogSpecificationSource;
 use Shopwell\Core\Content\Blog\Service\BlogDetailReader;
 use Shopwell\Core\Content\Blog\Service\BlogListingReader;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
@@ -579,6 +580,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(BlogSettings::class),
             service(AbstractContentRoute::class),
             service('event_dispatcher'),
+            service(BlogSpecificationSource::class),
+            service(SystemConfigService::class),
+            service(CacheTagCollector::class),
         ]);
 
     $services->set(ProductPageLoader::class)

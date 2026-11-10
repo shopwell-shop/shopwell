@@ -19,7 +19,17 @@
 
 {# Accept a bare video id or a full Vimeo URL (vimeo.com/… or player.vimeo.com/video/…) and normalize to the id #}
 {% set resolvedVideoId = videoId %}
+{% set privateHash = null %}
 {% if resolvedVideoId is not empty %}
+    {# Unlisted videos require the h parameter even after normalizing the URL to an id. #}
+    {% if '?' in resolvedVideoId %}
+        {% for parameter in resolvedVideoId|split('?', 2)|last|split('#')|first|split('&') %}
+            {% if parameter starts with 'h=' %}
+                {% set privateHash = parameter|slice(2) %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
     {% if '/video/' in resolvedVideoId %}
         {% set resolvedVideoId = resolvedVideoId|split('/video/')|last %}
     {% elseif 'vimeo.com/' in resolvedVideoId %}
@@ -39,6 +49,10 @@
     texttrack: locale,
     fullscreen: 'true',
 } %}
+
+{% if privateHash is not empty %}
+    {% set queryParams = queryParams|merge({ h: privateHash }) %}
+{% endif %}
 
 {% if color is not null %}
     {% set queryParams = queryParams|merge({ color: color|replace({'#': ''}) }) %}

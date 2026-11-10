@@ -304,6 +304,71 @@ class CoreMenuSynchronizerTest extends TestCase
         static::assertSame(0, $this->countByInternalKey('sw-review'));
     }
 
+    public function testAddsBlogChildrenAndKeepsCustomizedBlogEntryAndRoles(): void
+    {
+        $legacyProvider = new class implements AdminMenuDefinitionProviderInterface {
+            public function getPluginTechnicalName(): ?string
+            {
+                return null;
+            }
+
+            public function getDefinitions(): array
+            {
+                $definitions = array_values(array_filter(
+                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    static fn (AdminMenuDefinitionStruct $definition): bool => $definition->internalKey !== 'sw-blog' && $definition->parent !== 'sw-blog',
+                ));
+                $definitions[] = new AdminMenuDefinitionStruct(
+                    internalKey: 'sw-blog',
+                    title: 'sw-blog.general.mainMenuItemGeneral',
+                    parent: 'sw-content',
+                    position: 40,
+                    privilege: 'blog.viewer',
+                );
+
+                return $definitions;
+            }
+        };
+        $this->createSynchronizer($legacyProvider)->synchronize();
+        $items = $this->coreItems();
+        $blogId = $items['sw-blog']->getId();
+        $roleId = Uuid::randomHex();
+
+        static::getContainer()->get('acl_role.repository')->create([[
+            'id' => $roleId,
+            'name' => 'Blog navigation role',
+            'privileges' => [],
+        ]], $this->context);
+        $this->menuItemRepository->update([[
+            'id' => $blogId,
+            'title' => 'Editorial',
+            'icon' => 'regular-book',
+            'parentId' => $items['sw-catalogue']->getId(),
+            'afterMenuItemId' => null,
+            'configOverridden' => true,
+            'roles' => [['id' => $roleId]],
+        ]], $this->context);
+
+        $this->createSynchronizer()->synchronize();
+
+        $updatedItems = $this->coreItems();
+        foreach (['sw-blog-content', 'sw-blog-category', 'sw-blog-author', 'sw-blog-comment'] as $key) {
+            static::assertSame(1, $this->countByInternalKey($key));
+            static::assertSame($blogId, $updatedItems[$key]->getParentId());
+        }
+        $blog = $this->menuItemRepository->search((new Criteria([$blogId]))->addAssociation('roles'), $this->context)->getEntities()->first();
+        static::assertNotNull($blog);
+        static::assertSame($blogId, $blog->getId());
+        static::assertSame('Editorial', $blog->getTitle());
+        static::assertSame('regular-book', $blog->getIcon());
+        static::assertSame($items['sw-catalogue']->getId(), $blog->getParentId());
+        static::assertNull($blog->getAfterMenuItemId());
+        static::assertTrue($blog->isConfigOverridden());
+        static::assertNotNull($blog->getRoles());
+        static::assertSame([$roleId], array_values($blog->getRoles()->getIds()));
+        static::assertSame(0, $this->createSynchronizer()->synchronize());
+    }
+
     public function testReanchorsTheChildrenOfADeletedRowInsteadOfCascadingThemAway(): void
     {
         $this->createSynchronizer()->synchronize();

@@ -47,7 +47,13 @@
                 :sort-direction="sortDirection"
                 @page-change="onPageChange"
                 @column-sort="onSortColumn"
-            />
+            >
+                <template #column-name="{ item }">
+                    <router-link :to="{ name: 'sw.experience.studio.detail', params: { id: item.id } }">
+                        {{ getLayoutName(item) }}
+                    </router-link>
+                </template>
+            </sw-entity-listing>
 
             <mt-empty-state
                 v-else-if="!isLoading"

@@ -45,6 +45,7 @@ class BlogDetailReader
      * only, so the image is loaded on demand by {@see self::coverMedia()}.
      */
     private const ASSOCIATIONS = [
+        'tags',
         'author',
         'categories.blogCategory',
         'videos',
@@ -72,7 +73,7 @@ class BlogDetailReader
     /**
      * @throws BlogException when the entry does not exist or is not published yet
      */
-    public function read(string $blogId, Request $request, SalesChannelContext $salesChannelContext): BlogDetailStruct
+    public function read(string $blogId, Request $request, SalesChannelContext $salesChannelContext, bool $includeUnpublished = false): BlogDetailStruct
     {
         $salesChannelId = $salesChannelContext->getSalesChannelId();
         $context = $salesChannelContext->getContext();
@@ -87,7 +88,7 @@ class BlogDetailReader
 
         // a scheduled entry is answered with the same 404 as a missing one: telling a visitor that the
         // page exists but is not ready yet leaks the editorial calendar
-        if (!$blog instanceof BlogEntity || !$this->visibilityGuard->isVisible($blog, $context)) {
+        if (!$blog instanceof BlogEntity || (!$includeUnpublished && !$this->visibilityGuard->isVisible($blog, $context))) {
             throw BlogException::notFound($blogId);
         }
 

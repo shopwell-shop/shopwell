@@ -6,19 +6,36 @@ const { Mixin } = Shopwell;
 const { Criteria } = Shopwell.Data;
 
 const DEFAULT_LAYOUT_CONFIG_DOMAIN = 'core.content_system';
+const BLOG_DEFAULT_TYPES = ['post', 'video'] as const;
+type BlogDefaultType = (typeof BLOG_DEFAULT_TYPES)[number];
+type BlogDefaults = Record<BlogDefaultType, boolean>;
+const BLOG_DEFAULT_KEYS: Record<BlogDefaultType, string> = {
+    post: 'core.content_system.default_blog_post_content_layout',
+    video: 'core.content_system.default_blog_video_content_layout',
+};
 
 /**
  * The layout types whose layouts can be assigned from Experience Studio, keyed by the layout root source.
  * The default config keys mirror the Core `CONFIG_KEY_DEFAULT_CONTENT_LAYOUT` constants of the assignment definitions.
  */
 type LayoutAssignmentType = {
-    entity: 'product' | 'category' | 'landing_page';
-    assignmentEntity: 'product_content_layout' | 'category_content_layout' | 'landing_page_content_layout';
-    entityIdField: 'productId' | 'categoryId' | 'landingPageId';
+    entity: 'product' | 'category' | 'landing_page' | 'blog';
+    assignmentEntity:
+        | 'product_content_layout'
+        | 'category_content_layout'
+        | 'landing_page_content_layout'
+        | 'blog_content_layout';
+    entityIdField: 'productId' | 'categoryId' | 'landingPageId' | 'blogId';
     defaultConfigKey: string | null;
 };
 
 const LAYOUT_ASSIGNMENT_TYPES: Record<string, LayoutAssignmentType> = {
+    blog: {
+        entity: 'blog',
+        assignmentEntity: 'blog_content_layout',
+        entityIdField: 'blogId',
+        defaultConfigKey: 'core.content_system.default_blog_content_layout',
+    },
     product: {
         entity: 'product',
         assignmentEntity: 'product_content_layout',
@@ -98,6 +115,8 @@ export default Shopwell.Component.wrapComponentConfig({
         assignmentIdsByEntityId: Record<string, string>;
         isDefault: boolean;
         wasDefault: boolean;
+        blogDefaults: BlogDefaults;
+        savedBlogDefaults: BlogDefaults;
     } {
         return {
             isLoading: false,
@@ -105,6 +124,8 @@ export default Shopwell.Component.wrapComponentConfig({
             assignmentIdsByEntityId: {},
             isDefault: false,
             wasDefault: false,
+            blogDefaults: { post: false, video: false },
+            savedBlogDefaults: { post: false, video: false },
         };
     },
 
@@ -123,6 +144,10 @@ export default Shopwell.Component.wrapComponentConfig({
 
         entityRepository() {
             return this.assignmentType ? this.repositoryFactory.create(this.assignmentType.entity) : null;
+        },
+
+        entityLabelProperty(): string {
+            return this.assignmentType?.entity === 'blog' ? 'title' : 'name';
         },
 
         entityCriteria(): CriteriaType {
@@ -159,7 +184,8 @@ export default Shopwell.Component.wrapComponentConfig({
             try {
                 const assignments = await repository.search(criteria, Shopwell.Context.api);
                 const config =
-                    assignmentType.defaultConfigKey && this.acl.can('system.system_config')
+                    (assignmentType.entity === 'blog' || assignmentType.defaultConfigKey) &&
+                    this.acl.can('system.system_config')
                         ? ((await this.systemConfigApiService.getValues(DEFAULT_LAYOUT_CONFIG_DOMAIN)) as Record<
                               string,
                               unknown
@@ -176,6 +202,14 @@ export default Shopwell.Component.wrapComponentConfig({
                 this.wasDefault =
                     !!assignmentType.defaultConfigKey && config[assignmentType.defaultConfigKey] === this.layoutId;
                 this.isDefault = this.wasDefault;
+
+                if (assignmentType.entity === 'blog') {
+                    this.blogDefaults = {
+                        post: config[BLOG_DEFAULT_KEYS.post] === this.layoutId,
+                        video: config[BLOG_DEFAULT_KEYS.video] === this.layoutId,
+                    };
+                    this.savedBlogDefaults = { ...this.blogDefaults };
+                }
             } catch {
                 this.createNotificationError({
                     message: this.$t('sw-experience-studio.detail.assignmentModal.messageLoadError'),
@@ -192,6 +226,10 @@ export default Shopwell.Component.wrapComponentConfig({
 
         onChangeDefault(isDefault: boolean): void {
             this.isDefault = isDefault;
+        },
+
+        onChangeBlogDefault(type: BlogDefaultType, isDefault: boolean): void {
+            this.blogDefaults[type] = isDefault;
         },
 
         onModalRootChange(isOpen: boolean): void {
@@ -278,11 +316,28 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         async saveDefault(): Promise<void> {
-            if (
-                !this.assignmentType?.defaultConfigKey ||
-                !this.acl.can('system.system_config') ||
-                this.isDefault === this.wasDefault
-            ) {
+            if (!this.acl.can('system.system_config')) {
+                return;
+            }
+
+            if (this.assignmentType?.entity === 'blog') {
+                const values: Record<string, string | null> = {};
+
+                BLOG_DEFAULT_TYPES.forEach((type) => {
+                    if (this.blogDefaults[type] !== this.savedBlogDefaults[type]) {
+                        values[BLOG_DEFAULT_KEYS[type]] = this.blogDefaults[type] ? this.layoutId : null;
+                    }
+                });
+
+                if (Object.keys(values).length > 0) {
+                    await this.systemConfigApiService.saveValues(values);
+                    this.savedBlogDefaults = { ...this.blogDefaults };
+                }
+
+                return;
+            }
+
+            if (!this.assignmentType?.defaultConfigKey || this.isDefault === this.wasDefault) {
                 return;
             }
 

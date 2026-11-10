@@ -9,10 +9,11 @@ const loadedComponent = { template: '<div class="loaded-type">post editor</div>'
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(blog: { type: string }): Promise<VueWrapper> {
+async function createWrapper(blog: { type: string }, editor: Record<string, object> = {}): Promise<VueWrapper> {
     const wrapper = mount(await wrapTestComponent('sw-blog-detail-content', { sync: true }), {
         props: { blog },
         global: {
+            components: editor,
             stubs: {
                 'sw-blog-detail-content-unknown': {
                     template: '<div class="unknown-type">unknown</div>',
@@ -46,6 +47,37 @@ describe('src/module/sw-blog/component/sw-blog-detail-content', () => {
 
         expect(wrapper.find('.unknown-type').exists()).toBe(false);
         expect(wrapper.find('.loaded-type').exists()).toBe(true);
+    });
+
+    it('renders registered component names through the global factory component', async () => {
+        registerBlogType('podcast', { component: 'plugin-podcast-editor', label: 'Podcast' });
+        const wrapper = await createWrapper(
+            { type: 'podcast' },
+            {
+                'plugin-podcast-editor': { template: '<div class="plugin-editor">extended editor</div>' },
+            },
+        );
+        await flushPromises();
+        expect(wrapper.find('.plugin-editor').exists()).toBe(true);
+    });
+
+    it('supports a legacy loader resolving to a registered component name', async () => {
+        registerBlogType('podcast', () => Promise.resolve('plugin-podcast-editor'));
+        const wrapper = await createWrapper(
+            { type: 'podcast' },
+            {
+                'plugin-podcast-editor': { template: '<div class="plugin-editor">extended editor</div>' },
+            },
+        );
+        await flushPromises();
+        expect(wrapper.find('.plugin-editor').exists()).toBe(true);
+    });
+
+    it('keeps content safe with the unknown editor when a plugin fails to load', async () => {
+        registerBlogType('podcast', () => Promise.reject(new Error('unavailable plugin')));
+        const wrapper = await createWrapper({ type: 'podcast' });
+        await flushPromises();
+        expect(wrapper.find('.unknown-type').exists()).toBe(true);
     });
 
     it('falls back to the unknown component when nobody registered the type', async () => {

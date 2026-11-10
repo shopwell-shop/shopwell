@@ -1,0 +1,30 @@
+meta:
+  label: "Blog article"
+  description: "Article header, media, readable body, optional table of contents and comments."
+  icon: "regular-file-text"
+  category: "content"
+  priority: 120
+
+properties:
+  blogDetail:
+    type: Shopwell\Core\Content\Blog\Service\BlogDetailStruct
+    required: true
+    title: "Blog detail"
+    description: "The current Blog entry with its prepared article body, media and comment thread."
+  showTableOfContents:
+    type: boolean
+    title: "Show table of contents"
+    description: "Display the article outline when the shop enables it and the entry has headings."
+    default: true
+
+slots:
+  - name: header
+    description: "The article heading, categories and byline."
+  - name: media
+    description: "The article cover or video player."
+  - name: body
+    description: "The readable article content."
+  - name: related
+    description: "Related Blog entries."
+  - name: comments
+    description: "The article comment thread and form."

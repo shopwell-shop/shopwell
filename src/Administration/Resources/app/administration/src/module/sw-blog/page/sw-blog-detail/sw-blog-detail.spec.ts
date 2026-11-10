@@ -2,7 +2,8 @@
  * @sw-package discovery
  */
 import { flushPromises } from '@vue/test-utils';
-import { associationNames, createWrapper, unmountActiveWrapper } from './sw-blog-detail.spec/create-wrapper';
+import ShopwellError from 'src/core/data/ShopwellError';
+import { createWrapper, unmountActiveWrapper } from './sw-blog-detail.spec/create-wrapper';
 import { blog } from './sw-blog-detail.spec/fixtures';
 import { registerBlogType, resetBlogTypes } from '../../service/blog-type.registry';
 
@@ -15,45 +16,45 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
     afterEach(() => {
         unmountActiveWrapper();
         resetBlogTypes();
+        Shopwell.Store.get('error').resetApiErrors();
         jest.restoreAllMocks();
     });
 
-    it('loads the entry, selected categories and its selected content layout', async () => {
-        const { wrapper, getBlog } = await createWrapper();
+    it('creates content in the system language even when a translation was previously selected', async () => {
+        const context = Shopwell.Store.get('context');
+        const resetLanguage = jest.spyOn(context, 'resetLanguageToDefault');
+        context.setApiLanguageId('translation-language' as EntitySchema.EntityKey<'language'>);
+
+        await createWrapper({ blogId: null });
         await flushPromises();
-        const criteria = (getBlog.mock.calls as unknown as Array<[string, unknown, { associations: unknown[] }]>)[0][2];
-        expect(associationNames(criteria)).toEqual(
-            expect.arrayContaining([
-                'author',
-                'categories',
-                'categories.blogCategory',
-                'videos',
-            ]),
-        );
-        expect((wrapper.get('.sw-blog-detail__title').element as HTMLInputElement).value).toBe('Autumn guide');
-        expect(
-            wrapper
-                .findAll('.sw-blog-detail__category-option input')
-                .map((input) => (input.element as HTMLInputElement).checked),
-        ).toEqual([true, false]);
-        expect((wrapper.get('.sw-blog-detail__content-layout').element as HTMLInputElement).value).toBe('page-1');
-        expect(wrapper.find('.sw-blog-detail__loading').exists()).toBe(false);
+
+        expect(resetLanguage).toHaveBeenCalledTimes(1);
+        expect(context.isSystemDefaultLanguage).toBe(true);
     });
 
-    it('creates a new entry directly in the editor without reading a nonexistent entity', async () => {
-        const { wrapper, getBlog } = await createWrapper({ blogId: null });
+    it('preserves the selected translation when editing existing content', async () => {
+        const context = Shopwell.Store.get('context');
+        const resetLanguage = jest.spyOn(context, 'resetLanguageToDefault');
+        context.setApiLanguageId('translation-language' as EntitySchema.EntityKey<'language'>);
+
+        await createWrapper();
         await flushPromises();
-        expect((wrapper.get('.sw-blog-detail__title').element as HTMLInputElement).value).toBe('');
-        expect((wrapper.get('.sw-blog-detail__type').element as HTMLSelectElement).value).toBe('post');
-        expect(wrapper.get('.sw-blog-detail__type').attributes('disabled')).toBeUndefined();
+
+        expect(resetLanguage).not.toHaveBeenCalled();
+        expect(Shopwell.Context.api.languageId).toBe('translation-language');
+        context.resetLanguageToDefault();
+    });
+
+    it('opens new video content as an unpublished draft', async () => {
+        const { wrapper, getBlog, saveBlog } = await createWrapper({ blogId: null, blogType: 'video' });
+        await flushPromises();
+        expect(wrapper.get('.video-id').text()).toBe('video-new');
+        expect(wrapper.get('.sw-blog-detail__type').text()).toBe('video');
         expect(getBlog).not.toHaveBeenCalled();
-    });
-
-    it('locks the type of an existing entry', async () => {
-        const { wrapper } = await createWrapper();
+        await wrapper.get('.sw-blog-detail__title').setValue('Video draft');
+        await wrapper.get('.sw-blog-detail__action-save').trigger('click');
         await flushPromises();
-        expect((wrapper.get('.sw-blog-detail__type').element as HTMLSelectElement).value).toBe('post');
-        expect(wrapper.get('.sw-blog-detail__type').attributes('disabled')).toBeDefined();
+        expect(saveBlog).toHaveBeenCalledWith(expect.objectContaining({ active: false, type: 'video' }));
     });
 
     it('generates a new entry URL name from its title and replaces the create route after saving', async () => {
@@ -93,38 +94,32 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
         expect(wrapper.get('.video-id').text()).toBe('video-1');
     });
 
-    it('writes entry/video/category changes and reloads the saved entry without leaving', async () => {
-        const { wrapper, saveBlog, saveVideo, saveAssignment, deleteAssignment, push, getBlog } = await createWrapper({
+    it('saves video and category changes in the blog aggregate before reloading', async () => {
+        const { wrapper, saveBlog, saveVideo, saveAssignment, deleteAssignment, getBlog } = await createWrapper({
             entry: { ...blog, type: 'video', videos: [] },
         });
         await flushPromises();
-        await wrapper.findAll('.sw-blog-detail__category-option input')[0].setValue(false);
-        await wrapper.findAll('.sw-blog-detail__category-option input')[1].setValue(true);
+        await wrapper.get('.select-category').trigger('click');
         await wrapper.get('.sw-blog-detail__action-save').trigger('click');
         await flushPromises();
-        expect(saveVideo).toHaveBeenCalled();
-        expect(saveBlog).toHaveBeenCalledWith(expect.objectContaining({ id: 'blog-1' }));
-        expect(deleteAssignment).toHaveBeenCalledWith('assignment-1');
-        expect(saveAssignment).toHaveBeenCalledWith(
-            expect.objectContaining({ blogId: 'blog-1', blogCategoryId: 'category-2' }),
-        );
+        const saved = (saveBlog.mock.calls as Array<[EntitySchema.Entity<'blog'>]>)[0][0];
+        expect(Array.from(saved.videos ?? [], (video) => ({ id: video.id, blogId: video.blogId }))).toEqual([
+            { id: 'video-new', blogId: 'blog-1' },
+        ]);
+        expect(Array.from(saved.categories ?? [], (assignment) => assignment.blogCategoryId)).toEqual(['category-2']);
+        expect(saveVideo).not.toHaveBeenCalled();
+        expect(saveAssignment).not.toHaveBeenCalled();
+        expect(deleteAssignment).not.toHaveBeenCalled();
         expect(getBlog).toHaveBeenCalledTimes(2);
-        expect(push).not.toHaveBeenCalled();
-    });
-
-    it('leaves the editor when the operator cancels', async () => {
-        const { wrapper, push } = await createWrapper();
-        await flushPromises();
-        await wrapper.get('.sw-blog-detail__action-cancel').trigger('click');
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.list' });
     });
 
     it('publishes immediately without leaving the editor', async () => {
-        const { wrapper, saveBlog, push } = await createWrapper();
+        const { wrapper, saveBlog, push } = await createWrapper({ entry: { ...blog, active: false } });
         await flushPromises();
         await wrapper.get('.sw-blog-detail__publish-now').trigger('click');
         await flushPromises();
-        const saved = (saveBlog.mock.calls as unknown as Array<[{ publishedAt: string }]>)[0][0];
+        const saved = (saveBlog.mock.calls as unknown as Array<[{ publishedAt: string; active: boolean }]>)[0][0];
+        expect(saved.active).toBe(true);
         expect(saved.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
         expect(push).not.toHaveBeenCalled();
     });
@@ -134,47 +129,37 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
         await flushPromises();
         await wrapper.get('.sw-blog-detail__clear-schedule').trigger('click');
         await flushPromises();
-        expect(saveBlog).toHaveBeenCalledWith(expect.objectContaining({ publishedAt: null }));
+        expect(saveBlog).toHaveBeenCalledWith(expect.objectContaining({ publishedAt: null, active: false }));
     });
 
-    it('files the entry by checking and unchecking categories', async () => {
+    it('keeps SEO and layout fields in their own tabs', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
-        const categories = wrapper.findAll('.sw-blog-detail__category-option input');
-        expect((categories[0].element as HTMLInputElement).checked).toBe(true);
-        await categories[0].setValue(false);
-        await categories[1].setValue(true);
-        expect(categories.map((input) => (input.element as HTMLInputElement).checked)).toEqual([false, true]);
+        expect(wrapper.find('.sw-blog-detail__meta-title').exists()).toBe(false);
+        await wrapper.get('[data-tab="seo"]').trigger('click');
+        expect(wrapper.find('.sw-blog-detail__meta-title').exists()).toBe(true);
+        expect(wrapper.find('.content-editor').isVisible()).toBe(false);
+        await wrapper.get('[data-tab="layout"]').trigger('click');
+        expect(wrapper.find('sw-blog-detail-layout-stub').exists()).toBe(true);
     });
 
-    it('creates a category in the editor and selects it without prematurely saving the entry', async () => {
-        const { wrapper, saveBlog } = await createWrapper();
+    it('does not redirect when the aggregate save fails', async () => {
+        const { wrapper, saveBlog, push } = await createWrapper();
+        saveBlog.mockRejectedValueOnce(new Error('Save failed'));
         await flushPromises();
-        await wrapper.get('.sw-blog-detail__add-category').trigger('click');
-        await wrapper.get('.sw-blog-detail__category-name').setValue('Guides');
-        await wrapper.get('.sw-blog-detail__category-modal').findAll('button')[1].trigger('click');
+        await wrapper.get('.sw-blog-detail__action-save').trigger('click');
         await flushPromises();
-        expect(wrapper.find('.sw-blog-detail__category-modal').exists()).toBe(false);
-        const guides = wrapper.findAll('.sw-blog-detail__category-option').find((option) => option.text() === 'Guides');
-        expect(guides).toBeDefined();
-        expect(
-            wrapper
-                .findAll('.sw-blog-detail__category-option')
-                .filter((option) => option.text() === 'Guides')[0]
-                .get('input').element,
-        ).toHaveProperty('checked', true);
-        expect(saveBlog).not.toHaveBeenCalled();
+        expect(push).not.toHaveBeenCalled();
+        expect(wrapper.find('.sw-blog-detail__title').exists()).toBe(true);
     });
 
-    it('creates an author in the editor and selects the new author', async () => {
-        const { wrapper } = await createWrapper();
+    it('shows DAL validation errors on the matching native field', async () => {
+        const error = new ShopwellError({ code: 'CONTENT__INVALID_TITLE', detail: 'Title is invalid' });
+        Shopwell.Store.get('error').addApiError({ expression: 'blog.blog-1.title', error });
+        const { wrapper } = await createWrapper({ entry: { ...blog, getEntityName: () => 'blog' } });
         await flushPromises();
-        await wrapper.get('.sw-blog-detail__add-author').trigger('click');
-        await wrapper.get('.sw-blog-detail__author-name').setValue('Anna');
-        await wrapper.get('.sw-blog-detail__author-modal').findAll('button')[1].trigger('click');
-        await flushPromises();
-        expect(wrapper.find('.sw-blog-detail__author-modal').exists()).toBe(false);
-        expect((wrapper.get('.sw-blog-detail__author').element as HTMLInputElement).value).toBe('author-new');
+
+        expect(wrapper.get('.sw-blog-detail__title').attributes('data-error')).toBe(error.code);
     });
 
     it('keeps moderation controls off the entry editing page', async () => {

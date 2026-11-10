@@ -1,0 +1,254 @@
+{# @sw-package discovery #}
+{% props
+    blogDetail = null,
+    legacyContentPage = null,
+    showTableOfContents = true,
+    locale = null,
+    shareUrl = blogDetail ? url('frontend.blog.detail', { blogId: blogDetail.blog.id }) : '',
+    slots = [],
+%}
+
+{% set page = blogDetail %}
+{% set blog = blogDetail ? blogDetail.blog : null %}
+{% set hasTableOfContents = blogDetail and showTableOfContents and blogDetail.tocEnabled and blogDetail.toc is not empty %}
+{% set articleCVA = cva({
+    base: 'sw-blog-article blog-detail',
+    variants: {
+        type: {
+            post: 'blog-detail--post',
+            video: 'blog-detail--video',
+        },
+    },
+}) %}
+{% set attributeDefaults = {
+    class: articleCVA.apply({ type: blog ? blog.type : 'post' }),
+    'data-blog-reading': true,
+} %}
+
+{% if blog %}
+    <article {{ attributes.defaults(attributeDefaults) }}>
+        {% block progress %}
+            <div class="blog-detail__progress" data-blog-reading-progress aria-hidden="true"></div>
+        {% endblock %}
+
+        <div {{ attributes.nested('container').defaults({ class: 'sw-blog-article__container container' }) }}>
+            {% block breadcrumb %}
+                <nav class="blog-detail__breadcrumb" aria-label="{{ 'blog.detail.breadcrumbLabel'|trans|striptags }}">
+                    <a href="{{ seoUrl('frontend.blog.index') }}">{{ 'blog.listing.title'|trans|sw_sanitize }}</a>
+                    <span class="blog-detail__breadcrumb-divider" aria-hidden="true">/</span>
+                    <span class="blog-detail__breadcrumb-current" aria-current="page">{{ blog.title }}</span>
+                </nav>
+            {% endblock %}
+
+            {% block header %}
+                <twig:Slot name="header">
+                    <header class="blog-detail__header">
+                        {% if blog.categories is not empty %}
+                            <div class="blog-detail__categories">
+                                {% for assignment in blog.categories %}
+                                    {% if assignment.blogCategory %}
+                                        <a href="{{ seoUrl('frontend.blog.index', { category: assignment.blogCategoryId }) }}"
+                                            class="blog-detail__chip">{{ assignment.blogCategory.name }}</a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <h1 class="blog-detail__title">{{ blog.title }}</h1>
+
+                        {% if blog.teaser %}
+                            <p class="blog-detail__teaser">{{ blog.teaser|striptags }}</p>
+                        {% endif %}
+
+                        <div class="blog-detail__meta">
+                            {% if page.showAuthor and page.author %}
+                                <span class="blog-detail__author">
+                                    <span class="blog-detail__avatar" aria-hidden="true">{{ page.author.name|slice(0, 1) }}</span>
+                                    {{ page.author.name }}
+                                </span>
+                            {% endif %}
+
+                            {% if blog.publishedAt %}
+                                <time datetime="{{ blog.publishedAt|date('c') }}">{{ blog.publishedAt|format_date('medium', locale=locale) }}</time>
+                            {% endif %}
+
+                            {% if page.showReadingTime %}
+                                <span class="blog-detail__reading-time">
+                                    {{ 'blog.detail.readingTime'|trans({ '%minutes%': page.readingTimeMinutes })|sw_sanitize }}
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="blog-detail__share">
+                            <span class="blog-detail__share-label">{{ 'blog.detail.share.label'|trans|sw_sanitize }}</span>
+
+                            <button type="button"
+                                class="blog-detail__share-button"
+                                data-blog-share-copy
+                                data-blog-share-copy-url="{{ shareUrl }}"
+                                data-blog-share-copy-copied-label="{{ 'blog.detail.share.copied'|trans|striptags }}">
+                                {{ 'blog.detail.share.copyLink'|trans|sw_sanitize }}
+                            </button>
+
+                            <a class="blog-detail__share-button"
+                                href="https://twitter.com/intent/tweet?text={{ blog.title|url_encode }}&url={{ shareUrl|url_encode }}"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                {{ 'blog.detail.share.x'|trans|sw_sanitize }}
+                            </a>
+                        </div>
+                    </header>
+                </twig:Slot>
+            {% endblock %}
+
+            {% block hero %}
+                <twig:Slot name="media">
+                    {% if blog.type == 'video' and page.video %}
+                        <twig:Sw:Blog:Video :video="page.video" :cover="page.coverMedia" :title="blog.title" />
+                    {% elseif page.coverMedia %}
+                        <figure class="blog-detail__hero">
+                            <twig:Sw:Media:Image
+                                :media="page.coverMedia"
+                                class="sw-blog-article__cover blog-detail__hero-image"
+                                :alt="blog.title"
+                                loading="eager"
+                                fetchpriority="high"
+                            />
+                        </figure>
+                    {% endif %}
+                </twig:Slot>
+            {% endblock %}
+
+            {% block body %}
+                <div class="blog-detail__layout{% if hasTableOfContents %} blog-detail__layout--with-toc{% endif %}">
+                    {% block content %}
+                        <div class="blog-detail__content">
+                            {% block toc_mobile %}
+                                {#
+                                    The desktop table of contents lives in the sticky rail. On a phone
+                                    the rail is gone, so the same entries render as a collapsible
+                                    block at the top of the body - a reader on a phone loses the
+                                    outline entirely otherwise.
+                                #}
+                                {% if hasTableOfContents %}
+                                    <details class="blog-detail__toc-mobile">
+                                        <summary class="blog-detail__toc-mobile-summary">
+                                            {{ 'blog.detail.toc'|trans|sw_sanitize }}
+                                        </summary>
+                                        <ul class="blog-detail__toc-mobile-list">
+                                            {% for entry in page.toc %}
+                                                <li class="blog-detail__toc-mobile-item blog-detail__toc-mobile-item--h{{ entry.level }}">
+                                                    <a href="#{{ entry.id }}">{{ entry.title }}</a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </details>
+                                {% endif %}
+                            {% endblock %}
+
+                            {% block content_text %}
+                                <twig:Slot name="body">
+                                    {# Standalone legacy layouts replace only the article body. #}
+                                    {% if legacyContentPage %}
+                                        <div class="content-page blog-detail__content-layout">
+                                            <twig:Sw:Content:Page :page="legacyContentPage" />
+                                        </div>
+                                    {% else %}
+                                        <div class="blog-detail__text">{{ page.content|raw }}</div>
+                                    {% endif %}
+                                </twig:Slot>
+                            {% endblock %}
+
+                            {% block author %}
+                                {% if page.showAuthor and page.author %}
+                                    {% sw_include '@Storefront/storefront/component/blog/blog-sidebar.html.twig' with {
+                                        page: page,
+                                        authorOnly: true,
+                                    } only %}
+                                {% endif %}
+                            {% endblock %}
+
+                            {% block related %}
+                                <twig:Slot name="related">
+                                    {% if page.relatedBlogs is not empty %}
+                                        <section class="blog-detail__related">
+                                            <h2 class="blog-detail__related-title">{{ 'blog.detail.related'|trans|sw_sanitize }}</h2>
+                                            <div class="blog-listing blog-listing--grid">
+                                                {% for related in page.relatedBlogs %}
+                                                    <twig:Sw:Blog:Card :blog="related" layout="grid" :showAuthor="page.showAuthor" :showReadingTime="page.showReadingTime" />
+                                                {% endfor %}
+                                            </div>
+                                        </section>
+                                    {% endif %}
+                                </twig:Slot>
+                            {% endblock %}
+                        </div>
+                    {% endblock %}
+
+                    {% block sidebar %}
+                        {% if hasTableOfContents %}
+                            {% sw_include '@Storefront/storefront/component/blog/blog-sidebar.html.twig' with {
+                                page: page,
+                                authorOnly: false,
+                                showAuthor: false,
+                            } only %}
+                        {% endif %}
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block taxonomy %}
+                {% if blog.tags is not empty %}
+                    <ul class="sw-blog-article__tags list-inline blog-detail__tags" aria-label="{{ 'blog.detail.tags'|trans|striptags }}">
+                        {% for tag in blog.tags %}
+                            <li class="sw-blog-article__tag list-inline-item badge text-bg-light">{{ tag.name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endblock %}
+
+            {% block prev_next %}
+                {# Both sides are optional: the first entry has no previous one, the last has no next. #}
+                {% if page.previousBlog is not null or page.nextBlog is not null %}
+                    <nav class="blog-detail__prev-next" aria-label="{{ 'blog.detail.prevNextLabel'|trans|striptags }}">
+                        <div class="blog-detail__prev-next-slot">
+                            {% block prev_next_previous %}
+                                {% if page.previousBlog is not null %}
+                                    <a href="{{ seoUrl('frontend.blog.detail', { blogId: page.previousBlog.id }) }}"
+                                        class="blog-detail__prev-next-link blog-detail__prev-next-link--previous">
+                                        <span class="blog-detail__prev-next-direction">{{ 'blog.detail.previous'|trans|sw_sanitize }}</span>
+                                        <span class="blog-detail__prev-next-title">{{ page.previousBlog.title }}</span>
+                                    </a>
+                                {% endif %}
+                            {% endblock %}
+                        </div>
+
+                        <div class="blog-detail__prev-next-slot blog-detail__prev-next-slot--next">
+                            {% block prev_next_next %}
+                                {% if page.nextBlog is not null %}
+                                    <a href="{{ seoUrl('frontend.blog.detail', { blogId: page.nextBlog.id }) }}"
+                                        class="blog-detail__prev-next-link blog-detail__prev-next-link--next">
+                                        <span class="blog-detail__prev-next-direction">{{ 'blog.detail.next'|trans|sw_sanitize }}</span>
+                                        <span class="blog-detail__prev-next-title">{{ page.nextBlog.title }}</span>
+                                    </a>
+                                {% endif %}
+                            {% endblock %}
+                        </div>
+                    </nav>
+                {% endif %}
+            {% endblock %}
+
+            {% block comments %}
+                <twig:Slot name="comments">
+                    {% sw_include '@Storefront/storefront/component/blog/blog-comments.html.twig' with { page: page } only %}
+                </twig:Slot>
+            {% endblock %}
+
+            {% block back %}
+                <p class="blog-detail__back">
+                    <a href="{{ seoUrl('frontend.blog.index') }}">{{ 'blog.detail.backToList'|trans|sw_sanitize }}</a>
+                </p>
+            {% endblock %}
+        </div>
+    </article>
+{% endif %}

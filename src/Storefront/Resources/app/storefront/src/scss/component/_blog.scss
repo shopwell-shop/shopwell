@@ -711,12 +711,12 @@ One breakpoint pair, no per-layout query: the grid already reflows on its own, o
 column and the stacked list card need a decision.
 */
 @media screen and (min-width: 1200px) {
-    .blog-detail__layout {
+    .blog-detail__layout--with-toc {
         grid-template-columns: minmax(0, 1fr) 240px;
         align-items: start;
     }
 
-    .blog-detail__content {
+    .blog-detail__layout--with-toc .blog-detail__content {
         margin: 0;
     }
 

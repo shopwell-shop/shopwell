@@ -1,0 +1,139 @@
+{% block sw_blog_detail_layout %}
+<mt-card
+    class="sw-blog-detail-layout"
+    :title="$t('sw-blog.detail.cardLayout')"
+    :is-loading="isLoading || isLoadingDefaults"
+>
+    <section
+        class="sw-blog-detail-layout__current"
+        :aria-label="$t('sw-blog.layout.currentLayout')"
+    >
+        <div
+            class="sw-blog-detail-layout__icon"
+            aria-hidden="true"
+        >
+            <mt-icon
+                :name="category ? 'regular-list' : 'regular-file'"
+                size="32px"
+            />
+        </div>
+        <div class="sw-blog-detail-layout__summary">
+            <h3 class="sw-blog-detail-layout__name">
+                {{ layoutName }}
+            </h3>
+            <p class="sw-blog-detail-layout__source">
+                {{ sourceLabel }}
+            </p>
+        </div>
+        <mt-button
+            v-if="canEditLayout"
+            class="sw-blog-detail-layout__edit"
+            variant="secondary"
+            size="small"
+            :disabled="isDisabled || isCopying"
+            @click="onEditLayout"
+        >
+            {{ $t('sw-blog.layout.editLayout') }}
+        </mt-button>
+    </section>
+
+    <mt-banner
+        v-if="loadFailed"
+        variant="critical"
+    >
+        {{ $t('sw-blog.layout.loadError') }}
+    </mt-banner>
+
+    {% block sw_blog_detail_layout_assignment %}
+    <div class="sw-blog-detail-layout__assignment">
+        <sw-entity-single-select
+            class="sw-blog-detail-layout__select"
+            entity="content_layout"
+            :value="selectedLayoutId"
+            :criteria="layoutCriteria"
+            :label="assignmentLabel"
+            :placeholder="$t('sw-blog.detail.layoutSharedDefault')"
+            :disabled="isDisabled || isCopying"
+            @update:value="onLayoutChange"
+        >
+            <template #selection-label-property="{ item }">
+                {{ getLayoutName(item) }}
+            </template>
+            <template #result-label-property="{ item }">
+                {{ getLayoutName(item) }}
+            </template>
+        </sw-entity-single-select>
+
+        <mt-button
+            v-if="!isUsingDefault"
+            class="sw-blog-detail-layout__restore"
+            variant="tertiary"
+            size="small"
+            :disabled="isDisabled || isCopying"
+            @click="onRestoreDefault"
+        >
+            {{ $t('sw-blog.layout.restoreDefault') }}
+        </mt-button>
+    </div>
+    <p class="sw-blog-detail-layout__scope">
+        {{ $t('sw-blog.layout.globalScopeHint') }}
+    </p>
+    {% endblock %}
+
+    <div
+        v-if="currentLayout"
+        class="sw-blog-detail-layout__sharing"
+    >
+        <p class="sw-blog-detail-layout__hint">
+            {{ $t('sw-blog.layout.sharedEditHint') }}
+        </p>
+        <mt-button
+            v-if="canCopyLayout"
+            class="sw-blog-detail-layout__copy"
+            variant="tertiary"
+            size="small"
+            :disabled="isCopying"
+            @click="onCopyLayout"
+        >
+            {{ $t('sw-blog.layout.copyLayout') }}
+        </mt-button>
+    </div>
+
+    <p
+        v-if="hasCopied"
+        class="sw-blog-detail-layout__status"
+        role="status"
+    >
+        {{ $t('sw-blog.layout.copySaveHint') }}
+    </p>
+    <mt-banner
+        v-if="copyFailed"
+        variant="critical"
+    >
+        {{ $t('sw-blog.layout.copyError') }}
+    </mt-banner>
+
+    {% block sw_blog_detail_layout_legacy %}
+    <details
+        v-if="blog?.contentLayoutId"
+        class="sw-blog-detail-layout__legacy"
+    >
+        <summary>{{ $t('sw-blog.detail.layoutLegacy') }}</summary>
+        <sw-entity-single-select
+            v-model:value="blog.contentLayoutId"
+            entity="content_layout"
+            :criteria="legacyLayoutCriteria"
+            :label="$t('sw-blog.detail.labelContentLayout')"
+            :disabled="isDisabled || isCopying"
+        >
+            <template #selection-label-property="{ item }">
+                {{ getLayoutName(item) }}
+            </template>
+            <template #result-label-property="{ item }">
+                {{ getLayoutName(item) }}
+            </template>
+        </sw-entity-single-select>
+    </details>
+    {% endblock %}
+</mt-card>
+{% endblock %}

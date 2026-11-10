@@ -258,6 +258,7 @@ export default Shopwell.Component.wrapComponentConfig({
             criteria.addAssociation('productContentLayouts');
             criteria.addAssociation('categoryContentLayouts');
             criteria.addAssociation('landingPageContentLayouts');
+            criteria.addAssociation('blogContentLayouts');
 
             return criteria;
         },
@@ -283,7 +284,8 @@ export default Shopwell.Component.wrapComponentConfig({
                 !this.isCreateMode &&
                 (this.layoutRootSource === 'product' ||
                     this.layoutRootSource === 'category' ||
-                    this.layoutRootSource === 'landing_page')
+                    this.layoutRootSource === 'landing_page' ||
+                    this.layoutRootSource === 'blog')
             );
         },
 
@@ -597,6 +599,12 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         async loadDefaultPreviewSalesChannel(): Promise<void> {
+            const requestedChannelId = this.$route?.query?.previewSalesChannelId;
+
+            if (!this.previewSalesChannelId && typeof requestedChannelId === 'string' && requestedChannelId !== '') {
+                this.previewSalesChannelId = requestedChannelId;
+            }
+
             if (this.previewSalesChannelId) {
                 return;
             }
@@ -646,6 +654,19 @@ export default Shopwell.Component.wrapComponentConfig({
 
         applyPreviewContextDefaults(): void {
             const resolvedPreviewContext = this.resolvedPreviewContext;
+            const query = this.$route?.query ?? {};
+
+            if (!this.previewEntityId && typeof query.previewEntityId === 'string' && query.previewEntityId !== '') {
+                this.previewEntityId = query.previewEntityId;
+            }
+
+            if (
+                !this.previewSalesChannelId &&
+                typeof query.previewSalesChannelId === 'string' &&
+                query.previewSalesChannelId !== ''
+            ) {
+                this.previewSalesChannelId = query.previewSalesChannelId;
+            }
 
             if (!this.previewEntityId && resolvedPreviewContext?.entityId) {
                 this.previewEntityId = resolvedPreviewContext.entityId;
@@ -673,6 +694,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 product: 'regular-products',
                 category: 'regular-sitemap',
                 landing_page: 'regular-dashboard',
+                blog: 'regular-image-text',
             };
 
             return iconByEntityType[entityType] ?? 'regular-file';
@@ -737,6 +759,16 @@ export default Shopwell.Component.wrapComponentConfig({
                     entityType: 'category',
                     entityId: categoryAssignment.categoryId as string,
                     salesChannelId: (categoryAssignment.salesChannelId as string | null) ?? null,
+                };
+            }
+
+            const blogAssignment = this.getFirstAssociationEntry(layout.extensions?.blogContentLayouts);
+
+            if (blogAssignment?.blogId) {
+                return {
+                    entityType: 'blog',
+                    entityId: blogAssignment.blogId as string,
+                    salesChannelId: (blogAssignment.salesChannelId as string | null) ?? null,
                 };
             }
 

@@ -1,0 +1,171 @@
+{% block sw_blog_category_navigation %}
+<aside
+    class="sw-blog-category-navigation"
+    :aria-label="$t('sw-blog.category.navigationTitle')"
+>
+    <div class="sw-blog-category-navigation__header">
+        <h3>
+            {{ $t('sw-blog.category.navigationTitle') }}
+            <span class="sw-blog-category-navigation__count">{{ total }}</span>
+        </h3>
+        <div class="sw-blog-category-navigation__tools">
+            <mt-dropdown-menu-root>
+                <mt-dropdown-menu-trigger as-child>
+                    <mt-button
+                        variant="tertiary"
+                        size="small"
+                        square
+                        :disabled="isBusy"
+                        :aria-label="$t('sw-blog.category.treeActions')"
+                    >
+                        <mt-icon
+                            name="solid-ellipsis-h-s"
+                            size="16px"
+                        />
+                    </mt-button>
+                </mt-dropdown-menu-trigger>
+                <mt-dropdown-menu-portal>
+                    <mt-action-menu>
+                        <mt-action-menu-item
+                            class="sw-blog-category-navigation__expand-all"
+                            @click="onExpandAll"
+                        >
+                            {{ $t('sw-blog.category.expandAll') }}
+                        </mt-action-menu-item>
+                        <mt-action-menu-item
+                            class="sw-blog-category-navigation__collapse-all"
+                            @click="onCollapseAll"
+                        >
+                            {{ $t('sw-blog.category.collapseAll') }}
+                        </mt-action-menu-item>
+                    </mt-action-menu>
+                </mt-dropdown-menu-portal>
+            </mt-dropdown-menu-root>
+        </div>
+    </div>
+    <p
+        v-if="term.trim()"
+        class="sw-blog-category-navigation__help"
+    >
+        {{ $t(term.trim() ? 'sw-blog.category.searchTreeHint' : 'sw-blog.category.treeHelp') }}
+    </p>
+    <p
+        v-if="dropPreview"
+        class="sw-blog-category-navigation__drop-hint"
+        :class="{ 'is--invalid': dropPreview.position === 'invalid' }"
+        role="status"
+    >
+        {{ dropMessage }}
+    </p>
+    <mt-loader v-if="isLoading" />
+    <sw-blog-category-tree
+        v-if="categories.length"
+        :key="treeRevision"
+        ref="categoryTree"
+        class="sw-blog-category-navigation__tree"
+        :items="treeCategories"
+        :sortable="sortable"
+        :data-sortable="String(sortable)"
+        :active-tree-item-id="selectedId"
+        :open-selected-path="openSelectedPath"
+        :preview-drop="onDropPreview"
+        :on-change-route="onSelect"
+        @drag-start="captureExpandedIds"
+        @drag-end="onTreeDrop"
+    >
+        <template #content="{ item: categoryItem }">
+            <div class="sw-blog-category-navigation__node">
+                <mt-icon
+                    name="regular-folder"
+                    size="16px"
+                />
+                <mt-button
+                    class="sw-blog-category-navigation__category"
+                    :class="dropClass(categoryItem.id)"
+                    variant="tertiary"
+                    size="x-small"
+                    :disabled="isBusy"
+                    :aria-current="categoryItem.id === selectedId ? 'page' : undefined"
+                    :title="categoryPath(categoryItem.id)"
+                    @click.stop="onSelect(categoryItem)"
+                >
+                    {{ categoryItem.data.name }}
+                </mt-button>
+            </div>
+        </template>
+        <template #actions="{ item: categoryItem }">
+            <mt-status-dot
+                :variant="categoryItem.data.active ? 'positive' : 'neutral'"
+                :label="$t(categoryItem.data.active ? 'sw-blog.category.statusActive' : 'sw-blog.category.statusInactive')"
+                size="s"
+            />
+            <mt-dropdown-menu-root v-if="canCreate || acl.can('blog.editor')">
+                <mt-dropdown-menu-trigger as-child>
+                    <mt-button
+                        variant="tertiary"
+                        size="x-small"
+                        square
+                        :disabled="isBusy"
+                        :aria-label="$t('sw-blog.category.categoryActions')"
+                    >
+                        <mt-icon
+                            name="solid-ellipsis-h-s"
+                            size="16px"
+                        />
+                    </mt-button>
+                </mt-dropdown-menu-trigger>
+                <mt-dropdown-menu-portal>
+                    <mt-action-menu>
+                        <mt-action-menu-item
+                            v-if="canCreate"
+                            class="sw-blog-category-navigation__add-child"
+                            :disabled="isBusy"
+                            @click="onOpenCreate(categoryItem.id)"
+                        >
+                            {{ $t('sw-blog.category.addChild') }}
+                        </mt-action-menu-item>
+                        <mt-action-menu-item
+                            v-if="canCreate"
+                            class="sw-blog-category-navigation__add-sibling"
+                            :disabled="isBusy"
+                            @click="onOpenCreate(categoryItem.data.parentId)"
+                        >
+                            {{ $t('sw-blog.category.addSibling') }}
+                        </mt-action-menu-item>
+                        <mt-action-menu-item
+                            v-if="acl.can('blog.editor')"
+                            class="sw-blog-category-navigation__move-up"
+                            :disabled="!canMoveSibling(categoryItem.id, -1)"
+                            @click="onMoveSibling(categoryItem.id, -1)"
+                        >
+                            {{ $t('sw-blog.category.moveUp') }}
+                        </mt-action-menu-item>
+                        <mt-action-menu-item
+                            v-if="acl.can('blog.editor')"
+                            class="sw-blog-category-navigation__move-down"
+                            :disabled="!canMoveSibling(categoryItem.id, 1)"
+                            @click="onMoveSibling(categoryItem.id, 1)"
+                        >
+                            {{ $t('sw-blog.category.moveDown') }}
+                        </mt-action-menu-item>
+                        <mt-action-menu-item
+                            v-if="acl.can('blog.editor')"
+                            class="sw-blog-category-navigation__move-root"
+                            :disabled="!canMove || !categoryItem.data.parentId"
+                            @click="onMoveRoot(categoryItem.id)"
+                        >
+                            {{ $t('sw-blog.category.moveToRoot') }}
+                        </mt-action-menu-item>
+                    </mt-action-menu>
+                </mt-dropdown-menu-portal>
+            </mt-dropdown-menu-root>
+        </template>
+    </sw-blog-category-tree>
+    <div
+        v-if="!isLoading && !treeCategories.length"
+        class="sw-blog-category-navigation__empty"
+    >
+        <p>{{ $t(term.trim() ? 'sw-blog.category.noSearchResults' : 'sw-blog.list.messageEmptyCategory') }}</p>
+    </div>
+</aside>
+{% endblock %}

@@ -44,9 +44,14 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'blog_comment:read',
                 'blog_video:read',
                 'blog_category_assignment:read',
+                'tag:read',
+                'blog_tag:read',
+                'blog_content_layout:read',
+                'sales_channel:read',
                 // the layout tab offers the content layouts of the blog, so their names have to be
                 // readable to whoever may read a blog entry
                 'content_layout:read',
+                'system_config:read',
             ],
             dependencies: [],
         },
@@ -66,6 +71,12 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'blog_category_assignment:delete',
                 // approving a comment flips its status, it does not delete it
                 'blog_comment:update',
+                'tag:create',
+                'blog_tag:create',
+                'blog_tag:delete',
+                'blog_content_layout:create',
+                'blog_content_layout:update',
+                'blog_content_layout:delete',
             ],
             dependencies: ['blog.viewer'],
         },

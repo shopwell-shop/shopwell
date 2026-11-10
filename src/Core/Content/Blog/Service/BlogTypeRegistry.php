@@ -2,73 +2,64 @@
 
 namespace Shopwell\Core\Content\Blog\Service;
 
-use Shopwell\Core\Content\Blog\BlogException;
+use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * The one place that answers "which handler owns this type".
+ * Registered authoring types and their storefront presentation defaults.
  *
- * The handlers are injected as a tagged iterator, so a plugin that tags its own implementation is
- * part of the answer without touching the core. The registry is the only caller of `supports()`; the
- * rest of the code asks it for a handler and gets a typed answer or an exception, never a null that
- * every caller would have to think about.
- *
- * `find()` exists next to `get()` for the one caller that has to degrade instead of failing: the
- * storefront rendering an entry whose type came from an uninstalled plugin. A blank page is worse
- * than a generic layout, so the route falls back to the post handler while the administration and
- * every write path keep the loud `get()`.
+ * Extensions register additional types with addType(), following Product's registry pattern.
  *
  * @final
  */
 #[Package('discovery')]
 class BlogTypeRegistry
 {
-    /**
-     * @var list<BlogTypeHandlerInterface>
-     */
-    private readonly array $handlers;
+    final public const DEFAULT_TEMPLATE = '@Storefront/storefront/page/blog/detail.html.twig';
 
     /**
-     * @internal
-     *
-     * @param iterable<BlogTypeHandlerInterface> $handlers
+     * @var list<string>
      */
-    public function __construct(iterable $handlers)
+    private array $types = BlogEntity::TYPE_LIST;
+
+    /**
+     * @var array<string, array{template: string, schemaType: string}>
+     */
+    private array $presentation = [
+        BlogEntity::TYPE_POST => ['template' => self::DEFAULT_TEMPLATE, 'schemaType' => 'BlogPosting'],
+        BlogEntity::TYPE_VIDEO => ['template' => '@Storefront/storefront/page/blog/detail-video.html.twig', 'schemaType' => 'VideoObject'],
+    ];
+
+    public function addType(string $type, string $template = self::DEFAULT_TEMPLATE, string $schemaType = 'BlogPosting'): void
     {
-        $list = [];
-
-        foreach ($handlers as $handler) {
-            $list[] = $handler;
+        if ($this->hasType($type)) {
+            return;
         }
 
-        $this->handlers = $list;
+        $this->types[] = $type;
+        $this->presentation[$type] = ['template' => $template, 'schemaType' => $schemaType];
     }
 
     /**
-     * The handler of the type, or null when nobody claims it.
+     * @return list<string>
      */
-    public function find(string $type): ?BlogTypeHandlerInterface
+    public function getTypes(): array
     {
-        foreach ($this->handlers as $handler) {
-            if ($handler->supports($type)) {
-                return $handler;
-            }
-        }
-
-        return null;
+        return $this->types;
     }
 
-    /**
-     * @throws BlogException when no registered handler claims the type
-     */
-    public function get(string $type): BlogTypeHandlerInterface
+    public function hasType(string $type): bool
     {
-        $handler = $this->find($type);
+        return \in_array($type, $this->types, true);
+    }
 
-        if ($handler === null) {
-            throw BlogException::unknownType($type);
-        }
+    public function getDetailTemplate(string $type): string
+    {
+        return $this->presentation[$type]['template'] ?? self::DEFAULT_TEMPLATE;
+    }
 
-        return $handler;
+    public function getSchemaType(string $type): string
+    {
+        return $this->presentation[$type]['schemaType'] ?? 'BlogPosting';
     }
 }

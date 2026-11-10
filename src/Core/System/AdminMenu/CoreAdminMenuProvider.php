@@ -203,28 +203,39 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 position: 20,
                 privilege: 'media.viewer',
             ),
-            // A blog entry is content between a landing page and a cms layout, so it hangs below
-            // `sw-content` instead of opening a menu of its own.
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-blog',
+                type: AdminMenuItemDefinition::TYPE_FOLDER,
                 title: 'sw-blog.general.mainMenuItemGeneral',
                 icon: 'regular-file-text',
-                parent: 'sw-content',
-                position: 40,
+                position: 55,
+            ),
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw-blog-content',
+                title: 'sw-blog.navigation.content',
+                parent: 'sw-blog',
+                position: 10,
                 privilege: 'blog.viewer',
             ),
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-blog-category',
                 title: 'sw-blog.general.mainMenuItemCategory',
                 parent: 'sw-blog',
-                position: 10,
+                position: 20,
                 privilege: 'blog.viewer',
             ),
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-blog-author',
                 title: 'sw-blog.general.mainMenuItemAuthor',
                 parent: 'sw-blog',
-                position: 15,
+                position: 30,
+                privilege: 'blog.viewer',
+            ),
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw-blog-comment',
+                title: 'sw-blog.general.mainMenuItemComment',
+                parent: 'sw-blog',
+                position: 40,
                 privilege: 'blog.viewer',
             ),
 

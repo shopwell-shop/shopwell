@@ -11,6 +11,7 @@ type BlogRow = {
     title: string | null;
     slug: string | null;
     type: string;
+    active: boolean;
     publishedAt: string | null;
     updatedAt?: string | null;
     categories?: Array<{ blogCategory?: { name: string } | null }>;
@@ -45,6 +46,7 @@ const blogs: BlogRow[] = [
         title: 'Autumn guide',
         slug: 'autumn-guide',
         type: 'post',
+        active: false,
         publishedAt: null,
         updatedAt: '2026-10-01T10:00:00.000Z',
         categories: [
@@ -59,8 +61,9 @@ const blogs: BlogRow[] = [
         title: 'Behind the scenes',
         slug: 'behind-the-scenes',
         type: 'video',
+        active: true,
         publishedAt: '2999-01-01T00:00:00.000Z',
-        updatedAt: '2026-10-02T10:00:00.000Z',
+        updatedAt: null,
     },
 ];
 
@@ -79,6 +82,8 @@ async function createWrapper(
     remove: jest.Mock;
     push: jest.Mock;
     mergeWithStoredFilters: jest.Mock;
+    categorySearch: jest.Mock;
+    authorSearch: jest.Mock;
 }> {
     const rows = blogs.map((row) => ({ ...row }));
     const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog'>>(rows)));
@@ -143,20 +148,30 @@ async function createWrapper(
                         'repository',
                         'allowDelete',
                         'allowInlineEdit',
+                        'allowView',
                     ],
                     emits: ['inline-edit-save'],
                     template: `<table><tbody><tr v-for="item in dataSource" :key="item.id" :data-row="item.id">
                         <td><slot name="column-coverMediaId" :item="item" /></td>
-                        <td><slot name="column-title" :item="item" :is-inline-edit="false">{{ item.title }}</slot>
+                        <td><a v-if="allowView" class="detail-link" :href="'/sw/blog/' + item.id">{{ item.title }}</a><slot name="column-title" :item="item" :is-inline-edit="false">{{ item.title }}</slot>
                             <input v-if="allowInlineEdit" class="inline-title" :value="item.title" @input="item.title = $event.target.value" />
                             <button v-if="allowInlineEdit" class="inline-save" @click="$emit('inline-edit-save', item)">Save row</button>
                         </td>
-                        <td class="type"><slot name="column-type" :item="item" /></td>
+                        <td class="type"><slot name="column-type" :item="item" /></td><td class="updated"><slot name="column-updatedAt" :item="item" /></td>
                         <td><slot name="column-categories" :item="item" /></td>
                         <td><slot name="column-status" :item="item" :is-inline-edit="false" /></td>
                         <td class="delete-action"><slot name="delete-action" :item="item"><button :disabled="!allowDelete">Delete</button></slot></td>
                     </tr></tbody></table>`,
                 },
+                'mt-popover': {
+                    template:
+                        '<div><slot name="trigger" :toggle-floating-ui="() => {}" /><slot name="popover-items__base" :toggle-floating-ui="() => {}" /></div>',
+                },
+                'mt-popover-item': {
+                    props: ['label', 'disabled', 'onLabelClick'],
+                    template: '<button :disabled="disabled" @click="onLabelClick">{{ label }}</button>',
+                },
+                'mt-icon': true,
                 'sw-sidebar': { template: '<aside><slot /></aside>' },
                 'sw-sidebar-item': { props: ['title'], template: '<button>{{ title }}</button>' },
                 'sw-sidebar-filter-panel': {
@@ -165,7 +180,7 @@ async function createWrapper(
                 },
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
                 'sw-media-preview-v2': true,
-                'sw-time-ago': true,
+                'sw-time-ago': { props: ['date'], template: '<time>{{ date }}</time>' },
                 'mt-badge': { template: '<span class="badge"><slot /></span>' },
                 'sw-blog-status-badge': true,
                 'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
@@ -201,7 +216,7 @@ async function createWrapper(
     activeWrapper = wrapper;
     await flushPromises();
 
-    return { wrapper, search, save, remove, push, mergeWithStoredFilters };
+    return { wrapper, search, save, remove, push, mergeWithStoredFilters, categorySearch, authorSearch };
 }
 
 describe('src/module/sw-blog/page/sw-blog-list', () => {
@@ -216,6 +231,13 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         resetBlogTypes();
         jest.restoreAllMocks();
         jest.clearAllMocks();
+    });
+
+    it('only renders a relative update time when the entry has been updated', async () => {
+        const { wrapper } = await createWrapper();
+        await flushPromises();
+        expect(wrapper.get('[data-row="blog-1"] time').text()).toBe('2026-10-01T10:00:00.000Z');
+        expect(wrapper.find('[data-row="blog-2"] time').exists()).toBe(false);
     });
 
     it('reads the entries newest publication first, with author and categories', async () => {
@@ -244,14 +266,16 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         expect(wrapper.get('.filter-panel').attributes('data-active-count')).toBe('0');
     });
 
-    it('offers type, category and author as filters of the sidebar panel', async () => {
+    it('offers status, type, categories, authors and native tags as filters', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
         expect(wrapper.findAll('.filter-property').map((filter) => filter.text())).toEqual([
+            'active',
             'type',
-            'categories.blogCategoryId',
-            'authorId',
+            'categories.blogCategory',
+            'author',
+            'tags',
         ]);
     });
 
@@ -290,10 +314,10 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
     it('opens the create page instead of asking for anything in a dialog', async () => {
         const { wrapper, push, save } = await createWrapper();
 
-        await wrapper.get('.sw-blog-list__button-create').trigger('click');
+        await wrapper.get('[data-blog-type="post"]').trigger('click');
         await flushPromises();
 
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.create' });
+        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.create', query: { type: 'post' } });
         // nothing is written before the entry page is saved
         expect(save).not.toHaveBeenCalled();
     });
@@ -321,13 +345,52 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         expect(wrapper.find('.sw-blog-list__delete-modal').exists()).toBe(false);
     });
 
-    it('saves an inline edit of a row', async () => {
-        const { wrapper, save } = await createWrapper();
+    it('opens details for viewers and keeps inline title editing disabled', async () => {
+        const { wrapper, save } = await createWrapper((privilege) => privilege === 'blog.viewer');
+        expect(wrapper.get('[data-row="blog-1"] .detail-link').attributes('href')).toBe('/sw/blog/blog-1');
+        expect(wrapper.find('.inline-title').exists()).toBe(false);
+        expect(save).not.toHaveBeenCalled();
+    });
 
-        await wrapper.get('[data-row="blog-1"] .inline-title').setValue('Autumn guide 2026');
-        await wrapper.get('[data-row="blog-1"] .inline-save').trigger('click');
+    it('creates videos and plugin types directly from the type menu', async () => {
+        registerBlogType('podcast', () => Promise.resolve({ default: { name: 'podcast' } }));
+        const { wrapper, push } = await createWrapper();
+        await wrapper.get('[data-blog-type="video"]').trigger('click');
+        expect(push).toHaveBeenLastCalledWith({ name: 'sw.blog.create', query: { type: 'video' } });
+        await wrapper.get('[data-blog-type="podcast"]').trigger('click');
+        expect(push).toHaveBeenLastCalledWith({ name: 'sw.blog.create', query: { type: 'podcast' } });
+    });
 
-        expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'blog-1', title: 'Autumn guide 2026' }));
+    it('loads category and author options on demand through entity filters', async () => {
+        const { categorySearch, authorSearch } = await createWrapper();
+        expect(categorySearch).not.toHaveBeenCalled();
+        expect(authorSearch).not.toHaveBeenCalled();
+    });
+
+    it('turns stored draft status into an active flag filter before searching', async () => {
+        const { wrapper, search, mergeWithStoredFilters } = await createWrapper();
+        mergeWithStoredFilters.mockImplementation((key: string, criteria: { addFilter: (filter: unknown) => void }) => {
+            criteria.addFilter(Shopwell.Data.Criteria.equalsAny('active', ['draft']));
+            return Promise.resolve(criteria);
+        });
+        search.mockClear();
+        await wrapper.get('aside button').trigger('click');
+        await flushPromises();
+        expect(callArgument<{ filters: unknown[] }>(search).filters).toEqual([
+            expect.objectContaining({
+                type: 'multi',
+                operator: 'OR',
+                queries: [
+                    expect.objectContaining({
+                        type: 'multi',
+                        operator: 'AND',
+                        queries: [
+                            expect.objectContaining({ type: 'equals', field: 'active', value: false }),
+                        ],
+                    }),
+                ],
+            }),
+        ]);
     });
 
     it('names the categories of a row, so the column can badge the first two', async () => {
@@ -343,18 +406,16 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         );
     });
 
-    it('opens the category list from the sidebar and leaves moderation to its own page', async () => {
-        const { wrapper, push } = await createWrapper();
-
-        const categoriesButton = wrapper
-            .findAll('aside button')
-            .find((button) => button.text() === 'sw-blog.list.buttonManageCategories');
-        expect(categoriesButton).toBeDefined();
-        await categoriesButton!.trigger('click');
-
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.category.list' });
-        // the comment queue is not reachable from the entry list anymore: it is its own page
-        expect(push).not.toHaveBeenCalledWith({ name: 'sw.blog.comment.list' });
-        expect(wrapper.findAll('aside button').some((button) => button.text().includes('comment'))).toBe(false);
+    it('keeps only refresh and filters in the sidebar', async () => {
+        const { wrapper } = await createWrapper();
+        expect(wrapper.findAll('aside button')).toHaveLength(1);
+        expect(wrapper.findAll('aside button')[0].text()).toBe('sw-blog.list.buttonRefresh');
+    });
+    it('shows the list results without duplicating the main menu', async () => {
+        const { wrapper } = await createWrapper();
+        const content = wrapper.get('.sw-blog-list__content');
+        expect(content.find('sw-blog-navigation-stub').exists()).toBe(false);
+        expect(content.find('.sw-blog-list__results').exists()).toBe(true);
+        expect(content.find('.sw-blog-list__results sw-blog-navigation-stub').exists()).toBe(false);
     });
 });

@@ -15,6 +15,8 @@ import template from './sw-blog-detail-content-post.html.twig';
 export default defineComponent({
     template,
 
+    inject: ['feature'],
+
     props: {
         blog: {
             type: Object,

@@ -72,6 +72,25 @@ class BlogDetailReaderTest extends TestCase
         $reader->read('blog-id', new Request(), Generator::generateSalesChannelContext());
     }
 
+    public function testAnExplicitEditorPreviewCanReadADraft(): void
+    {
+        $blog = $this->blog('blog-id');
+        $visibilityGuard = static::createStub(BlogVisibilityGuard::class);
+        $visibilityGuard->method('isVisible')->willReturn(false);
+        $visibilityGuard->method('getVisibilityFilter')->willReturn(new EqualsFilter('active', true));
+        $settings = static::createStub(BlogSettings::class);
+        $settings->method('getCommentsPerPage')->willReturn(10);
+        $reader = $this->reader(
+            blogRepository: $this->blogRepositoryReturning(new BlogCollection([$blog])),
+            settings: $settings,
+            visibilityGuard: $visibilityGuard,
+        );
+
+        $detail = $reader->read('blog-id', new Request(), Generator::generateSalesChannelContext(), includeUnpublished: true);
+
+        static::assertSame($blog, $detail->getBlog());
+    }
+
     public function testASwitchedOffThreadAndATurnedOffTocCostNoExtraQuery(): void
     {
         $blog = $this->blog('blog-id');

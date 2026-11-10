@@ -16,13 +16,25 @@ let activeWrapper: VueWrapper | null = null;
 async function createWrapper(
     entries: unknown[] = [{ id: 'blog-1' }],
     can: (privilege: string) => boolean = () => true,
-): Promise<{ wrapper: VueWrapper; save: jest.Mock; remove: jest.Mock; push: jest.Mock }> {
+    authorId: string | null = 'author-1',
+): Promise<{
+    wrapper: VueWrapper;
+    save: jest.Mock;
+    remove: jest.Mock;
+    push: jest.Mock;
+    replace: jest.Mock;
+    get: jest.Mock;
+    search: jest.Mock;
+}> {
     const save = jest.fn(() => Promise.resolve());
     const remove = jest.fn(() => Promise.resolve());
     const push = jest.fn(() => Promise.resolve());
 
+    const replace = jest.fn(() => Promise.resolve());
+    const get = jest.fn(() => Promise.resolve({ ...author }));
     const authorRepository = {
-        get: () => Promise.resolve({ ...author }),
+        get,
+        create: () => ({ id: 'new-author', name: '', active: true }),
         save,
         delete: remove,
         hasChanges: () => false,
@@ -33,7 +45,7 @@ async function createWrapper(
     };
 
     const wrapper = shallowMount(await wrapTestComponent('sw-blog-author-detail', { sync: true }), {
-        props: { authorId: 'author-1' },
+        props: { authorId },
         global: {
             stubs: {
                 'sw-page': {
@@ -44,8 +56,9 @@ async function createWrapper(
                 'sw-container': { template: '<div><slot></slot></div>' },
                 'sw-language-switch': {
                     props: ['saveChangesFunction', 'abortChangeFunction'],
+                    data: () => ({ saveFailed: false }),
                     template:
-                        '<section><output class="unsaved">{{ abortChangeFunction() }}</output><button class="language-save" @click="saveChangesFunction()">Save translation</button><button class="language-change" @click="$emit(\'on-change\', \'language-2\')">Change language</button></section>',
+                        '<section><output class="language-save-failed">{{ saveFailed }}</output><output class="unsaved">{{ abortChangeFunction() }}</output><button class="language-save" @click="saveChangesFunction().catch(() => saveFailed = true)">Save translation</button><button class="language-change" @click="$emit(\'on-change\', \'language-2\')">Change language</button></section>',
                 },
                 'sw-skeleton': true,
                 'sw-media-compact-upload-v2': {
@@ -88,7 +101,7 @@ async function createWrapper(
             },
             mocks: {
                 $route: { name: 'sw.blog.author.detail', meta: { $module: { icon: 'regular-image-text' } } },
-                $router: { push, replace: jest.fn(() => Promise.resolve()) },
+                $router: { push, replace },
                 $t: (key: string, payload?: Record<string, unknown>) =>
                     payload ? `${key}:${JSON.stringify(payload)}` : key,
                 $te: () => false,
@@ -98,7 +111,7 @@ async function createWrapper(
 
     activeWrapper = wrapper;
 
-    return { wrapper, save, remove, push };
+    return { wrapper, save, remove, push, replace, get, search: blogRepository.search };
 }
 
 describe('src/module/sw-blog/page/sw-blog-author-detail', () => {
@@ -106,6 +119,51 @@ describe('src/module/sw-blog/page/sw-blog-author-detail', () => {
         activeWrapper?.unmount();
         activeWrapper = null;
         jest.restoreAllMocks();
+    });
+
+    it('shows a blank author form without persisting or requesting existing entries', async () => {
+        const { wrapper, save, get, search } = await createWrapper([], () => true, null);
+        await flushPromises();
+        expect((wrapper.get('.sw-blog-author-detail__name').element as HTMLInputElement).value).toBe('');
+        expect(wrapper.find('.sw-blog-author-detail__action-delete').exists()).toBe(false);
+        expect(wrapper.find('.sw-blog-author-detail__entries').exists()).toBe(false);
+        expect(wrapper.get('.sw-blog-author-detail__language-switch').attributes('disabled')).toBeDefined();
+        expect(save).not.toHaveBeenCalled();
+        expect(get).not.toHaveBeenCalled();
+        expect(search).not.toHaveBeenCalled();
+    });
+
+    it('saves the completed new author once and replaces the create route with the detail route', async () => {
+        const { wrapper, save, replace } = await createWrapper([], () => true, null);
+        await flushPromises();
+        await wrapper.get('.sw-blog-author-detail__name').setValue('Anna Schmidt');
+        await wrapper.get('.sw-blog-author-detail__email').setValue('anna@example.com');
+        await wrapper.get('.sw-blog-author-detail__action-save').trigger('click');
+        await flushPromises();
+        expect(save).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'new-author', name: 'Anna Schmidt', email: 'anna@example.com', active: true }),
+        );
+        expect(replace).toHaveBeenCalledWith({ name: 'sw.blog.author.detail', params: { id: 'new-author' } });
+    });
+
+    it('cancels a new author without persisting it', async () => {
+        const { wrapper, save, push } = await createWrapper([], () => true, null);
+        await flushPromises();
+        await wrapper.get('.sw-blog-author-detail__name').setValue('Unpublished author');
+        await wrapper.get('.sw-blog-author-detail__action-cancel').trigger('click');
+        expect(save).not.toHaveBeenCalled();
+        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.author.list' });
+    });
+
+    it('retains the new author form when saving fails', async () => {
+        const { wrapper, save, replace } = await createWrapper([], () => true, null);
+        await flushPromises();
+        save.mockRejectedValueOnce(new Error('Save rejected'));
+        await wrapper.get('.sw-blog-author-detail__name').setValue('Anna Schmidt');
+        await wrapper.get('.sw-blog-author-detail__action-save').trigger('click');
+        await flushPromises();
+        expect(replace).not.toHaveBeenCalled();
+        expect((wrapper.get('.sw-blog-author-detail__name').element as HTMLInputElement).value).toBe('Anna Schmidt');
     });
 
     it('loads the author and the entries that carry the byline', async () => {
@@ -185,5 +243,30 @@ describe('src/module/sw-blog/page/sw-blog-author-detail', () => {
 
         expect(remove).toHaveBeenCalledWith('author-1');
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.author.list' });
+    });
+    it('rejects a language change when the translation cannot be saved', async () => {
+        const { wrapper, save: saveAuthor, get: getAuthor } = await createWrapper();
+        await flushPromises();
+        saveAuthor.mockRejectedValueOnce(new Error('Save failed'));
+        await wrapper.get('.language-save').trigger('click');
+        await flushPromises();
+        expect(wrapper.get('.language-save-failed').text()).toBe('true');
+        expect(getAuthor).toHaveBeenCalledTimes(1);
+    });
+    it('ignores media callbacks while the author is being saved', async () => {
+        const { wrapper, save } = await createWrapper();
+        await flushPromises();
+        let finishSave: () => void = () => {};
+        save.mockImplementationOnce(
+            () =>
+                new Promise<void>((resolve) => {
+                    finishSave = resolve;
+                }),
+        );
+        await wrapper.get('.sw-blog-author-detail__action-save').trigger('click');
+        await wrapper.get('.select-avatar').trigger('click');
+        expect(wrapper.get('.avatar-source').text()).toBe('');
+        finishSave();
+        await flushPromises();
     });
 });

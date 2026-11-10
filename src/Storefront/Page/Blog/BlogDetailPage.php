@@ -90,13 +90,23 @@ class BlogDetailPage extends Page
     protected int $commentsPerPage = 10;
 
     /**
-     * The layout the merchant built for this entry, null when it renders through twig.
-     *
-     * The layout replaces the body of the article and not the whole page: the headline, the byline,
-     * the table of contents and the comment thread stay where they are. A merchant who builds an
-     * article layout decides how the article is presented, not whether readers may comment on it.
+     * The resolved article layout.
+     * Entity-bound layouts control the complete article presentation; legacy standalone layouts
+     * retain their body-only contract when no native assignment exists.
      */
     protected ?ContentPage $contentPage = null;
+
+    protected bool $entityBoundLayout = false;
+
+    public function isEntityBoundLayout(): bool
+    {
+        return $this->entityBoundLayout;
+    }
+
+    public function setEntityBoundLayout(bool $entityBoundLayout): void
+    {
+        $this->entityBoundLayout = $entityBoundLayout;
+    }
 
     public function getBlog(): ?BlogEntity
     {

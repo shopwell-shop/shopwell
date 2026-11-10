@@ -1,10 +1,4 @@
 .sw-blog-comment-detail {
-    &__body {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-16);
-    }
-
     &__text {
         padding-block-end: var(--scale-size-16);
         border-block-end: 1px solid var(--color-border-primary-default);

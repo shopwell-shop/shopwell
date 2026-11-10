@@ -2,6 +2,12 @@ import { useId } from 'vue';
 import template from './sw-experience-studio-element-picker.html.twig';
 import './sw-experience-studio-element-picker.scss';
 
+const blogPresetKeys: Record<string, string> = {
+    'Sw:BlogPost': 'sw-experience-studio.blogPresets.post',
+    'Sw:BlogVideo': 'sw-experience-studio.blogPresets.video',
+    'Sw:BlogListing': 'sw-experience-studio.blogPresets.listing',
+};
+
 type PickerItem = {
     name: string;
     label: string;
@@ -97,7 +103,12 @@ export default Shopwell.Component.wrapComponentConfig({
         visibleElements(): PickerItem[] {
             const searchTerm = this.normalizedSearchTerm;
 
-            return (this.elements as PickerItem[]).filter((item) => {
+            const items = (this.elements as PickerItem[]).map((item) => {
+                const key = item.kind === 'preset' ? blogPresetKeys[item.id ?? item.name] : null;
+                return key ? { ...item, label: this.$t(`${key}.name`), description: this.$t(`${key}.description`) } : item;
+            });
+
+            return items.filter((item) => {
                 const belongsToActiveTab = this.activeTab === 'presets' ? item.kind === 'preset' : item.kind !== 'preset';
 
                 return (

@@ -5,6 +5,7 @@ namespace Shopwell\Storefront\Framework\Seo\SeoUrlRoute;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\BlogException;
+use Shopwell\Core\Content\Blog\Service\BlogVisibilityGuard;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlMapping;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteConfig;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
@@ -12,9 +13,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 
@@ -30,7 +28,7 @@ use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
  * column and without a second route - the template reads `blog.translated.slug`, which the seo url
  * persister resolves in the language of the sales channel it is generating for.
  *
- * Only dated entries get a url. A scheduled article must not appear in a sitemap or in a generated url
+ * Only active entries with an elapsed or absent date get a url. A scheduled article must not appear in a sitemap or in a generated url
  * list before it is readable: a url that answers 404 is worse than no url, because a search engine
  * remembers it.
  *
@@ -67,15 +65,11 @@ class BlogSeoUrlRoute implements SeoUrlRouteInterface
     }
 
     /**
-     * The same visibility rule the storefront applies, expressed as a filter: an entry without a date
-     * is live, an entry dated in the future is not.
+     * Use the same publication guard as the listing, detail and comment readers.
      */
     public function prepareCriteria(Criteria $criteria, SalesChannelEntity $salesChannel): void
     {
-        $criteria->addFilter(new OrFilter([
-            new EqualsFilter('publishedAt', null),
-            new RangeFilter('publishedAt', [RangeFilter::LTE => $this->clock->now()->format('Y-m-d H:i:s.v')]),
-        ]));
+        $criteria->addFilter((new BlogVisibilityGuard($this->clock))->getVisibilityFilter());
     }
 
     /**

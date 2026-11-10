@@ -1,4 +1,5 @@
 import type CriteriaType from 'src/core/data/criteria.data';
+import { getContentLayoutNameKey } from 'src/app/utils/content-layout-label.util';
 
 import { getStorefrontSalesChannelCriteria } from 'src/module/sw-experience-studio/util/sales-channel-criteria.util';
 import template from './sw-experience-studio-toolbar.html.twig';
@@ -81,7 +82,15 @@ export default Shopwell.Component.wrapComponentConfig({
         layoutName(): string {
             const layout = this.layout as Entity<'content_layout'> | null;
 
-            return layout?.name ?? '';
+            if (!layout) {
+                return '';
+            }
+            const key = getContentLayoutNameKey(layout);
+            return key ? this.$t(key) : layout.name;
+        },
+
+        previewEntityLabelProperty(): string {
+            return this.previewEntityType === 'blog' ? 'title' : 'name';
         },
 
         salesChannelCriteria(): CriteriaType {

@@ -18,6 +18,8 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'product_content_layout:read',
                 'category_content_layout:read',
                 'landing_page_content_layout:read',
+                'blog_content_layout:read',
+                'blog:read',
             ],
             dependencies: [],
         },
@@ -33,6 +35,9 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'landing_page_content_layout:create',
                 'landing_page_content_layout:update',
                 'landing_page_content_layout:delete',
+                'blog_content_layout:create',
+                'blog_content_layout:update',
+                'blog_content_layout:delete',
             ],
             dependencies: [
                 'experience_studio.viewer',

@@ -6,6 +6,7 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\Filter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
@@ -15,15 +16,8 @@ use Shopwell\Core\Framework\Log\Package;
 /**
  * The one place that decides whether a visitor may read an entry.
  *
- * There is exactly one dimension: the date. An entry without a `publishedAt` is live the moment it is
- * saved, an entry dated in the future is a row nobody may read yet, and an entry dated in the past is
- * readable. That is the whole rule.
- *
- * There used to be a second switch next to it and it was removed: a flag that says "this content
- * exists but is switched off" creates states no template can render sensibly - enabled but undated,
- * dated but disabled - and every call site would have to decide what those mean. A merchant who
- * wants to take an article down either deletes it or moves its date forward; both are one field and
- * both are already understood by the rule below.
+ * An entry is public only when active and its publication date is absent or has elapsed.
+ * Inactive entries are drafts; active entries dated in the future are scheduled.
  *
  * Keeping the rule here instead of in the storefront route means a sitemap, a listing, an rss feed and
  * a search result cannot disagree about what is published - the mistake that makes a scheduled entry
@@ -59,6 +53,10 @@ class BlogVisibilityGuard
      */
     public function isVisible(BlogEntity $blog, Context $context): bool
     {
+        if (!$blog->active) {
+            return false;
+        }
+
         $publishedAt = $blog->publishedAt;
 
         if ($publishedAt === null) {
@@ -77,9 +75,12 @@ class BlogVisibilityGuard
      */
     public function getVisibilityFilter(): Filter
     {
-        return new OrFilter([
-            new EqualsFilter('publishedAt', null),
-            new RangeFilter('publishedAt', [RangeFilter::LTE => $this->clock->now()->format('Y-m-d H:i:s.v')]),
+        return new AndFilter([
+            new EqualsFilter('active', true),
+            new OrFilter([
+                new EqualsFilter('publishedAt', null),
+                new RangeFilter('publishedAt', [RangeFilter::LTE => $this->clock->now()->format('Y-m-d H:i:s.v')]),
+            ]),
         ]);
     }
 

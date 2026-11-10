@@ -1,7 +1,13 @@
 /**
  * @sw-package discovery
  */
-import { getBlogTypeComponent, registerBlogType, registeredBlogTypes, resetBlogTypes } from './blog-type.registry';
+import {
+    getBlogTypeComponent,
+    getBlogTypeDefinition,
+    registerBlogType,
+    registeredBlogTypes,
+    resetBlogTypes,
+} from './blog-type.registry';
 
 const postLoader = jest.fn(() => Promise.resolve({ default: { name: 'post-component' } }));
 
@@ -15,6 +21,26 @@ describe('src/module/sw-blog/service/blog-type.registry', () => {
         registerBlogType('post', postLoader);
 
         expect(getBlogTypeComponent('post')).toBe(postLoader);
+    });
+
+    it('accepts named factory components with display metadata', async () => {
+        registerBlogType('podcast', {
+            component: 'plugin-podcast-editor',
+            label: 'plugin.podcast.label',
+            icon: 'regular-play',
+        });
+
+        expect(await getBlogTypeComponent('podcast')?.()).toBe('plugin-podcast-editor');
+        expect(getBlogTypeDefinition('podcast')).toEqual({
+            component: 'plugin-podcast-editor',
+            label: 'plugin.podcast.label',
+            icon: 'regular-play',
+        });
+    });
+
+    it('accepts a registered component name without metadata', async () => {
+        registerBlogType('podcast', 'plugin-podcast-editor');
+        expect(await getBlogTypeComponent('podcast')?.()).toBe('plugin-podcast-editor');
     });
 
     it('does not invent a loader for a type nobody registered', () => {

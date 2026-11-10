@@ -1,27 +1,5 @@
 /**
  * @sw-package discovery
- *
- * The blog module: the editorial content of the shop.
- *
- * The module owns four things a merchant maintains - the entry, the category it is filed under, the
- * author it is signed with and the comments below it - and nothing else. What an entry *looks like*
- * is not decided here: the detail page asks the type registry for the component of `blog.type`, so a
- * plugin that brings its own type is edited in the same screen as an article or a video page. A type
- * nobody registered does not white-screen, it renders the unknown component and keeps its fields
- * untouched.
- *
- * Two decisions are worth knowing when reading the pages:
- *
- * - There is no `active` flag. An entry is live when `publishedAt` is empty or in the past, and
- *   scheduled when it is in the future. That derivation lives in `blogStatusOf` and is used by the
- *   list, the detail sidebar and the badge, so the three can not disagree.
- * - The categories are a list of assignment rows, not of categories. Filing an entry writes a row of
- *   `blog_category_assignment`; the category itself is never edited from the entry.
- *
- * The categories, the authors and the comments get a menu entry of their own next to the entries: a
- * merchant reworking the taxonomy browses the categories directly, a byline is maintained where the
- * people behind them live, and approving what readers wrote is its own sitting rather than a detour
- * through every article.
  */
 import privileges from './acl';
 
@@ -46,11 +24,14 @@ const { Module } = Shopwell;
 /** @private */
 Shopwell.Component.register('sw-blog-list', () => import('./page/sw-blog-list'));
 /** @private */
+Shopwell.Component.register('sw-blog-category-navigation', () => import('./component/sw-blog-category-navigation'));
+/** @private */
+Shopwell.Component.register('sw-blog-category-tree', () => import('./component/sw-blog-category-navigation/tree'));
+/** @private */
 Shopwell.Component.register('sw-blog-detail', () => import('./page/sw-blog-detail'));
 /** @private */
 Shopwell.Component.register('sw-blog-category-list', () => import('./page/sw-blog-category-list'));
 /** @private */
-Shopwell.Component.register('sw-blog-category-detail', () => import('./page/sw-blog-category-detail'));
 /** @private */
 Shopwell.Component.register('sw-blog-author-list', () => import('./page/sw-blog-author-list'));
 /** @private */
@@ -62,6 +43,9 @@ Shopwell.Component.register('sw-blog-comment-detail', () => import('./page/sw-bl
 
 /** @private */
 Shopwell.Component.register('sw-blog-status-badge', () => import('./component/sw-blog-status-badge'));
+/** @private */
+Shopwell.Component.register('sw-blog-detail-layout', () => import('./component/sw-blog-detail-layout'));
+
 /** @private */
 Shopwell.Component.register('sw-blog-detail-content', () => import('./component/sw-blog-detail-content'));
 /** @private */
@@ -82,8 +66,8 @@ Shopwell.Service().register('blogApiService', () => {
  * A plugin registers its own type the same way, next to registering the component it points at. The
  * loaders keep a type out of the initial bundle until an entry of that type is opened.
  */
-registerBlogType('post', () => import('./component/sw-blog-detail-content-post'));
-registerBlogType('video', () => import('./component/sw-blog-detail-content-video'));
+registerBlogType('post', { component: 'sw-blog-detail-content-post', label: 'sw-blog.type.post' });
+registerBlogType('video', { component: 'sw-blog-detail-content-video', label: 'sw-blog.type.video' });
 
 /** @private */
 Module.register('sw-blog', {
@@ -123,8 +107,10 @@ Module.register('sw-blog', {
                 },
             },
             props: {
-                default: () => {
-                    return { blogId: null };
+                default: (route?: { query?: Record<string, unknown> }) => {
+                    const type = route?.query?.type;
+
+                    return { blogId: null, blogType: typeof type === 'string' && type !== '' ? type : 'post' };
                 },
             },
         },
@@ -149,27 +135,15 @@ Module.register('sw-blog', {
         'category.list': {
             component: 'sw-blog-category-list',
             path: 'category',
+            props: {
+                default: (route: { query: Record<string, unknown> }) => ({
+                    categoryId: typeof route.query.id === 'string' ? route.query.id.toLowerCase() : null,
+                }),
+            },
             meta: {
                 privilege: privileges.blog.viewer,
                 appSystem: {
                     view: 'list',
-                },
-            },
-        },
-
-        'category.detail': {
-            component: 'sw-blog-category-detail',
-            path: 'category/:id',
-            meta: {
-                parentPath: 'sw.blog.category.list',
-                privilege: privileges.blog.viewer,
-                appSystem: {
-                    view: 'detail',
-                },
-            },
-            props: {
-                default(route: { params: Record<string, string> }) {
-                    return { categoryId: route.params.id.toLowerCase() };
                 },
             },
         },
@@ -182,6 +156,16 @@ Module.register('sw-blog', {
                 appSystem: {
                     view: 'list',
                 },
+            },
+        },
+
+        'author.create': {
+            component: 'sw-blog-author-detail',
+            path: 'author/create',
+            meta: {
+                parentPath: 'sw.blog.author.list',
+                privilege: privileges.blog.creator,
+                appSystem: { view: 'detail' },
             },
         },
 
@@ -235,12 +219,17 @@ Module.register('sw-blog', {
         {
             id: 'sw-blog',
             label: 'sw-blog.general.mainMenuItemGeneral',
+            color: '#9AA8B5',
             icon: 'regular-file-text',
-            // a navigation entry points at the *name* of a route - the router resolves it to build the
-            // link of the menu item
+            position: 55,
+            privilege: privileges.blog.viewer,
+        },
+        {
+            id: 'sw-blog-content',
+            label: 'sw-blog.navigation.content',
             path: 'sw.blog.list',
-            parent: 'sw-content',
-            position: 40,
+            parent: 'sw-blog',
+            position: 10,
             privilege: privileges.blog.viewer,
         },
         {
@@ -248,27 +237,23 @@ Module.register('sw-blog', {
             label: 'sw-blog.general.mainMenuItemCategory',
             path: 'sw.blog.category.list',
             parent: 'sw-blog',
-            position: 10,
+            position: 20,
             privilege: privileges.blog.viewer,
         },
         {
-            // the bylines: an author is maintained where the entry that needs one is written, and
-            // this page is where a merchant creates one that does not exist yet
             id: 'sw-blog-author',
             label: 'sw-blog.general.mainMenuItemAuthor',
             path: 'sw.blog.author.list',
             parent: 'sw-blog',
-            position: 15,
+            position: 30,
             privilege: privileges.blog.viewer,
         },
         {
-            // the moderation queue of its own entry: a moderator works through the comments of
-            // every article in one pass, the same way the review module keeps its list
             id: 'sw-blog-comment',
             label: 'sw-blog.general.mainMenuItemComment',
             path: 'sw.blog.comment.list',
             parent: 'sw-blog',
-            position: 20,
+            position: 40,
             privilege: privileges.blog.viewer,
         },
     ],

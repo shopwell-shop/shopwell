@@ -29,7 +29,7 @@
         </aside>
     {% endif %}
 
-    {% if page.author %}
+    {% if page.author and (showAuthor is not defined or showAuthor) %}
         {% block sw_blog_sidebar_author %}
             <section class="blog-author-card">
                 <div class="blog-author-card__avatar" aria-hidden="true">{{ page.author.name|slice(0, 1) }}</div>

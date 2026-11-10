@@ -69,9 +69,11 @@ async function createWrapper(can: (privilege: string) => boolean = () => true): 
             stubs: {
                 'sw-page': {
                     template:
-                        '<div><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/></div>',
+                        '<div><slot name="search-bar"/><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/></div>',
                 },
-                'sw-search-bar': true,
+                'sw-search-bar': {
+                    template: '<input class="search-input" @input="$emit(\'search\', $event.target.value)" />',
+                },
                 'sw-entity-listing': {
                     props: [
                         'dataSource',
@@ -162,29 +164,12 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
         expect(wrapper.get('.sw-blog-author-list__entry-count').text()).toBe('3');
     });
 
-    it('creates an author with a name and opens it, because a byline needs a place to be written', async () => {
+    it('opens the author creation page without creating or saving a record', async () => {
         const { wrapper, save, push } = await createWrapper();
-
         await wrapper.get('.sw-blog-author-list__button-create').trigger('click');
-        await wrapper.get('.sw-blog-author-list__create-name').setValue('Anna Schmidt');
-        await wrapper.findAll('.sw-blog-author-list__create-modal button')[1].trigger('click');
-        await flushPromises();
-
-        const created = callArgument<{ name: string; active: boolean }>(save);
-
-        expect(created.name).toBe('Anna Schmidt');
-        expect(created.active).toBe(true);
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.author.detail', params: { id: 'author-new' } });
-    });
-
-    it('refuses to create an author without a name', async () => {
-        const { wrapper, save } = await createWrapper();
-
-        await wrapper.get('.sw-blog-author-list__button-create').trigger('click');
-        await wrapper.get('.sw-blog-author-list__create-name').setValue('   ');
-
-        expect(wrapper.findAll('.sw-blog-author-list__create-modal button')[1].attributes('disabled')).toBeDefined();
+        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.author.create' });
         expect(save).not.toHaveBeenCalled();
+        expect(wrapper.find('.sw-blog-author-list__create-modal').exists()).toBe(false);
     });
 
     it('does not delete an author who still signs entries', async () => {
@@ -253,5 +238,29 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
         await wrapper.get('[data-row="author-2"] input[type="checkbox"]').setValue(true);
 
         expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'author-2', active: true }));
+    });
+    it('uses the Blog navigation without a duplicate return button', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.find('.sw-blog-author-list__button-entries').exists()).toBe(false);
+    });
+    it('shows the list results without duplicating the main menu', async () => {
+        const { wrapper } = await createWrapper();
+        const content = wrapper.get('.sw-blog-author-list__content');
+        expect(content.find('sw-blog-navigation-stub').exists()).toBe(false);
+        expect(content.find('.sw-blog-author-list__results').exists()).toBe(true);
+        expect(content.find('.sw-blog-author-list__results sw-blog-navigation-stub').exists()).toBe(false);
+    });
+    it('shows no matches after a search instead of the initial empty state', async () => {
+        const { wrapper, search } = await createWrapper();
+        await flushPromises();
+        search.mockResolvedValue(collection<EntityCollection<'blog_author'>>([]));
+        await wrapper.setData({ disableRouteParams: true });
+        await wrapper.get('.search-input').setValue('Missing');
+        await flushPromises();
+        expect(wrapper.get('mt-empty-state-stub').attributes('headline')).toBe('sw-empty-state.messageNoResultTitle');
+        expect(wrapper.get('mt-empty-state-stub').attributes('description')).toBe(
+            'sw-empty-state.messageNoResultSublineSimple',
+        );
     });
 });

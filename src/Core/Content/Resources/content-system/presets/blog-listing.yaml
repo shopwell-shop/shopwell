@@ -1,0 +1,15 @@
+name: "Blog listing"
+description: "Shared Blog home and category listing using the shop theme."
+icon: "regular-file-text"
+category: "content"
+priority: 160
+layout:
+  - component: Sw:Blog:Feed
+    properties:
+      categoryId: "{{categoryId}}"
+    dataRequirements:
+      listing:
+        key: listing
+        source: blog_listing
+        config:
+          property: categoryId

@@ -44,6 +44,36 @@ describe('module/sw-experience-studio/component/sw-experience-studio-assignment-
         expect(computed.assignmentType.call({ rootSource: 'none' })).toBeNull();
     });
 
+    it('assigns a layout to blog entries through the native assignment repository', async () => {
+        const assignmentType = computed.assignmentType.call({ rootSource: 'blog' });
+        expect(assignmentType).toEqual({
+            entity: 'blog',
+            assignmentEntity: 'blog_content_layout',
+            entityIdField: 'blogId',
+            defaultConfigKey: 'core.content_system.default_blog_content_layout',
+        });
+        const assignments = createCollection([]);
+        const saveAll = jest.fn().mockResolvedValue(undefined);
+        const vm = {
+            layoutId: 'layout-1',
+            assignmentType,
+            assignmentRepository: {
+                search: jest.fn().mockResolvedValue(assignments),
+                create: () => ({ id: 'assignment-blog' }),
+                saveAll,
+            },
+            assignmentIdsByEntityId: {},
+            entityIds: ['blog-1'],
+        };
+
+        await methods.saveEntityAssignments.call(vm);
+
+        expect([...assignments]).toEqual([
+            { id: 'assignment-blog', blogId: 'blog-1', salesChannelId: null, contentLayoutId: 'layout-1' },
+        ]);
+        expect(saveAll).toHaveBeenCalledWith(assignments, expect.anything());
+    });
+
     it('offers parent products and variants for selection', () => {
         const criteria = computed.entityCriteria.call({ assignmentType: { entity: 'product' } }) as {
             filters: unknown[];

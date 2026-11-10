@@ -188,7 +188,7 @@ export default defineComponent({
          * the moderator returns to all show what the api now holds.
          */
         async onSave(): Promise<void> {
-            if (!this.comment || this.isSaving) {
+            if (!this.comment || this.isSaving || this.isLoading || !this.canEdit) {
                 return;
             }
 

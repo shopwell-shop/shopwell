@@ -32,7 +32,7 @@ export default defineComponent({
     props: {
         authorId: {
             type: String,
-            required: true,
+            default: null,
         },
     },
 
@@ -63,8 +63,12 @@ export default defineComponent({
             return this.repositoryFactory.create('blog');
         },
 
+        isNew(): boolean {
+            return !this.authorId;
+        },
+
         canEdit(): boolean {
-            return this.acl.can('blog.editor');
+            return this.acl.can(this.isNew ? 'blog.creator' : 'blog.editor');
         },
 
         canDelete(): boolean {
@@ -111,12 +115,25 @@ export default defineComponent({
         },
     },
 
+    watch: {
+        authorId() {
+            void this.loadAuthor();
+        },
+    },
+
     created() {
         void this.loadAuthor();
     },
 
     methods: {
         async loadAuthor(): Promise<void> {
+            this.entries = null;
+            if (!this.authorId) {
+                Shopwell.Store.get('context').resetLanguageToDefault();
+                this.author = this.authorRepository.create(Shopwell.Context.api);
+                this.author.active = true;
+                return;
+            }
             this.isLoading = true;
 
             try {
@@ -158,25 +175,26 @@ export default defineComponent({
          * null, otherwise the author keeps the picture that was just deleted.
          */
         setAvatar(mediaId: EntitySchema.EntityKey<'media'> | null): void {
-            if (!this.author) {
+            if (!this.author || !this.canEdit || this.isSaving || this.isLoading) {
                 return;
             }
 
             this.author.mediaId = mediaId as EntitySchema.EntityKey<'media'>;
         },
 
-        async onSave(redirect: boolean = false): Promise<void> {
-            if (!this.author || this.isSaving) {
-                return;
+        async onSave(redirect: boolean = false): Promise<boolean> {
+            if (!this.author || !this.canEdit || this.isSaving || this.isLoading) {
+                return false;
             }
 
             if (this.isNameMissing) {
                 this.createNotificationError({ message: this.$t('sw-blog.author.messageNameRequired') });
 
-                return;
+                return false;
             }
 
             this.isSaving = true;
+            const wasNew = this.isNew;
 
             try {
                 await this.authorRepository.save(this.author);
@@ -186,12 +204,18 @@ export default defineComponent({
                 if (redirect) {
                     await this.$router.push({ name: 'sw.blog.author.list' });
 
-                    return;
+                    return true;
                 }
 
+                if (wasNew) {
+                    await this.$router.replace({ name: 'sw.blog.author.detail', params: { id: this.author.id } });
+                    return true;
+                }
                 await this.loadAuthor();
+                return true;
             } catch {
                 this.createNotificationError({ message: this.$t('sw-blog.detail.messageSaveError') });
+                return false;
             } finally {
                 this.isSaving = false;
             }
@@ -202,6 +226,9 @@ export default defineComponent({
         },
 
         onOpenDeleteModal(): void {
+            if (!this.canDelete || this.isSaving || this.isLoading || !this.entries) {
+                return;
+            }
             this.showDeleteModal = true;
         },
 
@@ -210,7 +237,7 @@ export default defineComponent({
         },
 
         onDelete(): void {
-            if (this.isDeleteBlocked) {
+            if (this.isDeleteBlocked || !this.canDelete || this.isSaving || this.isLoading || !this.entries) {
                 return;
             }
 
@@ -243,8 +270,10 @@ export default defineComponent({
             return this.author ? this.authorRepository.hasChanges(this.author) : false;
         },
 
-        saveOnLanguageChange(): Promise<void> {
-            return this.onSave(false);
+        async saveOnLanguageChange(): Promise<void> {
+            if (!(await this.onSave())) {
+                throw new Error('Blog author save failed');
+            }
         },
 
         onChangeLanguage(languageId: EntitySchema.EntityKey<'language'>): void {

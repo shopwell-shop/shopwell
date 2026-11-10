@@ -5,9 +5,11 @@ describe('Experience Studio assignment action', () => {
         ['product', false, true],
         ['category', false, true],
         ['landing_page', false, true],
+        ['blog', false, true],
         ['product', true, false],
         ['category', true, false],
         ['landing_page', true, false],
+        ['blog', true, false],
         ['none', false, false],
         [null, false, false],
     ])('gates assignments for root %s in create mode %s', (layoutRootSource, isCreateMode, expected) => {

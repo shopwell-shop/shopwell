@@ -68,6 +68,7 @@ class TagDefinition extends EntityDefinition
 
             // reverse side of the associations, not available in sales-channel-api
             (new ManyToManyAssociationField('products', ProductDefinition::class, ProductTagDefinition::class, 'tag_id', 'product_id'))->addFlags(new CascadeDelete()),
+            (new ManyToManyAssociationField('blogs', 'blog', 'blog_tag', 'tag_id', 'blog_id'))->addFlags(new CascadeDelete()),
             (new ManyToManyAssociationField('media', MediaDefinition::class, MediaTagDefinition::class, 'tag_id', 'media_id'))->addFlags(new CascadeDelete()),
             (new ManyToManyAssociationField('categories', CategoryDefinition::class, CategoryTagDefinition::class, 'tag_id', 'category_id'))->addFlags(new CascadeDelete()),
             (new ManyToManyAssociationField('customers', CustomerDefinition::class, CustomerTagDefinition::class, 'tag_id', 'customer_id'))->addFlags(new CascadeDelete()),

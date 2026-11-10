@@ -6,9 +6,23 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Content\Blog\Aggregate\BlogAuthor\BlogAuthorEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryEntity;
+use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryTree;
+use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryTreeExtension;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategoryAssignment\BlogCategoryAssignmentEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogComment\BlogCommentEntity;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogContentLayoutDefinition;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogContentLayoutExtension;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogDetailDataLoader;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogDetailLoaderConfigSerializer;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogLayoutSubscriber;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogListingDataLoader;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogListingLoaderConfigSerializer;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogMappingCandidateProvider;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogSpecificationSource;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\ProvisionBlogLayoutsCommand;
 use Shopwell\Core\Content\Blog\Aggregate\BlogVideo\BlogVideoEntity;
+use Shopwell\Core\Content\Blog\Api\BlogCategoryTreeController;
+use Shopwell\Core\Content\Blog\Api\BlogTypeController;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\SalesChannel\Review\BlogCommentRoute;
 use Shopwell\Core\Content\Blog\Service\BlogCommentFloodGuard;
@@ -21,10 +35,17 @@ use Shopwell\Core\Content\Blog\Service\BlogService;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
 use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
 use Shopwell\Core\Content\Blog\Service\BlogVisibilityGuard;
-use Shopwell\Core\Content\Blog\Service\PostTypeHandler;
-use Shopwell\Core\Content\Blog\Service\VideoTypeHandler;
 use Shopwell\Core\Content\Blog\Sitemap\BlogUrlProvider;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
+use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutContextFactory;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutResolver;
+use Shopwell\Core\Framework\ContentSystem\Helper\ContentLayoutMetadataDeriver;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\ContentSystemLayoutProvisioner;
+use Shopwell\Core\Framework\ContentSystem\Validation\LayoutRootSourceReader;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
+use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\Framework\Validation\DataValidator;
@@ -33,7 +54,6 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 /**
  * The blog domain, without a single storefront class.
@@ -60,6 +80,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(BlogCategoryEntity::class)
         ->tag('shopwell.entity');
 
+    $services->set(BlogCategoryTreeExtension::class)->tag('shopwell.entity.extension');
+
+    $services->set(BlogCategoryTree::class)
+        ->args([service(Connection::class), service('blog_category.repository'), service(TreeUpdater::class), service(ChildCountUpdater::class)])
+        ->tag('kernel.event_subscriber');
+
     $services->set(BlogAuthorEntity::class)
         ->tag('shopwell.entity');
 
@@ -74,19 +100,62 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(BlogCommentEntity::class)
         ->tag('shopwell.entity');
 
-    // ---- how a blog type is rendered ----
-    // Every handler tags itself, so a plugin adds a type without touching the core. The registry is
-    // the only consumer of the tag and the only place that knows the order.
-    $services->set(PostTypeHandler::class)
-        ->tag('shopwell.blog_type_handler');
+    $services->set(BlogContentLayoutDefinition::class)
+        ->args([service(ContentLayoutMetadataDeriver::class)])
+        ->tag('shopwell.entity.definition');
 
-    $services->set(VideoTypeHandler::class)
-        ->tag('shopwell.blog_type_handler');
-
-    $services->set(BlogTypeRegistry::class)
+    $services->set(BlogSpecificationSource::class)
         ->args([
-            tagged_iterator('shopwell.blog_type_handler'),
-        ]);
+            service('blog_content_layout.repository'),
+            service(BlogContentLayoutDefinition::class),
+            service(EntityLayoutContextFactory::class),
+            service('blog.repository'),
+            service(SystemConfigService::class),
+            service(EntityLayoutResolver::class),
+            service(CacheTagCollector::class),
+            service(BlogVisibilityGuard::class),
+        ])
+        ->tag('content_system.entity_specification_source', ['priority' => 100]);
+
+    $services->set(BlogMappingCandidateProvider::class)
+        ->args([service(BlogContentLayoutDefinition::class)])
+        ->tag('content_system.mapping_candidate_provider', ['priority' => 100]);
+
+    $services->set(BlogDetailDataLoader::class)
+        ->args([service(BlogDetailReader::class)])
+        ->tag('content_system.data_loader');
+
+    $services->set(BlogDetailLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(BlogLayoutSubscriber::class)
+        ->args([service(LayoutRootSourceReader::class), service(Connection::class), service(CacheInvalidator::class)])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(BlogListingDataLoader::class)
+        ->args([service(BlogListingReader::class)])
+        ->tag('content_system.data_loader');
+
+    $services->set(BlogListingLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(ProvisionBlogLayoutsCommand::class)
+        ->args([service(ContentSystemLayoutProvisioner::class), service(SystemConfigService::class)])
+        ->tag('console.command');
+
+    $services->set(BlogTypeRegistry::class);
+
+    $services->set(BlogContentLayoutExtension::class)->tag('shopwell.entity.extension');
+
+    $services->set(BlogCategoryTreeController::class)
+        ->args([service(BlogCategoryTree::class)])
+        ->public()
+        ->tag('controller.service_arguments');
+
+    $services->set(BlogTypeController::class)
+        ->args([service(BlogTypeRegistry::class)])
+        ->public()
+        ->tag('controller.service_arguments');
 
     // ---- whether a visitor may see an entry ----
     $services->set(BlogVisibilityGuard::class)

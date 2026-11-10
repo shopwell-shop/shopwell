@@ -4,107 +4,63 @@ namespace Shopwell\Tests\Unit\Core\Content\Blog\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Blog\BlogEntity;
-use Shopwell\Core\Content\Blog\BlogException;
-use Shopwell\Core\Content\Blog\Service\BlogTypeHandlerInterface;
 use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
-use Shopwell\Core\Content\Blog\Service\PostTypeHandler;
-use Shopwell\Core\Content\Blog\Service\VideoTypeHandler;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * The registry is the only place that maps a type to a handler, so the two core types and the
- * unknown case are pinned here. The unknown case matters most: an entry with a type nobody claims
- * must fail loudly instead of rendering a blank page.
- *
  * @internal
  */
 #[Package('discovery')]
 #[CoversClass(BlogTypeRegistry::class)]
 class BlogTypeRegistryTest extends TestCase
 {
-    public function testThePostTypeIsServedByThePostHandler(): void
+    public function testBuiltInTypesExposeTheirStorefrontDefaults(): void
     {
-        $handler = $this->registry()->get(BlogEntity::TYPE_POST);
+        $registry = new BlogTypeRegistry();
 
-        static::assertInstanceOf(PostTypeHandler::class, $handler);
+        static::assertSame(['post', 'video'], $registry->getTypes());
+        static::assertSame('@Storefront/storefront/page/blog/detail.html.twig', $registry->getDetailTemplate('post'));
+        static::assertSame('@Storefront/storefront/page/blog/detail-video.html.twig', $registry->getDetailTemplate('video'));
+        static::assertSame('BlogPosting', $registry->getSchemaType('post'));
+        static::assertSame('VideoObject', $registry->getSchemaType('video'));
     }
 
-    public function testTheVideoTypeIsServedByTheVideoHandler(): void
+    public function testExtensionsCanRegisterAdditionalTypesExactlyOnce(): void
     {
-        $handler = $this->registry()->get(BlogEntity::TYPE_VIDEO);
+        $registry = new BlogTypeRegistry();
+        $registry->addType('podcast', '@Podcast/detail.html.twig', 'PodcastEpisode');
+        $registry->addType('podcast');
 
-        static::assertInstanceOf(VideoTypeHandler::class, $handler);
+        static::assertTrue($registry->hasType('podcast'));
+        static::assertFalse($registry->hasType('PODCAST'));
+        static::assertSame(['post', 'video', 'podcast'], $registry->getTypes());
+        static::assertSame('@Podcast/detail.html.twig', $registry->getDetailTemplate('podcast'));
+        static::assertSame('PodcastEpisode', $registry->getSchemaType('podcast'));
     }
 
-    public function testAnUnknownTypeIsRejected(): void
+    public function testNumericStringIdentitiesRemainStrings(): void
     {
-        try {
-            $this->registry()->get('podcast');
-            static::fail('An unknown blog type must not be served by any handler.');
-        } catch (BlogException $exception) {
-            static::assertSame(BlogException::BLOG_TYPE_UNKNOWN, $exception->getErrorCode());
-            static::assertSame(['type' => 'podcast'], $exception->getParameters());
-        }
+        $registry = new BlogTypeRegistry();
+        $registry->addType('42');
+
+        static::assertSame(['post', 'video', '42'], $registry->getTypes());
     }
 
-    public function testAHandlerAddedByAPluginIsUsed(): void
+    public function testNewTypesCanReuseTheArticlePresentation(): void
     {
-        $pluginHandler = new class implements BlogTypeHandlerInterface {
-            public function supports(string $type): bool
-            {
-                return $type === 'podcast';
-            }
+        $registry = new BlogTypeRegistry();
+        $registry->addType('guide');
 
-            public function getDetailTemplate(): string
-            {
-                return '@Plugin/storefront/page/blog/detail-podcast.html.twig';
-            }
-
-            public function getSchemaType(): string
-            {
-                return 'PodcastEpisode';
-            }
-        };
-
-        $registry = new BlogTypeRegistry([
-            new PostTypeHandler(),
-            new VideoTypeHandler(),
-            $pluginHandler,
-        ]);
-
-        static::assertSame($pluginHandler, $registry->get('podcast'));
+        static::assertSame(BlogTypeRegistry::DEFAULT_TEMPLATE, $registry->getDetailTemplate('guide'));
+        static::assertSame('BlogPosting', $registry->getSchemaType('guide'));
     }
 
-    public function testTheFirstMatchingHandlerWins(): void
+    public function testAnUnavailableExtensionTypeFallsBackToTheArticlePresentation(): void
     {
-        $first = new class implements BlogTypeHandlerInterface {
-            public function supports(string $type): bool
-            {
-                return true;
-            }
+        $registry = new BlogTypeRegistry();
 
-            public function getDetailTemplate(): string
-            {
-                return '@Plugin/first.html.twig';
-            }
-
-            public function getSchemaType(): string
-            {
-                return 'Thing';
-            }
-        };
-
-        $registry = new BlogTypeRegistry([$first, new PostTypeHandler()]);
-
-        static::assertSame($first, $registry->get(BlogEntity::TYPE_POST));
-    }
-
-    private function registry(): BlogTypeRegistry
-    {
-        return new BlogTypeRegistry([
-            new PostTypeHandler(),
-            new VideoTypeHandler(),
-        ]);
+        static::assertFalse($registry->hasType('podcast'));
+        static::assertSame(BlogTypeRegistry::DEFAULT_TEMPLATE, $registry->getDetailTemplate('podcast'));
+        static::assertSame('BlogPosting', $registry->getSchemaType('podcast'));
     }
 }

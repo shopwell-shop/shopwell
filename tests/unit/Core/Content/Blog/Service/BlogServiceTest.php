@@ -15,12 +15,6 @@ use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\Clock\MockClock;
 
 /**
- * Publishing is the write that starts the editorial lifecycle, and it writes one field.
- *
- * The two rules worth pinning are that an undated entry gets a date (otherwise the listing sorts it
- * behind every dated article forever) and that a dated one keeps its date (otherwise re-publishing
- * rewrites the go-live date a reader sees next to the title).
- *
  * @internal
  */
 #[Package('discovery')]
@@ -46,6 +40,7 @@ class BlogServiceTest extends TestCase
         $payload = $repository->updates[0][0];
 
         static::assertSame($this->blogId, $payload['id']);
+        static::assertTrue($payload['active']);
         static::assertInstanceOf(\DateTimeInterface::class, $payload['publishedAt']);
         static::assertSame('2026-01-01 10:00:00', $payload['publishedAt']->format('Y-m-d H:i:s'));
     }
@@ -53,7 +48,9 @@ class BlogServiceTest extends TestCase
     public function testPublishingADatedEntryWritesNothingAtAll(): void
     {
         $publishedAt = new \DateTimeImmutable('2026-01-01 09:00:00', new \DateTimeZone('UTC'));
-        $repository = $this->repository($this->blog(publishedAt: $publishedAt));
+        $blog = $this->blog(publishedAt: $publishedAt);
+        $blog->active = true;
+        $repository = $this->repository($blog);
 
         $this->service($repository)->publish($this->blogId, $this->context);
 
@@ -87,8 +84,38 @@ class BlogServiceTest extends TestCase
             [
                 'id' => $this->blogId,
                 'publishedAt' => $moment,
+                'active' => true,
             ],
         ], $repository->updates[0]);
+    }
+
+    public function testPublishingADatedDraftPreservesItsDateAndActivatesIt(): void
+    {
+        $repository = $this->repository($this->blog(publishedAt: new \DateTimeImmutable('2025-12-24')));
+
+        $this->service($repository)->publish($this->blogId, $this->context);
+
+        static::assertSame([[['id' => $this->blogId, 'active' => true]]], $repository->updates);
+    }
+
+    public function testUnpublishingPreservesThePublicationDate(): void
+    {
+        $blog = $this->blog(publishedAt: new \DateTimeImmutable('2025-12-24'));
+        $blog->active = true;
+        $repository = $this->repository($blog);
+
+        $this->service($repository)->unpublish($this->blogId, $this->context);
+
+        static::assertSame([[['id' => $this->blogId, 'active' => false]]], $repository->updates);
+    }
+
+    public function testUnpublishingADraftDoesNotWriteAgain(): void
+    {
+        $repository = $this->repository($this->blog(publishedAt: null));
+
+        $this->service($repository)->unpublish($this->blogId, $this->context);
+
+        static::assertSame([], $repository->updates);
     }
 
     /**

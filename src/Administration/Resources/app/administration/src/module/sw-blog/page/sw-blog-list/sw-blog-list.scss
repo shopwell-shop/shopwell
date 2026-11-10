@@ -3,6 +3,7 @@
         display: flex;
         flex-direction: column;
         height: 100%;
+        min-height: 0;
     }
 
     &__preset {
@@ -53,26 +54,10 @@
         font-size: var(--font-size-xs);
     }
 
-    &__title-cell {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-4);
-        min-width: 0;
-    }
-
-    &__title-text {
-        overflow: hidden;
-        color: var(--color-text-primary-default);
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    &__title-subline {
-        overflow: hidden;
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs);
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    &__results {
+        position: relative;
+        flex: 1;
+        min-height: 0;
     }
 
     .mt-empty-state {

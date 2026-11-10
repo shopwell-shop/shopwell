@@ -24,7 +24,8 @@
                 "copyLink": "Copy link",
                 "copied": "Link copied",
                 "x": "Share on X"
-            }
+            },
+            "tags": "Tags"
         },
         "video": {
             "unsupported": "This video can not be played in your browser."
@@ -52,6 +53,10 @@
                 "error": "Your comment could not be submitted. Please check the fields and try again.",
                 "flood": "You just commented on this entry. Please wait a minute before writing the next one."
             }
+        },
+        "type": {
+            "post": "Article",
+            "video": "Video"
         }
     },
     "global": {

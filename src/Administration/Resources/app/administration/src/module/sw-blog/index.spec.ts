@@ -34,7 +34,6 @@ describe('src/module/sw-blog/index', () => {
             'sw-blog-list',
             'sw-blog-detail',
             'sw-blog-category-list',
-            'sw-blog-category-detail',
             'sw-blog-author-list',
             'sw-blog-author-detail',
             'sw-blog-comment-list',
@@ -71,7 +70,6 @@ describe('src/module/sw-blog/index', () => {
             'sw.blog.list',
             'sw.blog.detail',
             'sw.blog.category.list',
-            'sw.blog.category.detail',
             'sw.blog.author.list',
             'sw.blog.author.detail',
             'sw.blog.comment.list',
@@ -96,6 +94,13 @@ describe('src/module/sw-blog/index', () => {
         expect(create?.meta?.parentPath).toBe('sw.blog.list');
     });
 
+    it('requires creator permission on the author creation page', () => {
+        const routes = Module.getModuleRegistry().get('sw-blog')?.routes;
+        const create = routes?.get('sw.blog.author.create') as { meta?: RouteMeta } | undefined;
+        expect(create?.meta?.privilege).toBe('blog.creator');
+        expect(create?.meta?.parentPath).toBe('sw.blog.author.list');
+    });
+
     it('serves the list on the module root and the categories, authors and comments beside it', () => {
         const routes = Module.getModuleRegistry().get('sw-blog')?.routes;
 
@@ -117,7 +122,7 @@ describe('src/module/sw-blog/index', () => {
         expect(create?.path).toBe('/sw/blog/create');
         expect(detail?.path).toBe('/sw/blog/:id');
         expect(categoryList?.path).toBe('/sw/blog/category');
-        expect(categoryDetail?.path).toBe('/sw/blog/category/:id');
+        expect(categoryDetail).toBeUndefined();
         expect(authorList?.path).toBe('/sw/blog/author');
         expect(authorDetail?.path).toBe('/sw/blog/author/:id');
         expect(commentList?.path).toBe('/sw/blog/comment');
@@ -133,7 +138,7 @@ describe('src/module/sw-blog/index', () => {
         const commentDetail = routes?.get('sw.blog.comment.detail') as { meta?: RouteMeta } | undefined;
 
         expect(detail?.meta?.parentPath).toBe('sw.blog.list');
-        expect(categoryDetail?.meta?.parentPath).toBe('sw.blog.category.list');
+        expect(categoryDetail).toBeUndefined();
         expect(authorDetail?.meta?.parentPath).toBe('sw.blog.author.list');
         expect(commentDetail?.meta?.parentPath).toBe('sw.blog.comment.list');
     });
@@ -144,8 +149,8 @@ describe('src/module/sw-blog/index', () => {
         const detailProps = routes?.get('sw.blog.detail')?.props as {
             default: (route: { params: Record<string, string> }) => { blogId: string };
         };
-        const categoryProps = routes?.get('sw.blog.category.detail')?.props as {
-            default: (route: { params: Record<string, string> }) => { categoryId: string };
+        const categoryProps = routes?.get('sw.blog.category.list')?.props as {
+            default: (route: { query: Record<string, string> }) => { categoryId: string };
         };
         const authorProps = routes?.get('sw.blog.author.detail')?.props as {
             default: (route: { params: Record<string, string> }) => { authorId: string };
@@ -157,7 +162,7 @@ describe('src/module/sw-blog/index', () => {
         expect(detailProps.default({ params: { id: 'ABCDEF0123456789ABCDEF0123456789' } })).toEqual({
             blogId: 'abcdef0123456789abcdef0123456789',
         });
-        expect(categoryProps.default({ params: { id: 'ABCDEF0123456789ABCDEF0123456789' } })).toEqual({
+        expect(categoryProps.default({ query: { id: 'ABCDEF0123456789ABCDEF0123456789' } })).toEqual({
             categoryId: 'abcdef0123456789abcdef0123456789',
         });
         expect(authorProps.default({ params: { id: 'ABCDEF0123456789ABCDEF0123456789' } })).toEqual({
@@ -172,39 +177,54 @@ describe('src/module/sw-blog/index', () => {
         const routes = Module.getModuleRegistry().get('sw-blog')?.routes;
 
         const createProps = routes?.get('sw.blog.create')?.props as {
-            default: () => { blogId: string | null };
+            default: (route?: { query: Record<string, unknown> }) => { blogId: string | null; blogType: string };
         };
 
         // no title is asked for before the page opens - the page itself is where an entry is written
-        expect(createProps.default()).toEqual({ blogId: null });
+        expect(createProps.default()).toEqual({ blogId: null, blogType: 'post' });
+        expect(createProps.default({ query: { type: 'video' } })).toEqual({ blogId: null, blogType: 'video' });
+        expect(createProps.default({ query: { type: ['video'] } })).toEqual({ blogId: null, blogType: 'post' });
     });
 
-    it('hangs the module into the content menu and gives the categories, authors and comments entries of their own', () => {
+    it('registers independent localized Blog entries under its menu group', () => {
         const navigation = Module.getModuleRegistry().get('sw-blog')?.manifest.navigation ?? [];
 
-        const entry = navigation.find((item) => item.id === 'sw-blog');
-        const categoryEntry = navigation.find((item) => item.id === 'sw-blog-category');
-        const authorEntry = navigation.find((item) => item.id === 'sw-blog-author');
-        const commentEntry = navigation.find((item) => item.id === 'sw-blog-comment');
-
-        expect(navigation).toHaveLength(4);
-        expect(entry?.parent).toBe('sw-content');
-        expect(entry?.position).toBe(40);
-        expect(entry?.path).toBe('sw.blog.list');
-        expect(entry?.privilege).toBe('blog.viewer');
-
-        expect(categoryEntry?.parent).toBe('sw-blog');
-        expect(categoryEntry?.path).toBe('sw.blog.category.list');
-        expect(categoryEntry?.privilege).toBe('blog.viewer');
-
-        // the bylines sit between the categories and the moderation queue
-        expect(authorEntry?.parent).toBe('sw-blog');
-        expect(authorEntry?.path).toBe('sw.blog.author.list');
-        expect(authorEntry?.privilege).toBe('blog.viewer');
-
-        expect(commentEntry?.parent).toBe('sw-blog');
-        expect(commentEntry?.path).toBe('sw.blog.comment.list');
-        expect(commentEntry?.privilege).toBe('blog.viewer');
+        expect(navigation).toHaveLength(5);
+        expect(navigation).toEqual([
+            expect.objectContaining({
+                id: 'sw-blog',
+                label: 'sw-blog.general.mainMenuItemGeneral',
+                privilege: 'blog.viewer',
+            }),
+            expect.objectContaining({
+                id: 'sw-blog-content',
+                label: 'sw-blog.navigation.content',
+                parent: 'sw-blog',
+                path: 'sw.blog.list',
+                privilege: 'blog.viewer',
+            }),
+            expect.objectContaining({
+                id: 'sw-blog-category',
+                label: 'sw-blog.general.mainMenuItemCategory',
+                parent: 'sw-blog',
+                path: 'sw.blog.category.list',
+                privilege: 'blog.viewer',
+            }),
+            expect.objectContaining({
+                id: 'sw-blog-author',
+                label: 'sw-blog.general.mainMenuItemAuthor',
+                parent: 'sw-blog',
+                path: 'sw.blog.author.list',
+                privilege: 'blog.viewer',
+            }),
+            expect.objectContaining({
+                id: 'sw-blog-comment',
+                label: 'sw-blog.general.mainMenuItemComment',
+                parent: 'sw-blog',
+                path: 'sw.blog.comment.list',
+                privilege: 'blog.viewer',
+            }),
+        ]);
     });
 
     it('registers the two types of the core so a type dropdown is not empty', () => {

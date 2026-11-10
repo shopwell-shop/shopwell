@@ -1,0 +1,31 @@
+{# @sw-package discovery #}
+{% props listing = null, categoryId = null %}
+
+{% if listing %}
+    <twig:Sw:Blog:Listing
+        :blogs="listing.blogs"
+        :coverMedia="listing.coverMedia"
+        :readingTimes="listing.readingTimes"
+        :layout="listing.layout"
+        :showAuthor="listing.showAuthor"
+        :showReadingTime="listing.showReadingTime"
+    >
+        <twig:block name="pagination">
+            {% if listing.totalPages > 1 %}
+                <div class="blog-pagination" data-blog-pagination>
+                    {% sw_embed '@Storefront/storefront/component/pagination.html.twig' with {
+                        currentPage: listing.page,
+                        totalPages: listing.totalPages,
+                        paginationLocation: 'blog',
+                        categoryId: categoryId,
+                    } only %}
+                        {% block component_pagination %}
+                            {% set searchQuery = categoryId ? '&category=' ~ categoryId|url_encode : '' %}
+                            {{ parent() }}
+                        {% endblock %}
+                    {% end_sw_embed %}
+                </div>
+            {% endif %}
+        </twig:block>
+    </twig:Sw:Blog:Listing>
+{% endif %}

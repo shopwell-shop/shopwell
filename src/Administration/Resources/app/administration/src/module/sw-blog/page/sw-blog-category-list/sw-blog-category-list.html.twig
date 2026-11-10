@@ -7,9 +7,9 @@
     <template #search-bar>
         <sw-search-bar
             initial-search-type="blog_category"
-            :initial-search="term"
-            :placeholder="$t('sw-blog.list.placeholderSearchBarCategory')"
-            @search="onSearch"
+            :initial-search="categorySearch"
+            :placeholder="$t('sw-blog.category.placeholderSearch')"
+            @search="categorySearch = $event"
         />
     </template>
     {% endblock %}
@@ -19,233 +19,409 @@
         {% block sw_blog_category_list_smart_bar_header_title %}
         <h2>
             {% block sw_blog_category_list_smart_bar_header_title_text %}
-            {{ $t('sw-blog.list.categoryTitle') }}
-            {% endblock %}
-
-            {% block sw_blog_category_list_smart_bar_header_amount %}
-            <span
-                v-if="!isLoading"
-                class="sw-page__smart-bar-amount"
-            >
-                ({{ total }})
-            </span>
+            {{ category ? (isNew ? $t('sw-blog.list.buttonCreateCategory') : name) : $t('sw-blog.list.categoryTitle') }}
             {% endblock %}
         </h2>
         {% endblock %}
     </template>
     {% endblock %}
 
+    {% block sw_blog_category_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            v-if="category && !isNew"
+            class="sw-blog-category-list__language-switch"
+            :disabled="!category || isBusy"
+            :save-changes-function="saveOnLanguageChange"
+            :abort-change-function="abortOnLanguageChange"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+    {% endblock %}
+
     {% block sw_blog_category_list_smart_bar_actions %}
     <template #smart-bar-actions>
-        {% block sw_blog_category_list_smart_bar_actions_back %}
         <mt-button
-            class="sw-blog-category-list__button-back"
-            variant="secondary"
+            class="sw-blog-category-list__action-create"
+            :variant="category ? 'secondary' : 'primary'"
             size="default"
-            @click="onOpenBlogList"
-        >
-            {{ $t('sw-blog.list.title') }}
-        </mt-button>
-        {% endblock %}
-
-        {% block sw_blog_category_list_smart_bar_actions_add %}
-        <mt-button
-            class="sw-blog-category-list__button-create"
-            variant="primary"
-            size="default"
-            :disabled="!canCreate || undefined"
-            @click="onOpenCreateModal"
+            :disabled="!acl.can('blog.creator') || isBusy"
+            @click="onCreateCategory()"
         >
             {{ $t('sw-blog.list.buttonCreateCategory') }}
         </mt-button>
+        {% block sw_blog_category_list_actions_delete %}
+        <mt-button
+            v-if="category && !isNew && canDelete"
+            class="sw-blog-category-list__action-delete"
+            variant="critical"
+            size="default"
+            :disabled="isBusy || hasChildren"
+            :title="hasChildren ? $t('sw-blog.category.deleteHasChildren') : undefined"
+            @click="onOpenDeleteModal"
+        >
+            {{ $t('global.default.delete') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_blog_category_list_actions_save %}
+        <mt-button
+            v-if="category"
+            class="sw-blog-category-list__action-save"
+            variant="primary"
+            size="default"
+            :disabled="!canEdit || isBusy || undefined"
+            :is-loading="isSaving"
+            @click="onSave()"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
         {% endblock %}
     </template>
     {% endblock %}
+
+    <template #side-content>
+        <sw-blog-category-navigation
+            ref="categoryNavigation"
+            :search-term="categorySearch"
+            :selected-id="selectedId || category?.parentId"
+            :refresh-key="navigationRevision"
+            :disabled="isBusy"
+            :before-structure-change="onBeforeStructureChange"
+            @structure-change="onStructureChanged"
+            @structure-busy="isTreeMutating = $event"
+            @selection-path="categoryPath = $event"
+            @select="onSelectCategory"
+            @create="onCreateCategory"
+        />
+    </template>
 
     {% block sw_blog_category_list_content %}
     <template #content>
-        {% block sw_blog_category_list_content_inner %}
-        <div class="sw-blog-category-list__content">
-            {% block sw_blog_category_list_empty_state %}
+        <div class="sw-blog-category-list__editor">
+        {% block sw_blog_category_list_content_loading %}
+            <sw-skeleton
+                v-if="isLoading"
+                class="sw-blog-category-list__loading"
+                variant="bold"
+            />
             <mt-empty-state
-                v-if="!isLoading && !total"
+                v-else-if="!category"
+                class="sw-blog-category-list__selection"
                 centered
-                class="sw-blog-category-list__empty-state"
                 icon="regular-image-text"
-                :headline="$t('sw-blog.list.messageEmptyCategory')"
-                :description="$t('sw-blog.list.messageEmptyCategorySubline')"
+                :headline="$t('sw-blog.category.selectCategory')"
+                :description="$t('sw-blog.category.selectCategoryDescription')"
             />
-            {% endblock %}
+        {% endblock %}
 
-            {% block sw_blog_category_list_grid %}
-            <sw-entity-listing
+        {% block sw_blog_category_list_content_card_view %}
+            <sw-card-view
                 v-else
-                ref="listing"
-                class="sw-blog-category-list__grid"
-                identifier="sw-blog-category-list"
-                :data-source="categories"
-                :columns="columns"
-                :repository="categoryRepository"
-                :sort-by="sortBy"
-                :sort-direction="sortDirection"
-                :is-loading="isLoading"
-                :full-page="true"
-                :show-selection="false"
-                :show-settings="true"
-                :disable-data-fetching="true"
-                :allow-inline-edit="canEdit"
-                :allow-column-edit="true"
-                :allow-edit="canEdit"
-                :allow-delete="canDelete"
-                :allow-view="canEdit"
-                detail-route="sw.blog.category.detail"
-                @page-change="onPageChange"
-                @column-sort="onSortColumn"
-                @inline-edit-save="onInlineEditSave"
+                class="sw-blog-category-list__card-view"
             >
-                <template #delete-action="{ item }">
-                    <sw-context-menu-item
-                        :disabled="!canDelete || undefined"
-                        variant="danger"
-                        @click="onDelete(item)"
+                <div class="sw-blog-category-list__context">
+                    <div class="sw-blog-category-list__path">
+                        <span>{{ $t('sw-blog.list.categoryTitle') }}</span>
+                        <mt-icon
+                            name="regular-chevron-right-xs"
+                            size="12px"
+                        />
+                        <strong>{{ isNew ? ((categoryPath ? categoryPath + ' / ' : '') + $t('sw-blog.list.buttonCreateCategory')) : (categoryPath || name) }}</strong>
+                    </div>
+                </div>
+                <mt-tabs
+                    class="sw-blog-category-list__tabs"
+                    position-identifier="sw-blog-category-list-tabs"
+                    :small="true"
+                    :items="tabItems"
+                    :default-item="activeTab"
+                    :use-routes-for-extensions="false"
+                    @new-item-active="activeTab = $event"
+                />
+            {% block sw_blog_category_list_content_general %}
+                <div
+                    v-if="activeTab === 'general'"
+                    class="sw-blog-category-list__general-layout"
+                >
+                    <mt-card
+                        class="sw-blog-category-list__general"
+                        position-identifier="sw-blog-category-list-general"
+                        :title="$t('sw-blog.category.detailsTitle')"
+                        :is-loading="isLoading"
                     >
-                        {{ $t('global.default.delete') }}
-                    </sw-context-menu-item>
-                </template>
+                {% block sw_blog_category_list_content_general_fields %}
+                        <div class="sw-blog-category-list__fields">
+                            <mt-text-field
+                                v-model="category.name"
+                                class="sw-blog-category-list__name"
+                                required
+                                :disabled="!canEdit || isBusy"
+                                :label="$t('sw-blog.detail.labelName')"
+                                :placeholder="$t('sw-blog.detail.placeholderName')"
+                            />
 
-                {% block sw_blog_category_list_grid_column_active %}
-                <template #column-active="{ item, isInlineEdit }">
-                    <mt-checkbox
-                        v-if="isInlineEdit && canEdit"
-                        v-model:checked="item.active"
-                    />
+                            <mt-switch
+                                v-model="category.active"
+                                class="sw-blog-category-list__active"
+                                :disabled="!canEdit || isBusy"
+                                :label="$t('sw-blog.detail.labelActive')"
+                            />
 
-                    <template v-else>
-                        <mt-icon
-                            v-if="item.active"
-                            name="regular-checkmark-xs"
-                            size="12px"
-                            class="is--active"
-                        />
-                        <mt-icon
-                            v-else
-                            name="regular-times-s"
-                            size="12px"
-                            class="is--inactive"
-                        />
-                    </template>
-                </template>
+                            <mt-text-field
+                                v-model="category.slug"
+                                class="sw-blog-category-list__slug"
+                                required
+                                :disabled="!canEdit || isBusy"
+                                :label="$t('sw-blog.detail.labelSlug')"
+                                :placeholder="$t('sw-blog.detail.placeholderSlugCategory')"
+                                :help-text="$t('sw-blog.detail.helpTextSlug')"
+                            />
+
+                        </div>
                 {% endblock %}
 
-                {% block sw_blog_category_list_grid_column_assignments %}
-                <template #column-assignments="{ item }">
-                    <mt-button
-                        v-if="item.assignments && item.assignments.length > 0"
-                        class="sw-blog-category-list__entry-count"
-                        variant="tertiary"
-                        size="x-small"
-                        @click="onOpenCategoryEntries(item)"
-                    >
-                        {{ item.assignments.length }}
-                    </mt-button>
-
-                    <span
-                        v-else
-                        class="sw-blog-category-list__entry-count-empty"
-                    >
-                        {{ 0 }}
-                    </span>
-                </template>
+                {% block sw_blog_category_list_content_general_description %}
+                        <mt-textarea
+                            v-model="category.description"
+                            class="sw-blog-category-list__description"
+                            :disabled="!canEdit || isBusy"
+                            :label="$t('sw-blog.detail.labelDescription')"
+                        />
                 {% endblock %}
-            </sw-entity-listing>
+                    </mt-card>
+                </div>
             {% endblock %}
+
+            {% block sw_blog_category_list_content_layout %}
+                <sw-blog-detail-layout
+                    v-if="activeTab === 'layout'"
+                    class="sw-blog-category-list__layout"
+                    :category="category"
+                    :is-disabled="!canEdit || isBusy"
+                />
+            {% endblock %}
+
+            {% block sw_blog_category_list_content_seo %}
+                {#
+                The three seo fields exist on the entity and are what the category page of the storefront
+                renders into its head - a category without them falls back to its name, which is why the
+                form has to offer them.
+                #}
+                <mt-card
+                    v-if="activeTab === 'seo'"
+                    class="sw-blog-category-list__seo"
+                    position-identifier="sw-blog-category-list-seo"
+                    :title="$t('sw-blog.detail.cardSeo')"
+                    :is-loading="isLoading"
+                >
+                {% block sw_blog_category_list_content_seo_fields %}
+                    <sw-container
+                        columns="1fr"
+                        gap="var(--scale-size-16) 0"
+                    >
+                        <mt-text-field
+                            v-model="category.metaTitle"
+                            class="sw-blog-category-list__meta-title"
+                            :disabled="!canEdit || isBusy"
+                            :label="$t('sw-blog.detail.labelMetaTitle')"
+                            :placeholder="$t('sw-blog.detail.placeholderMetaTitle')"
+                        />
+
+                        <mt-textarea
+                            v-model="category.metaDescription"
+                            class="sw-blog-category-list__meta-description"
+                            :disabled="!canEdit || isBusy"
+                            :label="$t('sw-blog.detail.labelMetaDescription')"
+                            :placeholder="$t('sw-blog.detail.placeholderMetaDescription')"
+                        />
+
+                        <mt-text-field
+                            v-model="category.keywords"
+                            class="sw-blog-category-list__keywords"
+                            :disabled="!canEdit || isBusy"
+                            :label="$t('sw-blog.detail.labelKeywords')"
+                            :placeholder="$t('sw-blog.detail.placeholderKeywords')"
+                        />
+                    </sw-container>
+                {% endblock %}
+                </mt-card>
+            {% endblock %}
+
+            {% block sw_blog_category_list_content_entries %}
+                <mt-card
+                    v-if="activeTab === 'content'"
+                    class="sw-blog-category-list__entries"
+                    position-identifier="sw-blog-category-list-entries"
+                    :title="$t('sw-blog.category.cardEntries')"
+                    :is-loading="isEntriesLoading"
+                >
+                    <sw-entity-single-select
+                        v-if="canEdit"
+                        class="sw-blog-category-list__entry-select"
+                        entity="blog"
+                        label-property="title"
+                        :value="null"
+                        :disabled="isBusy"
+                        :criteria="entryOptionsCriteria"
+                        :label="$t('sw-blog.category.addEntry')"
+                        :placeholder="$t('sw-blog.category.addEntry')"
+                        @update:value="onAddEntry"
+                    />
+                {% block sw_blog_category_list_content_entries_empty %}
+                    <mt-empty-state
+                        v-if="!visibleEntries.length"
+                        class="sw-blog-category-list__entries-empty"
+                        icon="regular-image-text"
+                        :headline="$t('sw-blog.category.messageNoEntries')"
+                        :description="$t('sw-blog.category.messageNoEntriesSubline')"
+                    />
+                {% endblock %}
+
+                {% block sw_blog_category_list_content_entries_grid %}
+                    <sw-data-grid
+                        v-else
+                        class="sw-blog-category-list__entries-grid"
+                        :data-source="visibleEntries"
+                        :columns="entriesColumns"
+                        :show-selection="false"
+                        :show-settings="false"
+                        :allow-inline-edit="false"
+                        :allow-column-edit="false"
+                        :plain-appearance="true"
+                    >
+                        <template #actions="{ item }">
+                            <sw-context-menu-item
+                                v-if="canEdit"
+                                :data-entry-id="item.id"
+                                :disabled="isBusy"
+                                @click="onRemoveEntry(item)"
+                            >
+                                {{ $t('sw-blog.category.removeEntry') }}
+                            </sw-context-menu-item>
+                        </template>
+                        <template #column-type="{ item }">
+                            {{ $t('sw-blog.type.' + item.type) }}
+                        </template>
+                    {% block sw_blog_category_list_content_entries_grid_column_title %}
+                        <template #column-title="{ item }">
+                            <router-link :to="{ name: 'sw.blog.detail', params: { id: item.id } }">
+                                {{ item.title }}
+                            </router-link>
+                        </template>
+                    {% endblock %}
+
+                    {% block sw_blog_category_list_content_entries_grid_column_published_at %}
+                        <template #column-publishedAt="{ item }">
+                            <sw-blog-status-badge
+                                v-if="item.publishedAt"
+                                :active="item.active"
+                                :published-at="item.publishedAt"
+                            />
+                            <sw-time-ago
+                                v-else-if="item.createdAt"
+                                :date="item.createdAt"
+                            />
+                            <span v-else>{{ $t('sw-blog.status.draft') }}</span>
+                        </template>
+                    {% endblock %}
+
+                    {% block sw_blog_category_list_content_entries_grid_column_updated_at %}
+                        <template #column-updatedAt="{ item }">
+                            <sw-time-ago
+                                v-if="item.updatedAt"
+                                :date="item.updatedAt"
+                            />
+                            <span v-else>—</span>
+                        </template>
+                    {% endblock %}
+                    </sw-data-grid>
+                {% endblock %}
+                    <sw-pagination
+                        v-if="entriesTotal > 25"
+                        :page="entriesPage"
+                        :limit="25"
+                        :steps="[25]"
+                        :total="entriesTotal"
+                        @page-change="onEntriesPageChange"
+                    />
+                </mt-card>
+            {% endblock %}
+    {% block sw_blog_category_list_delete_modal %}
+                <sw-modal
+                    v-if="showDeleteModal"
+                    class="sw-blog-category-list__delete-modal"
+                    variant="small"
+                    :title="$t('sw-blog.list.titleDeleteCategory')"
+                    @modal-close="showDeleteModal = false"
+                >
+                    <p class="sw-blog-category-list__delete-message">
+                        {{ deleteMessage }}
+                    </p>
+                    <p>{{ $t('sw-blog.category.deleteKeepsEntries') }}</p>
+
+                    <template #modal-footer>
+                        <mt-button
+                            variant="secondary"
+                            size="small"
+                            @click="showDeleteModal = false"
+                        >
+                            {{ $t('global.default.cancel') }}
+                        </mt-button>
+
+                        <mt-button
+                            variant="critical"
+                            size="small"
+                            @click="onDelete"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </mt-button>
+                    </template>
+                </sw-modal>
+    {% endblock %}
+            </sw-card-view>
+        {% endblock %}
         </div>
-        {% endblock %}
-
-        {% block sw_blog_category_list_create_modal %}
         <sw-modal
-            v-if="showCreateModal"
-            class="sw-blog-category-list__create-modal"
+            v-if="pendingNavigation"
+            class="sw-blog-category-list__unsaved-modal"
             variant="small"
-            :title="$t('sw-blog.list.buttonCreateCategory')"
-            @modal-close="onCloseCreateModal"
+            :title="$t('sw-blog.category.unsavedTitle')"
+            @modal-close="onCancelNavigation"
         >
-            <mt-text-field
-                v-model="newCategoryName"
-                class="sw-blog-category-list__create-name"
-                required
-                :label="$t('sw-blog.detail.labelName')"
-                :placeholder="$t('sw-blog.detail.placeholderName')"
-            />
-
+            <p>{{ $t(pendingNavigationIsRoute ? 'sw-blog.category.unsavedMessage' : 'sw-blog.category.unsavedStructureMessage') }}</p>
             <template #modal-footer>
                 <mt-button
+                    class="sw-blog-category-list__unsaved-cancel"
                     variant="secondary"
                     size="small"
-                    @click="onCloseCreateModal"
+                    @click="onCancelNavigation"
                 >
                     {{ $t('global.default.cancel') }}
                 </mt-button>
-
                 <mt-button
-                    variant="primary"
-                    size="small"
-                    :disabled="isCreateDisabled || undefined"
-                    :is-loading="isCreating"
-                    @click="onCreateCategory"
-                >
-                    {{ $t('global.default.add') }}
-                </mt-button>
-            </template>
-        </sw-modal>
-        {% endblock %}
-
-        {% block sw_blog_category_list_delete_modal %}
-        <sw-modal
-            v-if="deleteTarget"
-            class="sw-blog-category-list__delete-modal"
-            variant="small"
-            :title="$t('sw-blog.list.titleDeleteCategory')"
-            @modal-close="onCloseDeleteModal"
-        >
-            <p class="sw-blog-category-list__delete-message">
-                {{ deleteMessage }}
-            </p>
-
-            <template #modal-footer>
-                <mt-button
-                    variant="secondary"
-                    size="small"
-                    @click="onCloseDeleteModal"
-                >
-                    {{ $t('global.default.cancel') }}
-                </mt-button>
-
-                <mt-button
+                    class="sw-blog-category-list__unsaved-discard"
                     variant="critical"
                     size="small"
-                    @click="onConfirmDelete"
+                    :disabled="isBusy"
+                    @click="onDiscardNavigation"
                 >
-                    {{ $t('global.default.delete') }}
+                    {{ $t('sw-blog.category.discardChanges') }}
+                </mt-button>
+                <mt-button
+                    class="sw-blog-category-list__unsaved-save"
+                    variant="primary"
+                    size="small"
+                    :disabled="!canEdit || isBusy"
+                    :is-loading="isSaving"
+                    @click="onSaveNavigation"
+                >
+                    {{ $t('global.default.save') }}
                 </mt-button>
             </template>
         </sw-modal>
-        {% endblock %}
     </template>
     {% endblock %}
 
-    {% block sw_blog_category_list_sidebar %}
-    <template #sidebar>
-        <sw-sidebar class="sw-blog-category-list__sidebar">
-            {% block sw_blog_category_list_sidebar_refresh %}
-            <sw-sidebar-item
-                icon="regular-undo"
-                :title="$t('sw-blog.list.buttonRefresh')"
-                @click="onRefresh"
-            />
-            {% endblock %}
-        </sw-sidebar>
-    </template>
-    {% endblock %}
 </sw-page>
 {% endblock %}

@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Tag;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
+use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\LandingPage\LandingPageCollection;
 use Shopwell\Core\Content\Media\MediaCollection;
@@ -26,6 +27,8 @@ class TagEntity extends Entity
     protected string $name;
 
     protected ?ProductCollection $products = null;
+
+    protected ?BlogCollection $blogs = null;
 
     protected ?MediaCollection $media = null;
 
@@ -61,6 +64,16 @@ class TagEntity extends Entity
     public function setProducts(ProductCollection $products): void
     {
         $this->products = $products;
+    }
+
+    public function getBlogs(): ?BlogCollection
+    {
+        return $this->blogs;
+    }
+
+    public function setBlogs(BlogCollection $blogs): void
+    {
+        $this->blogs = $blogs;
     }
 
     public function getMedia(): ?MediaCollection

@@ -7,6 +7,52 @@ describe('module/sw-experience-studio/component/sw-experience-studio-element-pic
     const methods = (pickerComponent as unknown as { methods: Record<string, (...args: unknown[]) => unknown> }).methods;
     const computed = (pickerComponent as unknown as { computed: Record<string, (...args: unknown[]) => unknown> }).computed;
 
+    it('localizes Blog preset labels and descriptions before searching', () => {
+        const elements = [
+            { name: 'Sw:BlogPost', id: 'Sw:BlogPost', kind: 'preset', label: 'Blog article', description: 'Article layout' },
+            { name: 'Sw:BlogVideo', id: 'Sw:BlogVideo', kind: 'preset', label: 'Blog video', description: 'Video layout' },
+            {
+                name: 'Sw:BlogListing',
+                id: 'Sw:BlogListing',
+                kind: 'preset',
+                label: 'Blog listing',
+                description: 'Blog feed',
+            },
+            {
+                name: 'merchant-preset',
+                id: 'merchant-preset',
+                kind: 'preset',
+                label: 'My preset',
+                description: 'My description',
+            },
+        ];
+        const original = JSON.parse(JSON.stringify(elements)) as typeof elements;
+        const vm = {
+            elements,
+            activeTab: 'presets',
+            normalizedSearchTerm: '',
+            $t: (key: string) => key,
+        };
+        expect(computed.visibleElements.call(vm)).toEqual([
+            expect.objectContaining({
+                label: 'sw-experience-studio.blogPresets.post.name',
+                description: 'sw-experience-studio.blogPresets.post.description',
+            }),
+            expect.objectContaining({
+                label: 'sw-experience-studio.blogPresets.video.name',
+                description: 'sw-experience-studio.blogPresets.video.description',
+            }),
+            expect.objectContaining({
+                label: 'sw-experience-studio.blogPresets.listing.name',
+                description: 'sw-experience-studio.blogPresets.listing.description',
+            }),
+            original[3],
+        ]);
+        vm.normalizedSearchTerm = 'blogpresets.video.name';
+        expect(computed.visibleElements.call(vm)).toEqual([expect.objectContaining({ id: 'Sw:BlogVideo' })]);
+        expect(elements).toEqual(original);
+    });
+
     it('normalizes unknown and invalid categories to other', () => {
         const vm = {
             fallbackCategoryKey: 'other',

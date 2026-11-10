@@ -86,6 +86,7 @@ async function createWrapper(
                     template:
                         '<div><slot name="smart-bar-header"></slot><slot name="smart-bar-actions"></slot><slot name="language-switch"></slot><slot name="content"></slot></div>',
                 },
+                'sw-card-view': { template: '<div><slot /></div>' },
                 'mt-card': { template: '<div><slot></slot></div>' },
                 'sw-container': { template: '<div><slot></slot></div>' },
                 'sw-description-list': { template: '<dl><slot></slot></dl>' },
@@ -211,5 +212,25 @@ describe('src/module/sw-blog/page/sw-blog-comment-detail', () => {
 
         await wrapper.get('.sw-blog-comment-detail__action-cancel').trigger('click');
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.comment.list' });
+    });
+    it('locks moderation during a save and retains the change after a failed request', async () => {
+        const { wrapper, saveComment, getComment } = await createWrapper();
+        await flushPromises();
+        let rejectSave: (error: Error) => void = () => {};
+        saveComment.mockImplementationOnce(
+            () =>
+                new Promise((resolve, reject) => {
+                    rejectSave = reject;
+                }),
+        );
+        await wrapper.get('.sw-blog-comment-detail__status').setValue(true);
+        await wrapper.get('.sw-blog-comment-detail__action-save').trigger('click');
+        expect(wrapper.get('.sw-blog-comment-detail__status').attributes('disabled')).toBeDefined();
+        expect(wrapper.get('.sw-blog-comment-detail__language').attributes('disabled')).toBe('true');
+        rejectSave(new Error('Save failed'));
+        await flushPromises();
+        expect(wrapper.get('.sw-blog-comment-detail__status').attributes('disabled')).toBeUndefined();
+        expect((wrapper.get('.sw-blog-comment-detail__status').element as HTMLInputElement).checked).toBe(true);
+        expect(getComment).toHaveBeenCalledTimes(1);
     });
 });

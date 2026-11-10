@@ -3,121 +3,85 @@
         display: flex;
         gap: var(--scale-size-12);
         align-items: center;
+        min-width: 0;
     }
 
-    &__header-status {
-        flex: none;
+    &__workspace {
+        height: 100%;
+        overflow-y: auto;
+        padding: var(--scale-size-16) var(--scale-size-24) var(--scale-size-24);
     }
 
-    /**
-     * Canvas and rail.
-     *
-     * The rail sticks: the publication date stays reachable while the body grows, which is the whole
-     * point of putting the settings beside the canvas instead of below it. The canvas wins the
-     * space - writing happens in the left column, the rail only decides about the entry.
-     */
+    &__tabs {
+        margin-bottom: var(--scale-size-16);
+    }
+
     &__layout {
         display: grid;
-        grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr);
-        gap: var(--scale-size-24);
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: var(--scale-size-16);
         align-items: start;
-        padding: var(--scale-size-24);
-        overflow-y: auto;
     }
 
-    &__main {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-24);
-        min-width: 0;
-    }
-
+    &__main,
     &__rail {
-        position: sticky;
-        top: 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-16);
         min-width: 0;
     }
 
-    &__field-stack {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-16);
-    }
-
-    &__rail-content {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-12);
-    }
-
-    &__publish-state {
-        display: flex;
-    }
-
-    &__publish-hint {
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs);
-    }
-
-    &__publish-actions {
-        display: flex;
-        gap: var(--scale-size-8);
-        flex-wrap: wrap;
-    }
-
-    &__category-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-8);
-        max-block-size: 220px;
-        overflow-y: auto;
-    }
-
-    &__category-empty {
+    &__main .mt-card,
+    &__rail .mt-card {
+        max-width: none;
         margin: 0;
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs);
     }
 
-    &__add-category,
-    &__add-author {
-        margin-block-start: var(--scale-size-12);
+    &__content-card .mt-card__content,
+    &__settings .mt-card__content {
+        padding: var(--scale-size-24);
     }
 
-    &__comment-hint {
-        margin: 0;
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs);
+    &__settings-section {
+        padding-bottom: var(--scale-size-16);
+
+        & + & {
+            border-top: 1px solid var(--color-border-primary-default);
+            padding-top: var(--scale-size-16);
+        }
+
+        &:last-child {
+            padding-bottom: 0;
+        }
+
+        h3 {
+            font-size: var(--font-size-s);
+            margin-bottom: var(--scale-size-12);
+        }
+
+        .mt-field,
+        .sw-field,
+        .sw-select {
+            margin-bottom: var(--scale-size-12);
+        }
     }
 
-    &__comment-count {
-        margin-inline-start: var(--scale-size-8);
+    &__content-card .sw-text-editor__content,
+    &__content-card .mt-text-editor__content,
+    &__content-card .mt-text-editor__code-editor {
+        min-height: 420px;
     }
 
-    &__delete-message {
-        margin: 0;
-        color: var(--color-text-primary-default);
+    @media screen and (max-width: 1100px) {
+        &__layout {
+            grid-template-columns: minmax(0, 1fr) 280px;
+        }
     }
 
-    &__category-name,
-    &__author-name {
-        margin-block-end: var(--scale-size-16);
-    }
-
-    /**
-     * A narrow administration (tablet, split screen) stacks the rail under the canvas: two columns of
-     * which one is 280px wide leave the body unreadable.
-     */
-    @media screen and (max-width: 1024px) {
+    @media screen and (max-width: 900px) {
         &__layout {
             grid-template-columns: minmax(0, 1fr);
         }
 
-        &__rail {
-            position: static;
+        &__workspace {
+            padding: var(--scale-size-16);
         }
     }
 }

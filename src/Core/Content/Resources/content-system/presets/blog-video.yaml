@@ -1,0 +1,14 @@
+name: "Blog video"
+description: "Shared Blog video presentation using the shop theme."
+icon: "regular-file-text"
+category: "content"
+priority: 160
+layout:
+  - component: Sw:Blog:Article
+    properties:
+      showTableOfContents: false
+    acceptsContext:
+      blogDetail:
+        type: single
+        scope: root
+        required: true

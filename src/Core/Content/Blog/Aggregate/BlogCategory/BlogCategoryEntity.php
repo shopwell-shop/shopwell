@@ -10,11 +10,14 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Protection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Translations;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TreeLevelField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\TreePathField;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayEntity;
 
@@ -25,9 +28,6 @@ use Shopwell\Core\Framework\Struct\ArrayEntity;
  * to the name. Both are translated: a shop that writes in two languages wants two readable listing
  * urls, and the slug is unique per language instead of globally, so the same segment may be used in
  * each language without a collision.
- *
- * A category is flat on purpose. A tree would need a nested set that has to be reindexed on every
- * write, and a blog with more than two levels is a content problem, not a data problem.
  *
  * @codeCoverageIgnore
  */
@@ -49,6 +49,22 @@ class BlogCategoryEntity extends EntityStruct
     #[PrimaryKey]
     #[Field(type: FieldType::UUID, api: ['admin-api' => true, 'store-api' => true])]
     public string $id;
+
+    #[ForeignKey(entity: 'blog_category', api: ['admin-api' => true, 'store-api' => true])]
+    public ?string $parentId = null;
+
+    #[ForeignKey(entity: 'blog_category', api: ['admin-api' => true, 'store-api' => true])]
+    public ?string $afterCategoryId = null;
+
+    #[Field(type: TreePathField::class, api: ['admin-api' => true, 'store-api' => true])]
+    public ?string $path = null;
+
+    #[Field(type: TreeLevelField::class, api: ['admin-api' => true, 'store-api' => true])]
+    public ?int $level = null;
+
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
+    #[Field(type: FieldType::INT, api: ['admin-api' => true, 'store-api' => true])]
+    public ?int $childCount = null;
 
     /**
      * The label of the category, shown in the navigation and on the listing page. Translated, so it
@@ -122,4 +138,9 @@ class BlogCategoryEntity extends EntityStruct
      */
     #[OneToMany(entity: 'blog_category_assignment', ref: 'blog_category_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => true])]
     public ?array $assignments = null;
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
 }

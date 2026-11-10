@@ -10,8 +10,12 @@
         <div class="blog-index">
             <div class="container">
                 {% block sw_blog_index_header %}
+                    {% set activeCategory = page.activeCategoryId and page.categories ? page.categories.get(page.activeCategoryId) : null %}
                     <header class="blog-index__header">
-                        <h1 class="blog-index__title">{{ 'blog.listing.title'|trans|sw_sanitize }}</h1>
+                        <h1 class="blog-index__title">{{ activeCategory ? activeCategory.name : 'blog.listing.title'|trans|sw_sanitize }}</h1>
+                        {% if activeCategory and activeCategory.description %}
+                            <div class="blog-index__description mx-auto mb-4">{{ activeCategory.description|sw_sanitize }}</div>
+                        {% endif %}
                     </header>
                 {% endblock %}
 

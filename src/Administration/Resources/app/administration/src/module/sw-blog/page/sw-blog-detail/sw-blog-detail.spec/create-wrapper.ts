@@ -1,29 +1,25 @@
 /**
  * @sw-package discovery
  */
-import { shallowMount } from '@vue/test-utils';
+import { mount, shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
+import { createMemoryHistory, createRouter } from 'vue-router';
+import type { Router } from 'vue-router';
 import BlogApiService from '../../../service/blog.api.service';
 import { assignments, blog } from './fixtures';
 
-type Association = { association: string; criteria: { associations: Association[] } };
-
-/**
- * The names of the associations a criteria reads. `addAssociation` stores an association object, not
- * the bare name, and a nested path becomes a nested association.
- *
- * @private
- */
-export function associationNames(criteria: { associations: unknown }, prefix: string = ''): string[] {
-    return (criteria.associations as Association[]).flatMap((association) => {
-        const name = `${prefix}${association.association}`;
-
-        return [name, ...associationNames(association.criteria, `${name}.`)];
-    });
-}
-
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
+}
+
+function entityCollection(entity: keyof EntitySchema.Entities, items: unknown) {
+    return new Shopwell.Data.EntityCollection(
+        `/${entity.replaceAll('_', '-')}`,
+        entity,
+        Shopwell.Context.api,
+        null,
+        items as never[],
+    );
 }
 
 let activeWrapper: VueWrapper | null = null;
@@ -54,9 +50,12 @@ export async function createWrapper(
         entry?: Record<string, unknown>;
         hasChanges?: boolean;
         blogId?: string | null;
+        blogType?: string;
+        realRouter?: boolean;
     } = {},
 ): Promise<{
     wrapper: VueWrapper;
+    router: Router | null;
     getBlog: jest.Mock;
     saveBlog: jest.Mock;
     deleteBlog: jest.Mock;
@@ -70,7 +69,18 @@ export async function createWrapper(
 
     const saveBlog = jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve());
     const deleteBlog = jest.fn(() => Promise.resolve());
-    const getBlog = jest.fn(() => Promise.resolve({ ...entry }));
+    const getBlog = jest.fn(() =>
+        Promise.resolve({
+            ...entry,
+            categories: entityCollection(
+                'blog_category_assignment',
+                (entry.categories as unknown[])?.length ? entry.categories : assignments,
+            ),
+            videos: entityCollection('blog_video', entry.videos ?? []),
+            tags: entityCollection('tag', []),
+            contentLayouts: entityCollection('blog_content_layout', []),
+        }),
+    );
     const saveVideo = jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve());
     const saveAssignment = jest.fn(() => Promise.resolve());
     const deleteAssignment = jest.fn(() => Promise.resolve());
@@ -83,7 +93,17 @@ export async function createWrapper(
         delete: deleteBlog,
         hasChanges: jest.fn(() => hasChanges),
         create: () => {
-            return { ...blog, id: 'blog-new', title: '', slug: '', content: null, categories: [], videos: [] };
+            return {
+                ...blog,
+                id: 'blog-new',
+                title: '',
+                slug: '',
+                content: null,
+                categories: entityCollection('blog_category_assignment', []),
+                videos: entityCollection('blog_video', []),
+                tags: entityCollection('tag', []),
+                contentLayouts: entityCollection('blog_content_layout', []),
+            };
         },
     };
 
@@ -144,9 +164,25 @@ export async function createWrapper(
         search: jest.fn(() => Promise.resolve(Object.assign([], { total: 2 }))),
     };
 
-    const wrapper = shallowMount(await wrapTestComponent('sw-blog-detail', { sync: true }), {
-        props: { blogId },
+    const component = await wrapTestComponent('sw-blog-detail', { sync: true });
+    const router = options.realRouter
+        ? createRouter({
+              history: createMemoryHistory(),
+              routes: [
+                  { path: '/article', name: 'sw.blog.detail', component, props: { blogId } },
+                  { path: '/outside', component: { template: '<p class="outside">Outside</p>' } },
+              ],
+          })
+        : null;
+    if (router) {
+        await router.push('/article');
+        await router.isReady();
+    }
+    const render = router ? mount : shallowMount;
+    const wrapper = render(router ? { template: '<router-view />' } : component, {
+        ...(router ? {} : { props: { blogId, blogType: options.blogType } }),
         global: {
+            plugins: router ? [router] : [],
             stubs: {
                 'sw-page': {
                     template:
@@ -160,9 +196,11 @@ export async function createWrapper(
                 'sw-skeleton': true,
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
                 'sw-language-switch': {
-                    props: ['saveChangesFunction', 'abortChangeFunction'],
+                    name: 'sw-language-switch',
+                    props: ['saveChangesFunction', 'abortChangeFunction', 'disabled'],
+                    data: () => ({ saveFailed: false }),
                     template:
-                        '<section><output class="unsaved">{{ abortChangeFunction() }}</output><button class="language-save" @click="saveChangesFunction()">Save translation</button><button class="language-change" @click="$emit(\'on-change\', \'language-2\')">Change language</button></section>',
+                        '<section><output class="language-save-failed">{{ saveFailed }}</output><output class="unsaved">{{ abortChangeFunction() }}</output><button class="language-save" @click="saveChangesFunction().catch(() => saveFailed = true)">Save translation</button><button class="language-change" @click="$emit(\'on-change\', \'language-2\')">Change language</button></section>',
                 },
                 'sw-media-compact-upload-v2': {
                     props: ['source'],
@@ -174,21 +212,34 @@ export async function createWrapper(
                     template:
                         '<input :value="value" :disabled="disabled" @input="$emit(\'update:value\', $event.target.value)">',
                 },
-                'sw-entity-multi-id-select': true,
+                'sw-entity-multi-id-select': {
+                    name: 'sw-entity-multi-id-select',
+                    props: ['value'],
+                    template: `<button class="select-category" @click="$emit('update:value', ['category-2'])">Select category</button>`,
+                },
+                'sw-blog-detail-layout': true,
+                'sw-entity-tag-select': true,
+                'mt-popover': {
+                    template:
+                        '<div><slot name="trigger" :toggleFloatingUi="() => {}"></slot><slot name="popover-items__base" :toggleFloatingUi="() => {}"></slot></div>',
+                },
+                'mt-popover-item': { props: ['onLabelClick'], template: '<button @click="onLabelClick()"></button>' },
+                'sw-discard-changes-modal': await wrapTestComponent('sw-discard-changes-modal', { sync: true }),
+                'sw-context-menu-item': { template: '<button><slot></slot></button>' },
                 'sw-content-layout-form': {
                     props: ['page'],
                     template: '<output class="content-layout-id">{{ page.id }}</output>',
                 },
                 'sw-blog-detail-content': {
-                    props: ['blog', 'video'],
+                    props: ['blog', 'video', 'isDisabled'],
                     template:
                         '<section class="content-editor"><output class="video-id">{{ video?.id }}</output><output class="video-blog">{{ video?.blogId }}</output><output class="video-provider">{{ video?.provider }}</output></section>',
                 },
                 'sw-blog-status-badge': true,
                 'mt-text-field': {
-                    props: ['modelValue', 'disabled'],
+                    props: ['modelValue', 'disabled', 'error'],
                     template:
-                        '<input :value="modelValue" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)">',
+                        '<input :value="modelValue" :disabled="disabled" :data-error="error?.code" @input="$emit(\'update:modelValue\', $event.target.value)">',
                 },
                 'mt-textarea': true,
                 'mt-select': {
@@ -202,7 +253,11 @@ export async function createWrapper(
                     template:
                         '<label>{{ label }}<input type="checkbox" :checked="checked" :disabled="disabled" @change="$emit(\'update:checked\', $event.target.checked)"></label>',
                 },
-                'mt-badge': true,
+                'mt-badge': { template: '<span><slot></slot></span>' },
+                'mt-tabs': {
+                    props: ['items'],
+                    template: `<div><button v-for="item in items" :data-tab="item.name" @click="$emit('new-item-active', item.name)">{{ item.label }}</button></div>`,
+                },
                 'mt-datepicker': true,
                 'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot></slot></button>' },
             },
@@ -240,8 +295,12 @@ export async function createWrapper(
                 blogApiService: new BlogApiService(),
             },
             mocks: {
-                $route: { name: 'sw.blog.detail', meta: { $module: { icon: 'regular-image-text' } } },
-                $router: { push, replace },
+                ...(router
+                    ? { $router: router, $route: router.currentRoute.value }
+                    : {
+                          $route: { name: 'sw.blog.detail', meta: { $module: { icon: 'regular-image-text' } } },
+                          $router: { push, replace },
+                      }),
                 $t: (key: string) => key,
                 $te: () => false,
             },
@@ -252,6 +311,7 @@ export async function createWrapper(
 
     return {
         wrapper,
+        router,
         getBlog,
         saveBlog,
         deleteBlog,

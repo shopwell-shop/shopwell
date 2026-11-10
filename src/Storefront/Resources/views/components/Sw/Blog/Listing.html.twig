@@ -1,0 +1,52 @@
+{# @sw-package discovery #}
+{% props
+    blogs = null,
+    coverMedia = null,
+    readingTimes = {},
+    layout = 'classic',
+    showAuthor = true,
+    showReadingTime = true,
+    locale = null,
+    slots = [],
+%}
+
+{% set listingCVA = cva({
+    base: 'sw-blog-listing blog-listing',
+    variants: {
+        layout: {
+            classic: 'blog-listing--classic',
+            grid: 'blog-listing--grid',
+            list: 'blog-listing--list',
+        },
+    },
+}) %}
+{% set attributeDefaults = { class: listingCVA.apply({ layout }) } %}
+
+<div {{ attributes.defaults(attributeDefaults) }}>
+    {% block content %}
+        <twig:Slot name="cards">
+            {% if blogs is empty %}
+                <div class="sw-blog-listing__empty blog-listing__empty">
+                    <twig:Sw:Alert variant="info">{{ 'blog.listing.empty'|trans|sw_sanitize }}</twig:Sw:Alert>
+                </div>
+            {% else %}
+                {% for blog in blogs %}
+                    <twig:Sw:Blog:Card
+                        :blog="blog"
+                        :cover="coverMedia and blog.coverMediaId ? coverMedia.get(blog.coverMediaId) : null"
+                        :layout="layout"
+                        :featured="layout == 'classic' and loop.first"
+                        :showAuthor="showAuthor"
+                        :showReadingTime="showReadingTime"
+                        :readingTime="readingTimes[blog.id] ?? 0"
+                        :locale="locale"
+                    />
+                {% endfor %}
+            {% endif %}
+        </twig:Slot>
+    {% endblock %}
+
+    {% block pagination %}
+        <twig:Slot name="pagination"></twig:Slot>
+    {% endblock %}
+</div>

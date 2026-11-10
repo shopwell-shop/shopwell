@@ -1,0 +1,8 @@
+{# @sw-package discovery #}
+{% block sw_blog_detail_content %}
+    <twig:Sw:Blog:Article
+        :blogDetail="page"
+        :legacyContentPage="page.contentPage|default(null)"
+        :showTableOfContents="showTableOfContents|default(true)"
+    />
+{% endblock %}

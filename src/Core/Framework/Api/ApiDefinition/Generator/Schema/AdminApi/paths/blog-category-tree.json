@@ -1,0 +1,92 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Blog category tree",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/_action/blog/category/{id}/move": {
+            "post": {
+                "tags": [
+                    "Content"
+                ],
+                "summary": "Move a Blog category",
+                "description": "Moves a category and atomically repairs source and target sibling order. Requires blog_category:update. Cycles and predecessors outside the target sibling list are rejected.",
+                "operationId": "moveBlogCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "parentId",
+                                    "afterCategoryId"
+                                ],
+                                "properties": {
+                                    "parentId": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "description": "Target parent, or null for the root level.",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "afterCategoryId": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "description": "Target sibling predecessor, or null for the first position.",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The category was moved.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "const": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The move would create a cycle, or the predecessor or payload is invalid."
+                    },
+                    "403": {
+                        "description": "Missing blog_category:update privilege."
+                    },
+                    "404": {
+                        "description": "The moved category or target parent does not exist."
+                    }
+                }
+            }
+        }
+    }
+}

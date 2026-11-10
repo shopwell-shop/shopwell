@@ -5,12 +5,14 @@ namespace Shopwell\Core\Content\Blog;
 use Shopwell\Core\Content\Blog\Aggregate\BlogAuthor\BlogAuthorEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategoryAssignment\BlogCategoryAssignmentEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogComment\BlogCommentEntity;
+use Shopwell\Core\Content\Blog\Aggregate\BlogContentLayout\BlogContentLayoutEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogVideo\BlogVideoEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\AllowHtml;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
@@ -22,6 +24,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayEntity;
+use Shopwell\Core\System\Tag\TagEntity;
 
 /**
  * One editorial page of the shop: an article, a video page or a page built out of articles.
@@ -31,15 +34,9 @@ use Shopwell\Core\Framework\Struct\ArrayEntity;
  * What stays untranslated is the editorial decision: `type`, `publishedAt` and the references are the
  * same in every language.
  *
- * There is no `active` flag. A blog is not a shop section a merchant switches on and off; it is
- * content, and content is governed by its date. An entry that should not be read yet carries a
- * `publishedAt` in the future, which the visibility guard already understands - a second switch would
- * only create the state where an entry is active but undated, or dated but inactive, and every
- * template would have to decide what that means.
- *
  * `type` decides how the page is rendered. It is a plain string instead of a state so a plugin can
- * bring its own type together with a {@see \Shopwell\Core\Content\Blog\Service\BlogTypeHandlerInterface}
- * implementation, without a schema change and without touching the core.
+ * register additional types through {@see \Shopwell\Core\Content\Blog\Service\BlogTypeRegistry::addType()}
+ * without a schema change.
  *
  * @codeCoverageIgnore
  */
@@ -84,13 +81,17 @@ class BlogEntity extends EntityStruct
      * start as an article and be turned into a video page without being recreated, and the id has to
      * survive that because the slug and the SEO url point at it.
      */
-    #[Required]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => true], maxLength: 32)]
-    public string $type = self::TYPE_POST;
+    public ?string $type = self::TYPE_POST;
 
     /**
-     * The moment the entry goes live. Null means "as soon as it is saved", which is what an editor
-     * expects when the page is written and saved in one step.
+     * Drafts remain private even when a publication date is present.
+     */
+    #[Field(type: FieldType::BOOL, api: ['admin-api' => true, 'store-api' => true])]
+    public ?bool $active = false;
+
+    /**
+     * The moment an active entry goes live. Null publishes an active entry immediately.
      *
      * A value in the future is a scheduled entry: the row exists, the merchant sees it in the
      * administration, but the storefront hides it until the moment has come. The decision is made by
@@ -209,6 +210,22 @@ class BlogEntity extends EntityStruct
      */
     #[OneToMany(entity: 'blog_video', ref: 'blog_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => true])]
     public ?array $videos = null;
+
+    /**
+     * Sales channel assignments maintained by the Experience Studio selector.
+     *
+     * @var array<string, BlogContentLayoutEntity>|null
+     */
+    #[OneToMany(entity: 'blog_content_layout', ref: 'blog_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    public ?array $contentLayouts = null;
+
+    /**
+     * Native system tags, shared with products and other tagged entities.
+     *
+     * @var array<string, TagEntity>|null
+     */
+    #[ManyToMany(entity: 'tag', mapping: 'blog_tag', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => true])]
+    public ?array $tags = null;
 
     /**
      * The comments of the entry, including the ones that are not approved yet. The storefront filters

@@ -2,6 +2,21 @@
 
 ## Core
 
+### Blog publishing and content layouts
+
+New Blog entries default to drafts (`active=false`).
+Publish an entry by setting `active=true`; a future `publishedAt` schedules its publication.
+Blog entries reuse system tags and support native `blog_content_layout` assignments with `rootSource=blog`.
+Tags expose their related entries directly through the native `blogs` association.
+The Blog installation baseline provisions shared article, video, and listing layouts automatically.
+The repair command `bin/console content:blog:provision-layouts` remains available.
+The type-specific configuration keys are `core.content_system.default_blog_post_content_layout` and `core.content_system.default_blog_video_content_layout`, with `core.content_system.default_blog_content_layout` as the shared fallback.
+The shared homepage/category listing default is configured through `core.content_system.default_blog_listing_content_layout` and uses `rootSource=none`.
+Blog layout associations extend `content_layout` through `extensions.blogContentLayouts`.
+Explicit Blog assignments take precedence over legacy standalone body layouts, which remain supported.
+Register custom types through `BlogTypeRegistry::addType($type, $template, $schemaType)` instead of type handlers.
+`GET /api/_action/blog/types` lists registered type names.
+
 ## Administration
 
 ### Configurable administration menus
@@ -23,6 +38,25 @@ New organizations open the `sw.settings.organization.create` route, which reuses
 New units open an unsaved entity in the detail form with the selected parent prefilled.
 The former organization and unit creation modal blocks are replaced by the detail form blocks.
 Changes are persisted through Save and reverted through Cancel using the entity repository.
+
+### Blog editor and extension points
+
+The Blog editor provides a wide content canvas, a compact settings sidebar, and separate Content, Layout and SEO tabs.
+Register custom editors through `registerBlogType($type, { component, label, icon })`; existing lazy editor loaders remain supported.
+Named editors use the Administration component factory, so component extensions apply.
+Plugins can extend `sw-blog-detail-content`, `sw-blog-detail-settings`, and `sw-blog-detail-tabs` through the standard component section and tab extension APIs.
+Tags use the system tag selector within the editor and do not add a navigation item.
+Blog navigation now groups content, categories, authors, and comments under a localized menu folder.
+Category management uses one workspace with a persistent category tree and an inline editor with General, Content, Layout, and SEO tabs.
+The category tree follows the system menu tree with drag handles, positional drop previews, sibling and child creation, and expand/collapse actions.
+Category search uses the standard page search bar, retains matching ancestor paths, and restores expanded branches when cleared.
+Root creation uses the page actions; sibling and child creation use the node action menu.
+New categories open an unsaved full form in the same workspace and are persisted only through Save.
+New authors open the `sw.blog.author.create` route and use the full detail form; records are persisted only through Save.
+Categories support parent and child relationships, drag and drop ordering, and menu actions for moving categories.
+Tree changes persist immediately after resolving unsaved editor changes.
+Moving a category into itself or its descendants is rejected, and categories with children must be emptied before deletion.
+The Layout tab displays the effective global layout and supports copying it or restoring the shared default.
 
 ### Today dashboard statistics
 

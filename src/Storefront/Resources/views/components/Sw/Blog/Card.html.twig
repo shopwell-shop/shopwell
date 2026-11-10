@@ -1,0 +1,133 @@
+{# @sw-package discovery #}
+{% props
+    blog = null,
+    cover = null,
+    layout = 'classic',
+    featured = false,
+    showAuthor = true,
+    showReadingTime = true,
+    readingTime = 0,
+    locale = null,
+    slots = [],
+%}
+
+{% set cardCVA = cva({
+    base: 'sw-blog-card blog-card card',
+    variants: {
+        layout: {
+            classic: 'blog-card--classic',
+            grid: 'blog-card--grid',
+            list: 'blog-card--list',
+        },
+        featured: {
+            true: 'blog-card--featured',
+            false: null,
+        },
+    },
+}) %}
+{% set attributeDefaults = { class: cardCVA.apply({ layout, featured }) } %}
+
+{% if blog %}
+    {% block card %}
+        <article {{ attributes.defaults(attributeDefaults) }}>
+            {% block inner %}
+                {% block media %}
+                    <twig:Slot name="media">
+                        <div class="blog-card__media">
+                            {% if cover %}
+                                <twig:Sw:Media:Image
+                                    :media="cover"
+                                    class="sw-blog-card__image blog-card__image"
+                                    :alt="blog.title"
+                                    :loading="featured ? 'eager' : 'lazy'"
+                                    :fetchpriority="featured ? 'high' : 'auto'"
+                                />
+                            {% else %}
+                                <div class="blog-card__media-placeholder" aria-hidden="true">
+                                    {{ blog.title|slice(0, 1) }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </twig:Slot>
+                {% endblock %}
+
+                {% block content %}
+                    <div {{ attributes.nested('body').defaults({ class: 'sw-blog-card__body blog-card__content' }) }}>
+                        {% block type %}
+                            <span class="sw-blog-card__type badge text-bg-light mb-2 align-self-start">
+                                {% if blog.type == 'video' %}
+                                    <twig:Sw:Icon name="play" size="xs" />
+                                    {{ 'blog.type.video'|trans|sw_sanitize }}
+                                {% else %}
+                                    {{ 'blog.type.post'|trans|sw_sanitize }}
+                                {% endif %}
+                            </span>
+                        {% endblock %}
+
+                        {% block categories %}
+                            {% if blog.categories is not empty %}
+                                <div class="blog-card__categories">
+                                    {% set shownCategories = 0 %}
+                                    {% for assignment in blog.categories %}
+                                        {% if shownCategories < 2 and assignment.blogCategory %}
+                                            <a href="{{ seoUrl('frontend.blog.index', { category: assignment.blogCategoryId }) }}"
+                                                class="blog-card__chip">{{ assignment.blogCategory.name }}</a>
+                                            {% set shownCategories = shownCategories + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if blog.categories|length > 2 %}
+                                        <span class="blog-card__chip blog-card__chip--more">+{{ blog.categories|length - 2 }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endblock %}
+
+                        {% block title %}
+                            <twig:Slot name="title">
+                                <h3 class="blog-card__title">
+                                    <a href="{{ seoUrl('frontend.blog.detail', { blogId: blog.id }) }}"
+                                        class="blog-card__link">{{ blog.title }}</a>
+                                </h3>
+                            </twig:Slot>
+                        {% endblock %}
+
+                        {% block teaser %}
+                            <twig:Slot name="teaser">
+                                {% if blog.teaser %}
+                                    <p class="blog-card__teaser">{{ blog.teaser|striptags|u.truncate(layout == 'list' ? 120 : 180, '…') }}</p>
+                                {% endif %}
+                            </twig:Slot>
+                        {% endblock %}
+
+                        {% block meta %}
+                            <div class="blog-card__meta">
+                                {% if showAuthor and blog.author %}
+                                    {% block author %}
+                                        <span class="blog-card__author">
+                                            <span class="blog-card__avatar" aria-hidden="true">{{ blog.author.name|slice(0, 1) }}</span>
+                                            {{ blog.author.name }}
+                                        </span>
+                                    {% endblock %}
+                                {% endif %}
+
+                                {% if blog.publishedAt %}
+                                    <time class="blog-card__date" datetime="{{ blog.publishedAt|date('c') }}">
+                                        {{ blog.publishedAt|format_date('medium', locale=locale) }}
+                                    </time>
+                                {% endif %}
+
+                                {% if showReadingTime and readingTime > 0 %}
+                                    {% block reading_time %}
+                                        <span class="blog-card__reading-time">
+                                            {{ 'blog.card.readingTime'|trans({ '%minutes%': readingTime })|sw_sanitize }}
+                                        </span>
+                                    {% endblock %}
+                                {% endif %}
+                            </div>
+                        {% endblock %}
+                    </div>
+                {% endblock %}
+            {% endblock %}
+        </article>
+    {% endblock %}
+{% endif %}

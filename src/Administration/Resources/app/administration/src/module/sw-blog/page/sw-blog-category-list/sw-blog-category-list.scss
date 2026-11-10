@@ -1,12 +1,79 @@
 .sw-blog-category-list {
-    &__content {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
+    .sw-page__content.has--side-content {
+        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr) auto;
     }
 
-    .mt-empty-state {
-        padding-block: var(--scale-size-48);
+    .sw-page__side-content {
+        background: var(--color-elevation-surface-raised);
+    }
+
+    &__editor {
+        height: 100%;
+        min-width: 0;
+    }
+
+    &__tabs {
+        margin-block-end: var(--scale-size-16);
+    }
+
+    &__card-view .sw-card-view__content {
+        padding: var(--scale-size-24);
+    }
+
+    &__context,
+    &__path {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-12);
+        min-width: 0;
+    }
+
+    &__context {
+        justify-content: space-between;
+        margin-block-end: var(--scale-size-16);
+    }
+
+    &__path {
+        font-size: var(--font-size-s);
+        color: var(--color-text-secondary-default);
+
+        strong {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: var(--color-text-primary-default);
+            font-weight: var(--font-weight-medium);
+        }
+    }
+
+    &__general-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--scale-size-24);
+        align-items: start;
+    }
+
+    &__general-layout > .mt-card {
+        margin-block: 0;
+        min-width: 0;
+    }
+
+    &__fields {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: var(--scale-size-24);
+    }
+
+    &__active {
+        margin-block-start: var(--scale-size-32);
+    }
+
+    &__slug {
+        grid-column: 1 / -1;
+    }
+
+    &__description {
+        margin-block-start: var(--scale-size-16);
     }
 
     &__delete-message {
@@ -14,15 +81,24 @@
         color: var(--color-text-primary-default);
     }
 
-    &__entry-count {
-        padding: 0;
-    }
+    @media screen and (max-width: 900px) {
+        .sw-page__content.has--side-content {
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: 240px minmax(0, 1fr);
+        }
 
-    &__entry-count-empty {
-        color: var(--color-text-secondary-default);
-    }
+        .sw-page__side-content {
+            border-inline-end: 0;
+            border-block-end: 1px solid var(--color-border-secondary-default);
+        }
 
-    &__create-name {
-        margin-block-end: var(--scale-size-16);
+        &__context {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        &__card-view .sw-card-view__content {
+            padding: var(--scale-size-16);
+        }
     }
 }

@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategory\BlogCategoryEntity;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\BlogException;
+use Shopwell\Core\Content\Blog\Service\BlogVisibilityGuard;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
@@ -65,6 +66,7 @@ class BlogSeoUrlRouteTest extends TestCase
 
         // an undated entry plus a range filter is what the storefront applies, expressed as a filter
         static::assertCount(1, $criteria->getFilters());
+        static::assertEquals((new BlogVisibilityGuard(new MockClock('2026-01-01 10:00:00', 'UTC')))->getVisibilityFilter(), $criteria->getFilters()[0]);
     }
 
     /**

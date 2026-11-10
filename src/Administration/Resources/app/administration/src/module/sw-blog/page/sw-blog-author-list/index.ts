@@ -53,9 +53,6 @@ export default defineComponent({
         sortBy: string;
         sortDirection: 'ASC' | 'DESC';
         deleteTarget: DeleteTarget | null;
-        showCreateModal: boolean;
-        newAuthorName: string;
-        isCreating: boolean;
     } {
         return {
             authors: null,
@@ -63,9 +60,6 @@ export default defineComponent({
             sortBy: 'name',
             sortDirection: 'ASC',
             deleteTarget: null,
-            showCreateModal: false,
-            newAuthorName: '',
-            isCreating: false,
         };
     },
 
@@ -128,10 +122,6 @@ export default defineComponent({
             return this.acl.can('blog.deleter');
         },
 
-        isCreateDisabled(): boolean {
-            return this.newAuthorName.trim() === '';
-        },
-
         /**
          * The delete question, with the number of entries that would lose their byline.
          *
@@ -179,10 +169,6 @@ export default defineComponent({
             void this.getList();
         },
 
-        onOpenBlogList(): void {
-            void this.$router.push({ name: 'sw.blog.list' });
-        },
-
         entryCountOf(author: AuthorRow): number {
             return author.entries?.length ?? 0;
         },
@@ -197,48 +183,10 @@ export default defineComponent({
             return (author.name ?? '').trim().charAt(0).toUpperCase();
         },
 
-        onOpenCreateModal(): void {
-            this.newAuthorName = '';
-            this.showCreateModal = true;
-        },
-
-        onCloseCreateModal(): void {
-            this.showCreateModal = false;
-            this.newAuthorName = '';
-        },
-
-        /**
-         * An author needs nothing but a name. Email, portrait and biography are filled in on the
-         * detail page - asking for all of them before the merchant knows who the author is would turn
-         * "add a byline" into a form.
-         */
         onCreateAuthor(): void {
-            const name = this.newAuthorName.trim();
-
-            if (name === '' || this.isCreating) {
-                return;
+            if (this.canCreate) {
+                void this.$router.push({ name: 'sw.blog.author.create' });
             }
-
-            this.isCreating = true;
-
-            const author = this.authorRepository.create();
-
-            author.name = name;
-            author.active = true;
-
-            void this.authorRepository
-                .save(author)
-                .then(() => {
-                    this.showCreateModal = false;
-
-                    return this.$router.push({
-                        name: 'sw.blog.author.detail',
-                        params: { id: author.id },
-                    });
-                })
-                .finally(() => {
-                    this.isCreating = false;
-                });
         },
 
         onInlineEditSave(author: EntitySchema.Entity<'blog_author'>): void {
