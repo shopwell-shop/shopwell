@@ -35,6 +35,8 @@ type ReasonListVm = {
     columns: Array<Record<string, unknown>>;
     criteria: unknown;
     getList: jest.Mock;
+    createNotificationError: jest.Mock;
+    $t: (key: string) => string;
     onRefresh: () => void;
     onCreate: () => void;
     onEdit: (reason: Reason) => void;
@@ -76,6 +78,8 @@ function createVm(
         acl: { can: jest.fn(() => canEdit) },
         repositoryFactory: { create: jest.fn(() => repository) },
         reasonRepository: repository,
+        createNotificationError: jest.fn(),
+        $t: (key: string) => key,
     } as unknown as ReasonListVm;
 
     Object.entries(page.computed).forEach(([name, computed]) => {
@@ -127,6 +131,48 @@ describe('src/module/sw-settings-order-return/page/sw-settings-order-return-reas
 
         expect(vm.reasonToEdit).toBeNull();
         expect(vm.showModal).toBe(true);
+    });
+
+    it('creates reasons in the system language and refreshes the displayed language', () => {
+        const previousLanguageId = Shopwell.Context.api.languageId;
+        const vm = createVm();
+        Shopwell.Context.api.languageId = Shopwell.Utils.createId<EntitySchema.LanguageId>();
+
+        try {
+            vm.onCreate();
+
+            expect(Shopwell.Context.api.languageId).toBe(Shopwell.Context.api.systemLanguageId);
+            expect(vm.showModal).toBe(true);
+        } finally {
+            Shopwell.Context.api.languageId = previousLanguageId;
+        }
+    });
+
+    it('keeps the selected language when editing a translation', () => {
+        const previousLanguageId = Shopwell.Context.api.languageId;
+        const selectedLanguageId = Shopwell.Utils.createId<EntitySchema.LanguageId>();
+        const vm = createVm();
+        Shopwell.Context.api.languageId = selectedLanguageId;
+
+        try {
+            vm.onEdit(reason);
+
+            expect(Shopwell.Context.api.languageId).toBe(selectedLanguageId);
+            expect(vm.reasonToEdit).toEqual(reason);
+        } finally {
+            Shopwell.Context.api.languageId = previousLanguageId;
+        }
+    });
+
+    it('reports a failed load and leaves loading state without an unhandled rejection', async () => {
+        const vm = createVm(true, jest.fn().mockRejectedValue(new Error('offline')), false);
+
+        await expect(page.methods.getList.call(vm)).resolves.toBeUndefined();
+
+        expect(vm.isLoading).toBe(false);
+        expect(vm.createNotificationError).toHaveBeenCalledWith({
+            message: 'sw-settings-order-return.reason.notificationLoadError',
+        });
     });
 
     it('opens the modal for the reason that is edited', () => {

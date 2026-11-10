@@ -2,7 +2,7 @@
  * @sw-package after-sales
  */
 
-import { flushPromises } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import SwSettingsOrderReturnIndex from './index';
 
 type SettingsIndexVm = {
@@ -48,9 +48,37 @@ function createVm(canEdit = true, saveAll: jest.Mock = jest.fn().mockResolvedVal
 }
 
 describe('src/module/sw-settings-order-return/page/sw-settings-order-return-index/index', () => {
-    it('only lets an editor of the returns save the rules', () => {
-        expect(page.computed.canEdit.call(createVm(true))).toBe(true);
+    it('requires the standard system config privilege to save the rules', () => {
+        const vm = createVm(true);
+        expect(page.computed.canEdit.call(vm)).toBe(true);
+        expect(vm.acl.can).toHaveBeenCalledWith('system.system_config');
         expect(page.computed.canEdit.call(createVm(false))).toBe(false);
+    });
+
+    it('uses the standard sales channel aware configuration component', async () => {
+        const wrapper = mount(await wrapTestComponent('sw-settings-order-return-index', { sync: true }), {
+            global: {
+                provide: { acl: { can: () => true } },
+                renderStubDefaultSlot: true,
+                stubs: {
+                    'sw-page': { template: '<div><slot name="content"/></div>' },
+                    'sw-card-view': { template: '<div><slot/></div>' },
+                    'sw-extension-component-section': true,
+                    'sw-system-config': {
+                        name: 'sw-system-config',
+                        props: { domain: String, salesChannelSwitchable: Boolean },
+                        template: '<div/>',
+                    },
+                },
+            },
+        });
+
+        expect(wrapper.findComponent({ name: 'sw-system-config' }).props()).toMatchObject({
+            domain: 'core.orderReturn',
+            salesChannelSwitchable: true,
+        });
+        expect(wrapper.find('.sw-settings-order-return-index__reasons').exists()).toBe(false);
+        wrapper.unmount();
     });
 
     it('saves the whole config domain and reports the success', async () => {

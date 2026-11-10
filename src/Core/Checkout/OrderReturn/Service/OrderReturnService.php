@@ -74,6 +74,7 @@ class OrderReturnService
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
+        private readonly OrderReturnRefundExecutor $refundExecutor,
     ) {
     }
 
@@ -216,10 +217,14 @@ class OrderReturnService
      * Agrees to the request. A refund without goods is paid out right away, a return waits for the
      * parcel and gets the deadline by which it has to arrive.
      */
-    public function approve(string $returnId, Context $context): OrderReturnEntity
+    public function approve(string $returnId, Context $context, ?string $refundDestination = null): OrderReturnEntity
     {
         $orderReturn = $this->get($returnId, $context);
         $this->assertState($orderReturn, [OrderReturnStates::STATE_REQUESTED], OrderReturnStates::ACTION_APPROVE);
+
+        if (!OrderReturnTypes::requiresReturn($orderReturn->type)) {
+            $this->selectRefundDestination($orderReturn, $refundDestination, $context);
+        }
 
         $this->stateHandler->approve($returnId, $context);
         $orderReturn = $this->get($returnId, $context);
@@ -296,10 +301,12 @@ class OrderReturnService
     /**
      * Books the parcel in, puts the accepted goods back into the stock and pays the customer out.
      */
-    public function receive(string $returnId, Context $context): OrderReturnEntity
+    public function receive(string $returnId, Context $context, ?string $refundDestination = null): OrderReturnEntity
     {
         $orderReturn = $this->get($returnId, $context);
         $this->assertState($orderReturn, [OrderReturnStates::STATE_RETURNING], OrderReturnStates::ACTION_RECEIVE);
+
+        $this->selectRefundDestination($orderReturn, $refundDestination, $context);
 
         $this->orderReturnRepository->update([[
             'id' => $returnId,
@@ -329,14 +336,18 @@ class OrderReturnService
      * announced. A payout that already started is answered with the refund it already has, so a
      * merchant can not refund twice by clicking twice.
      */
-    public function refund(string $returnId, Context $context): OrderReturnEntity
+    public function refund(string $returnId, Context $context, ?string $refundDestination = null): OrderReturnEntity
     {
         $orderReturn = $this->get($returnId, $context);
         $this->assertState(
             $orderReturn,
-            [OrderReturnStates::STATE_OPEN, OrderReturnStates::STATE_RECEIVED],
+            OrderReturnTypes::refundableOnApproval($orderReturn->type)
+                ? [OrderReturnStates::STATE_OPEN, OrderReturnStates::STATE_RECEIVED]
+                : [OrderReturnStates::STATE_RECEIVED],
             OrderReturnStates::ACTION_REFUND
         );
+
+        $this->selectRefundDestination($orderReturn, $refundDestination, $context);
 
         $this->refundService->refund($orderReturn, $this->getOrder($orderReturn->orderId, $context), $context);
 
@@ -470,6 +481,32 @@ class OrderReturnService
         }
 
         return $order;
+    }
+
+    private function selectRefundDestination(OrderReturnEntity $orderReturn, ?string $destination, Context $context): void
+    {
+        $destination ??= $orderReturn->refundDestination ?? OrderReturnEntity::REFUND_ORIGINAL;
+
+        if (!\in_array($destination, [OrderReturnEntity::REFUND_ORIGINAL, OrderReturnEntity::REFUND_WALLET], true)) {
+            throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'unknown refund destination.');
+        }
+
+        if ($destination === OrderReturnEntity::REFUND_WALLET && $orderReturn->customerId === null) {
+            throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'a guest has no customer wallet.');
+        }
+
+        if ($orderReturn->refundDestination !== null && $orderReturn->refundDestination !== $destination) {
+            throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'the refund destination is already fixed.');
+        }
+
+        if (!$this->refundExecutor->claimDestination($orderReturn->id, $destination)) {
+            throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'the refund destination is already fixed.');
+        }
+
+        $context->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($orderReturn, $destination): void {
+            $this->orderReturnRepository->update([['id' => $orderReturn->id, 'refundDestination' => $destination]], $context);
+        });
+        $orderReturn->refundDestination = $destination;
     }
 
     /**

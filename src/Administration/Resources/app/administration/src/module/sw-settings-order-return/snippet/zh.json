@@ -1,8 +1,8 @@
 {
     "sw-settings-order-return": {
         "general": {
-            "mainMenuItemGeneral": "售后",
-            "description": "配置售后规则并维护售后原因"
+            "mainMenuItemGeneral": "售后设置",
+            "description": "按销售渠道配置售后规则"
         },
         "index": {
             "cardReasonsTitle": "售后原因",
@@ -25,7 +25,8 @@
             "fieldActive": "启用",
             "helpTextActive": "停用后顾客不能再选择该原因，已有的售后单不受影响。",
             "notificationSaveSuccess": "售后原因已保存。",
-            "notificationSaveError": "售后原因保存失败。"
+            "notificationSaveError": "售后原因保存失败。",
+            "notificationLoadError": "售后原因加载失败。"
         },
         "notification": {
             "saveSuccess": "售后设置已保存。",

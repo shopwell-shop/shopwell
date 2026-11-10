@@ -1,7 +1,7 @@
 /**
  * @sw-package after-sales
  */
-import { defineComponent } from 'vue';
+import useNotification from 'src/app/composables/use-notification';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-settings-order-return-reason-list.html.twig';
@@ -24,12 +24,16 @@ type OrderReturnReason = EntitySchema.Entity<'order_return_reason'>;
  * language and an inline cell would always silently write the current one.
  */
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: ['repositoryFactory', 'acl'],
 
     mixins: [Mixin.getByName('listing')],
+
+    setup() {
+        return useNotification();
+    },
 
     data(): {
         reasons: EntityCollection<'order_return_reason'> | null;
@@ -107,6 +111,11 @@ export default defineComponent({
                     this.total = result.total ?? 0;
                     this.reasons = result;
                 })
+                .catch(() => {
+                    this.createNotificationError({
+                        message: this.$t('sw-settings-order-return.reason.notificationLoadError'),
+                    });
+                })
                 .finally(() => {
                     this.isLoading = false;
                 });
@@ -117,6 +126,13 @@ export default defineComponent({
         },
 
         onCreate(): void {
+            const { systemLanguageId, languageId } = Shopwell.Context.api;
+
+            if (systemLanguageId && languageId !== systemLanguageId) {
+                Shopwell.Context.api.languageId = systemLanguageId;
+                Shopwell.Utils.EventBus.emit('on-change-language-clicked', systemLanguageId);
+            }
+
             this.reasonToEdit = null;
             this.showModal = true;
         },

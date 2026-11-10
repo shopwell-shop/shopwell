@@ -26,19 +26,6 @@ const DEFAULT_FILTERS: string[] = ['return-no-filter', 'order-no-filter', 'state
 type OrderReturn = EntitySchema.Entity<'order_return'>;
 type StateMachineState = EntitySchema.Entity<'state_machine_state'>;
 
-/**
- * The three fields of a customer the queue needs.
- *
- * The entity type of the administration carries the whole customer, but the name is assembled from
- * fields the generated type does not expose on every path - so the page names the shape it reads
- * instead of wandering through the generated one.
- */
-type CustomerName = {
-    firstName?: string | null;
-    lastName?: string | null;
-    email?: string | null;
-};
-
 type FilterDefinition = {
     property: string;
     type: string;
@@ -131,7 +118,7 @@ export default defineComponent({
             const criteria = new Criteria(this.page, this.limit);
             criteria.setTerm(this.term ?? '');
             criteria.addSorting(Criteria.sort(this.sortBy ?? 'createdAt', this.sortDirection, this.naturalSorting));
-            criteria.addAssociation('order');
+            criteria.addAssociation('order.orderCustomer');
             criteria.addAssociation('customer');
             criteria.addAssociation('reason');
             criteria.addAssociation('stateMachineState');
@@ -348,24 +335,8 @@ export default defineComponent({
             return this.$te(key) ? this.$t(key) : type;
         },
 
-        /**
-         * The holder of the case. A guest return has no customer row, only the address it was opened
-         * with - the email is the only identity the queue can show for it.
-         */
         customerLabel(item: OrderReturn): string {
-            const customer = item.customer as CustomerName | null | undefined;
-
-            if (customer) {
-                const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();
-
-                if (name) {
-                    return name;
-                }
-
-                return customer.email || '–';
-            }
-
-            return item.guestEmail || '–';
+            return item.order?.orderCustomer?.name || item.customer?.name || '–';
         },
 
         formatAmount(amount: number | null, currency: string | null): string {

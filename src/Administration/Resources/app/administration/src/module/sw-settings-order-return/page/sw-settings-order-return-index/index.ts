@@ -1,11 +1,8 @@
 /**
  * @sw-package after-sales
  */
-import { defineComponent } from 'vue';
+import useNotification from 'src/app/composables/use-notification';
 import template from './sw-settings-order-return-index.html.twig';
-import './sw-settings-order-return-index.scss';
-
-const { Mixin } = Shopwell;
 
 /**
  * The return rules.
@@ -15,12 +12,14 @@ const { Mixin } = Shopwell;
  * keys the server reads - and not twice.
  */
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
-    mixins: [Mixin.getByName('notification')],
-
     inject: ['acl'],
+
+    setup() {
+        return useNotification();
+    },
 
     data(): { isLoading: boolean; isSaveSuccessful: boolean } {
         return {
@@ -37,7 +36,7 @@ export default defineComponent({
 
     computed: {
         canEdit(): boolean {
-            return this.acl.can('order_return.editor');
+            return this.acl.can('system.system_config');
         },
     },
 

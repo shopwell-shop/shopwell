@@ -48,6 +48,14 @@ class OrderReturnControllerTest extends TestCase
         );
     }
 
+    public function testOperatorDestinationIsPassedToTheRefundService(): void
+    {
+        $context = Context::createDefaultContext();
+        $service = $this->createMock(OrderReturnService::class);
+        $service->expects($this->once())->method('refund')->with('return-id', $context, 'wallet')->willReturn($this->orderReturn());
+        $this->controller($service)->refund('return-id', $context, new Request(request: ['refundDestination' => 'wallet']));
+    }
+
     public function testADeclineCarriesTheReasonAndTheAdministrator(): void
     {
         $context = Context::createDefaultContext(new AdminApiSource('administrator-id'));

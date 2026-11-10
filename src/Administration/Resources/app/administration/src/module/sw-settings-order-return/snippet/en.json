@@ -1,8 +1,8 @@
 {
     "sw-settings-order-return": {
         "general": {
-            "mainMenuItemGeneral": "Returns",
-            "description": "Configure the return rules and maintain the reasons"
+            "mainMenuItemGeneral": "Return settings",
+            "description": "Configure return rules per sales channel"
         },
         "index": {
             "cardReasonsTitle": "Return reasons",
@@ -25,7 +25,8 @@
             "fieldActive": "Active",
             "helpTextActive": "A disabled reason can not be picked anymore; the returns that already picked it keep it.",
             "notificationSaveSuccess": "The reason was saved.",
-            "notificationSaveError": "The reason could not be saved."
+            "notificationSaveError": "The reason could not be saved.",
+            "notificationLoadError": "The return reasons could not be loaded."
         },
         "notification": {
             "saveSuccess": "The return settings were saved.",

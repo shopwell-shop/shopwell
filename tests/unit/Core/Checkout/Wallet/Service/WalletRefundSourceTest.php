@@ -10,11 +10,15 @@ use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalle
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionEntity;
 use Shopwell\Core\Checkout\Wallet\Service\WalletPaymentService;
 use Shopwell\Core\Checkout\Wallet\Service\WalletRefundSource;
+use Shopwell\Core\Checkout\Wallet\WalletException;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
 /**
@@ -91,6 +95,101 @@ class WalletRefundSourceTest extends TestCase
             ->refund($this->orderReturn(), $this->order(), 7000, $this->context);
     }
 
+    public function testOperatorCanRedirectCollectedGatewayMoneyToWallet(): void
+    {
+        $paymentOrders = static::createStub(PaymentOrderService::class);
+        $paymentOrders->method('findLatestByOrderTransaction')->willReturn((new PaymentOrderEntity())->assign([
+            'id' => 'payment-id', 'paidAt' => new \DateTimeImmutable(), 'paidAmount' => 10000, 'refundedAmount' => 3000,
+        ]));
+        $order = $this->order();
+        $order->setPrimaryOrderTransactionId('transaction-id');
+        $orderReturn = $this->orderReturn();
+        $orderReturn->assign(['refundDestination' => 'wallet']);
+        $source = new WalletRefundSource($this->repository([
+            $this->transaction('consume', -20.0), $this->transaction('refund', 30.0),
+        ]), static::createStub(WalletPaymentService::class), $paymentOrders);
+
+        static::assertSame(7000, $source->refundableDestinationAmount($orderReturn, $order, $this->context));
+    }
+
+    public function testReplayIncludesTheSameReturnWithoutCreditingItTwice(): void
+    {
+        $refund = $this->transaction('refund', 70.0);
+        $refund['externalReference'] = 'RT-1';
+        $source = new WalletRefundSource($this->repository([
+            $this->transaction('consume', -100.0), $refund,
+        ]), static::createStub(WalletPaymentService::class));
+
+        static::assertSame(10000, $source->refundableAmount($this->orderReturn(), $this->order(), $this->context));
+    }
+
+    public function testWalletPayoutAlsoBooksOnlyTheRedirectedGatewayPart(): void
+    {
+        $payment = (new PaymentOrderEntity())->assign(['id' => 'payment-id', 'paidAt' => new \DateTimeImmutable(), 'paidAmount' => 10000]);
+        $paymentOrders = $this->createMock(PaymentOrderService::class);
+        $paymentOrders->method('findLatestByOrderTransaction')->willReturn($payment);
+        $paymentOrders->expects($this->once())->method('applyRefund')->with($payment, 1000)->willReturn($payment);
+        $lock = static::createStub(PaymentOrderRowLock::class);
+        $lock->method('transaction')->willReturnCallback(static fn (\Closure $write) => $write());
+        $lock->method('lockOrder')->willReturn(['paidAmount' => 10000, 'refundedAmount' => 0]);
+        $lock->method('reservedRefundAmount')->willReturn(0);
+        $wallet = $this->createMock(WalletPaymentService::class);
+        $wallet->expects($this->once())->method('refundForOrder')->with(self::ORDER_ID, self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, $this->context, 'RT-1');
+        $source = new WalletRefundSource($this->repository([$this->transaction('consume', -20.0)]), $wallet, $paymentOrders, $lock);
+        $order = $this->order();
+        $order->setPrimaryOrderTransactionId('transaction-id');
+        $orderReturn = $this->orderReturn();
+        $orderReturn->refundDestination = 'wallet';
+
+        $source->refund($orderReturn, $order, 3000, $this->context);
+    }
+
+    public function testReservedGatewayFundsCannotBeCreditedToTheWallet(): void
+    {
+        $payment = (new PaymentOrderEntity())->assign(['id' => 'payment-id', 'paidAt' => new \DateTimeImmutable(), 'paidAmount' => 8000]);
+        $paymentOrders = $this->createMock(PaymentOrderService::class);
+        $paymentOrders->method('findLatestByOrderTransaction')->willReturn($payment);
+        $paymentOrders->expects($this->never())->method('applyRefund');
+        $lock = static::createStub(PaymentOrderRowLock::class);
+        $lock->method('transaction')->willReturnCallback(static fn (\Closure $write) => $write());
+        $lock->method('lockOrder')->willReturn(['paidAmount' => 8000, 'refundedAmount' => 0]);
+        $lock->method('reservedRefundAmount')->willReturn(1000);
+        $wallet = $this->createMock(WalletPaymentService::class);
+        $wallet->expects($this->never())->method('refundForOrder');
+        $source = new WalletRefundSource($this->repository([]), $wallet, $paymentOrders, $lock);
+        $order = $this->order();
+        $order->setPrimaryOrderTransactionId('transaction-id');
+        $orderReturn = $this->orderReturn();
+        $orderReturn->refundDestination = 'wallet';
+
+        static::assertSame(7000, $source->refundableDestinationAmount($orderReturn, $order, $this->context));
+        $this->expectExceptionObject(WalletException::refundNotPossible('RT-1', 'the collected payment has insufficient refundable funds.'));
+        $source->refund($orderReturn, $order, 8000, $this->context);
+    }
+
+    public function testAReplayedGatewayRedirectionDoesNotBookThePaymentTwice(): void
+    {
+        $payment = (new PaymentOrderEntity())->assign(['id' => 'payment-id', 'paidAt' => new \DateTimeImmutable(), 'paidAmount' => 10000]);
+        $paymentOrders = $this->createMock(PaymentOrderService::class);
+        $paymentOrders->method('findLatestByOrderTransaction')->willReturn($payment);
+        $paymentOrders->expects($this->never())->method('applyRefund');
+        $lock = static::createStub(PaymentOrderRowLock::class);
+        $lock->method('transaction')->willReturnCallback(static fn (\Closure $write) => $write());
+        $lock->method('lockOrder')->willReturn(['paidAmount' => 10000, 'refundedAmount' => 3000]);
+        $wallet = $this->createMock(WalletPaymentService::class);
+        $wallet->expects($this->never())->method('refundForOrder');
+        $refund = $this->transaction('refund', 30.0);
+        $refund['externalReference'] = 'RT-1';
+        $source = new WalletRefundSource($this->repository([$refund]), $wallet, $paymentOrders, $lock);
+        $order = $this->order();
+        $order->setPrimaryOrderTransactionId('transaction-id');
+        $orderReturn = $this->orderReturn();
+        $orderReturn->refundDestination = 'wallet';
+
+        static::assertSame(3000, $source->refundableDestinationAmount($orderReturn, $order, $this->context));
+        $source->refund($orderReturn, $order, 3000, $this->context);
+    }
+
     /**
      * The stub answers one scripted call per `search()`, and a refundable amount costs two of them -
      * the debit and the credit of the order - so the same script is queued twice.
@@ -117,7 +216,7 @@ class WalletRefundSourceTest extends TestCase
             return $collection;
         };
 
-        return new StaticEntityRepository([$search, $search]);
+        return new StaticEntityRepository(array_fill(0, 10, $search));
     }
 
     /**

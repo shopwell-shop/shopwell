@@ -2,6 +2,13 @@
 
 ## Core
 
+### After-sales refund destination
+
+Administration refund confirmations default to the original payment sources and can instead credit a registered customer's wallet.
+The approve, receive and refund actions accept optional `refundDestination` (`original` or `wallet`); the first payout attempt fixes this value on the return.
+Wallet payouts also reduce the collected payment's refundable amount and use the return number for idempotency.
+Guest returns support the original payment sources only.
+
 ### Blog publishing and content layouts
 
 New Blog entries default to drafts (`active=false`).
@@ -18,6 +25,12 @@ Register custom types through `BlogTypeRegistry::addType($type, $template, $sche
 `GET /api/_action/blog/types` lists registered type names.
 
 ## Administration
+
+### Return settings per sales channel
+
+Return rules support sales channel overrides and inheritance from the global configuration.
+Return reasons have a separate settings entry and remain shared across sales channels.
+The return rules page uses the standard `system.system_config` permission; reason management continues to use the return permissions.
 
 ### Configurable administration menus
 

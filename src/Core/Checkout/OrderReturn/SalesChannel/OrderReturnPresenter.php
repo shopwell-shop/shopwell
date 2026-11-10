@@ -35,6 +35,7 @@ class OrderReturnPresenter
             'state' => $orderReturn->stateMachineState?->getTechnicalName(),
             'stateLabel' => $orderReturn->stateMachineState?->getTranslation('name'),
             'refundAmount' => $orderReturn->refundAmount,
+            'refundDestination' => $orderReturn->refundDestination ?? OrderReturnEntity::REFUND_ORIGINAL,
             // the amount is the smallest unit of the currency, the decimals are what a template needs
             // to turn it back into the number a customer reads
             'decimals' => $orderReturn->order?->getCurrency()?->getItemRounding()?->getDecimals() ?? 2,

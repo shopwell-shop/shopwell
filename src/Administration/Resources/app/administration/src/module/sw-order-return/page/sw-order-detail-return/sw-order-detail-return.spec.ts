@@ -2,6 +2,7 @@
  * @sw-package after-sales
  */
 import { mount } from '@vue/test-utils';
+import MtCard from '@shopwell-ag/meteor-component-library/dist/esm/MtCard';
 import type { VueWrapper } from '@vue/test-utils';
 import type CriteriaType from 'src/core/data/criteria.data';
 
@@ -50,15 +51,13 @@ async function createWrapper(can: (privilege: string) => boolean = () => true, a
         props: { orderId: 'order-id' },
         global: {
             stubs: {
+                'mt-card': MtCard,
                 'sw-data-grid': {
                     name: 'sw-data-grid',
                     props: ['dataSource'],
                     template: `<div><article v-for="item in dataSource" :key="item.id"><slot v-for="(_, name) in $slots" :name="name" :item="item"/></article></div>`,
                 },
                 'sw-loader': true,
-                // the card passes its body through the `grid` slot, so the stub has to render both -
-                // otherwise the grid and the toolbar would never reach the template under test
-                'mt-card': { template: '<div class="mt-card-stub"><slot></slot><slot name="grid"></slot></div>' },
                 'sw-card-section': { template: '<div><slot></slot></div>' },
                 'sw-modal': {
                     template: '<div class="sw-modal-stub"><slot></slot><slot name="modal-footer"></slot></div>',

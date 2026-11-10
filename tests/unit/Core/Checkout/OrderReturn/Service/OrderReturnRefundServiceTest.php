@@ -8,6 +8,8 @@ use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnException;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundDestination;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundExecutor;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundService;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundSource;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnStateHandler;
@@ -178,6 +180,30 @@ class OrderReturnRefundServiceTest extends TestCase
         static::assertSame([1999], $source->refunded);
     }
 
+    public function testWalletRedirectionPreservesPointsAndCombinesCashInOneBooking(): void
+    {
+        $orderReturn = $this->orderReturn();
+        $orderReturn->refundDestination = 'wallet';
+        $orderReturn->refundAmount = 1000;
+        $wallet = new RecordingWalletDestination(200, 1000);
+        $points = $this->source(100);
+        $this->service(sources: [$wallet, $points])->refund($orderReturn, $this->order(), $this->context);
+
+        static::assertSame([900], $wallet->amounts);
+        static::assertSame([100], $points->refunded);
+    }
+
+    public function testWalletDestinationNeverFallsBackToTheGateway(): void
+    {
+        $orderReturn = $this->orderReturn();
+        $orderReturn->assign(['refundDestination' => 'wallet']);
+        $gateway = $this->paymentRefundService($this->refund('RF-replayed', new \DateTimeImmutable()));
+        $source = $this->source(0);
+        $this->expectException(OrderReturnException::class);
+
+        $this->service(paymentRefundService: $gateway, sources: [$source])->refund($orderReturn, $this->order(), $this->context);
+    }
+
     /**
      * @param list<PaymentAppEntity>|null $apps null means "the app of the payment exists"
      * @param StaticEntityRepository<OrderReturnCollection>|null $repository
@@ -198,12 +224,16 @@ class OrderReturnRefundServiceTest extends TestCase
             $paymentApps->add($app);
         }
 
+        $executor = static::createStub(OrderReturnRefundExecutor::class);
+        $executor->method('run')->willReturnCallback(static fn (OrderReturnEntity $orderReturn, OrderEntity $order, \Closure $write) => $write());
+
         return new OrderReturnRefundService(
             new StaticEntityRepository([$paymentApps]),
             $repository ?? $this->returnRepository(),
             $this->paymentOrderService($paymentOrder ?? $this->paymentOrder()),
             $paymentRefundService ?? $this->paymentRefundService(null),
             $stateHandler ?? static::createStub(OrderReturnStateHandler::class),
+            $executor,
             $sources,
         );
     }
@@ -336,5 +366,40 @@ final class RecordingRefundSource implements OrderReturnRefundSource
     public function refund(OrderReturnEntity $orderReturn, OrderEntity $order, int $amount, Context $context): void
     {
         $this->refunded[] = $amount;
+    }
+}
+
+/**
+ * @internal
+ */
+final class RecordingWalletDestination implements OrderReturnRefundDestination
+{
+    /**
+     * @var list<int>
+     */
+    public array $amounts = [];
+
+    public function __construct(private readonly int $originalAmount, private readonly int $capacity)
+    {
+    }
+
+    public function getDestination(): string
+    {
+        return 'wallet';
+    }
+
+    public function refundableAmount(OrderReturnEntity $orderReturn, OrderEntity $order, Context $context): int
+    {
+        return $this->originalAmount;
+    }
+
+    public function refundableDestinationAmount(OrderReturnEntity $orderReturn, OrderEntity $order, Context $context): int
+    {
+        return $this->capacity;
+    }
+
+    public function refund(OrderReturnEntity $orderReturn, OrderEntity $order, int $amount, Context $context): void
+    {
+        $this->amounts[] = $amount;
     }
 }

@@ -45,9 +45,9 @@ class OrderReturnController
         defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_return.editor']],
         methods: [Request::METHOD_POST]
     )]
-    public function approve(string $id, Context $context): Response
+    public function approve(string $id, Context $context, ?Request $request = null): Response
     {
-        return $this->respond($this->orderReturnService->approve($id, $context));
+        return $this->respond($this->orderReturnService->approve($id, $context, $request === null ? null : $this->stringOrNull($request, 'refundDestination')));
     }
 
     #[Route(
@@ -86,9 +86,9 @@ class OrderReturnController
         defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_return.editor']],
         methods: [Request::METHOD_POST]
     )]
-    public function receive(string $id, Context $context): Response
+    public function receive(string $id, Context $context, ?Request $request = null): Response
     {
-        return $this->respond($this->orderReturnService->receive($id, $context));
+        return $this->respond($this->orderReturnService->receive($id, $context, $request === null ? null : $this->stringOrNull($request, 'refundDestination')));
     }
 
     #[Route(
@@ -97,9 +97,9 @@ class OrderReturnController
         defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_return.editor']],
         methods: [Request::METHOD_POST]
     )]
-    public function refund(string $id, Context $context): Response
+    public function refund(string $id, Context $context, ?Request $request = null): Response
     {
-        return $this->respond($this->orderReturnService->refund($id, $context));
+        return $this->respond($this->orderReturnService->refund($id, $context, $request === null ? null : $this->stringOrNull($request, 'refundDestination')));
     }
 
     #[Route(

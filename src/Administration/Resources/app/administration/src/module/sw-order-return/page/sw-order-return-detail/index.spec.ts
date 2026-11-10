@@ -22,7 +22,9 @@ type OrderReturn = {
     orderId: string;
     type: string;
     stateMachineState?: { technicalName: string; name: string; translated?: { name: string } } | null;
-    customer?: { firstName?: string | null; lastName?: string | null; email?: string | null } | null;
+    customerId?: string | null;
+    refundDestination?: string | null;
+    customer?: { name?: string | null; email?: string | null } | null;
     guestEmail?: string | null;
     reason?: { label?: string | null; translated?: { label?: string | null } } | null;
     reasonText?: string | null;
@@ -32,7 +34,7 @@ type OrderReturn = {
     currency: string | null;
     createdAt: string | null;
     deadlineAt: string | null;
-    order?: { orderNumber: string } | null;
+    order?: { orderNumber: string; orderCustomer?: { name?: string; customerId?: string | null } } | null;
     lineItems?: LineItem[] | null;
     messages?: Message[] | null;
 };
@@ -53,6 +55,11 @@ type DetailVm = {
     isSubmitting: boolean;
     messageDraft: string;
     showDeclineModal: boolean;
+    pendingRefundAction: 'approve' | 'receive' | 'refund' | null;
+    draftRefundDestination: string;
+    refundDestinationOptions: Array<{ value: string; label: string }>;
+    onCloseRefundModal: () => void;
+    onConfirmRefund: () => Promise<void>;
     acl: { can: jest.Mock };
     repositoryFactory: { create: jest.Mock };
     orderReturnApiService: ApiServiceMock;
@@ -70,7 +77,7 @@ type DetailVm = {
     trackingLabel: string;
     isRefundOnly: boolean;
     lineItemColumns: Array<Record<string, unknown>>;
-    generalFacts: Array<{ label: string; value: string }>;
+    generalFacts: Array<{ label: string; value: string; to?: { name: string; params: { id: string } } }>;
     $t: (key: string) => string;
     $te: (key: string) => boolean;
     createNotificationSuccess: jest.Mock;
@@ -106,7 +113,8 @@ const orderReturn: OrderReturn = {
     orderId: 'order-1',
     type: 'return_refund',
     stateMachineState: { technicalName: 'requested', name: 'Requested' },
-    customer: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' },
+    customerId: 'customer-1',
+    customer: { name: 'Ada Lovelace', email: 'ada@example.com' },
     reason: { label: 'damaged' },
     trackingCode: 'SF123',
     trackingCarrier: 'SF',
@@ -145,6 +153,8 @@ function createVm(
         isSubmitting: false,
         messageDraft: '',
         showDeclineModal: false,
+        pendingRefundAction: null,
+        draftRefundDestination: 'original',
         acl: { can: jest.fn(() => canDecide) },
         repositoryFactory: { create: jest.fn(() => repository) },
         orderReturnApiService: api,
@@ -178,7 +188,7 @@ describe('src/module/sw-order-return/page/sw-order-return-detail/index', () => {
 
         expect(setIds).toHaveBeenCalledWith(['return-1']);
         expect(addAssociation.mock.calls.map((call) => call[0])).toEqual([
-            'order',
+            'order.orderCustomer',
             'customer',
             'reason',
             'stateMachineState',
@@ -207,7 +217,17 @@ describe('src/module/sw-order-return/page/sw-order-return-detail/index', () => {
         expect(vm.availableActions).toEqual(['approve', 'decline', 'cancel']);
 
         vm.orderReturn = { ...orderReturn, stateMachineState: { technicalName: 'returning', name: 'Returning' } };
-        expect(vm.availableActions).toEqual(['cancel', 'receive', 'refund']);
+        expect(vm.availableActions).toEqual(['cancel', 'receive']);
+
+        vm.orderReturn = {
+            ...orderReturn,
+            type: 'return_refund',
+            stateMachineState: { technicalName: 'open', name: 'Open' },
+        };
+        expect(vm.availableActions).toEqual(['cancel']);
+
+        vm.orderReturn = { ...orderReturn, type: 'refund_only', stateMachineState: { technicalName: 'open', name: 'Open' } };
+        expect(vm.availableActions).toEqual(['cancel', 'refund']);
 
         vm.orderReturn = { ...orderReturn, stateMachineState: { technicalName: 'closed', name: 'Closed' } };
         expect(vm.availableActions).toEqual([]);
@@ -234,7 +254,7 @@ describe('src/module/sw-order-return/page/sw-order-return-detail/index', () => {
         expect(vm.isRefundOnly).toBe(false);
     });
 
-    it('falls back to the free text when the reason was deleted, and to the guest mail without a customer', () => {
+    it('falls back to the reason text and never uses a guest email as the customer name', () => {
         const vm = createVm({
             orderReturn: {
                 ...orderReturn,
@@ -246,7 +266,29 @@ describe('src/module/sw-order-return/page/sw-order-return-detail/index', () => {
         });
 
         expect(vm.reasonLabel).toBe('the shoe is too small');
-        expect(vm.customerLabel).toBe('guest@example.com');
+        expect(vm.customerLabel).toBe('–');
+    });
+
+    it('uses the order customer name and links to the customer detail', () => {
+        const vm = createVm({
+            orderReturn: {
+                ...orderReturn,
+                order: { orderNumber: '10001', orderCustomer: { name: '张伟', customerId: 'customer-1' } },
+            },
+        });
+
+        expect(vm.customerLabel).toBe('张伟');
+        expect(vm.generalFacts[1]).toMatchObject({
+            value: '张伟',
+            to: { name: 'sw.customer.detail', params: { id: 'customer-1' } },
+        });
+    });
+
+    it('does not link a customer without a customer account', () => {
+        const vm = createVm({ orderReturn: { ...orderReturn, customerId: null, customer: null } });
+
+        expect(vm.generalFacts[1].to).toBeUndefined();
+        expect(vm.customerLabel).toBe('–');
     });
 
     it('renders an empty case as dashes', () => {
@@ -272,6 +314,7 @@ describe('src/module/sw-order-return/page/sw-order-return-detail/index', () => {
             'sw-order-return.detail.labelCreatedAt',
             'sw-order-return.detail.labelDeadline',
             'sw-order-return.detail.labelTracking',
+            'sw-order-return.refund.labelDestination',
         ]);
 
         expect(facts[0].value).toBe('10001');
@@ -343,11 +386,34 @@ describe('src/module/sw-order-return/page/sw-order-return-detail/index', () => {
 
         const receive = createVm();
         receive.onReceive();
-        expect(receive.orderReturnApiService.receive).toHaveBeenCalledWith('return-1');
+        expect(receive.pendingRefundAction).toBe('receive');
+        expect(receive.orderReturnApiService.receive).not.toHaveBeenCalled();
 
         const refund = createVm();
         refund.onRefund();
-        expect(refund.orderReturnApiService.refund).toHaveBeenCalledWith('return-1');
+        expect(refund.pendingRefundAction).toBe('refund');
+        expect(refund.orderReturnApiService.refund).not.toHaveBeenCalled();
+    });
+
+    it('defaults refund confirmation to original and lets the operator select wallet', async () => {
+        const vm = createVm({ orderReturn: { ...orderReturn, type: 'refund_only' } });
+        vm.onApprove();
+        expect(vm.pendingRefundAction).toBe('approve');
+        expect(vm.draftRefundDestination).toBe('original');
+        expect(vm.orderReturnApiService.approve).not.toHaveBeenCalled();
+        vm.draftRefundDestination = 'wallet';
+        await vm.onConfirmRefund();
+        expect(vm.orderReturnApiService.approve).toHaveBeenCalledWith('return-1', 'wallet');
+        expect(vm.pendingRefundAction).toBeNull();
+    });
+
+    it('does not offer a wallet to guests or change a submitted destination', () => {
+        const guest = createVm({ orderReturn: { ...orderReturn, customerId: null } });
+        expect(guest.refundDestinationOptions.map((option) => option.value)).toEqual(['original']);
+        const submitted = createVm({ orderReturn: { ...orderReturn, refundDestination: 'wallet' } });
+        submitted.onRefund();
+        expect(submitted.draftRefundDestination).toBe('wallet');
+        expect(submitted.refundDestinationOptions.map((option) => option.value)).toEqual(['wallet']);
     });
 
     it('runs one decision at a time', async () => {

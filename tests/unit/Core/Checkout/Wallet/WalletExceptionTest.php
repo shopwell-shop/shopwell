@@ -15,6 +15,14 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(WalletException::class)]
 class WalletExceptionTest extends TestCase
 {
+    public function testRefundNotPossible(): void
+    {
+        $exception = WalletException::refundNotPossible('RT-1', 'insufficient funds');
+        static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+        static::assertSame('CHECKOUT__WALLET_REFUND_NOT_POSSIBLE', $exception->getErrorCode());
+        static::assertSame('Cannot refund "RT-1" to the wallet: insufficient funds', $exception->getMessage());
+    }
+
     public function testInvalidAmount(): void
     {
         $exception = WalletException::invalidAmount(0.0);

@@ -37,21 +37,37 @@ describe('src/module/sw-settings-order-return/index', () => {
         expect(routes?.has('sw.settings.order.return.index')).toBe(true);
         expect(routes?.has('sw.settings.order.return.reason')).toBe(true);
 
-        ['sw.settings.order.return.index', 'sw.settings.order.return.reason'].forEach((name) => {
+        [
+            ['sw.settings.order.return.index', 'system.system_config'],
+            ['sw.settings.order.return.reason', 'order_return.viewer'],
+        ].forEach(([name, privilege]) => {
             const route = routes?.get(name) as { meta?: RouteMeta } | undefined;
 
             expect(route?.meta?.parentPath).toBe('sw.settings.index');
-            expect(route?.meta?.privilege).toBe('order_return.viewer');
+            expect(route?.meta?.privilege).toBe(privilege);
         });
     });
 
-    it('hangs the settings item into the commerce group', () => {
+    it('registers independent settings entries for channel rules and global reasons', () => {
         const settingsItems = (Module.getModuleRegistry().get('sw-settings-order-return')?.manifest.settingsItem ??
             []) as Array<{ group?: string; to?: string; privilege?: string }>;
 
-        expect(settingsItems).toHaveLength(1);
+        expect(settingsItems).toHaveLength(2);
         expect(settingsItems[0].group).toBe('commerce');
         expect(settingsItems[0].to).toBe('sw.settings.order.return.index');
-        expect(settingsItems[0].privilege).toBe('order_return.viewer');
+        expect(settingsItems[0].privilege).toBe('system.system_config');
+        expect(settingsItems[1]).toMatchObject({
+            group: 'commerce',
+            to: 'sw.settings.order.return.reason',
+            privilege: 'order_return.viewer',
+        });
+    });
+
+    it('keeps the reason entry in the commerce settings group without a sidebar shortcut', () => {
+        const navigation = Module.getModuleRegistry().get('sw-settings-order-return')?.manifest.navigation ?? [];
+
+        expect(navigation).not.toEqual(
+            expect.arrayContaining([expect.objectContaining({ path: 'sw.settings.order.return.reason' })]),
+        );
     });
 });

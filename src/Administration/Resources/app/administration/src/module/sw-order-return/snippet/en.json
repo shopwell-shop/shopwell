@@ -95,7 +95,7 @@
             "columnReturnable": "Returnable",
             "columnQuantity": "Quantity",
             "textOverdue": "overdue",
-            "textReturnable": "up to {{quantity}}",
+            "textReturnable": "up to {quantity}",
             "modalTitle": "New return",
             "hintAmountComputed": "The refund amount is calculated from the selected items and quantities - there is nothing to type.",
             "headlinePositions": "Items and quantities",
@@ -105,7 +105,7 @@
             "labelNote": "Note of the customer",
             "placeholderNote": "What the customer said on the phone...",
             "buttonConfirmCreate": "Open return",
-            "messageCreated": "Return {{returnNumber}} was opened."
+            "messageCreated": "Return {returnNumber} was opened."
         },
         "decline": {
             "modalTitle": "Decline the return",
@@ -137,6 +137,23 @@
         "typeLabel": {
             "refund_only": "Refund only",
             "return_refund": "Return and refund"
+        },
+        "refund": {
+            "labelDestination": "Refund destination",
+            "amount": "Refund amount: {amount}",
+            "title": {
+                "approve": "Approve and refund",
+                "receive": "Receive and refund",
+                "refund": "Confirm refund"
+            },
+            "destination": {
+                "original": "Original payment method",
+                "wallet": "Customer wallet"
+            },
+            "hint": {
+                "original": "Return funds to their original sources. Wallet payments return to the wallet; the remainder returns through the original payment channel.",
+                "wallet": "Credit the refund to the customer wallet. Redeemed points are restored according to the existing points rules."
+            }
         }
     }
 }

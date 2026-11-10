@@ -1,11 +1,9 @@
 /**
  * @sw-package after-sales
  */
-import { defineComponent } from 'vue';
 import type { PropType } from 'vue';
+import useNotification from 'src/app/composables/use-notification';
 import template from './sw-settings-order-return-reason-modal.html.twig';
-
-const { Mixin } = Shopwell;
 
 type OrderReturnReason = EntitySchema.Entity<'order_return_reason'>;
 
@@ -17,14 +15,16 @@ type OrderReturnReason = EntitySchema.Entity<'order_return_reason'>;
  * which is why they sit next to the label instead of in a separate section.
  */
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
-
-    mixins: [Mixin.getByName('notification')],
 
     inject: ['repositoryFactory'],
 
     emits: ['modal-close', 'saved'],
+
+    setup() {
+        return useNotification();
+    },
 
     props: {
         reason: {

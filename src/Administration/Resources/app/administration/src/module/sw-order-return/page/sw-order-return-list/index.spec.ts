@@ -13,8 +13,7 @@ type State = {
 };
 
 type Customer = {
-    firstName?: string | null;
-    lastName?: string | null;
+    name?: string | null;
     email?: string | null;
 };
 
@@ -28,6 +27,7 @@ type OrderReturn = {
     deadlineAt: string | null;
     customer?: Customer | null;
     guestEmail?: string | null;
+    order?: { orderCustomer?: { name?: string } };
 };
 
 type RepositoryMock = {
@@ -94,7 +94,7 @@ const orderReturn: OrderReturn = {
     refundAmount: 19900,
     currency: 'CNY',
     deadlineAt: null,
-    customer: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com' },
+    customer: { name: 'Ada Lovelace', email: 'ada@example.com' },
 };
 
 function createVm(options: { translatedKeys?: string[]; states?: State[]; isValidTerm?: boolean } = {}): OrderReturnListVm {
@@ -205,16 +205,13 @@ describe('src/module/sw-order-return/page/sw-order-return-list/index', () => {
         expect(vm.typeLabel('return_refund')).toBe('return_refund');
     });
 
-    it('names the holder of the case: the customer, the mail of a guest, or nothing', () => {
+    it('shows customer names without falling back to an email address', () => {
         const vm = createVm();
 
         expect(vm.customerLabel(orderReturn)).toBe('Ada Lovelace');
-        expect(
-            vm.customerLabel({ ...orderReturn, customer: { firstName: null, lastName: '', email: 'ada@example.com' } }),
-        ).toBe('ada@example.com');
-        expect(vm.customerLabel({ ...orderReturn, customer: null, guestEmail: 'guest@example.com' })).toBe(
-            'guest@example.com',
-        );
+        expect(vm.customerLabel({ ...orderReturn, customer: { name: '', email: 'ada@example.com' } })).toBe('–');
+        expect(vm.customerLabel({ ...orderReturn, customer: null, guestEmail: 'guest@example.com' })).toBe('–');
+        expect(vm.customerLabel({ ...orderReturn, order: { orderCustomer: { name: '张伟' } } })).toBe('张伟');
         expect(vm.customerLabel({ ...orderReturn, customer: null, guestEmail: null })).toBe('–');
     });
 

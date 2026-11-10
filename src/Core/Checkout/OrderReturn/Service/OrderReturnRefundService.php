@@ -54,6 +54,7 @@ class OrderReturnRefundService
         private readonly PaymentOrderService $paymentOrderService,
         private readonly PaymentRefundService $paymentRefundService,
         private readonly OrderReturnStateHandler $stateHandler,
+        private readonly OrderReturnRefundExecutor $executor,
         private readonly iterable $sources = [],
     ) {
     }
@@ -70,6 +71,13 @@ class OrderReturnRefundService
      */
     public function refund(OrderReturnEntity $orderReturn, OrderEntity $order, Context $context): void
     {
+        $this->executor->run($orderReturn, $order, function () use ($orderReturn, $order, $context): void {
+            $this->refundLocked($orderReturn, $order, $context);
+        });
+    }
+
+    private function refundLocked(OrderReturnEntity $orderReturn, OrderEntity $order, Context $context): void
+    {
         if ($orderReturn->refundAmount <= 0) {
             throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'the return has no amount to refund.');
         }
@@ -83,6 +91,39 @@ class OrderReturnRefundService
         }
 
         [$remaining, $portions] = $this->split($orderReturn, $order, $context);
+
+        if ($orderReturn->refundDestination === OrderReturnEntity::REFUND_WALLET) {
+            $destination = null;
+            foreach ($this->sources as $source) {
+                if ($source instanceof OrderReturnRefundDestination && $source->getDestination() === OrderReturnEntity::REFUND_WALLET) {
+                    $destination = $source;
+                    break;
+                }
+            }
+
+            if ($destination === null) {
+                throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'the wallet refund destination is unavailable.');
+            }
+
+            $redirected = $remaining;
+            $originalPortions = [];
+            foreach ($portions as [$source, $amount]) {
+                if ($source === $destination) {
+                    $redirected += $amount;
+                } else {
+                    $originalPortions[] = [$source, $amount];
+                }
+            }
+
+            if ($redirected > $destination->refundableDestinationAmount($orderReturn, $order, $context)) {
+                throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'the collected amount cannot be credited to the customer wallet.');
+            }
+            if ($redirected > 0) {
+                $originalPortions[] = [$destination, $redirected];
+            }
+            $portions = $originalPortions;
+            $remaining = 0;
+        }
 
         // resolved before any money moves: a return that cannot be paid out completely has to fail while
         // it is still untouched, not after a source has already credited the customer

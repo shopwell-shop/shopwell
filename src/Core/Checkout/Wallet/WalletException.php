@@ -15,7 +15,18 @@ class WalletException extends HttpException
     final public const WALLET_EXCEEDS_MAX_PAYMENT_CODE = 'CHECKOUT__WALLET_EXCEEDS_MAX_PAYMENT';
     final public const WALLET_TOP_UP_NOT_FOUND_CODE = 'CHECKOUT__WALLET_TOP_UP_NOT_FOUND';
     final public const WALLET_TOP_UP_ABOVE_MAXIMUM_CODE = 'CHECKOUT__WALLET_TOP_UP_ABOVE_MAXIMUM';
+    final public const WALLET_REFUND_NOT_POSSIBLE_CODE = 'CHECKOUT__WALLET_REFUND_NOT_POSSIBLE';
     final public const WALLET_DISABLED_CODE = 'CHECKOUT__WALLET_DISABLED';
+
+    public static function refundNotPossible(string $reference, string $reason): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::WALLET_REFUND_NOT_POSSIBLE_CODE,
+            'Cannot refund "{{ reference }}" to the wallet: {{ reason }}',
+            ['reference' => $reference, 'reason' => $reason]
+        );
+    }
 
     public static function walletDisabled(): self
     {

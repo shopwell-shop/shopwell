@@ -127,7 +127,15 @@
                             {{ fact.label }}
                         </dt>
                         <dd class="sw-order-return-detail__fact-value">
-                            {{ fact.value }}
+                            <router-link
+                                v-if="fact.to"
+                                :to="fact.to"
+                            >
+                                {{ fact.value }}
+                            </router-link>
+                            <template v-else>
+                                {{ fact.value }}
+                            </template>
                         </dd>
                     </div>
                 </dl>
@@ -179,19 +187,13 @@
 
                     {% block sw_order_return_detail_line_items_column_accepted %}
                     <template #column-accepted="{ item }">
-                        <mt-icon
-                            :name="item.accepted ? 'regular-checkmark-circle' : 'regular-circle-slash'"
-                            size="var(--scale-size-16)"
-                        />
+                        <sw-data-grid-column-boolean :value="item.accepted" />
                     </template>
                     {% endblock %}
 
                     {% block sw_order_return_detail_line_items_column_restocked %}
                     <template #column-restocked="{ item }">
-                        <mt-icon
-                            :name="item.restocked ? 'regular-checkmark-circle' : 'regular-circle-slash'"
-                            size="var(--scale-size-16)"
-                        />
+                        <sw-data-grid-column-boolean :value="item.restocked" />
                     </template>
                     {% endblock %}
                 </sw-data-grid>
@@ -299,6 +301,44 @@
             :headline="$t('sw-order-return.detail.messageNotFound')"
             :description="$t('sw-order-return.detail.messageNotFoundSubline')"
         />
+        {% endblock %}
+
+        {% block sw_order_return_detail_refund_modal %}
+        <sw-modal
+            v-if="pendingRefundAction"
+            class="sw-order-return-detail__refund-modal"
+            :title="$t(`sw-order-return.refund.title.${pendingRefundAction}`)"
+            @modal-close="onCloseRefundModal"
+        >
+            <p>{{ $t('sw-order-return.refund.amount', { amount: formatAmount(orderReturn.refundAmount, orderReturn.currency) }) }}</p>
+            <mt-select
+                v-model="draftRefundDestination"
+                :label="$t('sw-order-return.refund.labelDestination')"
+                :options="refundDestinationOptions"
+                :disabled="isSubmitting || !!orderReturn.refundDestination"
+                hide-clearable-button
+            />
+            <mt-banner variant="info">
+                {{ $t(`sw-order-return.refund.hint.${draftRefundDestination}`) }}
+            </mt-banner>
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    :disabled="isSubmitting"
+                    @click="onCloseRefundModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                <mt-button
+                    class="sw-order-return-detail__confirm-refund"
+                    variant="primary"
+                    :disabled="isSubmitting"
+                    @click="onConfirmRefund"
+                >
+                    {{ $t(`sw-order-return.refund.title.${pendingRefundAction}`) }}
+                </mt-button>
+            </template>
+        </sw-modal>
         {% endblock %}
 
         {% block sw_order_return_detail_modal %}

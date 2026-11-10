@@ -46,6 +46,26 @@
                     "409": {
                         "description": "The return is not in a state that allows this decision."
                     }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "refundDestination": {
+                                        "type": "string",
+                                        "enum": [
+                                            "original",
+                                            "wallet"
+                                        ],
+                                        "description": "Defaults to the original payment sources. Wallet payout requires a registered customer. The destination is fixed at the first payout attempt."
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -142,7 +162,10 @@
                                 "type": "object",
                                 "properties": {
                                     "note": {
-                                        "type": ["string", "null"],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
                                         "description": "An optional note that is written into the conversation of the return."
                                     }
                                 }
@@ -222,6 +245,26 @@
                     "409": {
                         "description": "The return is not in a state that allows this decision."
                     }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "refundDestination": {
+                                        "type": "string",
+                                        "enum": [
+                                            "original",
+                                            "wallet"
+                                        ],
+                                        "description": "Defaults to the original payment sources. Wallet payout requires a registered customer. The destination is fixed at the first payout attempt."
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -231,7 +274,7 @@
                     "Order Return"
                 ],
                 "summary": "Start the refund of a return",
-                "description": "Starts the refund of a return that sits in `received` - the manual way for a parcel that was booked in without a refund, for example after the payment channel was fixed.",
+                "description": "Retries the refund of a return in `received`, or a `refund_only` return in `open`, after the payment channel was fixed. Goods returns must be received before they can be refunded.",
                 "operationId": "refundOrderReturn",
                 "parameters": [
                     {
@@ -268,6 +311,26 @@
                     },
                     "409": {
                         "description": "The return is not in a state that allows this decision, or the payment is not refundable."
+                    }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "refundDestination": {
+                                        "type": "string",
+                                        "enum": [
+                                            "original",
+                                            "wallet"
+                                        ],
+                                        "description": "Defaults to the original payment sources. Wallet payout requires a registered customer. The destination is fixed at the first payout attempt."
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -363,11 +426,17 @@
                                     "type": "object",
                                     "properties": {
                                         "orderNumber": {
-                                            "type": ["string", "null"],
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
                                             "description": "The number of the order, for the title of the form."
                                         },
                                         "currency": {
-                                            "type": ["string", "null"],
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
                                             "description": "The iso code of the currency of the order."
                                         },
                                         "decimals": {
@@ -414,7 +483,10 @@
                                                         "description": "The id of the reason."
                                                     },
                                                     "label": {
-                                                        "type": ["string", "null"],
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
                                                         "description": "Its translated label."
                                                     }
                                                 }
@@ -489,15 +561,24 @@
                                         }
                                     },
                                     "reasonId": {
-                                        "type": ["string", "null"],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
                                         "description": "The id of the reason the customer picked."
                                     },
                                     "reasonText": {
-                                        "type": ["string", "null"],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
                                         "description": "The free text of the customer."
                                     },
                                     "customerNote": {
-                                        "type": ["string", "null"],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
                                         "description": "A note the customer added."
                                     }
                                 },

@@ -21,11 +21,6 @@
                 name="regular-chevron-right-xs"
                 size="12px"
             />
-            {{ $t('sw-settings-order-return.general.mainMenuItemGeneral') }}
-            <mt-icon
-                name="regular-chevron-right-xs"
-                size="12px"
-            />
             {{ $t('sw-settings-order-return.reason.title') }}
             {% endblock %}
 
@@ -78,47 +73,47 @@
                 position-identifier="sw-settings-order-return-reason-list-content"
             >
                 {% block sw_settings_order_return_reason_list_grid %}
-                <sw-entity-listing
-                    class="sw-settings-order-return-reason-list__grid"
-                    :repository="reasonRepository"
-                    :is-loading="isLoading"
-                    :data-source="reasons"
-                    :columns="columns"
-                    identifier="sw-settings-order-return-reason-list"
-                    :sort-by="sortBy"
-                    :sort-direction="sortDirection"
-                    :full-page="false"
-                    :show-selection="false"
-                    :disable-data-fetching="true"
-                    :allow-inline-edit="false"
-                    :allow-edit="false"
-                    :allow-view="false"
-                    :allow-delete="canEdit"
-                    @column-sort="onSortColumn"
-                    @page-change="onPageChange"
-                    @delete-item-finish="onRefresh"
-                >
-                    {% block sw_settings_order_return_reason_list_grid_column_active %}
-                    <template #column-active="{ item }">
-                        <mt-icon
-                            :name="item.active ? 'regular-checkmark-circle' : 'regular-circle-slash'"
-                            size="var(--scale-size-16)"
-                        />
-                    </template>
-                    {% endblock %}
+                <template #grid>
+                    <sw-entity-listing
+                        ref="reasonListing"
+                        class="sw-settings-order-return-reason-list__grid"
+                        :repository="reasonRepository"
+                        :is-loading="isLoading"
+                        :data-source="reasons"
+                        :columns="columns"
+                        identifier="sw-settings-order-return-reason-list"
+                        :sort-by="sortBy"
+                        :sort-direction="sortDirection"
+                        :full-page="false"
+                        :show-selection="false"
+                        :disable-data-fetching="true"
+                        :allow-inline-edit="false"
+                        :allow-edit="false"
+                        :allow-view="false"
+                        :allow-delete="canEdit"
+                        @column-sort="onSortColumn"
+                        @page-change="onPageChange"
+                        @delete-item-finish="onRefresh"
+                    >
+                        {% block sw_settings_order_return_reason_list_grid_column_active %}
+                        <template #column-active="{ item }">
+                            <sw-data-grid-column-boolean :value="item.active" />
+                        </template>
+                        {% endblock %}
 
-                    {% block sw_settings_order_return_reason_list_grid_action_edit %}
-                    <template #more-actions="{ item }">
-                        <sw-context-menu-item
-                            v-if="canEdit"
-                            class="sw-settings-order-return-reason-list__action-edit"
-                            @click="onEdit(item)"
-                        >
-                            {{ $t('global.default.edit') }}
-                        </sw-context-menu-item>
-                    </template>
-                    {% endblock %}
-                </sw-entity-listing>
+                        {% block sw_settings_order_return_reason_list_grid_action_edit %}
+                        <template #more-actions="{ item }">
+                            <sw-context-menu-item
+                                v-if="canEdit"
+                                class="sw-settings-order-return-reason-list__action-edit"
+                                @click="onEdit(item)"
+                            >
+                                {{ $t('global.default.edit') }}
+                            </sw-context-menu-item>
+                        </template>
+                        {% endblock %}
+                    </sw-entity-listing>
+                </template>
                 {% endblock %}
             </mt-card>
             {% endblock %}

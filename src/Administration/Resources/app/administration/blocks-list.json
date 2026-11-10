@@ -3980,6 +3980,7 @@
  "sw_order_return_detail_messages_hint",
  "sw_order_return_detail_messages_list",
  "sw_order_return_detail_modal",
+ "sw_order_return_detail_refund_modal",
  "sw_order_return_detail_smart_bar_actions",
  "sw_order_return_detail_smart_bar_header",
  "sw_order_return_detail_smart_bar_header_state",

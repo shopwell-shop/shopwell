@@ -44,7 +44,7 @@ export const ORDER_RETURN_ACTIONS: Record<string, string[]> = {
     decline: ['requested'],
     cancel: ['requested', 'open', 'returning'],
     receive: ['returning'],
-    refund: ['received', 'returning'],
+    refund: ['open', 'received'],
 };
 
 /**
@@ -251,8 +251,8 @@ export default class OrderReturnApiService {
      * Accepts the return. Depending on the type the goods are expected afterwards, or the refund is
      * prepared right away.
      */
-    public approve(id: string): Promise<OrderReturnView | null> {
-        return this.post(id, 'approve');
+    public approve(id: string, refundDestination?: string): Promise<OrderReturnView | null> {
+        return this.post(id, 'approve', refundDestination ? { refundDestination } : null);
     }
 
     /**
@@ -272,16 +272,16 @@ export default class OrderReturnApiService {
     /**
      * Books the arrival of the parcel: the goods go back into the stock and the refund is started.
      */
-    public receive(id: string): Promise<OrderReturnView | null> {
-        return this.post(id, 'receive');
+    public receive(id: string, refundDestination?: string): Promise<OrderReturnView | null> {
+        return this.post(id, 'receive', refundDestination ? { refundDestination } : null);
     }
 
     /**
      * Starts the refund of a return that sits in `received` - the manual way for a parcel that was
      * booked in without a refund, e.g. after a channel was fixed.
      */
-    public refund(id: string): Promise<OrderReturnView | null> {
-        return this.post(id, 'refund');
+    public refund(id: string, refundDestination?: string): Promise<OrderReturnView | null> {
+        return this.post(id, 'refund', refundDestination ? { refundDestination } : null);
     }
 
     /**

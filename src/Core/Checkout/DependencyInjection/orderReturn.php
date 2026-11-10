@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\DependencyInjection;
 
+use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\OrderReturn\Api\OrderReturnController;
 use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnLineItem\OrderReturnLineItemEntity;
@@ -16,6 +17,7 @@ use Shopwell\Core\Checkout\OrderReturn\ScheduledTask\OrderReturnDeadlineTaskHand
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnGuestTokenService;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnNumberGenerator;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnQuantityGuard;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundExecutor;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundService;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnService;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
@@ -24,12 +26,14 @@ use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnStockRestorer;
 use Shopwell\Core\Checkout\OrderReturn\Subscriber\OrderReturnRefundFinishedSubscriber;
 use Shopwell\Core\Content\Product\Stock\StockStorage;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Lock\LockFactory;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -82,6 +86,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     // ---- the money: the gateway refunds, the return only hands it over ----
+    $services->set(OrderReturnRefundExecutor::class)
+        ->args([service(Connection::class), service(LockFactory::class), service(PaymentOrderService::class), service(PaymentOrderRowLock::class)]);
+
     $services->set(OrderReturnRefundService::class)
         ->args([
             service('payment_app.repository'),
@@ -89,6 +96,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PaymentOrderService::class),
             service(PaymentRefundService::class),
             service(OrderReturnStateHandler::class),
+            service(OrderReturnRefundExecutor::class),
             // parts of the order that were collected outside the gateway, paid out before the gateway
             tagged_iterator('shopwell.order_return.refund_source'),
         ]);
@@ -108,6 +116,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(InitialStateIdLoader::class),
             service('event_dispatcher'),
             service(ClockInterface::class),
+            service(OrderReturnRefundExecutor::class),
         ]);
 
     // ---- the confirmation of the gateway closes the return ----

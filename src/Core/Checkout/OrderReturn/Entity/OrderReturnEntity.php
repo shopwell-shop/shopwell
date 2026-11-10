@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Protection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ReferenceVersion;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
@@ -52,6 +53,9 @@ class OrderReturnEntity extends EntityStruct
     use EntityCustomFieldsTrait;
 
     final public const ENTITY_NAME = 'order_return';
+
+    final public const REFUND_ORIGINAL = 'original';
+    final public const REFUND_WALLET = 'wallet';
 
     /**
      * Who wrote a message of the return, and who is allowed to read it.
@@ -159,6 +163,13 @@ class OrderReturnEntity extends EntityStruct
      */
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
     public ?string $paymentRefundNo = null;
+
+    /**
+     * The payout destination is fixed before the first attempt so a retry cannot pay elsewhere.
+     */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
+    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => true], maxLength: 16)]
+    public ?string $refundDestination = null;
 
     /**
      * The administrator who decided on the return last.

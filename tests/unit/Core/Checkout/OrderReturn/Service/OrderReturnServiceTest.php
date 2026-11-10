@@ -19,6 +19,7 @@ use Shopwell\Core\Checkout\OrderReturn\OrderReturnStates;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnTypes;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnNumberGenerator;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnQuantityGuard;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundExecutor;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundService;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnService;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
@@ -267,6 +268,37 @@ class OrderReturnServiceTest extends TestCase
         $this->service($this->order([]), currentReturn: $orderReturn)->approve($orderReturn->id, $this->context);
     }
 
+    public function testGuestCannotSelectWalletBeforeTheReturnMovesState(): void
+    {
+        $orderReturn = (new OrderReturnEntity())->assign([
+            'id' => 'return-id', 'returnNumber' => 'RT-1', 'type' => OrderReturnTypes::REFUND_ONLY,
+            'stateMachineState' => (new StateMachineStateEntity())->assign(['technicalName' => OrderReturnStates::STATE_REQUESTED]),
+        ]);
+        $this->expectException(OrderReturnException::class);
+        $this->service($this->order([]), currentReturn: $orderReturn)->approve('return-id', $this->context, 'wallet');
+    }
+
+    public function testRefundDestinationCannotChangeAfterAnAttempt(): void
+    {
+        $orderReturn = (new OrderReturnEntity())->assign([
+            'id' => 'return-id', 'returnNumber' => 'RT-1', 'type' => OrderReturnTypes::REFUND_ONLY,
+            'refundDestination' => 'original', 'customerId' => 'customer-id',
+            'stateMachineState' => (new StateMachineStateEntity())->assign(['technicalName' => OrderReturnStates::STATE_OPEN]),
+        ]);
+        $this->expectException(OrderReturnException::class);
+        $this->service($this->order([]), currentReturn: $orderReturn)->refund('return-id', $this->context, 'wallet');
+    }
+
+    public function testAReturnRequiringGoodsCannotRefundBeforeReceivingThem(): void
+    {
+        $orderReturn = (new OrderReturnEntity())->assign([
+            'id' => 'return-id', 'type' => OrderReturnTypes::RETURN_REFUND,
+            'stateMachineState' => (new StateMachineStateEntity())->assign(['technicalName' => OrderReturnStates::STATE_OPEN]),
+        ]);
+        $this->expectExceptionObject(OrderReturnException::stateNotAllowed(OrderReturnStates::STATE_OPEN, OrderReturnStates::ACTION_REFUND));
+        $this->service($this->order([]), currentReturn: $orderReturn)->refund('return-id', $this->context);
+    }
+
     /**
      * @param StaticEntityRepository<OrderReturnCollection>|null $repository
      */
@@ -282,6 +314,9 @@ class OrderReturnServiceTest extends TestCase
         $initialStateIds = static::createStub(InitialStateIdLoader::class);
         $initialStateIds->method('get')->willReturn('initial-state-id');
 
+        $executor = static::createStub(OrderReturnRefundExecutor::class);
+        $executor->method('claimDestination')->willReturn(true);
+
         return new OrderReturnService(
             $repository ?? $this->returnRepository($currentReturn),
             new StaticEntityRepository([]),
@@ -296,6 +331,7 @@ class OrderReturnServiceTest extends TestCase
             $initialStateIds,
             static::createStub(EventDispatcherInterface::class),
             new MockClock('2026-10-21 09:30:15'),
+            $executor,
         );
     }
 

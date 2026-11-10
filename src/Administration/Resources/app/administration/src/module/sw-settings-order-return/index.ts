@@ -44,7 +44,7 @@ Module.register('sw-settings-order-return', {
             path: 'index',
             meta: {
                 parentPath: 'sw.settings.index',
-                privilege: 'order_return.viewer',
+                privilege: 'system.system_config',
             },
         },
         reason: {
@@ -65,18 +65,27 @@ Module.register('sw-settings-order-return', {
             path: 'sw.settings.order.return.index',
             icon: 'regular-undo',
             position: 630,
-            privilege: 'order_return.viewer',
+            privilege: 'system.system_config',
         },
     ],
 
-    settingsItem: {
-        // `commerce` and not `system`: the two screens change how the shop treats a customer, not how
-        // the installation runs
-        group: 'commerce',
-        to: 'sw.settings.order.return.index',
-        icon: 'regular-undo',
-        privilege: 'order_return.viewer',
-    },
+    settingsItem: [
+        {
+            group: 'commerce',
+            to: 'sw.settings.order.return.index',
+            icon: 'regular-undo',
+            privilege: 'system.system_config',
+        },
+        {
+            id: 'sw-settings-order-return-reason',
+            name: 'settings-order-return-reason',
+            label: 'sw-settings-order-return.reason.title',
+            group: 'commerce',
+            to: 'sw.settings.order.return.reason',
+            icon: 'regular-list',
+            privilege: 'order_return.viewer',
+        },
+    ],
 });
 
 // A module file without an import of its own is a global script, and its `const { Module }` would

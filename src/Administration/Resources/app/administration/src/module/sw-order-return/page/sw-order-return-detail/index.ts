@@ -19,20 +19,9 @@ const { Criteria } = Shopwell.Data;
 const { Mixin } = Shopwell;
 
 type OrderReturn = EntitySchema.Entity<'order_return'>;
+type RefundAction = 'approve' | 'receive' | 'refund';
 type OrderReturnMessage = EntitySchema.Entity<'order_return_message'>;
 type OrderReturnLineItem = EntitySchema.Entity<'order_return_line_item'>;
-
-/**
- * The three fields of a customer the page needs.
- *
- * The generated entity type of the administration carries the whole customer, but the name is
- * assembled from fields it does not expose on every path - so the page names the shape it reads.
- */
-type CustomerName = {
-    firstName?: string | null;
-    lastName?: string | null;
-    email?: string | null;
-};
 
 /**
  * One case, with every decision it allows.
@@ -66,6 +55,8 @@ export default defineComponent({
         isSubmitting: boolean;
         messageDraft: string;
         showDeclineModal: boolean;
+        pendingRefundAction: RefundAction | null;
+        draftRefundDestination: string;
     } {
         return {
             orderReturn: null,
@@ -73,6 +64,8 @@ export default defineComponent({
             isSubmitting: false,
             messageDraft: '',
             showDeclineModal: false,
+            pendingRefundAction: null,
+            draftRefundDestination: 'original',
         };
     },
 
@@ -83,6 +76,15 @@ export default defineComponent({
     },
 
     computed: {
+        refundDestinationOptions(): Array<{ value: string; label: string }> {
+            const selected = this.orderReturn?.refundDestination;
+            return ['original', 'wallet']
+                .filter((value) => {
+                    return selected ? value === selected : value === 'original' || !!this.orderReturn?.customerId;
+                })
+                .map((value) => ({ value, label: this.$t(`sw-order-return.refund.destination.${value}`) }));
+        },
+
         orderReturnRepository(): RepositoryType<'order_return'> {
             return this.repositoryFactory.create('order_return');
         },
@@ -115,6 +117,7 @@ export default defineComponent({
 
             return Object.entries(ORDER_RETURN_ACTIONS)
                 .filter(([, states]) => states.includes(state))
+                .filter(([action]) => action !== 'refund' || state !== 'open' || this.orderReturn?.type === 'refund_only')
                 .map(([action]) => action);
         },
 
@@ -148,26 +151,8 @@ export default defineComponent({
             return this.$te(key) ? this.$t(key) : type;
         },
 
-        /**
-         * The holder of the case. A guest return has no customer row, only the address it was opened
-         * with - the email is the only identity the page can show for it.
-         */
         customerLabel(): string {
-            const orderReturn = this.orderReturn;
-
-            if (!orderReturn) {
-                return '–';
-            }
-
-            const customer = orderReturn.customer as CustomerName | null | undefined;
-
-            if (customer) {
-                const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();
-
-                return name || customer.email || '–';
-            }
-
-            return orderReturn.guestEmail || '–';
+            return this.orderReturn?.order?.orderCustomer?.name || this.orderReturn?.customer?.name || '–';
         },
 
         /**
@@ -220,12 +205,14 @@ export default defineComponent({
          * The facts an operator reads first, in the order of the questions they ask: which order,
          * whose case, what kind, how far, how much, until when.
          */
-        generalFacts(): Array<{ label: string; value: string }> {
+        generalFacts(): Array<{ label: string; value: string; to?: { name: string; params: { id: string } } }> {
             const orderReturn = this.orderReturn;
 
             if (!orderReturn) {
                 return [];
             }
+
+            const customerId = orderReturn.customerId || orderReturn.order?.orderCustomer?.customerId;
 
             return [
                 {
@@ -235,6 +222,7 @@ export default defineComponent({
                 {
                     label: this.$t('sw-order-return.detail.labelCustomer'),
                     value: this.customerLabel,
+                    to: customerId ? { name: 'sw.customer.detail', params: { id: customerId } } : undefined,
                 },
                 {
                     label: this.$t('sw-order-return.detail.labelType'),
@@ -260,6 +248,10 @@ export default defineComponent({
                     label: this.$t('sw-order-return.detail.labelTracking'),
                     value: this.trackingLabel,
                 },
+                {
+                    label: this.$t('sw-order-return.refund.labelDestination'),
+                    value: this.$t(`sw-order-return.refund.destination.${orderReturn.refundDestination ?? 'original'}`),
+                },
             ];
         },
     },
@@ -272,7 +264,7 @@ export default defineComponent({
         criteria(): CriteriaType {
             const criteria = new Criteria(1, 1);
             criteria.setIds([this.orderReturnId]);
-            criteria.addAssociation('order');
+            criteria.addAssociation('order.orderCustomer');
             criteria.addAssociation('customer');
             criteria.addAssociation('reason');
             criteria.addAssociation('stateMachineState');
@@ -333,6 +325,10 @@ export default defineComponent({
         },
 
         onApprove(): void {
+            if (this.isRefundOnly) {
+                this.onOpenRefundModal('approve');
+                return;
+            }
             void this.runAction(
                 () => this.orderReturnApiService.approve(this.orderReturnId),
                 'sw-order-return.notification.approveSuccess',
@@ -356,17 +352,39 @@ export default defineComponent({
         },
 
         onReceive(): void {
-            void this.runAction(
-                () => this.orderReturnApiService.receive(this.orderReturnId),
-                'sw-order-return.notification.receiveSuccess',
-            );
+            this.onOpenRefundModal('receive');
         },
 
         onRefund(): void {
-            void this.runAction(
-                () => this.orderReturnApiService.refund(this.orderReturnId),
-                'sw-order-return.notification.refundSuccess',
+            this.onOpenRefundModal('refund');
+        },
+
+        onOpenRefundModal(action: RefundAction): void {
+            if (this.isSubmitting || !this.canDecide) {
+                return;
+            }
+            this.draftRefundDestination = this.orderReturn?.refundDestination ?? 'original';
+            this.pendingRefundAction = action;
+        },
+
+        onCloseRefundModal(): void {
+            if (!this.isSubmitting) {
+                this.pendingRefundAction = null;
+            }
+        },
+
+        async onConfirmRefund(): Promise<void> {
+            const action = this.pendingRefundAction;
+            if (!action || !this.canDecide) {
+                return;
+            }
+            const success = await this.runAction(
+                () => this.orderReturnApiService[action](this.orderReturnId, this.draftRefundDestination),
+                `sw-order-return.notification.${action}Success`,
             );
+            if (success) {
+                this.pendingRefundAction = null;
+            }
         },
 
         onOpenDeclineModal(): void {

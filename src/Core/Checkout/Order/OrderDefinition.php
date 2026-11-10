@@ -156,9 +156,8 @@ class OrderDefinition extends EntityDefinition
             new OneToManyAssociationField('customerWalletTransactions', CustomerWalletTransactionDefinition::class, 'order_id'),
             (new OneToManyAssociationField('paymentOrders', 'payment_order', 'order_id'))->addFlags(new CascadeDelete()),
 
-            // The returns of the order. The cascade is declared here and not on the many to one
-            // side, so deleting an order takes its returns, their positions and their messages.
-            (new OneToManyAssociationField('returns', 'order_return', 'order_id'))->addFlags(new CascadeDelete()),
+            // Returns belong to the live order and must survive editing and discarding an order draft.
+            (new OneToManyAssociationField('returns', 'order_return', 'order_id'))->addFlags(new CascadeDelete(cloneRelevant: false)),
         ]);
     }
 }

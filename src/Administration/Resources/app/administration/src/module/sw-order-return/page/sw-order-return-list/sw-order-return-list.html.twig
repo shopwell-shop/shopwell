@@ -92,7 +92,15 @@
             >
                 {% block sw_order_return_list_grid_column_customer %}
                 <template #column-customerId="{ item }">
-                    {{ customerLabel(item) }}
+                    <router-link
+                        v-if="item.customerId || item.order?.orderCustomer?.customerId"
+                        :to="{ name: 'sw.customer.detail', params: { id: item.customerId || item.order.orderCustomer.customerId } }"
+                    >
+                        {{ customerLabel(item) }}
+                    </router-link>
+                    <template v-else>
+                        {{ customerLabel(item) }}
+                    </template>
                 </template>
                 {% endblock %}
 

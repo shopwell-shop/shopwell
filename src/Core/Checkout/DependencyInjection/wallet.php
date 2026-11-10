@@ -33,6 +33,8 @@ use Shopwell\Core\Checkout\Wallet\Subscriber\WalletAccountProvisionSubscriber;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletOrderSubscriber;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletTopUpSettlementSubscriber;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -87,6 +89,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('customer_wallet_transaction.repository'),
             service(WalletPaymentService::class),
+            service(PaymentOrderService::class),
+            service(PaymentOrderRowLock::class),
         ])
         ->tag('shopwell.order_return.refund_source', ['priority' => 100]);
 

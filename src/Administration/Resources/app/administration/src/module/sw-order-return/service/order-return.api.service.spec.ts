@@ -58,7 +58,7 @@ describe('src/module/sw-order-return/service/order-return.api.service', () => {
         expect(ORDER_RETURN_ACTIONS.decline).toEqual(['requested']);
         expect(ORDER_RETURN_ACTIONS.cancel).toEqual(['requested', 'open', 'returning']);
         expect(ORDER_RETURN_ACTIONS.receive).toEqual(['returning']);
-        expect(ORDER_RETURN_ACTIONS.refund).toEqual(['received', 'returning']);
+        expect(ORDER_RETURN_ACTIONS.refund).toEqual(['open', 'received']);
     });
 
     it('builds the auth headers from the token of the login service', () => {
@@ -94,6 +94,19 @@ describe('src/module/sw-order-return/service/order-return.api.service', () => {
         httpClient.post.mock.calls.forEach(([, , options]) => {
             expect(options).toEqual({ headers: service.getAuthHeaders() });
         });
+    });
+
+    it('passes the selected payout destination for every action that pays money', async () => {
+        const { service, httpClient } = createService();
+        httpClient.post.mockResolvedValue({ data: { orderReturn: { id: 'return-1' } } });
+        await service.approve('return-1', 'wallet');
+        await service.receive('return-1', 'original');
+        await service.refund('return-1', 'wallet');
+        expect(httpClient.post.mock.calls.map(([, body]) => body)).toEqual([
+            { refundDestination: 'wallet' },
+            { refundDestination: 'original' },
+            { refundDestination: 'wallet' },
+        ]);
     });
 
     it('answers with the return the endpoint decided on', async () => {
