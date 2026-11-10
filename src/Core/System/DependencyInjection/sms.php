@@ -4,19 +4,22 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Sms\Api\SmsGatewayProviderController;
 use Shopwell\Core\System\Sms\Api\SmsTemplateAuditController;
 use Shopwell\Core\System\Sms\Delivery\SmsDeliveryEntity;
-use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunGatewayTransportFactory;
-use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
-use Shopwell\Core\System\Sms\Gateway\Log\LogGatewayTransportFactory;
-use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolver;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
-use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudGatewayTransportFactory;
+use Shopwell\Core\System\Sms\Gateway\SmsGatewayValidator;
+use Shopwell\Core\System\Sms\Integration\Aliyun\AliyunSmsProvider;
+use Shopwell\Core\System\Sms\Integration\Log\LogSmsProvider;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsProvider;
+use Shopwell\Core\System\Sms\Integration\TencentCloud\TencentCloudSmsProvider;
 use Shopwell\Core\System\Sms\Message\SendSmsHandler;
+use Shopwell\Core\System\Sms\Provider\Audit\SmsProviderCapabilities;
+use Shopwell\Core\System\Sms\Provider\Config\SmsConfigValidator;
+use Shopwell\Core\System\Sms\Provider\SmsProviderRegistry;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolver;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\Service\AbstractSmsSender;
 use Shopwell\Core\System\Sms\Service\SmsSender;
 use Shopwell\Core\System\Sms\Subscriber\SmsDeliverySubscriber;
@@ -46,8 +49,8 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
  * The multi gateway sms component: one entry point for the business, a gateway that is pickable per
  * sales channel and per country of the recipient and a provider that is pluggable.
  *
- * A provider is one implementation of SmsGatewayTransportFactoryInterface registered with the
- * `shopwell.sms.gateway` tag. The platform ships the null gateway (the baseline that records without
+ * A provider is one implementation of AbstractSmsProvider registered with the
+ * `shopwell.sms.provider` tag. The platform ships the null gateway (the baseline that records without
  * sending) and the log gateway (development), an extension adds its provider in its own services.
  *
  * The transports of the text channel are replaced at compile time, see SmsConfigurationCompilerPass.
@@ -71,8 +74,8 @@ return static function (ContainerConfigurator $container): void {
         ->tag('shopwell.entity');
 
     // ---- the gateways ----
-    $services->set(NullGatewayTransportFactory::class)
-        ->tag('shopwell.sms.gateway');
+    $services->set(NullSmsProvider::class)
+        ->tag('shopwell.sms.provider');
 
     // the dial code data the normaliser reads, a provider is the extension point: a shop that sells
     // into a country the platform ships no code for adds one instead of forking the component
@@ -93,37 +96,43 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(SmsSegmentCounter::class);
 
-    $services->set(LogGatewayTransportFactory::class)
+    $services->set(LogSmsProvider::class)
         ->args([
             service('logger'),
             service(PhoneNumberNormalizerInterface::class),
             service(PhoneNumberMaskerInterface::class),
         ])
-        ->tag('shopwell.sms.gateway');
+        ->tag('shopwell.sms.provider');
 
     // the providers of the platform, they build their client per gateway row from the stored
     // credentials, so they are stateless and take no argument
-    $services->set(AliyunGatewayTransportFactory::class)
-        ->tag('shopwell.sms.gateway');
+    $services->set(AliyunSmsProvider::class)
+        ->tag('shopwell.sms.provider');
 
-    $services->set(TencentCloudGatewayTransportFactory::class)
-        ->tag('shopwell.sms.gateway');
+    $services->set(TencentCloudSmsProvider::class)
+        ->tag('shopwell.sms.provider');
 
-    $services->set(SmsGatewayRegistry::class)
-        ->args([tagged_iterator('shopwell.sms.gateway')]);
+    $services->set(SmsProviderRegistry::class)
+        ->args([tagged_iterator('shopwell.sms.provider')]);
+
+    $services->set(SmsConfigValidator::class);
+
+    $services->set(SmsGatewayValidator::class)
+        ->args([service('sms_gateway.repository'), service(SmsProviderRegistry::class), service(SmsConfigValidator::class)])
+        ->tag('kernel.event_subscriber');
 
     // the one place that knows which provider declares which audit capability, everything else asks
     // it by technical name instead of comparing a provider name or probing a method
-    $services->set(SmsGatewayAuditCapabilities::class)
-        ->args([service(SmsGatewayRegistry::class)]);
+    $services->set(SmsProviderCapabilities::class)
+        ->args([service(SmsProviderRegistry::class)]);
 
     // tells the administration which providers exist and which credentials they need, so the
     // credential form of a provider - including the one of an extension - is rendered, not shipped
     $services->set(SmsGatewayProviderController::class)
         ->public()
         ->args([
-            service(SmsGatewayRegistry::class),
-            service(SmsGatewayAuditCapabilities::class),
+            service(SmsProviderRegistry::class),
+            service(SmsProviderCapabilities::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -138,18 +147,20 @@ return static function (ContainerConfigurator $container): void {
     $services->set(SmsGatewayResolver::class)
         ->args([
             service('sms_gateway.repository'),
-            service('sms_template_mapping.repository'),
-            service(SmsGatewayRegistry::class),
-            service(SmsGatewayAuditCapabilities::class),
+            service(SmsTemplateMappingLocator::class),
+            service(SmsProviderRegistry::class),
+            service(SmsProviderCapabilities::class),
             service(SystemConfigService::class),
-        ]);
+            service(ExtensionDispatcher::class),
+        ])
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->alias(SmsGatewayResolverInterface::class, SmsGatewayResolver::class);
 
     // ---- the transports ----
     $services->set(SmsTransportLoader::class)
         ->args([
-            service(SmsGatewayRegistry::class),
+            service(SmsProviderRegistry::class),
             service('sms_gateway.repository'),
             service('logger'),
             service('event_dispatcher')->ignoreOnInvalid(),
@@ -171,7 +182,7 @@ return static function (ContainerConfigurator $container): void {
     // the audit loop: report a template at the provider, read its state back, confirm it by hand
     $services->set(SmsTemplateAuditService::class)
         ->args([
-            service(SmsGatewayAuditCapabilities::class),
+            service(SmsProviderCapabilities::class),
             service('sms_template_mapping.repository'),
             service('sms_gateway.repository'),
             service('sms_template.repository'),
@@ -185,9 +196,8 @@ return static function (ContainerConfigurator $container): void {
     $services->set(SmsTemplateResolver::class)
         ->args([
             service('sms_template.repository'),
-            service(SmsTemplateMappingLocator::class),
             service('sms_gateway.repository'),
-            service(SmsGatewayRegistry::class),
+            service(SmsProviderRegistry::class),
             service(SmsGatewayResolverInterface::class),
             service(SmsParamValidator::class),
             service(SmsTemplateRenderer::class),

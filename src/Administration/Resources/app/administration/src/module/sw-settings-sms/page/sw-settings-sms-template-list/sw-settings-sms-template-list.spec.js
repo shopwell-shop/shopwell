@@ -34,6 +34,7 @@ async function createWrapper({ rows = [], hasSnippet = false } = {}) {
                 },
             },
             stubs: {
+                'sw-settings-sms-page': await wrapTestComponent('sw-settings-sms-page'),
                 'sw-page': {
                     template: `
                         <div>

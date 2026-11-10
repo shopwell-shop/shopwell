@@ -1,0 +1,60 @@
+{% block sw_settings_sms_page %}
+<sw-page class="sw-settings-sms-page">
+    <template
+        v-if="$slots['search-bar']"
+        #search-bar
+    >
+        <slot name="search-bar"></slot>
+    </template>
+
+    <template #smart-bar-header>
+        {% block sw_settings_sms_page_header %}
+        <slot name="smart-bar-header">
+            <h2>{{ $t('sw-settings-sms.general.mainMenuItemGeneral') }}</h2>
+        </slot>
+        {% endblock %}
+    </template>
+
+    <template #smart-bar-actions>
+        {% block sw_settings_sms_page_actions %}
+        <mt-button
+            v-if="backRoute"
+            class="sw-settings-sms-page__cancel"
+            variant="secondary"
+            @click="$router.push({ name: backRoute })"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        <slot name="smart-bar-actions"></slot>
+        {% endblock %}
+    </template>
+
+    <template
+        v-if="$slots['language-switch']"
+        #language-switch
+    >
+        <slot name="language-switch"></slot>
+    </template>
+
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_sms_page_navigation %}
+            <sw-settings-sms-section-tabs
+                v-if="!backRoute"
+                :active="activeSection"
+            />
+            {% endblock %}
+
+            {% block sw_settings_sms_page_content %}
+            <slot name="content"></slot>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    <template
+        v-if="$slots.sidebar"
+        #sidebar
+    >
+        <slot name="sidebar"></slot>
+    </template>
+</sw-page>
+{% endblock %}

@@ -16,6 +16,15 @@ The approve, receive and refund actions accept optional `refundDestination` (`or
 Wallet payouts also reduce the collected payment's refundable amount and use the return number for idempotency.
 Guest returns support the original payment sources only.
 
+### SMS provider extension contract
+
+SMS providers extend `Shopwell\Core\System\Sms\Provider\AbstractSmsProvider` and register with `shopwell.sms.provider`.
+Credential and connection fields use `SmsConfigField`; the Administration renders them and enabled accounts are validated when written.
+The provider metadata endpoint includes `optionDefinitions`.
+Template sending and template approval are independent capabilities under `Provider\Audit`.
+The development baseline removes the former gateway factory registration and uses `Routing\SmsGatewayResolverInterface` for routing.
+The `SelectSmsGatewayExtension` extension can reorder or remove eligible accounts.
+
 ### Blog publishing and content layouts
 
 New Blog entries default to drafts (`active=false`).

@@ -1,11 +1,15 @@
 {% block sw_settings_sms_delivery_list %}
-<sw-page class="sw-settings-sms-delivery-list">
+<sw-settings-sms-page
+    class="sw-settings-sms-delivery-list"
+    active-section="delivery"
+>
 
     {% block sw_settings_sms_delivery_list_search_bar %}
     <template #search-bar>
         <sw-search-bar
             initial-search-type="sms_delivery"
             :initial-search="term"
+            :placeholder="$t('sw-settings-sms.delivery.placeholderSearchBar')"
             @search="onSearch"
         />
     </template>
@@ -39,94 +43,105 @@
 
     {% block sw_settings_sms_delivery_list_content %}
     <template #content>
-        <sw-card-view>
-            {% block sw_settings_sms_delivery_list_tabs %}
-            <sw-settings-sms-section-tabs active="delivery" />
-            {% endblock %}
 
-            {% block sw_settings_sms_delivery_list_card %}
-            <mt-card position-identifier="sw-settings-sms-delivery-list-content">
-                <template #toolbar>
-                    {% block sw_settings_sms_delivery_list_toolbar %}
-                    <div class="sw-settings-sms-delivery-list__toolbar">
-                        {% block sw_settings_sms_delivery_list_toolbar_status_filter %}
-                        <mt-select
-                            class="sw-settings-sms-delivery-list__status-filter"
-                            name="status"
-                            small
-                            clearable
-                            :model-value="statusFilter"
-                            :placeholder="$t('sw-settings-sms.delivery.filterStatus')"
-                            :options="statusFilterOptions"
-                            @update:model-value="onFilterStatus"
-                        />
-                        {% endblock %}
-                    </div>
-                    {% endblock %}
-                </template>
-                {% block sw_settings_sms_delivery_list_grid %}
-                <template #grid>
-                    <sw-entity-listing
-                        class="sw-settings-sms-delivery-list__grid"
-                        :repository="deliveryRepository"
-                        :is-loading="isLoading"
-                        :data-source="deliveries"
-                        :columns="columns"
-                        identifier="sw-settings-sms-delivery-list"
-                        :sort-by="'createdAt'"
-                        :sort-direction="'DESC'"
-                        :full-page="false"
-                        :disable-data-fetching="true"
-                        :show-selection="false"
-                        :allow-edit="false"
-                        :allow-view="false"
-                        :allow-delete="false"
-                        @page-change="onPageChange"
-                    >
-                        {% block sw_settings_sms_delivery_list_grid_columns_created_at %}
-                        <template #column-createdAt="{ item }">
-                            {{ dateFilter(item.createdAt, { hour: '2-digit', minute: '2-digit' }) }}
-                        </template>
-                        {% endblock %}
+        {% block sw_settings_sms_delivery_list_status_help %}
+        <mt-banner variant="info">
+            {{ $t('sw-settings-sms.delivery.statusHelp') }}
+        </mt-banner>
+        {% endblock %}
 
-                        {% block sw_settings_sms_delivery_list_grid_columns_technical_name %}
-                        <template #column-technicalName="{ item }">
-                            {{ item.technicalName }}
-                        </template>
-                        {% endblock %}
-
-                        {% block sw_settings_sms_delivery_list_grid_columns_status %}
-                        <template #column-status="{ item }">
-                            <mt-badge
-                                class="sw-settings-sms-delivery-list__status"
-                                size="small"
-                                :variant="statusVariant(item.status)"
-                            >
-                                {{ statusLabel(item.status) }}
-                            </mt-badge>
-                        </template>
-                        {% endblock %}
-                    </sw-entity-listing>
-
-                    {% block sw_settings_sms_delivery_list_empty_state %}
-                    <mt-empty-state
-                        v-if="!isLoading && !total"
-                        centered
-                        :icon="$route.meta.$module.icon"
-                        :headline="$t('sw-settings-sms.delivery.emptyStateTitle')"
-                        :description="$t('sw-settings-sms.delivery.emptyStateDescription')"
-                    />
-                    {% endblock %}
-                </template>
+        {% block sw_settings_sms_delivery_list_card %}
+        <mt-card position-identifier="sw-settings-sms-delivery-list-content">
+            <template #toolbar>
+                {% block sw_settings_sms_delivery_list_toolbar %}
+                <sw-card-filter
+                    :initial-search-term="term"
+                    :placeholder="$t('sw-settings-sms.delivery.placeholderSearchBar')"
+                    @sw-card-filter-term-change="onSearch"
+                />
                 {% endblock %}
-            </mt-card>
-            {% endblock %}
+            </template>
+            {% block sw_settings_sms_delivery_list_grid %}
+            <template #grid>
+                <sw-entity-listing
+                    class="sw-settings-sms-delivery-list__grid"
+                    :repository="deliveryRepository"
+                    :is-loading="isLoading"
+                    :data-source="deliveries"
+                    :columns="columns"
+                    identifier="sw-settings-sms-delivery-list"
+                    :sort-by="'createdAt'"
+                    :sort-direction="'DESC'"
+                    :full-page="false"
+                    :disable-data-fetching="true"
+                    :show-selection="false"
+                    :allow-edit="false"
+                    :allow-view="false"
+                    :allow-delete="false"
+                    @page-change="onPageChange"
+                >
+                    {% block sw_settings_sms_delivery_list_grid_columns_created_at %}
+                    <template #column-createdAt="{ item }">
+                        {{ dateFilter(item.createdAt, { hour: '2-digit', minute: '2-digit' }) }}
+                    </template>
+                    {% endblock %}
 
-            {% block sw_settings_sms_delivery_list_extension %}
-            <sw-extension-component-section position-identifier="sw-settings-sms-delivery-list__after-content" />
+                    {% block sw_settings_sms_delivery_list_grid_columns_technical_name %}
+                    <template #column-technicalName="{ item }">
+                        {{ item.technicalName }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_settings_sms_delivery_list_grid_columns_status %}
+                    <template #column-status="{ item }">
+                        <mt-badge
+                            class="sw-settings-sms-delivery-list__status"
+                            size="small"
+                            :variant="statusVariant(item.status)"
+                        >
+                            {{ statusLabel(item.status) }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+                </sw-entity-listing>
+
+                {% block sw_settings_sms_delivery_list_empty_state %}
+                <mt-empty-state
+                    v-if="!isLoading && !total"
+                    centered
+                    :icon="$route.meta.$module.icon"
+                    :headline="$t('sw-settings-sms.delivery.emptyStateTitle')"
+                    :description="$t('sw-settings-sms.delivery.emptyStateDescription')"
+                />
+                {% endblock %}
+            </template>
             {% endblock %}
-        </sw-card-view>
+        </mt-card>
+        {% endblock %}
+
+        {% block sw_settings_sms_delivery_list_extension %}
+        <sw-extension-component-section position-identifier="sw-settings-sms-delivery-list__after-content" />
+        {% endblock %}
     </template>
     {% endblock %}
-</sw-page>
+    {% block sw_settings_sms_delivery_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar>
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-settings-sms.delivery.titleSidebarItemRefresh')"
+                @click="getList"
+            />
+            <sw-sidebar-filter-panel
+                entity="sms_delivery"
+                :store-key="storeKey"
+                :active-filter-number="activeFilterNumber"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                @criteria-changed="updateCriteria"
+            />
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-settings-sms-page>
 {% endblock %}

@@ -14,6 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
 class SmsException extends HttpException
 {
     public const UNKNOWN_GATEWAY = 'SMS__UNKNOWN_GATEWAY';
+    public const INVALID_PROVIDER_DECLARATION = 'SMS__INVALID_PROVIDER_DECLARATION';
+    public const CONFIGURATION_INVALID = 'SMS__CONFIGURATION_INVALID';
     public const INVALID_PHONE_NUMBER = 'SMS__INVALID_PHONE_NUMBER';
     public const PHONE_NUMBER_NOT_INTERNATIONAL = 'SMS__PHONE_NUMBER_NOT_INTERNATIONAL';
 
@@ -43,6 +45,16 @@ class SmsException extends HttpException
     public const TEMPLATE_AUDIT_RESPONSE_INVALID = 'SMS__TEMPLATE_AUDIT_RESPONSE_INVALID';
     public const TEMPLATE_AUDIT_CONFIRMATION_INVALID = 'SMS__TEMPLATE_AUDIT_CONFIRMATION_INVALID';
     public const MISSING_CONTEXT = 'SMS__MISSING_CONTEXT';
+    public const MISSING_PRIVILEGES = 'SMS__MISSING_PRIVILEGES';
+
+    public static function missingProviderReadPrivilege(): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::MISSING_PRIVILEGES,
+            'Reading SMS providers requires sms_gateway:read or sms_template:read.',
+        );
+    }
 
     /**
      * @param list<string> $available
@@ -54,6 +66,29 @@ class SmsException extends HttpException
             self::UNKNOWN_GATEWAY,
             'The sms gateway "{{ technicalName }}" is unknown, registered are: {{ available }}.',
             ['technicalName' => $technicalName, 'available' => implode(', ', $available)]
+        );
+    }
+
+    public static function invalidProviderDeclaration(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_PROVIDER_DECLARATION,
+            'SMS provider names must be non-empty and unique: "{{ technicalName }}".',
+            ['technicalName' => $technicalName]
+        );
+    }
+
+    /**
+     * @param list<string> $fields
+     */
+    public static function configurationInvalid(string $technicalName, array $fields): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::CONFIGURATION_INVALID,
+            'The SMS configuration for "{{ technicalName }}" has invalid fields: {{ fields }}.',
+            ['technicalName' => $technicalName, 'fields' => implode(', ', $fields)]
         );
     }
 

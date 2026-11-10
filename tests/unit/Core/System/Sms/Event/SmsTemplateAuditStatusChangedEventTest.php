@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Event\SmsTemplateAuditStatusChangedEvent;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateApprovalStatus;
 
 /**
  * @internal

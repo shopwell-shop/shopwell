@@ -10,7 +10,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Migration\V6_7\Migration1792500003AddDefaultSmsGateway;
-use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsProvider;
 
 /**
  * @internal
@@ -53,7 +53,7 @@ class Migration1792500003AddDefaultSmsGatewayTest extends TestCase
 
         $gateway = $this->nullGateway();
         static::assertIsArray($gateway);
-        static::assertSame(NullGatewayTransportFactory::TECHNICAL_NAME, $gateway['technical_name']);
+        static::assertSame(NullSmsProvider::TECHNICAL_NAME, $gateway['technical_name']);
         static::assertSame(1, (int) $gateway['enabled']);
         static::assertNull($gateway['sales_channel_id']);
         static::assertSame(Migration1792500003AddDefaultSmsGateway::PRIORITY, (int) $gateway['priority']);

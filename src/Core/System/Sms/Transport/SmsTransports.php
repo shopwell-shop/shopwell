@@ -4,12 +4,13 @@ namespace Shopwell\Core\System\Sms\Transport;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Exception\SmsUnrecoverableException;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\SmsException;
 use Symfony\Component\Notifier\Message\MessageInterface;
 use Symfony\Component\Notifier\Message\SentMessage;
 use Symfony\Component\Notifier\Message\SmsMessage;
 use Symfony\Component\Notifier\Transport\TransportInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * The transports of the text channel, resolved lazily by the name the message carries.
@@ -24,7 +25,7 @@ use Symfony\Component\Notifier\Transport\TransportInterface;
  * @internal
  */
 #[Package('framework')]
-final class SmsTransports implements TransportInterface
+final class SmsTransports implements TransportInterface, ResetInterface
 {
     /**
      * @var array<string, TransportInterface>
@@ -59,6 +60,11 @@ final class SmsTransports implements TransportInterface
     public function supports(MessageInterface $message): bool
     {
         return $message instanceof SmsMessage;
+    }
+
+    public function reset(): void
+    {
+        $this->transports = [];
     }
 
     private function transport(string $name): TransportInterface

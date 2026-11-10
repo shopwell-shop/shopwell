@@ -38,13 +38,16 @@
       "credentialsHelpText": "The account details are assigned by the provider, its secrets are shown as password fields.",
       "regions": "Regions",
       "regionGlobal": "Global",
-      "templateModeRequired": "Reported template required",
+      "templateModeRequired": "Uses provider templates",
       "templateModeFreeText": "Free text",
       "emptyStateTitle": "No sms gateway yet",
       "emptyStateDescription": "Create a gateway to let the shop send messages over a provider.",
       "placeholderSearchBar": "Search sms gateways…",
       "removeModalTitle": "Delete sms gateway",
-      "removeModalMessage": "Delete \"{name}\"? The template mappings of the gateway go with it, the messages it sent stay in the log."
+      "removeModalMessage": "Delete \"{name}\"? The template mappings of the gateway go with it, the messages it sent stay in the log.",
+      "cardGeneral": "General information",
+      "cardRouting": "Routing",
+      "labelSignName": "SMS signature"
     },
     "template": {
       "listTitle": "SMS templates",
@@ -137,7 +140,12 @@
         "queued": "Queued",
         "sent": "Sent",
         "failed": "Failed"
-      }
+      },
+      "filterGateway": "Gateway account",
+      "filterFrom": "From",
+      "filterUntil": "Until",
+      "statusHelp": "Sent means the provider accepted the message. It does not confirm delivery to the recipient.",
+      "titleSidebarItemRefresh": "Refresh"
     },
     "notification": {
       "saveSuccess": "The sms settings were saved.",

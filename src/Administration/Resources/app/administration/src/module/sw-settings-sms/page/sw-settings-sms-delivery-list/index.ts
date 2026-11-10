@@ -1,6 +1,7 @@
 /**
  * @sw-package framework
  */
+import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-settings-sms-delivery-list.html.twig';
 import './sw-settings-sms-delivery-list.scss';
@@ -9,13 +10,29 @@ const { Criteria } = Shopwell.Data;
 
 const STATUSES = ['queued', 'sent', 'failed'];
 
+type FilterDefinition = {
+    property: string;
+    label: string;
+    type?: string;
+    placeholder?: string;
+    options?: Array<{ value: string; label: string }>;
+    valueProperty?: string;
+    labelProperty?: string;
+    dateType?: string;
+    showTimeframe?: boolean;
+    fromPlaceholder?: string;
+    toPlaceholder?: string;
+};
+
+interface FilterFactory {
+    create(entity: string, filters: Record<string, FilterDefinition>): FilterDefinition[];
+}
+
+interface FilterService {
+    mergeWithStoredFilters(storeKey: string, criteria: CriteriaType): Promise<CriteriaType>;
+}
+
 /**
- * The record of what the shop tried to send.
- *
- * The table it reads is written by the sending path, the administration only reads it - nothing here
- * changes an attempt that was made.
- *
- * @sw-package framework
  * @private
  */
 export default Shopwell.Component.wrapComponentConfig({
@@ -23,7 +40,7 @@ export default Shopwell.Component.wrapComponentConfig({
 
     template,
 
-    inject: ['repositoryFactory', 'acl'],
+    inject: ['repositoryFactory', 'acl', 'filterFactory'],
 
     data(): {
         deliveries: EntityCollection<'sms_delivery'> | null;
@@ -32,7 +49,9 @@ export default Shopwell.Component.wrapComponentConfig({
         limit: number;
         total: number;
         term: string;
-        statusFilter: string | null;
+        filterCriteria: CriteriaType['filters'];
+        activeFilterNumber: number;
+        storeKey: string;
     } {
         return {
             deliveries: null,
@@ -41,7 +60,9 @@ export default Shopwell.Component.wrapComponentConfig({
             limit: 25,
             total: 0,
             term: '',
-            statusFilter: null,
+            filterCriteria: [],
+            activeFilterNumber: 0,
+            storeKey: 'grid.filter.sms_delivery',
         };
     },
 
@@ -99,17 +120,51 @@ export default Shopwell.Component.wrapComponentConfig({
             });
         },
 
+        listFilters(): FilterDefinition[] {
+            const filters = {
+                'status-filter': {
+                    property: 'status',
+                    type: 'multi-select-filter',
+                    label: this.$t('sw-settings-sms.delivery.filterStatus'),
+                    placeholder: this.$t('sw-settings-sms.delivery.filterStatus'),
+                    options: this.statusFilterOptions,
+                    valueProperty: 'value',
+                    labelProperty: 'label',
+                },
+                ...(this.acl.can('sms_gateway.viewer')
+                    ? {
+                          'gateway-filter': {
+                              property: 'gateway',
+                              label: this.$t('sw-settings-sms.delivery.filterGateway'),
+                              placeholder: this.$t('sw-settings-sms.delivery.filterGateway'),
+                              labelProperty: 'label',
+                          },
+                      }
+                    : {}),
+                'created-at-filter': {
+                    property: 'createdAt',
+                    label: this.$t('sw-settings-sms.delivery.columnCreatedAt'),
+                    dateType: 'datetime',
+                    showTimeframe: true,
+                    fromPlaceholder: this.$t('sw-settings-sms.delivery.filterFrom'),
+                    toPlaceholder: this.$t('sw-settings-sms.delivery.filterUntil'),
+                },
+            };
+
+            const filterFactory: FilterFactory = this.filterFactory;
+
+            return filterFactory.create('sms_delivery', filters);
+        },
+
+        defaultFilters(): string[] {
+            return ['status-filter', 'gateway-filter', 'created-at-filter'];
+        },
+
         listCriteria() {
             const criteria = new Criteria(this.page, this.limit);
             criteria.addSorting(Criteria.sort('createdAt', 'DESC', true));
-
-            if (this.term !== '') {
-                criteria.setTerm(this.term);
-            }
-
-            if (this.statusFilter !== null) {
-                criteria.addFilter(Criteria.equals('status', this.statusFilter));
-            }
+            criteria.setTerm(this.term);
+            this.filterCriteria.forEach((filter) => criteria.addFilter(filter));
 
             return criteria;
         },
@@ -141,7 +196,11 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
 
             try {
-                const result = await this.deliveryRepository.search(this.listCriteria);
+                const filterService = Shopwell.Service('filterService') as FilterService;
+                const criteria = await filterService.mergeWithStoredFilters(this.storeKey, this.listCriteria);
+                this.activeFilterNumber = criteria.filters.length;
+
+                const result = await this.deliveryRepository.search(criteria);
 
                 this.deliveries = result;
                 this.total = result.total ?? 0;
@@ -164,8 +223,8 @@ export default Shopwell.Component.wrapComponentConfig({
             void this.getList();
         },
 
-        onFilterStatus(status: string | null): void {
-            this.statusFilter = status;
+        updateCriteria(filters: CriteriaType['filters']): void {
+            this.filterCriteria = filters;
             this.page = 1;
 
             void this.getList();

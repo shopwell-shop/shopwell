@@ -5,7 +5,7 @@ namespace Shopwell\Tests\Unit\Core\System\Sms\Transport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\Transport\SmsTransportLoader;
 use Shopwell\Core\System\Sms\Transport\SmsTransports;
 use Symfony\Component\Notifier\Message\ChatMessage;
@@ -82,5 +82,21 @@ class SmsTransportsTest extends TestCase
 
         $transports->send((new SmsMessage('+8613800000000', 'hello'))->transport('gateway-id'));
         $transports->send((new SmsMessage('+8613800000001', 'again'))->transport('gateway-id'));
+    }
+
+    public function testResetLoadsTheUpdatedGatewayConfiguration(): void
+    {
+        $message = (new SmsMessage('+8613800000000', 'hello'))->transport('gateway-id');
+        $first = static::createStub(TransportInterface::class);
+        $first->method('send')->willReturn(new SentMessage($message, 'old-account'));
+        $second = static::createStub(TransportInterface::class);
+        $second->method('send')->willReturn(new SentMessage($message, 'updated-account'));
+        $loader = static::createStub(SmsTransportLoader::class);
+        $loader->method('fromGatewayId')->willReturnOnConsecutiveCalls($first, $second);
+        $transports = new SmsTransports($loader);
+
+        static::assertSame('old-account', $transports->send($message)?->getTransport());
+        $transports->reset();
+        static::assertSame('updated-account', $transports->send($message)?->getTransport());
     }
 }

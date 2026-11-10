@@ -3,9 +3,10 @@
  */
 import type { SmsCredentialDefinition, SmsGatewayProvider } from '../../service/sms-gateway-provider.service';
 import type RepositoryType from 'src/core/data/repository.data';
+import { readConfigValues, writeConfigValues } from '../../helper/sms-provider-config.helper';
 import template from './sw-settings-sms-gateway-detail.html.twig';
 
-const { Mixin } = Shopwell;
+import useNotification from 'src/app/composables/use-notification';
 
 /**
  * The custom field that says a gateway also takes a number whose country the shop does not know.
@@ -25,6 +26,8 @@ const FORM_FIELD_TYPES: Record<string, string> = {
     secret: 'password',
     json: 'textarea',
     bool: 'switch',
+    int: 'int',
+    select: 'single-select',
 };
 
 /**
@@ -43,7 +46,9 @@ export default Shopwell.Component.wrapComponentConfig({
 
     inject: ['repositoryFactory', 'acl', 'smsGatewayProviderService'],
 
-    mixins: [Mixin.getByName('notification')],
+    setup() {
+        return useNotification();
+    },
 
     props: {
         gatewayId: {
@@ -57,8 +62,8 @@ export default Shopwell.Component.wrapComponentConfig({
     data(): {
         gateway: EntitySchema.Entity<'sms_gateway'> | null;
         providers: SmsGatewayProvider[];
-        credentialValues: Record<string, string | boolean>;
-        optionsText: string;
+        credentialValues: Record<string, string | number | boolean>;
+        optionValues: Record<string, string | number | boolean>;
         acceptUnknownRegion: boolean;
         isLoading: boolean;
         isSaving: boolean;
@@ -67,7 +72,7 @@ export default Shopwell.Component.wrapComponentConfig({
             gateway: null,
             providers: [],
             credentialValues: {},
-            optionsText: '',
+            optionValues: {},
             acceptUnknownRegion: false,
             isLoading: true,
             isSaving: false,
@@ -95,6 +100,10 @@ export default Shopwell.Component.wrapComponentConfig({
 
         credentialFields(): SmsCredentialDefinition[] {
             return this.provider?.credentialDefinitions ?? [];
+        },
+
+        optionFields(): SmsCredentialDefinition[] {
+            return this.provider?.optionDefinitions ?? [];
         },
 
         providerOptions(): Array<{ value: string; label: string }> {
@@ -154,6 +163,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 }
 
                 this.fillCredentialValues();
+                this.fillOptionValues();
             } catch (error) {
                 this.createNotificationError({
                     message: (error as Error).message,
@@ -176,8 +186,9 @@ export default Shopwell.Component.wrapComponentConfig({
                 this.gatewayId as EntitySchema.SmsGatewayId,
                 Shopwell.Context.api,
             );
-            this.optionsText = this.gateway?.options ? JSON.stringify(this.gateway.options, null, 2) : '';
             this.acceptUnknownRegion = this.storedAcceptUnknownRegion();
+            this.fillCredentialValues();
+            this.fillOptionValues();
         },
 
         /**
@@ -213,21 +224,17 @@ export default Shopwell.Component.wrapComponentConfig({
          * dropped in a newer version is simply not shown any more.
          */
         fillCredentialValues(): void {
-            const stored = (this.gateway?.credentials ?? {}) as Record<string, unknown>;
-            const values: Record<string, string | boolean> = {};
+            this.credentialValues = readConfigValues(
+                this.credentialFields,
+                (this.gateway?.credentials ?? {}) as Record<string, unknown>,
+            );
+        },
 
-            this.credentialFields.forEach((field) => {
-                const storedValue = stored[field.name];
-
-                values[field.name] =
-                    field.type === 'bool'
-                        ? storedValue === true
-                        : typeof storedValue === 'string' || typeof storedValue === 'number'
-                          ? String(storedValue)
-                          : '';
-            });
-
-            this.credentialValues = values;
+        fillOptionValues(): void {
+            this.optionValues = readConfigValues(
+                this.optionFields,
+                (this.gateway?.options ?? {}) as Record<string, unknown>,
+            );
         },
 
         providerLabel(provider: SmsGatewayProvider): string {
@@ -246,10 +253,15 @@ export default Shopwell.Component.wrapComponentConfig({
             return {
                 label: this.credentialLabel(field),
                 required: field.required,
+                helpText: field.helpSnippet ? this.$t(field.helpSnippet) : undefined,
+                options: field.options?.map((option) => ({
+                    value: option.value,
+                    label: this.$te(option.labelSnippet) ? this.$t(option.labelSnippet) : String(option.value),
+                })),
             };
         },
 
-        setCredentialValue(field: SmsCredentialDefinition, value: string | boolean): void {
+        setCredentialValue(field: SmsCredentialDefinition, value: string | number | boolean): void {
             this.credentialValues[field.name] = value;
         },
 
@@ -259,10 +271,15 @@ export default Shopwell.Component.wrapComponentConfig({
          */
         onProviderChange(): void {
             this.credentialValues = {};
+            this.optionValues = {};
 
-            this.credentialFields.forEach((field) => {
-                this.credentialValues[field.name] = field.type === 'bool' ? false : '';
-            });
+            if (this.gateway) {
+                this.gateway.options = null;
+                this.gateway.credentials = null;
+            }
+
+            this.fillCredentialValues();
+            this.fillOptionValues();
         },
 
         isEmpty(value: unknown): boolean {
@@ -270,21 +287,22 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         collectCredentials(): Record<string, unknown> | null {
-            const credentials: Record<string, unknown> = {};
-
-            this.credentialFields.forEach((field) => {
-                credentials[field.name] = this.credentialValues[field.name] ?? null;
-            });
+            const credentials = writeConfigValues(
+                this.credentialFields,
+                this.credentialValues,
+                (this.gateway?.credentials ?? {}) as Record<string, unknown>,
+            );
 
             return Object.keys(credentials).length === 0 ? null : credentials;
         },
 
         collectOptions(): Record<string, unknown> | null {
-            if (this.optionsText.trim() === '') {
-                return null;
-            }
-
-            return JSON.parse(this.optionsText) as Record<string, unknown>;
+            const options = writeConfigValues(
+                this.optionFields,
+                this.optionValues,
+                (this.gateway?.options ?? {}) as Record<string, unknown>,
+            );
+            return Object.keys(options).length === 0 ? null : options;
         },
 
         async onSave(): Promise<void> {
@@ -300,10 +318,17 @@ export default Shopwell.Component.wrapComponentConfig({
                 return;
             }
 
+            if (this.optionFields.some((field) => field.required && this.isEmpty(this.optionValues[field.name]))) {
+                this.createNotificationError({ message: this.$t('sw-settings-sms.notification.missingFields') });
+
+                return;
+            }
+
             let options: Record<string, unknown> | null = null;
 
             try {
                 options = this.collectOptions();
+                this.gateway.credentials = this.collectCredentials();
             } catch {
                 this.createNotificationError({
                     message: this.$t('sw-settings-sms.gateway.labelOptionsHelpText'),
@@ -315,7 +340,6 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isSaving = true;
 
             try {
-                this.gateway.credentials = this.collectCredentials();
                 this.gateway.options = options;
                 // the routing flag of the shop belongs to the row, not to the connection options the
                 // provider is called with

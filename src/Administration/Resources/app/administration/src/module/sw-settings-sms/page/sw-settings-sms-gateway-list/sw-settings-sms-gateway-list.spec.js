@@ -11,7 +11,7 @@ function collection(items) {
     });
 }
 
-async function createWrapper({ rows = [], search, hasSnippet = false } = {}) {
+async function createWrapper({ rows = [], search, hasSnippet = false, providers = [] } = {}) {
     const repository = {
         search: search ?? jest.fn(() => Promise.resolve(collection(rows))),
         delete: jest.fn(() => Promise.resolve()),
@@ -28,6 +28,7 @@ async function createWrapper({ rows = [], search, hasSnippet = false } = {}) {
                 $route: { meta: { $module: { icon: 'regular-envelope' } } },
             },
             provide: {
+                smsGatewayProviderService: { list: jest.fn(async () => providers) },
                 repositoryFactory: {
                     create: () => repository,
                 },
@@ -36,6 +37,7 @@ async function createWrapper({ rows = [], search, hasSnippet = false } = {}) {
                 },
             },
             stubs: {
+                'sw-settings-sms-page': await wrapTestComponent('sw-settings-sms-page'),
                 'sw-page': {
                     template: `
                         <div>
@@ -97,6 +99,15 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-list', () => {
         if (wrapper) {
             wrapper.unmount();
         }
+    });
+
+    it('should use the label declared by a plugin provider', async () => {
+        ({ wrapper } = await createWrapper({
+            rows: [{ id: 'gateway-1', technicalName: 'plugin', label: null }],
+            hasSnippet: true,
+            providers: [{ technicalName: 'plugin', labelSnippet: 'my-plugin.sms.name' }],
+        }));
+        expect(wrapper.get('[data-id="gateway-1"]').text()).toContain('my-plugin.sms.name');
     });
 
     it('should load the gateways ordered by priority', async () => {

@@ -38,13 +38,16 @@
       "credentialsHelpText": "账号信息由厂商分配，其中的密钥会以密码框显示。",
       "regions": "支持地区",
       "regionGlobal": "全球",
-      "templateModeRequired": "需要报备模板",
+      "templateModeRequired": "使用厂商模板",
       "templateModeFreeText": "支持自由文本",
       "emptyStateTitle": "还没有短信网关",
       "emptyStateDescription": "新建一个网关后，系统才能通过厂商发送短信。",
       "placeholderSearchBar": "搜索短信网关…",
       "removeModalTitle": "删除短信网关",
-      "removeModalMessage": "确定要删除「{name}」吗？该网关下的模板映射会一并删除，已产生的发送记录会保留。"
+      "removeModalMessage": "确定要删除「{name}」吗？该网关下的模板映射会一并删除，已产生的发送记录会保留。",
+      "cardGeneral": "基本信息",
+      "cardRouting": "发送路由",
+      "labelSignName": "短信签名"
     },
     "template": {
       "listTitle": "短信模板",
@@ -137,7 +140,12 @@
         "queued": "排队中",
         "sent": "已发送",
         "failed": "失败"
-      }
+      },
+      "filterGateway": "短信账号",
+      "filterFrom": "开始时间",
+      "filterUntil": "结束时间",
+      "statusHelp": "“已发送”表示厂商已受理，不代表短信已送达。",
+      "titleSidebarItemRefresh": "刷新"
     },
     "notification": {
       "saveSuccess": "短信设置已保存。",

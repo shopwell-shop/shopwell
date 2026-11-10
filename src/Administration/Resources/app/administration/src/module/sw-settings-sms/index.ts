@@ -7,6 +7,9 @@ import SmsTemplateAuditService from './service/sms-template-audit.service';
 
 const { Module } = Shopwell;
 
+/** @private */
+Shopwell.Component.register('sw-settings-sms-page', () => import('./component/sw-settings-sms-page'));
+
 /**
  * The navigation between the three screens of the module. It is a component of its own because each
  * list shows it, so the three stay reachable from one another.

@@ -8,11 +8,11 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Sms\Gateway\Null\NullSmsTransport;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsTransport;
+use Shopwell\Core\System\Sms\Provider\SmsProviderRegistry;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Symfony\Component\Notifier\Transport\TransportInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -33,7 +33,7 @@ class SmsTransportLoader
      * @param EntityRepository<SmsGatewayCollection> $gatewayRepository
      */
     public function __construct(
-        private readonly SmsGatewayRegistry $registry,
+        private readonly SmsProviderRegistry $registry,
         private readonly EntityRepository $gatewayRepository,
         private readonly LoggerInterface $logger,
         private readonly ?EventDispatcherInterface $dispatcher = null,
@@ -44,7 +44,7 @@ class SmsTransportLoader
      * The factory of the texter transports, the counterpart of MailerTransportLoader::fromStrings().
      *
      * The dsns of framework.notifier.texter_transports are not used, the gateways are resolved from
-     * the database per message - a provider of a static dsn can be registered as a gateway factory
+     * the database per message - a provider of a static dsn can be registered as an SMS provider
      * just like a provider that is implemented here.
      *
      * @param array<string, string> $dsns
@@ -85,6 +85,6 @@ class SmsTransportLoader
 
         return $this->registry
             ->get($gateway->technicalName)
-            ->create($gateway->credentials ?? [], $gateway->options ?? [], $this->dispatcher);
+            ->createTransport($gateway->credentials ?? [], $gateway->options ?? [], $this->dispatcher);
     }
 }

@@ -3,34 +3,13 @@
  */
 import type { SmsGatewayProvider } from '../../service/sms-gateway-provider.service';
 import type RepositoryType from 'src/core/data/repository.data';
-import {
-    approvalStatusLabel,
-    auditOfProvider,
-    CUSTOM_FIELD_LAST_SYNCED_AT,
-    customFieldValue,
-} from '../../helper/sms-template-audit.helper';
+import { auditOfProvider } from '../../helper/sms-template-audit.helper';
 import template from './sw-settings-sms-template-detail.html.twig';
 
 const { Mixin } = Shopwell;
 const { Criteria } = Shopwell.Data;
 
 const SCENES = ['otp', 'transaction', 'marketing'];
-
-/**
- * One line of the ledger: what one provider account answered for this template.
- *
- * There is no language in it on purpose - a mapping row carries one template and one submitted body,
- * and the language of a recipient never decides which of them is used.
- */
-interface SmsTemplateAuditLedgerRow {
-    mappingId: string;
-    technicalName: string;
-    providerLabel: string;
-    templateCode: string | null;
-    auditStatus: string;
-    auditStatusLabel: string;
-    lastSyncedAt: string | null;
-}
 
 /**
  * A logical template: the parameter contract, the bodies per language and where it goes at the
@@ -105,29 +84,8 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         /**
-         * The state of the audit at every provider this template is mapped to.
-         *
-         * It is built from the mappings of the template and not from the providers, so a provider an
-         * extension adds shows up here without a change, and a row that was never submitted shows the
-         * state the shop knows - which is the one it started in.
-         */
-        auditLedger(): SmsTemplateAuditLedgerRow[] {
-            return this.mappings.map((mapping) => {
-                return {
-                    mappingId: mapping.id,
-                    technicalName: mapping.technicalName,
-                    providerLabel: this.providerLabelOf(mapping.technicalName),
-                    templateCode: mapping.templateCode ?? null,
-                    auditStatus: mapping.auditStatus,
-                    auditStatusLabel: this.auditStatusLabel(mapping.auditStatus),
-                    lastSyncedAt: customFieldValue(mapping.customFields, CUSTOM_FIELD_LAST_SYNCED_AT),
-                };
-            });
-        },
-
-        /**
          * The providers that block a message until a template is approved, but that this template is
-         * not mapped to at all - the one state an operator cannot see in the ledger, as there is no
+         * not mapped to at all - a state with no
          * row to show it in.
          */
         providersMissingMapping(): SmsGatewayProvider[] {
@@ -144,32 +102,6 @@ export default Shopwell.Component.wrapComponentConfig({
          */
         defaultLanguageName(): string {
             return this.defaultLanguageLabel;
-        },
-
-        /**
-         * The columns of the ledger. There is no language in it: a mapping row carries one template
-         * and one submitted body, and a delivered message is rendered in the language of its
-         * recipient, which the audit does not change.
-         */
-        auditLedgerColumns(): Array<{ property: string; label: string }> {
-            return [
-                {
-                    property: 'providerLabel',
-                    label: 'sw-settings-sms.template.auditLedgerColumnProvider',
-                },
-                {
-                    property: 'templateCode',
-                    label: 'sw-settings-sms.mapping.columnTemplateCode',
-                },
-                {
-                    property: 'auditStatusLabel',
-                    label: 'sw-settings-sms.mapping.columnAuditStatus',
-                },
-                {
-                    property: 'lastSyncedAt',
-                    label: 'sw-settings-sms.template.auditLedgerColumnLastSyncedAt',
-                },
-            ];
         },
 
         /**
@@ -233,6 +165,11 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         async loadGateways(): Promise<void> {
+            if (!this.acl.can('sms_gateway.viewer')) {
+                this.gateways = [];
+                return;
+            }
+
             const result = await this.gatewayRepository.search(new Criteria(1, 100));
 
             this.gateways = result
@@ -283,22 +220,6 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.$te(snippet) ? this.$t(snippet) : technicalName;
         },
 
-        /**
-         * The states of the audit are named by the server, so a state it adds is shown without a
-         * change here - a state without a label is shown as it came.
-         */
-        auditStatusLabel(status: string | null | undefined): string {
-            return approvalStatusLabel(
-                status,
-                (key) => this.$te(key),
-                (key) => this.$t(key),
-            );
-        },
-
-        /**
-         * The grid took one of the three audit steps: the template is read again, which also brings
-         * the ledger up to date, as both are built from the same rows.
-         */
         async onMappingChanged(): Promise<void> {
             await this.loadTemplate();
         },

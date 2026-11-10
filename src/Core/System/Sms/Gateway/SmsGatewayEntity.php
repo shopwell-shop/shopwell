@@ -69,8 +69,8 @@ class SmsGatewayEntity extends EntityStruct
     /**
      * The credentials of the provider, e.g. ['accessKeyId' => '…', 'accessKeySecret' => '…'].
      *
-     * The structure is declared by the credential definitions of the gateway factory, the fields a
-     * factory marks as secret are rendered as password inputs by the administration.
+     * The structure is declared by the credential definitions of the provider, the fields a
+     * provider marks as secret are rendered as password inputs by the administration.
      *
      * @var array<string, mixed>|null
      */

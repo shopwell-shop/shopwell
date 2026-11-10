@@ -12,8 +12,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 
 /**

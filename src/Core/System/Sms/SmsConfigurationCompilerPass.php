@@ -35,6 +35,7 @@ class SmsConfigurationCompilerPass implements CompilerPassInterface
         // the class is part of the swap: the transports this component builds are a lazy collection of
         // its own, the notifier ones would have to be built eagerly from dsns
         $definition->setClass(SmsTransports::class);
+        $definition->addTag('kernel.reset', ['method' => 'reset']);
         $definition->setFactory([
             new Reference(SmsTransportLoader::class),
             'fromConfig',

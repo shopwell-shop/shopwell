@@ -3,12 +3,13 @@
  */
 import { mount } from '@vue/test-utils';
 
-async function createWrapper(active = 'gateway', routerPush = jest.fn()) {
+async function createWrapper(active = 'gateway', routerPush = jest.fn(), can = () => true) {
     return mount(await wrapTestComponent('sw-settings-sms-section-tabs', { sync: true }), {
         props: {
             active,
         },
         global: {
+            provide: { acl: { can } },
             mocks: {
                 $router: {
                     push: routerPush,
@@ -69,6 +70,12 @@ describe('src/module/sw-settings-sms/component/sw-settings-sms-section-tabs', ()
             'sw-settings-sms.general.tabTemplate',
             'sw-settings-sms.general.tabDelivery',
         ]);
+    });
+
+    it('should only offer sections the user may read', async () => {
+        wrapper = await createWrapper('template', jest.fn(), (privilege) => privilege === 'sms_template.viewer');
+
+        expect(tabItems(wrapper).map((item) => item.name)).toEqual(['sw.settings.sms.template']);
     });
 
     it('should mark the route of the section it was given as active', async () => {

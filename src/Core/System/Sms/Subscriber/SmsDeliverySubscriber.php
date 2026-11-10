@@ -17,10 +17,10 @@ use Shopwell\Core\System\Sms\Delivery\SmsDeliveryCollection;
 use Shopwell\Core\System\Sms\Delivery\SmsDeliveryEntity;
 use Shopwell\Core\System\Sms\Event\SmsFailedEvent;
 use Shopwell\Core\System\Sms\Event\SmsSentEvent;
-use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsProvider;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
@@ -275,7 +275,7 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
     private function technicalNameOf(?string $gatewayId): string
     {
         if ($gatewayId === null || $gatewayId === '') {
-            return NullGatewayTransportFactory::TECHNICAL_NAME;
+            return NullSmsProvider::TECHNICAL_NAME;
         }
 
         $gateway = $this->gatewayRepository
@@ -285,7 +285,7 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
 
         return $gateway instanceof SmsGatewayEntity
             ? $gateway->technicalName
-            : NullGatewayTransportFactory::TECHNICAL_NAME;
+            : NullSmsProvider::TECHNICAL_NAME;
     }
 
     private function templateIdOf(string $templateRef): ?string

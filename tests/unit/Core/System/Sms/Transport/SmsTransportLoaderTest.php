@@ -9,13 +9,13 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
-use Shopwell\Core\System\Sms\Gateway\Null\NullSmsTransport;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsProvider;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsTransport;
+use Shopwell\Core\System\Sms\Provider\AbstractSmsProvider;
+use Shopwell\Core\System\Sms\Provider\SmsProviderRegistry;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\Transport\SmsTransportLoader;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\Notifier\Message\SmsMessage;
@@ -50,16 +50,16 @@ class SmsTransportLoaderTest extends TestCase
         $gateway = $this->createGateway('aliyun');
         $expected = static::createStub(TransportInterface::class);
 
-        $factory = static::createMock(SmsGatewayTransportFactoryInterface::class);
+        $factory = static::createMock(AbstractSmsProvider::class);
         $factory->method('getTechnicalName')->willReturn('aliyun');
         $factory->method('getSupportedRegions')->willReturn(['CN']);
         $factory->method('supportsTemplateMode')->willReturn(true);
         $factory->expects($this->once())
-            ->method('create')
+            ->method('createTransport')
             ->with(['accessKeyId' => 'key'], ['sandbox' => true])
             ->willReturn($expected);
 
-        $loader = $this->createLoader([$gateway], new SmsGatewayRegistry([$factory]));
+        $loader = $this->createLoader([$gateway], new SmsProviderRegistry([$factory]));
 
         static::assertSame($expected, $loader->fromGatewayId($gateway->id));
     }
@@ -70,7 +70,7 @@ class SmsTransportLoaderTest extends TestCase
 
         static::assertInstanceOf(
             NullSmsTransport::class,
-            $this->createLoader([$gateway], new SmsGatewayRegistry([new NullGatewayTransportFactory()]))->fromGatewayId($gateway->id)
+            $this->createLoader([$gateway], new SmsProviderRegistry([new NullSmsProvider()]))->fromGatewayId($gateway->id)
         );
     }
 
@@ -95,7 +95,7 @@ class SmsTransportLoaderTest extends TestCase
             );
 
         $loader = new SmsTransportLoader(
-            new SmsGatewayRegistry([]),
+            new SmsProviderRegistry([]),
             $this->createGatewayRepository([$gateway]),
             $logger,
         );
@@ -120,7 +120,7 @@ class SmsTransportLoaderTest extends TestCase
             },
         ]);
 
-        $loader = new SmsTransportLoader(new SmsGatewayRegistry([]), $repository, static::createStub(LoggerInterface::class));
+        $loader = new SmsTransportLoader(new SmsProviderRegistry([]), $repository, static::createStub(LoggerInterface::class));
 
         static::assertInstanceOf(NullSmsTransport::class, $loader->fromGatewayId(Uuid::randomHex()));
     }
@@ -138,10 +138,10 @@ class SmsTransportLoaderTest extends TestCase
     /**
      * @param list<SmsGatewayEntity> $gateways
      */
-    private function createLoader(array $gateways = [], ?SmsGatewayRegistry $registry = null): SmsTransportLoader
+    private function createLoader(array $gateways = [], ?SmsProviderRegistry $registry = null): SmsTransportLoader
     {
         return new SmsTransportLoader(
-            $registry ?? new SmsGatewayRegistry([new NullGatewayTransportFactory()]),
+            $registry ?? new SmsProviderRegistry([new NullSmsProvider()]),
             $this->createGatewayRepository($gateways),
             static::createStub(LoggerInterface::class),
         );

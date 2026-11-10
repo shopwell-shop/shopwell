@@ -8,6 +8,7 @@ describe('src/module/sw-settings-sms/service/sms-template-audit.service', () => 
         Accept: 'application/json',
         Authorization: 'Bearer the-token',
         'Content-Type': 'application/json',
+        'sw-language-id': Shopwell.Context.api.languageId,
     };
 
     function createService(answer = { status: 'pending', templateCode: 'SMS_1', errorCode: null, errorMessage: null }) {

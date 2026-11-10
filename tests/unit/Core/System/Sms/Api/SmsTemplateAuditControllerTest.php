@@ -12,17 +12,17 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Sms\Api\SmsTemplateAuditController;
-use Shopwell\Core\System\Sms\Gateway\Audit\ReadsTemplateApprovalStatusInterface;
-use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
-use Shopwell\Core\System\Sms\Gateway\Audit\SubmitsTemplatesForApprovalInterface;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalReading;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmissionReceipt;
-use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsProvider;
+use Shopwell\Core\System\Sms\Provider\AbstractSmsProvider;
+use Shopwell\Core\System\Sms\Provider\Audit\ReadsTemplateApprovalStatusInterface;
+use Shopwell\Core\System\Sms\Provider\Audit\SmsProviderCapabilities;
+use Shopwell\Core\System\Sms\Provider\Audit\SubmitsTemplatesForApprovalInterface;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateApprovalReading;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateApprovalStatus;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateSubmissionReceipt;
+use Shopwell\Core\System\Sms\Provider\SmsProviderRegistry;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
@@ -32,6 +32,7 @@ use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Sms\Provider\Fixtures\TemplateAuditSmsProvider;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -100,7 +101,7 @@ class SmsTemplateAuditControllerTest extends TestCase
     public function testSubmitAnswersTheCodeOfAProviderThatCannotSubmitTemplates(): void
     {
         $controller = $this->createController(
-            new NullGatewayTransportFactory(),
+            new NullSmsProvider(),
             $this->createMappingRepository($this->createMapping(technicalName: 'null'))
         );
 
@@ -184,7 +185,7 @@ class SmsTemplateAuditControllerTest extends TestCase
     public function testConfirmAnswersTheStateTheOperatorRecorded(): void
     {
         $controller = $this->createController(
-            new NullGatewayTransportFactory(),
+            new NullSmsProvider(),
             $this->createMappingRepository(
                 $this->createMapping(technicalName: 'null', templateCode: 'SMS_123456789'),
                 $this->createMapping(technicalName: 'null', templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::APPROVED),
@@ -231,7 +232,7 @@ class SmsTemplateAuditControllerTest extends TestCase
     public function testAConfirmationWithoutAStatusIsAnsweredAsTheViolationItIs(): void
     {
         $controller = $this->createController(
-            new NullGatewayTransportFactory(),
+            new NullSmsProvider(),
             $this->createMappingRepository($this->createMapping(technicalName: 'null'))
         );
 
@@ -274,14 +275,10 @@ class SmsTemplateAuditControllerTest extends TestCase
     /**
      * A provider that reports templates and can be asked for their state.
      */
-    private function createFactory(): SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject
+    private function createFactory(): AbstractSmsProvider&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject
     {
-        /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject $factory */
-        $factory = $this->createMockForIntersectionOfInterfaces([
-            SmsGatewayTransportFactoryInterface::class,
-            SubmitsTemplatesForApprovalInterface::class,
-            ReadsTemplateApprovalStatusInterface::class,
-        ]);
+        /** @var AbstractSmsProvider&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject $factory */
+        $factory = $this->createMock(TemplateAuditSmsProvider::class);
 
         $factory->method('getTechnicalName')->willReturn(self::TECHNICAL_NAME);
         $factory->method('getLabelSnippet')->willReturn('sms.gateway.aliyun');
@@ -293,14 +290,10 @@ class SmsTemplateAuditControllerTest extends TestCase
     /**
      * The same provider for the tests that never look at what it answered.
      */
-    private function createFactoryStub(): SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub
+    private function createFactoryStub(): AbstractSmsProvider&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub
     {
-        /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub $factory */
-        $factory = static::createStubForIntersectionOfInterfaces([
-            SmsGatewayTransportFactoryInterface::class,
-            SubmitsTemplatesForApprovalInterface::class,
-            ReadsTemplateApprovalStatusInterface::class,
-        ]);
+        /** @var AbstractSmsProvider&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub $factory */
+        $factory = static::createStub(TemplateAuditSmsProvider::class);
 
         $factory->method('getTechnicalName')->willReturn(self::TECHNICAL_NAME);
         $factory->method('getLabelSnippet')->willReturn('sms.gateway.aliyun');
@@ -313,14 +306,14 @@ class SmsTemplateAuditControllerTest extends TestCase
      * @param StaticEntityRepository<SmsTemplateMappingCollection> $mappingRepository
      */
     private function createController(
-        SmsGatewayTransportFactoryInterface $factory,
+        AbstractSmsProvider $factory,
         StaticEntityRepository $mappingRepository,
     ): SmsTemplateAuditController {
         $clock = static::createStub(ClockInterface::class);
         $clock->method('now')->willReturn(new \DateTimeImmutable(self::NOW));
 
         $service = new SmsTemplateAuditService(
-            new SmsGatewayAuditCapabilities(new SmsGatewayRegistry([$factory])),
+            new SmsProviderCapabilities(new SmsProviderRegistry([$factory])),
             $mappingRepository,
             StaticEntityRepository::of(SmsGatewayCollection::class, [new SmsGatewayCollection([$this->createGateway()])]),
             StaticEntityRepository::of(SmsTemplateCollection::class, [new SmsTemplateCollection([$this->createTemplate()])]),

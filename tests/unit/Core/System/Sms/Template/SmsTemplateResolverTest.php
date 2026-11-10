@@ -4,14 +4,16 @@ namespace Shopwell\Tests\Unit\Core\System\Sms\Template;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
+use Shopwell\Core\System\Sms\Provider\AbstractSmsProvider;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateApprovalStatus;
+use Shopwell\Core\System\Sms\Provider\SmsProviderRegistry;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolution;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
@@ -138,9 +140,9 @@ class SmsTemplateResolverTest extends TestCase
 
         $gatewayResolver = $this->createMock(SmsGatewayResolverInterface::class);
         $gatewayResolver->expects($this->once())
-            ->method('resolveGatewayIds')
+            ->method('resolve')
             ->with(static::anything(), null, 'DE', $template)
-            ->willReturn([]);
+            ->willReturn(new SmsGatewayResolution([], []));
 
         $this->createResolver(
             [$template],
@@ -159,9 +161,9 @@ class SmsTemplateResolverTest extends TestCase
 
         $gatewayResolver = $this->createMock(SmsGatewayResolverInterface::class);
         $gatewayResolver->expects($this->once())
-            ->method('resolveGatewayIds')
+            ->method('resolve')
             ->with(static::anything(), null, null, $template)
-            ->willReturn([]);
+            ->willReturn(new SmsGatewayResolution([], []));
 
         // the number itself is valid, the dial code data simply does not know its country - the
         // routing has to see that as unknown and not as a domestic number
@@ -350,12 +352,11 @@ class SmsTemplateResolverTest extends TestCase
         $gateway = $this->createGateway('aliyun');
 
         $gatewayResolver = $this->createMock(SmsGatewayResolverInterface::class);
-        $gatewayResolver->method('resolveGatewayIds')->willReturn([]);
         $gatewayResolver->expects($this->once())
-            ->method('undeliverableReason')
+            ->method('resolve')
             // the same country and the same template, otherwise the routing explains another message
             ->with(static::anything(), 'my-sales-channel', 'DE', $template)
-            ->willReturn(null);
+            ->willReturn(new SmsGatewayResolution([], []));
 
         $this->createResolver(
             [$template],
@@ -408,20 +409,25 @@ class SmsTemplateResolverTest extends TestCase
     ): SmsTemplateResolver {
         $mappingRepository = StaticEntityRepository::of(
             SmsTemplateMappingCollection::class,
-            [new SmsTemplateMappingCollection($mappings)]
+            array_fill(0, max(1, \count($gateways)), new SmsTemplateMappingCollection($mappings))
         );
 
         if ($gatewayResolver === null) {
             $stub = static::createStub(SmsGatewayResolverInterface::class);
-            $stub->method('resolveGatewayIds')->willReturn($resolvedGatewayIds);
-            $stub->method('undeliverableReason')->willReturn($refusal);
+            $locator = new SmsTemplateMappingLocator($mappingRepository);
+            $selectedMappings = [];
+            foreach ($gateways as $gateway) {
+                foreach ($templates as $template) {
+                    $selectedMappings[$gateway->id] = $locator->locate(Context::createDefaultContext(), $template->id, $gateway->technicalName, $gateway->id);
+                }
+            }
+            $stub->method('resolve')->willReturn(new SmsGatewayResolution($resolvedGatewayIds, $selectedMappings, $refusal));
 
             $gatewayResolver = $stub;
         }
 
         return new SmsTemplateResolver(
             StaticEntityRepository::of(SmsTemplateCollection::class, [new SmsTemplateCollection($templates)]),
-            new SmsTemplateMappingLocator($mappingRepository),
             StaticEntityRepository::of(SmsGatewayCollection::class, [new SmsGatewayCollection($gateways)]),
             $this->createRegistry($factories),
             $gatewayResolver,
@@ -459,12 +465,12 @@ class SmsTemplateResolverTest extends TestCase
     /**
      * @param array<string, array{regions?: list<string>, templateMode?: bool}> $factories
      */
-    private function createRegistry(array $factories): SmsGatewayRegistry
+    private function createRegistry(array $factories): SmsProviderRegistry
     {
         $stubs = [];
 
         foreach ($factories as $technicalName => $config) {
-            $factory = static::createStub(SmsGatewayTransportFactoryInterface::class);
+            $factory = static::createStub(AbstractSmsProvider::class);
             $factory->method('getTechnicalName')->willReturn($technicalName);
             $factory->method('getSupportedRegions')->willReturn($config['regions'] ?? ['GLOBAL']);
             $factory->method('supportsTemplateMode')->willReturn($config['templateMode'] ?? false);
@@ -474,7 +480,7 @@ class SmsTemplateResolverTest extends TestCase
             $stubs[] = $factory;
         }
 
-        return new SmsGatewayRegistry($stubs);
+        return new SmsProviderRegistry($stubs);
     }
 
     private function createTemplate(?string $content = null): SmsTemplateEntity

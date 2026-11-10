@@ -46,6 +46,13 @@
                                                             "type": "object"
                                                         }
                                                     },
+                                                    "optionDefinitions": {
+                                                        "type": "array",
+                                                        "description": "Connection fields declared by the provider, without stored values.",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
                                                     "audit": {
                                                         "type": "object",
                                                         "description": "What the transport can do about a template approval."

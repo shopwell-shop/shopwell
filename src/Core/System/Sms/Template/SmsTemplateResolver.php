@@ -9,8 +9,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
+use Shopwell\Core\System\Sms\Provider\SmsProviderRegistry;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
@@ -43,9 +43,8 @@ final class SmsTemplateResolver
      */
     public function __construct(
         private readonly EntityRepository $templateRepository,
-        private readonly SmsTemplateMappingLocator $mappingLocator,
         private readonly EntityRepository $gatewayRepository,
-        private readonly SmsGatewayRegistry $registry,
+        private readonly SmsProviderRegistry $registry,
         private readonly SmsGatewayResolverInterface $gatewayResolver,
         private readonly SmsParamValidator $paramValidator,
         private readonly SmsTemplateRenderer $renderer,
@@ -78,24 +77,15 @@ final class SmsTemplateResolver
         $number = $this->normalizer->normalize($phone, $countryIso);
         $e164 = $number->e164();
 
-        $gatewayIds = $this->gatewayResolver->resolveGatewayIds(
-            $context,
-            $salesChannelId,
-            $number->countryIso(),
-            $template
-        );
+        $resolution = $this->gatewayResolver->resolve($context, $salesChannelId, $number->countryIso(), $template);
+        $gatewayIds = $resolution->gatewayIds;
         $gateway = $gatewayIds === [] ? null : $this->loadGateway($gatewayIds[0], $context);
 
         if ($gateway === null) {
             // nothing is usable, the message still goes through the pipeline and is recorded with the
             // reason it could not be sent - asked from the routing, the only place that knows which
             // gate dropped the candidates
-            $refusal = $this->gatewayResolver->undeliverableReason(
-                $context,
-                $salesChannelId,
-                $number->countryIso(),
-                $template
-            );
+            $refusal = $resolution->refusal;
 
             return $this->buildTextMessage(
                 $template,
@@ -106,10 +96,10 @@ final class SmsTemplateResolver
             )->transport(SmsGatewayResolverInterface::GATEWAY_NULL);
         }
 
-        $factory = $this->registry->get($gateway->technicalName);
+        $provider = $this->registry->get($gateway->technicalName);
 
-        $message = $factory->supportsTemplateMode()
-            ? $this->buildTemplateMessage($template, $params, $e164, $gateway, $context)
+        $message = $provider->supportsTemplateMode()
+            ? $this->buildTemplateMessage($template, $params, $e164, $gateway, $resolution->mappings[$gateway->id] ?? null)
             : $this->buildTextMessage($template, $params, $e164);
 
         return $message->transport($gateway->id);
@@ -123,9 +113,15 @@ final class SmsTemplateResolver
         array $params,
         string $e164,
         SmsGatewayEntity $gateway,
-        Context $context,
+        ?SmsTemplateMappingEntity $mapping = null,
     ): SmsMessage {
-        $mapping = $this->loadMapping($template, $gateway, $context);
+        if ($mapping === null) {
+            throw SmsException::templateNotConfigured($template->technicalName, $gateway->technicalName);
+        }
+
+        if ($mapping->templateCode === null) {
+            throw SmsException::templateNotConfigured($template->technicalName, $gateway->technicalName);
+        }
 
         $options = new SmsMessageOptions(
             scene: $template->scene,
@@ -186,25 +182,6 @@ final class SmsTemplateResolver
             ->first();
 
         return $gateway instanceof SmsGatewayEntity ? $gateway : null;
-    }
-
-    /**
-     * The row the audit reports and reads as well, so the routing and the audit converge on the same
-     * mapping instead of each picking its own out of duplicates.
-     *
-     * @throws SmsException when the template was never reported for this gateway
-     */
-    private function loadMapping(SmsTemplateEntity $template, SmsGatewayEntity $gateway, Context $context): SmsTemplateMappingEntity
-    {
-        $mapping = $this->mappingLocator->locate($context, $template->id, $gateway->technicalName, $gateway->id);
-
-        if ($mapping === null || $mapping->templateCode === null) {
-            // without the code of the provider there is nothing to submit, the template has to be
-            // reported for this gateway first
-            throw SmsException::templateNotConfigured($template->technicalName, $gateway->technicalName);
-        }
-
-        return $mapping;
     }
 
     /**

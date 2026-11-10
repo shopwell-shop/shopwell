@@ -22,6 +22,7 @@ describe('src/module/sw-settings-sms/service/sms-gateway-provider.service', () =
         Accept: 'application/json',
         Authorization: 'Bearer the-token',
         'Content-Type': 'application/json',
+        'sw-language-id': Shopwell.Context.api.languageId,
     };
 
     it('should ask the server for the providers with the admin token', async () => {

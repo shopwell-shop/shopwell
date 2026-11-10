@@ -7,6 +7,12 @@ const SECTION_ROUTES: Record<string, string> = {
     delivery: 'sw.settings.sms.delivery',
 };
 
+const SECTION_PRIVILEGES: Record<string, string> = {
+    [SECTION_ROUTES.gateway]: 'sms_gateway.viewer',
+    [SECTION_ROUTES.template]: 'sms_template.viewer',
+    [SECTION_ROUTES.delivery]: 'sms_delivery.viewer',
+};
+
 /**
  * The tabs that lead from one screen of the module to the other.
  *
@@ -17,6 +23,8 @@ export default Shopwell.Component.wrapComponentConfig({
     name: 'sw-settings-sms-section-tabs',
 
     template,
+
+    inject: ['acl'],
 
     props: {
         active: {
@@ -50,7 +58,9 @@ export default Shopwell.Component.wrapComponentConfig({
                         this.navigate('delivery');
                     },
                 },
-            ];
+            ].filter((tab) => {
+                return this.acl.can(SECTION_PRIVILEGES[tab.name]);
+            });
         },
 
         activeRoute(): string {

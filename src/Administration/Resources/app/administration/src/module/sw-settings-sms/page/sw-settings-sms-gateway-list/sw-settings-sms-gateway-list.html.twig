@@ -1,5 +1,8 @@
 {% block sw_settings_sms_gateway_list %}
-<sw-page class="sw-settings-sms-gateway-list">
+<sw-settings-sms-page
+    class="sw-settings-sms-gateway-list"
+    active-section="gateway"
+>
 
     {% block sw_settings_sms_gateway_list_search_bar %}
     <template #search-bar>
@@ -56,111 +59,106 @@
 
     {% block sw_settings_sms_gateway_list_content %}
     <template #content>
-        <sw-card-view>
-            {% block sw_settings_sms_gateway_list_tabs %}
-            <sw-settings-sms-section-tabs active="gateway" />
-            {% endblock %}
 
-            {% block sw_settings_sms_gateway_list_card %}
-            <mt-card position-identifier="sw-settings-sms-gateway-list-content">
-                {% block sw_settings_sms_gateway_list_grid %}
-                <template #grid>
-                    <sw-entity-listing
-                        class="sw-settings-sms-gateway-list__grid"
-                        :repository="gatewayRepository"
-                        :is-loading="isLoading"
-                        :data-source="gateways"
-                        :columns="columns"
-                        identifier="sw-settings-sms-gateway-list"
-                        :sort-by="sortBy"
-                        :sort-direction="sortDirection"
-                        :full-page="false"
-                        detail-route="sw.settings.sms.gateway.detail"
-                        :disable-data-fetching="true"
-                        :show-selection="acl.can('sms_gateway.deleter') || undefined"
-                        :allow-edit="acl.can('sms_gateway.editor') || undefined"
-                        :allow-view="acl.can('sms_gateway.viewer') || undefined"
-                        :allow-delete="acl.can('sms_gateway.deleter') || undefined"
-                        @column-sort="onSortColumn"
-                        @page-change="onPageChange"
-                    >
-                        {% block sw_settings_sms_gateway_list_grid_columns_technical_name %}
-                        <template #column-technicalName="{ item }">
-                            {{ providerLabel(item.technicalName) }}
-                        </template>
-                        {% endblock %}
-
-                        {% block sw_settings_sms_gateway_list_grid_columns_label %}
-                        <template #column-label="{ item }">
-                            {{ gatewayName(item) }}
-                        </template>
-                        {% endblock %}
-
-                        {% block sw_settings_sms_gateway_list_grid_columns_enabled %}
-                        <template #column-enabled="{ item }">
-                            <mt-icon
-                                v-if="item.enabled"
-                                class="sw-settings-sms-gateway-list__enabled"
-                                name="solid-check-circle"
-                                color="var(--color-emerald-500)"
-                                size="16px"
-                            />
-                            <span
-                                v-else
-                                class="sw-settings-sms-gateway-list__disabled"
-                            >
-                                {{ $t('global.default.no') }}
-                            </span>
-                        </template>
-                        {% endblock %}
-
-                        {% block sw_settings_sms_gateway_list_grid_columns_actions %}
-                        <template #actions="{ item }">
-                            {% block sw_settings_sms_gateway_list_grid_columns_actions_delete %}
-                            <sw-context-menu-item
-                                class="sw-settings-sms-gateway-list__delete-action"
-                                variant="danger"
-                                :disabled="!acl.can('sms_gateway.deleter') || undefined"
-                                @click="onOpenRemoveModal(item)"
-                            >
-                                {{ $t('global.default.delete') }}
-                            </sw-context-menu-item>
-                            {% endblock %}
-                        </template>
-                        {% endblock %}
-                    </sw-entity-listing>
-
-                    {% block sw_settings_sms_gateway_list_empty_state %}
-                    <mt-empty-state
-                        v-if="!isLoading && !total"
-                        centered
-                        :icon="$route.meta.$module.icon"
-                        :headline="$t('sw-settings-sms.gateway.emptyStateTitle')"
-                        :description="$t('sw-settings-sms.gateway.emptyStateDescription')"
-                    >
-                        <template
-                            v-if="acl.can('sms_gateway.creator')"
-                            #button
-                        >
-                            <mt-button
-                                variant="primary"
-                                size="default"
-                                @click="$router.push({ name: 'sw.settings.sms.gateway.create' })"
-                            >
-                                {{ $t('sw-settings-sms.general.buttonCreate') }}
-                            </mt-button>
-                        </template>
-                    </mt-empty-state>
+        {% block sw_settings_sms_gateway_list_card %}
+        <mt-card position-identifier="sw-settings-sms-gateway-list-content">
+            {% block sw_settings_sms_gateway_list_grid %}
+            <template #grid>
+                <sw-entity-listing
+                    class="sw-settings-sms-gateway-list__grid"
+                    :repository="gatewayRepository"
+                    :is-loading="isLoading"
+                    :data-source="gateways"
+                    :columns="columns"
+                    identifier="sw-settings-sms-gateway-list"
+                    :sort-by="sortBy"
+                    :sort-direction="sortDirection"
+                    :full-page="false"
+                    detail-route="sw.settings.sms.gateway.detail"
+                    :disable-data-fetching="true"
+                    :show-selection="acl.can('sms_gateway.deleter') || undefined"
+                    :allow-edit="acl.can('sms_gateway.editor') || undefined"
+                    :allow-view="acl.can('sms_gateway.viewer') || undefined"
+                    :allow-delete="acl.can('sms_gateway.deleter') || undefined"
+                    @column-sort="onSortColumn"
+                    @page-change="onPageChange"
+                >
+                    {% block sw_settings_sms_gateway_list_grid_columns_technical_name %}
+                    <template #column-technicalName="{ item }">
+                        {{ providerLabel(item.technicalName) }}
+                    </template>
                     {% endblock %}
-                </template>
-                {% endblock %}
-            </mt-card>
-            {% endblock %}
 
-            {% block sw_settings_sms_gateway_list_extension %}
-            <sw-extension-component-section position-identifier="sw-settings-sms-gateway-list__after-content" />
+                    {% block sw_settings_sms_gateway_list_grid_columns_label %}
+                    <template #column-label="{ item }">
+                        {{ gatewayName(item) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_settings_sms_gateway_list_grid_columns_enabled %}
+                    <template #column-enabled="{ item }">
+                        <mt-icon
+                            v-if="item.enabled"
+                            class="sw-settings-sms-gateway-list__enabled"
+                            name="solid-check-circle"
+                            color="var(--color-emerald-500)"
+                            size="16px"
+                        />
+                        <span
+                            v-else
+                            class="sw-settings-sms-gateway-list__disabled"
+                        >
+                            {{ $t('global.default.no') }}
+                        </span>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_settings_sms_gateway_list_grid_columns_actions %}
+                    <template #actions="{ item }">
+                        {% block sw_settings_sms_gateway_list_grid_columns_actions_delete %}
+                        <sw-context-menu-item
+                            class="sw-settings-sms-gateway-list__delete-action"
+                            variant="danger"
+                            :disabled="!acl.can('sms_gateway.deleter') || undefined"
+                            @click="onOpenRemoveModal(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                        {% endblock %}
+                    </template>
+                    {% endblock %}
+                </sw-entity-listing>
+
+                {% block sw_settings_sms_gateway_list_empty_state %}
+                <mt-empty-state
+                    v-if="!isLoading && !total"
+                    centered
+                    :icon="$route.meta.$module.icon"
+                    :headline="$t('sw-settings-sms.gateway.emptyStateTitle')"
+                    :description="$t('sw-settings-sms.gateway.emptyStateDescription')"
+                >
+                    <template
+                        v-if="acl.can('sms_gateway.creator')"
+                        #button
+                    >
+                        <mt-button
+                            variant="primary"
+                            size="default"
+                            @click="$router.push({ name: 'sw.settings.sms.gateway.create' })"
+                        >
+                            {{ $t('sw-settings-sms.general.buttonCreate') }}
+                        </mt-button>
+                    </template>
+                </mt-empty-state>
+                {% endblock %}
+            </template>
             {% endblock %}
-        </sw-card-view>
+        </mt-card>
+        {% endblock %}
+
+        {% block sw_settings_sms_gateway_list_extension %}
+        <sw-extension-component-section position-identifier="sw-settings-sms-gateway-list__after-content" />
+        {% endblock %}
 
         {% block sw_settings_sms_gateway_list_remove_modal %}
         <mt-modal-root
@@ -208,5 +206,5 @@
         {% endblock %}
     </template>
     {% endblock %}
-</sw-page>
+</sw-settings-sms-page>
 {% endblock %}

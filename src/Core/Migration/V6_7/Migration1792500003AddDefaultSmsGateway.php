@@ -7,7 +7,7 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
+use Shopwell\Core\System\Sms\Integration\Null\NullSmsProvider;
 
 /**
  * Seeds the gateway a shop sends over until an administrator configures a provider.
@@ -26,7 +26,7 @@ class Migration1792500003AddDefaultSmsGateway extends MigrationStep
     /**
      * The name the transport factory of the null gateway is registered with.
      */
-    final public const TECHNICAL_NAME = NullGatewayTransportFactory::TECHNICAL_NAME;
+    final public const TECHNICAL_NAME = NullSmsProvider::TECHNICAL_NAME;
 
     /**
      * The last value of the routing order - a gateway is picked earlier the lower its priority is.

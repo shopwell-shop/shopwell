@@ -13,11 +13,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Sms\Event\SmsTemplateAuditStatusChangedEvent;
-use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmission;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
+use Shopwell\Core\System\Sms\Provider\Audit\SmsProviderCapabilities;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateApprovalStatus;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateSubmission;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
@@ -35,8 +35,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * of the default language. There is no per language row and no language fallback in this round -
  * the language of the recipient never decides which template is used.
  *
- * The provider is never named here - the capabilities of the registered factory decide what happens,
- * and which fields the submission needs is asked from the factory as well.
+ * The provider is never named here - the capabilities of the registered provider decide what happens,
+ * and which fields the submission needs is asked from the provider as well.
  *
  * Every write path first resolves the row through SmsTemplateMappingLocator, so a combination that
  * already exists is reused instead of duplicated - the unique key of the table cannot express that,
@@ -82,7 +82,7 @@ final class SmsTemplateAuditService
      * @param EntityRepository<SmsTemplateCollection> $templateRepository
      */
     public function __construct(
-        private readonly SmsGatewayAuditCapabilities $capabilities,
+        private readonly SmsProviderCapabilities $capabilities,
         private readonly EntityRepository $mappingRepository,
         private readonly EntityRepository $gatewayRepository,
         private readonly EntityRepository $templateRepository,
@@ -107,7 +107,7 @@ final class SmsTemplateAuditService
     public function submit(Context $context, string $mappingId, array $fieldValues): SmsTemplateMappingEntity
     {
         $mapping = $this->loadMapping($context, $mappingId);
-        $factory = $this->capabilities->submitter($mapping->technicalName);
+        $provider = $this->capabilities->submitter($mapping->technicalName);
 
         $gatewayId = $mapping->gatewayId;
 
@@ -125,7 +125,7 @@ final class SmsTemplateAuditService
             throw SmsException::templateContentMissing($template->technicalName);
         }
 
-        $violations = $this->validateFieldValues($factory->getTemplateSubmissionFieldDefinitions(), $fieldValues);
+        $violations = $this->validateFieldValues($provider->getTemplateSubmissionFieldDefinitions(), $fieldValues);
 
         if ($violations !== []) {
             throw SmsException::templateSubmissionInvalid($template->technicalName, $mapping->technicalName, $violations);
@@ -137,7 +137,7 @@ final class SmsTemplateAuditService
             return $mapping;
         }
 
-        $receipt = $factory->submitTemplate(
+        $receipt = $provider->submitTemplate(
             $gateway->credentials ?? [],
             $gateway->options ?? [],
             new TemplateSubmission(
@@ -196,7 +196,7 @@ final class SmsTemplateAuditService
     public function refresh(Context $context, string $mappingId): SmsTemplateMappingEntity
     {
         $mapping = $this->loadMapping($context, $mappingId);
-        $factory = $this->capabilities->reader($mapping->technicalName);
+        $provider = $this->capabilities->reader($mapping->technicalName);
 
         $gatewayId = $mapping->gatewayId;
 
@@ -213,7 +213,7 @@ final class SmsTemplateAuditService
 
         $gateway = $this->loadGateway($context, $mapping, $gatewayId);
 
-        $reading = $factory->readTemplateApprovalStatus(
+        $reading = $provider->readTemplateApprovalStatus(
             $gateway->credentials ?? [],
             $gateway->options ?? [],
             $templateCode,

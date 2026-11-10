@@ -1,6 +1,7 @@
 /**
  * @sw-package framework
  */
+import type { SmsGatewayProvider } from '../../service/sms-gateway-provider.service';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-settings-sms-gateway-list.html.twig';
 
@@ -16,12 +17,13 @@ export default Shopwell.Component.wrapComponentConfig({
 
     template,
 
-    inject: ['repositoryFactory', 'acl'],
+    inject: ['repositoryFactory', 'acl', 'smsGatewayProviderService'],
 
     mixins: [Mixin.getByName('notification')],
 
     data(): {
         gateways: EntityCollection<'sms_gateway'> | null;
+        providers: SmsGatewayProvider[];
         isLoading: boolean;
         page: number;
         limit: number;
@@ -35,6 +37,7 @@ export default Shopwell.Component.wrapComponentConfig({
     } {
         return {
             gateways: null,
+            providers: [],
             isLoading: true,
             page: 1,
             limit: 25,
@@ -91,6 +94,7 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     created() {
+        void this.loadProviders();
         void this.getList();
     },
 
@@ -99,8 +103,14 @@ export default Shopwell.Component.wrapComponentConfig({
          * A provider is code and ships its own name as a snippet of the platform, a provider an
          * extension added may ship none - then its technical name is the honest answer.
          */
+        async loadProviders(): Promise<void> {
+            this.providers = await this.smsGatewayProviderService.list();
+        },
+
         providerLabel(technicalName: string): string {
-            const snippet = `sms.gateway.${technicalName}`;
+            const snippet =
+                this.providers.find((provider) => provider.technicalName === technicalName)?.labelSnippet ??
+                `sms.gateway.${technicalName}`;
 
             return this.$te(snippet) ? this.$t(snippet) : technicalName;
         },

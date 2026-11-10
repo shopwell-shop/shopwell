@@ -9,19 +9,18 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 use Shopwell\Core\System\Sms\Message\SendLowPrioritySmsMessage;
 use Shopwell\Core\System\Sms\Message\SendSmsMessage;
+use Shopwell\Core\System\Sms\Provider\AbstractSmsProvider;
+use Shopwell\Core\System\Sms\Provider\SmsProviderRegistry;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolution;
+use Shopwell\Core\System\Sms\Routing\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\Service\SmsSender;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
-use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
-use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateRenderer;
 use Shopwell\Core\System\Sms\Template\SmsTemplateResolver;
 use Shopwell\Core\System\Sms\Transport\SmsTransportLoader;
@@ -204,6 +203,7 @@ class SmsSenderTest extends TestCase
         if ($gatewayResolver === null) {
             $gatewayResolver = static::createStub(SmsGatewayResolverInterface::class);
             $gatewayResolver->method('resolveGatewayIds')->willReturn($resolvedGatewayIds);
+            $gatewayResolver->method('resolve')->willReturn(new SmsGatewayResolution($resolvedGatewayIds, []));
         }
 
         $transportLoader = $this->createMock(SmsTransportLoader::class);
@@ -224,7 +224,7 @@ class SmsSenderTest extends TestCase
 
         $factories = [];
         foreach ($gateways as $gateway) {
-            $factory = static::createStub(SmsGatewayTransportFactoryInterface::class);
+            $factory = static::createStub(AbstractSmsProvider::class);
             $factory->method('getTechnicalName')->willReturn($gateway->technicalName);
             $factory->method('getSupportedRegions')->willReturn(['GLOBAL']);
             $factory->method('supportsTemplateMode')->willReturn(false);
@@ -236,11 +236,8 @@ class SmsSenderTest extends TestCase
 
         $templateResolver = new SmsTemplateResolver(
             StaticEntityRepository::of(SmsTemplateCollection::class, [new SmsTemplateCollection($templates)]),
-            new SmsTemplateMappingLocator(
-                StaticEntityRepository::of(SmsTemplateMappingCollection::class, [new SmsTemplateMappingCollection()])
-            ),
             StaticEntityRepository::of(SmsGatewayCollection::class, [new SmsGatewayCollection($gateways)]),
-            new SmsGatewayRegistry($factories),
+            new SmsProviderRegistry($factories),
             $gatewayResolver,
             new SmsParamValidator(),
             new SmsTemplateRenderer(),

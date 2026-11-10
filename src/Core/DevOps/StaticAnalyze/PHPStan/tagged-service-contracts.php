@@ -71,7 +71,7 @@ use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\Abs
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Routing\PaymentRoutingPolicy;
 use Shopwell\Core\System\SalesChannel\Capability\AbstractSalesChannelTypeCapabilities;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
+use Shopwell\Core\System\Sms\Provider\AbstractSmsProvider;
 use Shopwell\Core\System\Sms\Util\CountryDialCodeProviderInterface;
 use Shopwell\Core\System\Snippet\Filter\SnippetFilterInterface;
 use Shopwell\Core\System\Tax\TaxRuleType\TaxRuleTypeFilterInterface;
@@ -157,7 +157,7 @@ return [
             'shopwell.sitemap.config_handler' => ConfigHandlerInterface::class,
             'shopwell.sitemap_url_provider' => AbstractUrlProvider::class,
             'shopwell.sms.country_dial_code_provider' => CountryDialCodeProviderInterface::class,
-            'shopwell.sms.gateway' => SmsGatewayTransportFactoryInterface::class,
+            'shopwell.sms.provider' => AbstractSmsProvider::class,
             'shopwell.snippet.filter' => SnippetFilterInterface::class,
             'shopwell.storefront.captcha' => AbstractCaptcha::class,
             'shopwell.sync.fk_resolver' => AbstractFkResolver::class,

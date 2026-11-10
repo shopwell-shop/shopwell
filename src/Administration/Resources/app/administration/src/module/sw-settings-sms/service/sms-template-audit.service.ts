@@ -1,7 +1,10 @@
 /**
  * @sw-package framework
  */
-import type { AxiosError, AxiosInstance } from 'axios';
+import type { HttpClient } from 'src/core/factory/http-client.types';
+import type { LoginService } from 'src/core/service/login.service';
+import ApiService from 'src/core/service/api.service';
+import type { AxiosError } from 'axios';
 
 /**
  * The one answer shape the three steps of the audit share.
@@ -32,10 +35,6 @@ const NO_ANSWER: SmsTemplateAuditAnswer = {
     errorMessage: null,
 };
 
-interface LoginService {
-    getToken(): string | null;
-}
-
 /**
  * The three steps of the audit loop of one mapping row: report the template at the provider, read
  * its state back, and record a state an operator read at the console.
@@ -46,11 +45,10 @@ interface LoginService {
  *
  * @private
  */
-export default class SmsTemplateAuditService {
-    constructor(
-        private readonly httpClient: AxiosInstance,
-        private readonly loginService: LoginService,
-    ) {}
+export default class SmsTemplateAuditService extends ApiService {
+    constructor(httpClient: HttpClient, loginService: LoginService) {
+        super(httpClient, loginService, '_action/sms-template-audit', 'application/json');
+    }
 
     /**
      * Reports the template of the row at the provider account it points to.
@@ -91,7 +89,7 @@ export default class SmsTemplateAuditService {
     private async post(url: string, body: Record<string, unknown> | null): Promise<SmsTemplateAuditAnswer> {
         try {
             const response = await this.httpClient.post<Partial<SmsTemplateAuditAnswer>>(url, body, {
-                headers: this.getHeaders(),
+                headers: this.getBasicHeaders(),
             });
 
             return this.normalize(response.data);
@@ -116,16 +114,6 @@ export default class SmsTemplateAuditService {
             templateCode: typeof answer.templateCode === 'string' ? answer.templateCode : null,
             errorCode: typeof answer.errorCode === 'string' ? answer.errorCode : null,
             errorMessage: typeof answer.errorMessage === 'string' ? answer.errorMessage : null,
-        };
-    }
-
-    private getHeaders(): Record<string, string> {
-        const token = this.loginService.getToken();
-
-        return {
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
         };
     }
 }

@@ -58,6 +58,7 @@ async function createWrapper({
     gateways = [],
     providerList = providers,
     language = defaultLanguage,
+    can = () => true,
 } = {}) {
     const templateRepository = {
         // a row is created with the id it will be stored under, the same way the entity factory does
@@ -107,13 +108,14 @@ async function createWrapper({
                     },
                 },
                 acl: {
-                    can: () => true,
+                    can,
                 },
                 smsGatewayProviderService: {
                     list: jest.fn(() => Promise.resolve(providerList)),
                 },
             },
             stubs: {
+                'sw-settings-sms-page': await wrapTestComponent('sw-settings-sms-page'),
                 'sw-page': {
                     template: `
                         <div>
@@ -137,6 +139,13 @@ async function createWrapper({
                     template: `<select :value="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.value)"><option v-for="option in options" :value="option.value">{{ option.label }}</option></select>`,
                 },
                 'sw-settings-sms-template-mapping-grid': {
+                    name: 'sw-settings-sms-template-mapping-grid',
+                    props: [
+                        'template',
+                        'providers',
+                        'gateways',
+                        'disabled',
+                    ],
                     template: `<button class="reload-mapping" @click="$emit('reload')">Reload</button>`,
                 },
                 'sw-data-grid': {
@@ -200,6 +209,17 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
         if (wrapper) {
             wrapper.unmount();
         }
+    });
+
+    it('should load templates for roles without gateway account access', async () => {
+        let gatewayRepository;
+        ({ wrapper, gatewayRepository } = await createWrapper({
+            templateId: 'template-1',
+            storedTemplate: storedTemplateWithMappings([]),
+            can: (privilege) => privilege.startsWith('sms_template.'),
+        }));
+        expect(gatewayRepository.search).not.toHaveBeenCalled();
+        expect(wrapper.find('.sw-settings-sms-template-detail__technical-name').exists()).toBe(true);
     });
 
     it('should start a new template as a verification code', async () => {
@@ -325,72 +345,25 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
         expect(templateRepository.search).not.toHaveBeenCalled();
     });
 
-    it('should build the ledger from the mappings of the template', async () => {
+    it('should present mappings and audit status in one editable grid', async () => {
+        const mappings = [
+            { id: 'mapping-1', technicalName: 'reports-itself', auditStatus: 'approved', templateCode: 'SMS_1' },
+            { id: 'mapping-2', technicalName: 'free-text', auditStatus: 'pending', templateCode: null },
+        ];
         ({ wrapper } = await createWrapper({
             templateId: 'template-1',
-            storedTemplate: storedTemplateWithMappings([
-                {
-                    id: 'mapping-1',
-                    templateId: 'template-1',
-                    technicalName: 'reports-itself',
-                    gatewayId: 'gateway-1',
-                    templateCode: 'SMS_1',
-                    auditStatus: 'approved',
-                    customFields: { sms_last_synced_at: '2026-10-19 10:00:00.000' },
-                },
-                {
-                    id: 'mapping-2',
-                    templateId: 'template-1',
-                    technicalName: 'free-text',
-                    gatewayId: null,
-                    templateCode: null,
-                    auditStatus: 'pending',
-                    customFields: null,
-                },
-            ]),
+            storedTemplate: storedTemplateWithMappings(mappings),
         }));
 
-        expect(wrapper.getComponent({ name: 'sw-data-grid' }).props('dataSource')).toEqual([
-            {
-                mappingId: 'mapping-1',
-                technicalName: 'reports-itself',
-                providerLabel: 'sms.gateway.reportsItself',
-                templateCode: 'SMS_1',
-                auditStatus: 'approved',
-                auditStatusLabel: 'sms.approval.status.approved',
-                lastSyncedAt: '2026-10-19 10:00:00.000',
-            },
-            {
-                mappingId: 'mapping-2',
-                technicalName: 'free-text',
-                providerLabel: 'sms.gateway.freeText',
-                templateCode: null,
-                auditStatus: 'pending',
-                auditStatusLabel: 'sms.approval.status.pending',
-                lastSyncedAt: null,
-            },
-        ]);
+        const grid = wrapper.getComponent({ name: 'sw-settings-sms-template-mapping-grid' });
+        expect(Array.from(grid.props('template').mappings)).toEqual(mappings);
+        expect(grid.props('providers')).toEqual(providers);
+        expect(wrapper.findComponent({ name: 'sw-data-grid' }).exists()).toBe(false);
     });
 
-    it('should keep the language of a message out of the ledger', async () => {
-        ({ wrapper } = await createWrapper({
-            templateId: 'template-1',
-            storedTemplate: storedTemplateWithMappings([
-                { id: 'mapping-1', technicalName: 'reports-itself', auditStatus: 'pending' },
-            ]),
-        }));
-
-        expect(
-            wrapper
-                .getComponent({ name: 'sw-data-grid' })
-                .props('columns')
-                .map((column) => column.property),
-        ).toEqual([
-            'providerLabel',
-            'templateCode',
-            'auditStatusLabel',
-            'lastSyncedAt',
-        ]);
+    it('should wait until the template is saved before warning about missing mappings', async () => {
+        ({ wrapper } = await createWrapper());
+        expect(wrapper.find('.sw-settings-sms-template-detail__audit-missing-provider').exists()).toBe(false);
     });
 
     it('should point out the providers that require approval but are not mapped at all', async () => {

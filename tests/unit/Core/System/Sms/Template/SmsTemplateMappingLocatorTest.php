@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
+use Shopwell\Core\System\Sms\Provider\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;

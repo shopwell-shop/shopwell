@@ -1,17 +1,19 @@
 /**
  * @sw-package framework
  */
-import type { AxiosInstance } from 'axios';
+import type { HttpClient } from 'src/core/factory/http-client.types';
+import type { LoginService } from 'src/core/service/login.service';
+import ApiService from 'src/core/service/api.service';
 
 /**
  * @private
  */
-export type SmsCredentialType = 'string' | 'secret' | 'json' | 'bool';
+export type SmsCredentialType = 'string' | 'secret' | 'json' | 'bool' | 'int' | 'select';
 
 /**
- * One field a provider needs to be usable, as the gateway factory declares it on the server.
+ * One field a provider needs to be usable, as the provider declares it on the server.
  *
- * The type is the vocabulary of the factory, not one of the administration: `secret` says the value
+ * The type is the vocabulary of the provider, not one of the administration: `secret` says the value
  * is rendered as a password input, `json` that it holds a structure.
  *
  * @private
@@ -21,6 +23,9 @@ export interface SmsCredentialDefinition {
     type: SmsCredentialType;
     required: boolean;
     labelSnippet: string;
+    default?: string | number | boolean;
+    helpSnippet?: string;
+    options?: Array<{ value: string | number; labelSnippet: string }>;
 }
 
 /**
@@ -48,7 +53,7 @@ export interface SmsSubmissionFieldOption {
 
 /**
  * One field of the form a provider asks for before it takes a template. The shape is the one the
- * gateway factory declares on the server, so a provider an extension adds brings its own form.
+ * provider declares on the server, so a provider an extension adds brings its own form.
  *
  * @private
  */
@@ -100,6 +105,7 @@ export interface SmsGatewayProvider {
     supportedRegions: string[];
     supportsTemplateMode: boolean;
     credentialDefinitions: SmsCredentialDefinition[];
+    optionDefinitions: SmsCredentialDefinition[];
     audit: SmsGatewayAudit;
 }
 
@@ -115,11 +121,12 @@ export interface SmsGatewayProviderPayload {
 }
 
 /**
- * A provider of a payload that predates the audit block, or one an extension answered without it.
+ * Provider metadata before optional fields are normalized.
  *
  * @private
  */
-type RawProvider = Omit<SmsGatewayProvider, 'audit'> & {
+type RawProvider = Omit<SmsGatewayProvider, 'audit' | 'optionDefinitions'> & {
+    optionDefinitions?: SmsCredentialDefinition[];
     audit?: Partial<SmsGatewayAudit> | null;
 };
 
@@ -129,10 +136,6 @@ type RawProvider = Omit<SmsGatewayProvider, 'audit'> & {
 interface RawPayload {
     providers?: RawProvider[] | null;
     approvalStatuses?: SmsApprovalStatus[] | null;
-}
-
-interface LoginService {
-    getToken(): string | null;
 }
 
 /**
@@ -158,11 +161,10 @@ const NO_AUDIT: SmsGatewayAudit = {
  *
  * @private
  */
-export default class SmsGatewayProviderService {
-    constructor(
-        private readonly httpClient: AxiosInstance,
-        private readonly loginService: LoginService,
-    ) {}
+export default class SmsGatewayProviderService extends ApiService {
+    constructor(httpClient: HttpClient, loginService: LoginService) {
+        super(httpClient, loginService, '_action/sms/gateway-providers', 'application/json');
+    }
 
     async list(): Promise<SmsGatewayProvider[]> {
         const payload = await this.fetch();
@@ -190,7 +192,7 @@ export default class SmsGatewayProviderService {
 
     private async fetch(): Promise<SmsGatewayProviderPayload> {
         const response = await this.httpClient.get<RawPayload>('/_action/sms/gateway-providers', {
-            headers: this.getHeaders(),
+            headers: this.getBasicHeaders(),
         });
 
         return {
@@ -206,6 +208,7 @@ export default class SmsGatewayProviderService {
             supportedRegions: Array.isArray(provider.supportedRegions) ? provider.supportedRegions : [],
             supportsTemplateMode: provider.supportsTemplateMode,
             credentialDefinitions: Array.isArray(provider.credentialDefinitions) ? provider.credentialDefinitions : [],
+            optionDefinitions: Array.isArray(provider.optionDefinitions) ? provider.optionDefinitions : [],
             audit: SmsGatewayProviderService.normalizeAudit(provider.audit),
         };
     }
@@ -221,16 +224,6 @@ export default class SmsGatewayProviderService {
             canSubmit: audit.canSubmit === true,
             canReadStatus: audit.canReadStatus === true,
             submissionFields: Array.isArray(audit.submissionFields) ? audit.submissionFields : [],
-        };
-    }
-
-    private getHeaders(): Record<string, string> {
-        const token = this.loginService.getToken();
-
-        return {
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
         };
     }
 }
