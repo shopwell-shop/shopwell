@@ -1,7 +1,6 @@
 /**
  * @sw-package framework
  */
-import { defineComponent } from 'vue';
 import type { PropType } from 'vue';
 import template from './sw-settings-organization-unit-tree-item.html.twig';
 import './sw-settings-organization-unit-tree-item.scss';
@@ -17,7 +16,7 @@ type OrganizationUnitEntity = EntitySchema.Entity<'organization_unit'>;
  * detail page with this unit as parent.
  */
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: ['acl'],

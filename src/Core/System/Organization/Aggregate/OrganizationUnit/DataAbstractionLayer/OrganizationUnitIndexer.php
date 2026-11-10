@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\DataAbstr
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IterableQuery;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer;
@@ -12,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitCollection;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
 
@@ -73,6 +75,29 @@ class OrganizationUnitIndexer extends EntityIndexer
 
         if ($ids === []) {
             return null;
+        }
+
+        $parentIds = [];
+        foreach ($unitEvent->getWriteResults() as $result) {
+            $payload = $result->getPayload();
+            if ($result->getOperation() === EntityWriteResult::OPERATION_UPDATE && !\array_key_exists('parentId', $payload)) {
+                continue;
+            }
+
+            $oldParentId = $result->getExistence()?->getState()['parent_id'] ?? null;
+            if (\is_string($oldParentId)) {
+                $parentIds[] = Uuid::fromBytesToHex($oldParentId);
+            }
+            if (isset($payload['parentId']) && \is_string($payload['parentId'])) {
+                $parentIds[] = $payload['parentId'];
+            }
+        }
+        if ($parentIds !== []) {
+            $this->childCountUpdater->update(
+                OrganizationUnitDefinition::ENTITY_NAME,
+                array_values(array_unique($parentIds)),
+                $event->getContext(),
+            );
         }
 
         return new EntityIndexingMessage(array_values(array_unique($ids)), null, $event->getContext());

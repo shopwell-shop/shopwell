@@ -1,6 +1,7 @@
 /**
  * @sw-package framework
  */
+import MtSwitch from '@shopwell-ag/meteor-component-library/dist/esm/MtSwitch';
 import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
@@ -37,17 +38,19 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
                     repositoryFactory: {
                         create: () => ({
                             search: () =>
-                                Promise.resolve([
-                                    {
-                                        id: 'org-id',
-                                        name: 'Shopwell HQ',
-                                        active: true,
-                                        units: [
-                                            { id: 'unit-1', parentId: null },
-                                            { id: 'unit-2', parentId: 'unit-1' },
+                                Promise.resolve(
+                                    Object.assign(
+                                        [
+                                            { id: 'org-id', name: 'Shopwell HQ', active: true },
                                         ],
-                                    },
-                                ]),
+                                        {
+                                            total: 1,
+                                            aggregations: {
+                                                unitCounts: { buckets: [{ key: 'org-id', unitCount: { count: 2 } }] },
+                                            },
+                                        },
+                                    ),
+                                ),
                             save: saveSpy,
                             delete: deleteSpy,
                             create: () => ({
@@ -88,18 +91,21 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
                         emits: ['update:modelValue'],
                         template: `<input type="number" :value="modelValue" @input="$emit('update:modelValue', Number($event.target.value))" />`,
                     },
-                    'mt-switch': {
-                        props: ['modelValue'],
-                        emits: ['update:modelValue'],
-                        template: `<input type="checkbox" :checked="modelValue" @change="$emit('update:modelValue', $event.target.checked)" />`,
-                    },
+                    'mt-switch': MtSwitch,
                     'sw-ignore-class': true,
                     'sw-entity-listing': {
-                        props: ['items', 'dataSource'],
+                        name: 'sw-entity-listing',
+                        props: [
+                            'items',
+                            'dataSource',
+                            'allowEdit',
+                            'allowInlineEdit',
+                            'allowDelete',
+                        ],
                         template: `
                     <div>
                         <div v-for="item in (dataSource || items)" :key="item.id" :data-row="item.id"><span>{{ item.name }}</span><span class="unit-count"><slot name="column-units" :item="item" /></span>
-                            <slot name="actions" v-bind="{ item }"></slot>
+                            <slot name="column-active" :item="item" /><slot name="actions" v-bind="{ item }"></slot>
                             <slot name="action-modals" v-bind="{ item }"></slot></div>
                     </div>`,
                     },
@@ -114,6 +120,7 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
                     'sw-label': true,
                     'sw-ai-copilot-badge': true,
                     'sw-context-button': true,
+                    teleport: true,
                     'sw-modal': {
                         template: `
                             <div class="sw-modal">
@@ -133,6 +140,27 @@ describe('module/sw-settings-organization/page/sw-settings-organization-list', (
     beforeEach(async () => {
         wrapper = await createWrapper();
         await flushPromises();
+    });
+
+    afterEach(() => wrapper.unmount());
+
+    it('passes explicit false permissions to the entity listing', () => {
+        const listing = wrapper.findComponent({ name: 'sw-entity-listing' });
+
+        expect(listing.props('allowEdit')).toBe(false);
+        expect(listing.props('allowInlineEdit')).toBe(false);
+        expect(listing.props('allowDelete')).toBe(false);
+    });
+
+    it('persists disabling an organization with the real Meteor switch', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.editor']);
+        await flushPromises();
+
+        await wrapper.get('[data-row="org-id"] .mt-switch input').setValue(false);
+        await flushPromises();
+
+        expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
     });
 
     it('should not allow creating an organization without permission', () => {
@@ -155,32 +183,44 @@ describe('module/sw-settings-organization/page/sw-settings-organization-list', (
         expect(wrapper.get('.unit-count').text()).toBe('2');
     });
 
-    it('should create an organization and route to its detail page', async () => {
+    it('opens the create page without asking for a name or writing an entity', async () => {
+        wrapper.unmount();
         wrapper = await createWrapper(['organization.creator']);
         await flushPromises();
 
         await wrapper.get('.sw-settings-organization-list__add-organization').trigger('click');
-        await wrapper.get('.sw-settings-organization-list__create-name').setValue('Shopwell HQ');
-        await wrapper.findAll('.sw-settings-organization-list__create-modal button')[1].trigger('click');
-        await flushPromises();
 
-        expect(saveSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                name: 'Shopwell HQ',
-            }),
-        );
-        expect(routerPushSpy).toHaveBeenCalled();
+        expect(routerPushSpy).toHaveBeenCalledWith({ name: 'sw.settings.organization.create' });
+        expect(saveSpy).not.toHaveBeenCalled();
+        expect(wrapper.find('.sw-settings-organization-list__create-modal').exists()).toBe(false);
     });
 
-    it('should reject an organization without a name', async () => {
-        wrapper = await createWrapper(['organization.creator']);
+    it('keeps deletion pending until the request finishes and allows retry after failure', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.deleter']);
+        await flushPromises();
+        let rejectDelete!: (error: Error) => void;
+        deleteSpy.mockImplementationOnce(
+            () =>
+                new Promise<void>((_resolve, reject) => {
+                    rejectDelete = reject;
+                }),
+        );
+        await wrapper.get('.sw-entity-listing__context-menu-delete').trigger('click');
+        await wrapper.findAll('.sw-modal button')[1].trigger('click');
         await flushPromises();
 
-        await wrapper.get('.sw-settings-organization-list__add-organization').trigger('click');
-        await wrapper.findAll('.sw-settings-organization-list__create-modal button')[1].trigger('click');
+        expect(wrapper.find('.sw-modal').exists()).toBe(true);
+        expect(wrapper.findAll('.sw-modal button').every((button) => button.attributes('disabled') !== undefined)).toBe(
+            true,
+        );
+        rejectDelete(new Error('Delete failed'));
         await flushPromises();
-
-        expect(saveSpy).not.toHaveBeenCalled();
+        expect(wrapper.find('.sw-modal').exists()).toBe(true);
+        await wrapper.findAll('.sw-modal button')[1].trigger('click');
+        await flushPromises();
+        expect(deleteSpy).toHaveBeenCalledTimes(2);
+        expect(wrapper.find('.sw-modal').exists()).toBe(false);
     });
 
     it('should confirm the delete of an organization', async () => {

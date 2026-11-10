@@ -3,7 +3,8 @@
     "general": {
       "mainMenuItemGeneral": "组织机构",
       "description": "管理组织机构及其单元。",
-      "placeholderSearchBar": "搜索组织机构..."
+      "placeholderSearchBar": "搜索组织机构...",
+      "treeHeadline": "组织单元"
     },
     "list": {
       "textHeadline": "组织机构",
@@ -39,7 +40,7 @@
       "buttonDeleteUnit": "删除单元",
       "modalTitleCreateChild": "在「{name}」下添加下级单元",
       "modalTitleCreateRoot": "添加单元",
-      "placeholderSearchTree": "搜索单元...",
+      "placeholderSearchTree": "搜索机构或单元...",
       "messageEmptyTree": "暂无组织单元",
       "messageNoUnitSelected": "请选择单元",
       "messageNoUnitSelectedDescription": "在左侧树中选择一个单元进行编辑。",
@@ -48,7 +49,15 @@
       "messageUnitDeleteError": "单元删除失败。",
       "messageLoadError": "组织机构加载失败。",
       "textDeleteUnitConfirm": "确定删除单元「{name}」吗？其下级单元将一并删除。",
-      "errorCircularParent": "单元不能移动到自身或其下级单元之下。"
+      "errorCircularParent": "单元不能移动到自身或其下级单元之下。",
+      "parentRoot": "无上级（顶级单元）",
+      "labelUnitSettings": "单元信息",
+      "labelOrganizationSettings": "机构信息",
+      "buttonRetry": "重新加载",
+      "titleCreateUnit": "新建单元",
+      "messageSelectNode": "选择机构或单元",
+      "messageWorkspaceDescription": "在左侧管理多个机构及其下属单元。",
+      "messageDeleteError": "删除失败，请重试。"
     }
   }
 }

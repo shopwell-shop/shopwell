@@ -14,8 +14,10 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEve
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexingMessage;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\DataAbstractionLayer\OrganizationUnitIndexer;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
 
@@ -121,6 +123,34 @@ class OrganizationUnitIndexerTest extends TestCase
         static::assertInstanceOf(EntityIndexingMessage::class, $message);
         static::assertSame(['unit-1', 'unit-2'], $message->getData());
         static::assertSame($event->getContext(), $message->getContext());
+    }
+
+    public function testMovingAUnitRecountsBothParents(): void
+    {
+        $oldParentId = Uuid::randomHex();
+        $newParentId = Uuid::randomHex();
+        $unitId = Uuid::randomHex();
+        $context = Context::createDefaultContext();
+        $event = EntityWrittenContainerEvent::createWithWrittenEvents(
+            [OrganizationUnitDefinition::ENTITY_NAME => [
+                new EntityWriteResult(
+                    $unitId,
+                    ['parentId' => $newParentId],
+                    OrganizationUnitDefinition::ENTITY_NAME,
+                    EntityWriteResult::OPERATION_UPDATE,
+                    new EntityExistence(OrganizationUnitDefinition::ENTITY_NAME, ['id' => $unitId], true, true, true, [
+                        'parent_id' => Uuid::fromHexToBytes($oldParentId),
+                    ]),
+                ),
+            ]],
+            $context,
+            [],
+        );
+        $updater = $this->createMock(ChildCountUpdater::class);
+        $updater->expects($this->once())->method('update')
+            ->with(OrganizationUnitDefinition::ENTITY_NAME, [$oldParentId, $newParentId], $context);
+
+        $this->indexer(childCountUpdater: $updater)->update($event);
     }
 
     public function testHandleCleansTheIdsAndExpandsAPartialIndexRecursively(): void

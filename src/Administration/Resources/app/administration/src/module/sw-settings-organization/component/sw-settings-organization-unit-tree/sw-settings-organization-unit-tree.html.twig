@@ -1,56 +1,87 @@
 {% block sw_settings_organization_unit_tree %}
 <div class="sw-settings-organization-unit-tree">
-    {% block sw_settings_organization_unit_tree_search %}
-    <div class="sw-settings-organization-unit-tree__search">
-        <mt-text-field
-            :model-value="searchTerm ?? ''"
-            name="sw-field--organization-unit-tree-search"
-            :placeholder="$t('sw-settings-organization.detail.placeholderSearchTree')"
-            size="small"
-            @update:model-value="onSearch"
-        >
-            <template #prefix>
-                <mt-icon name="regular-search" />
-            </template>
-        </mt-text-field>
-    </div>
-    {% endblock %}
-
     {% block sw_settings_organization_unit_tree_content %}
-    <div
-        class="sw-settings-organization-unit-tree__content"
-        role="tree"
-        :aria-label="$t('sw-settings-organization.detail.labelUnits')"
+    <sw-skeleton
+        v-if="isLoading"
+        variant="tree-item"
+    />
+    <sw-tree
+        v-else-if="filteredNodes.length"
+        ref="tree"
+        :items="filteredNodes"
+        :active-tree-item-id="activeNodeId"
+        :sortable="false"
+        :searchable="false"
+        :allow-create-categories="false"
+        :allow-delete-categories="false"
+        @vue:mounted="openSelection"
+        @get-tree-items="onLoadNode"
     >
-        {% block sw_settings_organization_unit_tree_items %}
-        <template v-if="rootUnits.length > 0">
-            <sw-settings-organization-unit-tree-item
-                v-for="unit in rootUnits"
-                :key="unit.id"
-                :unit="unit"
-                :unit-tree="unitById"
-                :filtered-units="filteredUnits"
-                :selected-unit-id="selectedUnitId"
-                :is-searching="isSearching"
-                :expanded-ids="expandedIds"
-                @select-unit="onSelectUnit"
-                @add-child="onAddChild"
-                @toggle-expand="toggleExpand"
-            />
+        <template #headline>
+            <span></span>
         </template>
-
-        {% block sw_settings_organization_unit_tree_empty %}
-        <div
-            v-else-if="!isLoading"
-            class="sw-settings-organization-unit-tree__empty"
-        >
-            <p class="sw-settings-organization-unit-tree__empty-text">
-                {{ isSearching ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-settings-organization.detail.messageEmptyTree') }}
-            </p>
-        </div>
-        {% endblock %}
-        {% endblock %}
-    </div>
+        <template #items="{ treeItems }">
+            <sw-tree-item
+                v-for="item in treeItems"
+                :key="item.id"
+                :item="item"
+                :active="item.active"
+                :sortable="false"
+                :display-checkbox="false"
+                :allow-new-categories="false"
+                :allow-delete-categories="false"
+                :allow-duplicate="false"
+                :should-show-active-state="true"
+                :get-is-highlighted="isSelected"
+                :get-item-url="getItemUrl"
+                :on-change-route="onSelectNode"
+                :mark-inactive="true"
+            >
+                <template #grip>
+                    <div class="sw-tree-item__icon">
+                        <mt-icon
+                            name="regular-officebuilding"
+                            size="16px"
+                        />
+                    </div>
+                </template>
+                <template #actions="{ item: node }">
+                    <span>
+                        <sw-context-button
+                            v-if="canManage"
+                            :disabled="disabled || undefined"
+                        >
+                            <sw-context-menu-item
+                                v-if="acl.can('organization.creator')"
+                                :class="node.data.unit ? 'sw-settings-organization-unit-tree__add-child' : 'sw-settings-organization-unit-tree__add-unit'"
+                                :disabled="disabled || isNew(node)"
+                                @click="onAdd(node)"
+                            >
+                                {{ node.data.unit ? $t('sw-settings-organization.detail.buttonAddChildUnit') : $t('sw-settings-organization.detail.buttonAddUnit') }}
+                            </sw-context-menu-item>
+                            <sw-context-menu-item
+                                v-if="acl.can('organization.deleter')"
+                                class="sw-settings-organization-unit-tree__delete"
+                                variant="danger"
+                                :disabled="disabled || isNew(node)"
+                                @click="onDelete(node)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </sw-context-menu-item>
+                        </sw-context-button>
+                    </span>
+                </template>
+            </sw-tree-item>
+        </template>
+    </sw-tree>
+    {% block sw_settings_organization_unit_tree_empty %}
+    <mt-empty-state
+        v-else
+        class="sw-settings-organization-unit-tree__empty"
+        icon="regular-officebuilding"
+        :headline="searchTerm.trim() ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-settings-organization.list.messageEmpty')"
+    />
+    {% endblock %}
     {% endblock %}
 </div>
 {% endblock %}

@@ -1,172 +1,8 @@
 /**
  * @sw-package framework
  */
-import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
-
-type UnitRow = {
-    id: string;
-    parentId: string | null;
-    organizationId: string;
-    name: string;
-    active: boolean;
-    translated: { name: string };
-};
-
-let saveSpy: jest.Mock;
-let deleteSpy: jest.Mock;
-
-const units: UnitRow[] = [
-    {
-        id: 'unit-root',
-        parentId: null,
-        organizationId: 'org-id',
-        name: 'Headquarters',
-        active: true,
-        translated: { name: 'Headquarters' },
-    },
-    {
-        id: 'unit-child',
-        parentId: 'unit-root',
-        organizationId: 'org-id',
-        name: 'Engineering',
-        active: true,
-        translated: { name: 'Engineering' },
-    },
-    {
-        id: 'unit-leaf',
-        parentId: 'unit-child',
-        organizationId: 'org-id',
-        name: 'Frontend',
-        active: true,
-        translated: { name: 'Frontend' },
-    },
-];
-
-async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
-    saveSpy = jest.fn(() => Promise.resolve());
-    deleteSpy = jest.fn(() => Promise.resolve());
-    const rows = units.map((unit) => ({ ...unit }));
-    return shallowMount(
-        await wrapTestComponent('sw-settings-organization-detail', {
-            sync: true,
-        }),
-        {
-            props: {
-                organizationId: 'org-id',
-            },
-            global: {
-                renderStubDefaultSlot: true,
-                mocks: {
-                    $route: {
-                        meta: {
-                            $module: {
-                                icon: 'regular-officebuilding',
-                            },
-                        },
-                    },
-                },
-                provide: {
-                    repositoryFactory: {
-                        create: () => ({
-                            get: () =>
-                                Promise.resolve({
-                                    id: 'org-id',
-                                    name: 'Shopwell HQ',
-                                    active: true,
-                                }),
-                            search: () => Promise.resolve(rows),
-                            save: saveSpy,
-                            delete: deleteSpy,
-                            create: () => ({
-                                organizationId: null,
-                                parentId: null,
-                                name: null,
-                                active: true,
-                            }),
-                        }),
-                    },
-                    acl: {
-                        can: (key: string) => (key ? privileges.includes(key) : true),
-                    },
-                },
-                stubs: {
-                    'sw-page': {
-                        template: `
-                    <div class="sw-page">
-                        <slot name="smart-bar-header"></slot>
-                        <slot name="smart-bar-actions"></slot>
-                        <slot name="content"></slot>
-                    </div>
-                `,
-                    },
-                    'sw-card-view': { template: '<div><slot /></div>' },
-                    'mt-card': { template: '<section><slot name="grid"/><slot /></section>' },
-                    'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
-                    'mt-text-field': {
-                        props: ['modelValue', 'disabled'],
-                        emits: ['update:modelValue'],
-                        template: `<input :disabled="disabled" :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
-                    },
-                    'mt-number-field': {
-                        props: ['modelValue', 'disabled'],
-                        emits: ['update:modelValue'],
-                        template: `<input type="number" :disabled="disabled" :value="modelValue" @input="$emit('update:modelValue', Number($event.target.value))" />`,
-                    },
-                    'mt-switch': {
-                        props: ['modelValue', 'disabled'],
-                        emits: ['update:modelValue'],
-                        template: `<input type="checkbox" :disabled="disabled" :checked="modelValue" @change="$emit('update:modelValue', $event.target.checked)" />`,
-                    },
-                    'sw-container': {
-                        template: `
-                            <div class="sw-container">
-                                <slot></slot>
-                            </div>`,
-                    },
-                    'sw-ignore-class': true,
-                    'sw-settings-organization-unit-tree': {
-                        props: ['units', 'selectedUnitId'],
-                        emits: ['select-unit', 'add-child'],
-                        template: `
-                            <div class="sw-settings-organization-unit-tree">
-                                <template
-                                    v-for="unit in units"
-                                    :key="unit.id"
-                                >
-                                    <button
-                                        class="tree-unit"
-                                        @click="$emit('select-unit', unit)"
-                                    >{{ unit.name }}</button>
-                                    <button
-                                        class="tree-add-child"
-                                        @click="$emit('add-child', unit)"
-                                    >+</button>
-                                </template>
-                            </div>`,
-                    },
-                    'sw-search-bar': true,
-                    'mt-select': {
-                        props: ['modelValue', 'options', 'disabled'],
-                        emits: ['update:model-value'],
-                        template: `<select :value="modelValue" :disabled="disabled" @change="$emit('update:model-value', $event.target.value)"><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></select>`,
-                    },
-                    'sw-context-menu-item': true,
-                    'sw-loader': true,
-                    'sw-extension-component-section': true,
-                    'sw-skeleton': true,
-                    'sw-modal': {
-                        template: `
-                            <div class="sw-modal">
-                                <slot></slot>
-                                <slot name="modal-footer"></slot>
-                            </div>`,
-                    },
-                },
-            },
-        },
-    );
-}
+import { createWrapper, router, saveSpy, deleteSpy, searchSpy } from './sw-settings-organization-detail.spec/create-wrapper';
 
 describe('module/sw-settings-organization/page/sw-settings-organization-detail', () => {
     let wrapper: VueWrapper;
@@ -176,17 +12,72 @@ describe('module/sw-settings-organization/page/sw-settings-organization-detail',
         await flushPromises();
     });
 
+    afterEach(() => wrapper.unmount());
+
+    it.each(['/list', '/organization/another-org'])('keeps the draft and cancels navigation to %s', async (destination) => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.editor']);
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__organization-name').setValue('Unsaved organization');
+        const navigation = router.push(destination);
+        await flushPromises();
+        await wrapper.get('.keep-editing').trigger('click');
+        await navigation;
+
+        expect(router.currentRoute.value.path).toBe('/organization/org-id');
+        expect((wrapper.get('.sw-settings-organization-detail__organization-name').element as HTMLInputElement).value).toBe(
+            'Unsaved organization',
+        );
+    });
+
+    it('loads every page of an organization with more than 500 units', async () => {
+        searchSpy.mockReset();
+        for (let page = 0; page < 6; page += 1) {
+            searchSpy.mockResolvedValueOnce(
+                Array.from({ length: 100 }, (_, index) => ({
+                    id: `unit-${page * 100 + index}`,
+                    parentId: null,
+                    organizationId: 'large-org',
+                    name: `Department ${page * 100 + index}`,
+                    active: true,
+                })),
+            );
+        }
+        searchSpy.mockResolvedValueOnce([]);
+        await router.push('/organization/large-org');
+        await flushPromises();
+        expect(wrapper.findAll('.tree-unit[data-organization="large-org"]')).toHaveLength(600);
+        expect(searchSpy).toHaveBeenCalledTimes(7);
+    });
+
+    it('preserves a draft when changing the selected node', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.editor']);
+        await flushPromises();
+        await wrapper.findAll('.tree-unit')[0].trigger('click');
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__unit-name').setValue('Unsaved name');
+        await wrapper.findAll('.tree-unit')[1].trigger('click');
+        await flushPromises();
+        expect((wrapper.get('.sw-settings-organization-detail__unit-name').element as HTMLInputElement).value).toBe(
+            'Unsaved name',
+        );
+        expect(wrapper.findComponent({ name: 'sw-discard-changes-modal' }).exists()).toBe(true);
+        expect(saveSpy).not.toHaveBeenCalled();
+    });
+
     it('should load the organization and its units', () => {
         expect(wrapper.get('h2').text()).toContain('Shopwell HQ');
         expect(wrapper.findAll('.tree-unit')).toHaveLength(3);
     });
 
-    it('should show the empty state until a unit is selected', () => {
-        expect(wrapper.find('.mt-empty-state').exists()).toBe(true);
+    it('shows organization settings before selecting a unit', () => {
+        expect(wrapper.find('.sw-settings-organization-detail__organization-name').exists()).toBe(true);
     });
 
     it('should load the unit form when a unit is selected', async () => {
         await wrapper.findAll('.tree-unit')[0].trigger('click');
+        await flushPromises();
 
         expect((wrapper.get('.sw-settings-organization-detail__unit-name').element as HTMLInputElement).value).toBe(
             'Headquarters',
@@ -195,6 +86,7 @@ describe('module/sw-settings-organization/page/sw-settings-organization-detail',
 
     it('should exclude the unit and its descendants from the parent options (circular parent protection)', async () => {
         await wrapper.findAll('.tree-unit')[1].trigger('click');
+        await flushPromises();
 
         const optionIds = wrapper
             .findAll('.sw-settings-organization-detail__unit-parent option')
@@ -206,10 +98,12 @@ describe('module/sw-settings-organization/page/sw-settings-organization-detail',
     });
 
     it('prevents choosing a descendant parent before saving', async () => {
+        wrapper.unmount();
         wrapper = await createWrapper(['organization.editor']);
         await flushPromises();
 
         await wrapper.findAll('.tree-unit')[1].trigger('click');
+        await flushPromises();
 
         expect(wrapper.find('.sw-settings-organization-detail__unit-parent option[value="unit-leaf"]').exists()).toBe(false);
         expect((wrapper.get('.sw-settings-organization-detail__unit-parent').element as HTMLSelectElement).value).toBe(
@@ -218,13 +112,19 @@ describe('module/sw-settings-organization/page/sw-settings-organization-detail',
         expect(saveSpy).not.toHaveBeenCalled();
     });
 
-    it('should save unit edits immediately', async () => {
+    it('saves edits only after the save action', async () => {
+        wrapper.unmount();
         wrapper = await createWrapper(['organization.editor']);
         await flushPromises();
 
         await wrapper.findAll('.tree-unit')[0].trigger('click');
+        await flushPromises();
 
         await wrapper.get('.sw-settings-organization-detail__unit-name').setValue('HQ renamed');
+        await flushPromises();
+
+        expect(saveSpy).not.toHaveBeenCalled();
+        await wrapper.get('.sw-settings-organization-detail__save').trigger('click');
         await flushPromises();
 
         expect(saveSpy).toHaveBeenCalledWith(
@@ -234,35 +134,199 @@ describe('module/sw-settings-organization/page/sw-settings-organization-detail',
         );
     });
 
-    it('should create a child unit below the hovered parent', async () => {
-        wrapper = await createWrapper(['organization.creator', 'organization.editor']);
+    it('keeps a failed edit available for retry', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.editor']);
+        await flushPromises();
+        await wrapper.findAll('.tree-unit')[0].trigger('click');
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__unit-name').setValue('Retry name');
+        saveSpy.mockRejectedValueOnce(new Error('Save failed'));
+
+        await wrapper.get('.sw-settings-organization-detail__save').trigger('click');
         await flushPromises();
 
-        await wrapper.findAll('.tree-add-child')[0].trigger('click');
-        expect(wrapper.find('.sw-settings-organization-detail__create-unit-modal').exists()).toBe(true);
-        await wrapper.get('.sw-settings-organization-detail__create-unit-name').setValue('Support');
+        expect((wrapper.get('.sw-settings-organization-detail__unit-name').element as HTMLInputElement).value).toBe(
+            'Retry name',
+        );
+        expect(wrapper.get('.sw-settings-organization-detail__save').attributes('disabled')).toBeUndefined();
+    });
 
-        await wrapper.findAll('.sw-settings-organization-detail__create-unit-modal button')[1].trigger('click');
+    it('offers a root parent when moving a department', async () => {
+        await wrapper.findAll('.tree-unit')[1].trigger('click');
+        await flushPromises();
+
+        expect(wrapper.find('.sw-settings-organization-detail__unit-parent option[value=""]').exists()).toBe(true);
+    });
+
+    it('opens a blank department editor and saves its full form only on Save', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.creator', 'organization.editor']);
+        await flushPromises();
+        await wrapper.findAll('.tree-add-child')[0].trigger('click');
+        await flushPromises();
+
+        expect(wrapper.find('.sw-settings-organization-detail__create-unit-modal').exists()).toBe(false);
+        expect(wrapper.find('.sw-settings-organization-detail__unit-name').exists()).toBe(true);
+        expect((wrapper.get('.sw-settings-organization-detail__unit-parent').element as HTMLSelectElement).value).toBe(
+            'unit-root',
+        );
+        expect(saveSpy).not.toHaveBeenCalled();
+        await wrapper.get('.sw-settings-organization-detail__unit-name').setValue('Support');
+        await wrapper.get('.sw-settings-organization-detail__save').trigger('click');
         await flushPromises();
 
         expect(saveSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                organizationId: 'org-id',
-                parentId: 'unit-root',
-                name: 'Support',
-            }),
+            expect.objectContaining({ organizationId: 'org-id', parentId: 'unit-root', name: 'Support' }),
         );
-        expect(wrapper.find('.sw-settings-organization-detail__create-unit-modal').exists()).toBe(false);
+    });
+
+    it('cancels a new department without writing it and returns to its parent', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.creator', 'organization.editor']);
+        await flushPromises();
+        await wrapper.findAll('.tree-add-child')[0].trigger('click');
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__unit-name').setValue('Temporary department');
+        await wrapper.get('.sw-settings-organization-detail__cancel').trigger('click');
+        await flushPromises();
+
+        expect(saveSpy).not.toHaveBeenCalled();
+        expect(wrapper.findAll('.tree-unit')).toHaveLength(3);
+        expect((wrapper.get('.sw-settings-organization-detail__unit-name').element as HTMLInputElement).value).toBe(
+            'Headquarters',
+        );
+    });
+
+    it('opens the organization create form without requiring a name first', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.creator']);
+        await flushPromises();
+        await router.push('/create');
+        await flushPromises();
+
+        expect((wrapper.get('.sw-settings-organization-detail__organization-name').element as HTMLInputElement).value).toBe(
+            '',
+        );
+        expect(wrapper.get('h2').text()).toContain('sw-settings-organization.list.modalTitleCreate');
+        expect(saveSpy).not.toHaveBeenCalled();
+        await wrapper.get('.sw-settings-organization-detail__organization-name').setValue('New organization');
+        await wrapper.get('.sw-settings-organization-detail__save').trigger('click');
+        await flushPromises();
+
+        expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'New organization', active: true }));
+        expect(router.currentRoute.value.name).toBe('sw.settings.organization.detail');
+    });
+
+    it('cancels a new organization and returns to the list without saving', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.creator']);
+        await flushPromises();
+        await router.push('/create');
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__organization-name').setValue('Temporary organization');
+        await wrapper.get('.sw-settings-organization-detail__cancel').trigger('click');
+        await flushPromises();
+
+        expect(router.currentRoute.value.name).toBe('sw.settings.organization.index');
+        expect(saveSpy).not.toHaveBeenCalled();
+    });
+
+    it('keeps a failed new department available with its parent for retry', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.creator']);
+        await flushPromises();
+        await wrapper.findAll('.tree-add-child')[0].trigger('click');
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__unit-name').setValue('Support');
+        saveSpy.mockRejectedValueOnce(new Error('Save failed'));
+        await wrapper.get('.sw-settings-organization-detail__save').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.findAll('.tree-unit')).toHaveLength(4);
+        expect((wrapper.get('.sw-settings-organization-detail__unit-name').element as HTMLInputElement).value).toBe(
+            'Support',
+        );
+        expect((wrapper.get('.sw-settings-organization-detail__unit-parent').element as HTMLSelectElement).value).toBe(
+            'unit-root',
+        );
+        await wrapper.get('.sw-settings-organization-detail__save').trigger('click');
+        await flushPromises();
+        expect(saveSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not create children under an unsaved department', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.creator']);
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__add-root-unit').trigger('click');
+        await flushPromises();
+        await wrapper.findAll('.tree-add-child')[3].trigger('click');
+        await flushPromises();
+
+        expect(wrapper.find('.discard-modal').exists()).toBe(false);
+        expect(wrapper.findAll('.tree-unit')).toHaveLength(4);
+        expect(saveSpy).not.toHaveBeenCalled();
+    });
+
+    it('cancels edits using the entity repository and restores the tree name', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.editor']);
+        await flushPromises();
+        await wrapper.findAll('.tree-unit')[0].trigger('click');
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__unit-name').setValue('Discard this');
+        await wrapper.get('.sw-settings-organization-detail__cancel').trigger('click');
+        await wrapper.findAll('.tree-unit')[0].trigger('click');
+        await flushPromises();
+
+        expect((wrapper.get('.sw-settings-organization-detail__unit-name').element as HTMLInputElement).value).toBe(
+            'Headquarters',
+        );
+        expect(saveSpy).not.toHaveBeenCalled();
+    });
+
+    it('opens an unsaved root department with no parent and validates it on save', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.creator']);
+        await flushPromises();
+        await wrapper.get('.sw-settings-organization-detail__add-root-unit').trigger('click');
+        await flushPromises();
+        expect((wrapper.get('.sw-settings-organization-detail__unit-parent').element as HTMLSelectElement).value).toBe('');
+        await wrapper.get('.sw-settings-organization-detail__save').trigger('click');
+        await flushPromises();
+
+        expect(saveSpy).not.toHaveBeenCalled();
+        expect(wrapper.find('.sw-settings-organization-detail__unit-name').exists()).toBe(true);
+        expect(wrapper.find('.sw-settings-organization-detail__delete-unit').exists()).toBe(false);
+    });
+
+    it('keeps the unit deletion dialog available when deletion fails', async () => {
+        wrapper.unmount();
+        wrapper = await createWrapper(['organization.deleter']);
+        await flushPromises();
+        await wrapper.findAll('.tree-unit')[2].trigger('click');
+        await flushPromises();
+        await wrapper.findAll('.tree-delete-unit')[2].trigger('click');
+        deleteSpy.mockRejectedValueOnce(new Error('Delete failed'));
+        await wrapper.findAll('.sw-settings-organization-detail__delete-unit-modal button')[1].trigger('click');
+        await flushPromises();
+
+        expect(wrapper.find('.sw-settings-organization-detail__delete-unit-modal').exists()).toBe(true);
+        expect(wrapper.findAll('.tree-unit')).toHaveLength(3);
     });
 
     it('should confirm the delete of the selected unit', async () => {
+        wrapper.unmount();
         wrapper = await createWrapper(['organization.deleter']);
         await flushPromises();
 
         await wrapper.findAll('.tree-unit')[2].trigger('click');
+        await flushPromises();
 
-        await wrapper.get('.sw-settings-organization-detail__delete-unit').trigger('click');
+        await wrapper.findAll('.tree-delete-unit')[2].trigger('click');
         expect(wrapper.find('.sw-settings-organization-detail__delete-unit-modal').exists()).toBe(true);
+        expect(wrapper.get('.sw-modal').attributes('variant')).toBe('small');
         expect(deleteSpy).not.toHaveBeenCalled();
         await wrapper.findAll('.sw-settings-organization-detail__delete-unit-modal button')[1].trigger('click');
         await flushPromises();

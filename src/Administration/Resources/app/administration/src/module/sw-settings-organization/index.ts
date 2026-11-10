@@ -39,11 +39,20 @@ Module.register('sw-settings-organization', {
 
     routes: {
         index: {
-            component: 'sw-settings-organization-list',
+            component: 'sw-settings-organization-detail',
             path: 'index',
             meta: {
                 parentPath: 'sw.settings.index',
                 privilege: 'organization.viewer',
+            },
+        },
+        create: {
+            component: 'sw-settings-organization-detail',
+            path: 'create',
+            props: { default: { createOrganization: true } },
+            meta: {
+                parentPath: 'sw.settings.organization.index',
+                privilege: 'organization.creator',
             },
         },
         detail: {
@@ -54,8 +63,12 @@ Module.register('sw-settings-organization', {
                 privilege: 'organization.viewer',
             },
             props: {
-                default(route: { params: Record<string, string> }) {
-                    return { organizationId: route.params.id.toLowerCase() };
+                default(route: { params: Record<string, string>; query: Record<string, unknown> }) {
+                    return {
+                        organizationId: route.params.id.toLowerCase(),
+                        unitId: typeof route.query.unitId === 'string' ? route.query.unitId : null,
+                        parentId: typeof route.query.parentId === 'string' ? route.query.parentId : null,
+                    };
                 },
             },
         },

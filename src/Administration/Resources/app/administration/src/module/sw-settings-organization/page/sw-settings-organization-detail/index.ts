@@ -1,297 +1,487 @@
 /**
  * @sw-package framework
  */
-import { defineComponent } from 'vue';
-import type CriteriaType from 'src/core/data/criteria.data';
+import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
+import { inject } from 'vue';
+import type RepositoryFactory from 'src/core/data/repository-factory.data';
+import useOrganizationTree from '../../composables/use-organization-tree';
+import { getUnitPath, getDescendantIds } from '../../organization-unit-tree.util';
 import type RepositoryType from 'src/core/data/repository.data';
+import useNotification from 'src/app/composables/use-notification';
 import template from './sw-settings-organization-detail.html.twig';
 import './sw-settings-organization-detail.scss';
 
-const { Mixin } = Shopwell;
-const { Criteria } = Shopwell.Data;
+const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
+type Organization = EntitySchema.Entity<'organization'>;
+type Unit = EntitySchema.Entity<'organization_unit'>;
+type DeleteTarget = { organization: Organization; unit?: never } | { unit: Unit; organization?: never };
 
-type OrganizationEntity = EntitySchema.Entity<'organization'>;
-type OrganizationUnitEntity = EntitySchema.Entity<'organization_unit'>;
-
-/**
- * The organization detail page: the unit tree on the left, the selected unit on the right.
- *
- * The unit form saves as the merchant edits - a unit has four fields and a save button behind a
- * language switch would bury every one of them. Moving a unit under a descendant is rejected in
- * the form itself: the parent select does not offer the unit or its subtree (AC-06), and a unit
- * whose parent is gone from the options keeps its current parent.
- */
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
-
     inject: ['repositoryFactory', 'acl'],
-
-    mixins: [Mixin.getByName('notification')],
-
     props: {
-        organizationId: {
-            type: String,
-            required: true,
-        },
+        organizationId: { type: String, default: null },
+        unitId: { type: String, default: null },
+        parentId: { type: String, default: null },
+        createOrganization: { type: Boolean, default: false },
     },
-
+    setup() {
+        const factory = inject<RepositoryFactory>('repositoryFactory');
+        if (!factory) {
+            throw new Error('repositoryFactory is required');
+        }
+        return useOrganizationTree(factory.create('organization'), factory.create('organization_unit'));
+    },
     data(): {
-        organization: OrganizationEntity | null;
-        units: OrganizationUnitEntity[];
-        isLoading: boolean;
+        organization: Organization | null;
         selectedUnitId: string | null;
-        isSavingUnit: boolean;
-        showCreateUnitModal: boolean;
-        newUnitParent: OrganizationUnitEntity | null;
-        newUnitName: string;
-        showDeleteModal: boolean;
-        parentSearchTerm: string;
+        newUnit: Unit | null;
+        isLoading: boolean;
+        loadFailed: boolean;
+        loadRequest: number;
+        isSaving: boolean;
+        isDeleting: boolean;
+        deleteTarget: DeleteTarget | null;
+        pendingAction: (() => void) | null;
+        cancelPendingAction: (() => void) | null;
+        nameInvalid: boolean;
+        searchTerm: string;
     } {
         return {
             organization: null,
-            units: [],
-            isLoading: false,
             selectedUnitId: null,
-            isSavingUnit: false,
-            showCreateUnitModal: false,
-            newUnitParent: null,
-            newUnitName: '',
-            showDeleteModal: false,
-            parentSearchTerm: '',
+            newUnit: null,
+            isLoading: false,
+            loadFailed: false,
+            loadRequest: 0,
+            isSaving: false,
+            isDeleting: false,
+            deleteTarget: null,
+            pendingAction: null,
+            cancelPendingAction: null,
+            nameInvalid: false,
+            searchTerm: '',
         };
     },
-
     metaInfo() {
-        return {
-            title: this.$createTitle(this.organization?.name),
-        };
+        return { title: this.$createTitle(this.identifier) };
     },
-
     computed: {
         organizationRepository(): RepositoryType<'organization'> {
             return this.repositoryFactory.create('organization');
         },
-
         unitRepository(): RepositoryType<'organization_unit'> {
             return this.repositoryFactory.create('organization_unit');
         },
-
-        unitById(): Record<string, OrganizationUnitEntity> {
-            const map: Record<string, OrganizationUnitEntity> = {};
-
-            this.units.forEach((unit) => {
-                map[unit.id] = unit;
-            });
-
-            return map;
+        selectionKey(): string {
+            return `${this.createOrganization}/${this.organizationId}/${this.unitId}/${this.parentId}`;
         },
-
-        selectedUnit(): OrganizationUnitEntity | null {
-            return this.selectedUnitId ? (this.unitById[this.selectedUnitId] ?? null) : null;
-        },
-
-        descendantIdsOfSelected(): Record<string, boolean> {
-            const collected: Record<string, boolean> = {};
-            const stack: (string | null | undefined)[] = [this.selectedUnitId];
-
-            while (stack.length > 0) {
-                const currentId = stack.pop();
-
-                if (!currentId || collected[currentId]) {
-                    continue;
-                }
-
-                collected[currentId] = true;
-
-                this.units.filter((unit) => unit.parentId === currentId).forEach((unit) => stack.push(unit.id));
+        treeOrganizations(): Organization[] {
+            const organizations = this.organizations.map((item) =>
+                this.organization?.id === item.id ? this.organization : item,
+            );
+            if (this.organization && !organizations.some((item) => item.id === this.organization?.id)) {
+                organizations.push(this.organization);
             }
-
-            return collected;
+            return organizations;
         },
-
+        treeUnits(): Unit[] {
+            return this.newUnit ? [...this.units, this.newUnit] : this.units;
+        },
+        organizationUnits(): Unit[] {
+            return this.units.filter((unit) => unit.organizationId === this.organization?.id);
+        },
+        selectedUnit(): Unit | null {
+            return this.newUnit ?? this.organizationUnits.find((unit) => unit.id === this.selectedUnitId) ?? null;
+        },
+        editableEntity(): Organization | Unit | null {
+            return this.selectedUnit ?? this.organization;
+        },
+        identifier(): string {
+            return (
+                this.editableEntity?.name ||
+                this.editableEntity?.translated?.name ||
+                this.$t(
+                    this.selectedUnit
+                        ? 'sw-settings-organization.detail.titleCreateUnit'
+                        : this.createOrganization
+                          ? 'sw-settings-organization.list.modalTitleCreate'
+                          : 'sw-settings-organization.general.mainMenuItemGeneral',
+                )
+            );
+        },
+        descendantIdsOfSelected(): Set<string> {
+            return getDescendantIds(this.treeUnits, this.selectedUnitId);
+        },
         parentOptions(): Array<{ value: string; label: string }> {
-            return this.units
-                .filter((unit) => {
-                    if (unit.id === this.selectedUnitId) {
-                        return false;
-                    }
-
-                    return !(unit.id in this.descendantIdsOfSelected);
-                })
-                .map((unit) => ({
-                    value: unit.id,
-                    label: unit.translated?.name ?? unit.name ?? '',
-                }));
+            return [
+                { value: '', label: this.$t('sw-settings-organization.detail.parentRoot') },
+                ...this.organizationUnits
+                    .filter((unit) => !this.descendantIdsOfSelected.has(unit.id))
+                    .map((unit) => ({ value: unit.id, label: getUnitPath(this.organizationUnits, unit.id).join(' / ') })),
+            ];
         },
-
-        canEdit(): boolean {
-            return this.acl.can('organization.editor');
-        },
-
         canCreate(): boolean {
             return this.acl.can('organization.creator');
         },
-
         canDelete(): boolean {
             return this.acl.can('organization.deleter');
         },
+        allowSave(): boolean {
+            return this.newUnit || this.createOrganization ? this.canCreate : this.acl.can('organization.editor');
+        },
+        hasChanges(): boolean {
+            if (this.selectedUnit) {
+                return !!this.newUnit || this.unitRepository.hasChanges(this.selectedUnit);
+            }
+            return (
+                !!this.organization && (this.createOrganization || this.organizationRepository.hasChanges(this.organization))
+            );
+        },
+        isBusy(): boolean {
+            return this.isLoading || this.isSaving || this.isDeleting;
+        },
+        deleteConfirmation(): string {
+            const entity = this.deleteTarget?.unit ?? this.deleteTarget?.organization;
+            return this.$t(
+                this.deleteTarget?.unit
+                    ? 'sw-settings-organization.detail.textDeleteUnitConfirm'
+                    : 'sw-settings-organization.list.textDeleteConfirm',
+                { name: entity?.name ?? entity?.translated?.name },
+                0,
+            );
+        },
+        ...mapPropertyErrors('editableEntity', ['name', 'parentId']),
     },
-
     watch: {
-        organizationId() {
+        selectionKey() {
             void this.createdComponent();
         },
     },
-
     created() {
         void this.createdComponent();
     },
-
+    beforeRouteLeave(_to, _from, next: NavigationGuardNext) {
+        this.confirmRouteNavigation(next);
+    },
+    beforeRouteUpdate(_to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) {
+        this.confirmRouteNavigation(next);
+    },
     methods: {
         async createdComponent(): Promise<void> {
+            const request = ++this.loadRequest;
             this.isLoading = true;
-
+            this.loadFailed = false;
+            this.nameInvalid = false;
+            this.newUnit = null;
+            this.selectedUnitId = null;
             try {
-                const criteria: CriteriaType = new Criteria(1, 500);
-
-                criteria.addFilter(Criteria.equals('organizationId', this.organizationId));
-                criteria.addSorting(Criteria.sort('level', 'ASC'));
-
-                const [organization, units] = await Promise.all([
-                    this.organizationRepository.get(this.organizationId as EntitySchema.OrganizationId),
-                    this.unitRepository.search(criteria),
-                ]);
-
-                this.organization = organization;
-                this.units = [...units];
+                if (this.createOrganization) {
+                    Shopwell.Store.get('context').resetLanguageToDefault();
+                }
+                await this.loadNavigation();
+                if (request !== this.loadRequest) {
+                    return;
+                }
+                if (this.createOrganization) {
+                    this.organization = this.organizationRepository.create();
+                    this.organization.active = true;
+                } else if (this.organizationId) {
+                    const [organization] = await Promise.all([
+                        this.organizationRepository.get(this.organizationId as EntitySchema.OrganizationId),
+                        this.loadOrganizationUnits(this.organizationId),
+                    ]);
+                    if (request !== this.loadRequest) {
+                        return;
+                    }
+                    if (!organization) {
+                        throw new Error('Organization was not found');
+                    }
+                    this.organization = organization;
+                    if (this.unitId === 'create') {
+                        if (this.parentId && !this.organizationUnits.some((unit) => unit.id === this.parentId)) {
+                            throw new Error('Parent unit does not belong to this organization');
+                        }
+                        this.newUnit = this.unitRepository.create();
+                        this.newUnit.organizationId = organization.id;
+                        this.newUnit.parentId = this.parentId as EntitySchema.OrganizationUnitId;
+                        this.newUnit.active = true;
+                        this.selectedUnitId = this.newUnit.id;
+                    } else {
+                        this.selectedUnitId = this.unitId;
+                        if (this.unitId && !this.selectedUnit) {
+                            throw new Error('Organization unit was not found');
+                        }
+                    }
+                } else {
+                    this.organization = null;
+                }
             } catch {
-                this.createNotificationError({
+                if (request === this.loadRequest) {
+                    this.organization = null;
+                    this.newUnit = null;
+                    this.loadFailed = true;
+                    useNotification().createNotificationError({
+                        message: this.$t('sw-settings-organization.detail.messageLoadError'),
+                    });
+                }
+            } finally {
+                if (request === this.loadRequest) {
+                    this.isLoading = false;
+                }
+            }
+        },
+        async onLoadOrganization(id: string): Promise<void> {
+            try {
+                await this.loadOrganizationUnits(id);
+            } catch {
+                useNotification().createNotificationError({
                     message: this.$t('sw-settings-organization.detail.messageLoadError'),
                 });
-            } finally {
-                this.isLoading = false;
             }
         },
-
-        onSelectUnit(unit: OrganizationUnitEntity): void {
-            this.selectedUnitId = unit.id;
-        },
-
-        onAddChild(parentUnit: OrganizationUnitEntity): void {
-            this.newUnitParent = parentUnit;
-            this.newUnitName = '';
-            this.showCreateUnitModal = true;
-        },
-
-        onAddRootUnit(): void {
-            this.newUnitParent = null;
-            this.newUnitName = '';
-            this.showCreateUnitModal = true;
-        },
-
-        onCloseCreateUnitModal(): void {
-            this.showCreateUnitModal = false;
-            this.newUnitParent = null;
-            this.newUnitName = '';
-        },
-
-        async onCreateUnitSave(): Promise<void> {
-            if (this.newUnitName.trim() === '') {
-                this.createNotificationError({
-                    message: this.$t('sw-settings-organization.detail.messageUnitNameRequired'),
-                });
-
-                return;
-            }
-
-            const unit = this.unitRepository.create();
-
-            unit.organizationId = this.organizationId as EntitySchema.OrganizationId;
-            // undefined for a new root unit, the parent id for a child unit
-            unit.parentId = this.newUnitParent?.id;
-            unit.name = this.newUnitName;
-            unit.active = true;
-
+        async onSearch(term: string): Promise<void> {
+            this.searchTerm = term;
             try {
-                await this.unitRepository.save(unit);
-                this.onCloseCreateUnitModal();
-                await this.createdComponent();
-                this.selectedUnitId = unit.id;
+                await this.searchTree(term);
             } catch {
-                this.createNotificationError({
-                    message: this.$t('sw-settings-organization.detail.messageUnitSaveError'),
+                useNotification().createNotificationError({
+                    message: this.$t('sw-settings-organization.detail.messageLoadError'),
                 });
             }
         },
-
-        async onParentChange(parentId: string): Promise<void> {
-            const unit = this.selectedUnit;
-
-            if (!unit) {
-                return;
+        resetEntityChanges(): void {
+            if (this.newUnit) {
+                this.selectedUnitId = this.newUnit.parentId ?? null;
+                this.newUnit = null;
+            } else if (this.selectedUnit) {
+                this.unitRepository.discard(this.selectedUnit);
+            } else if (this.organization) {
+                this.organizationRepository.discard(this.organization);
             }
-
-            if (parentId === unit.id || parentId in this.descendantIdsOfSelected) {
-                this.createNotificationError({
-                    message: this.$t('sw-settings-organization.detail.errorCircularParent'),
-                });
-
-                return;
-            }
-
-            // null must reach the DAL to detach the unit from its parent (move to root level)
-            unit.parentId = (parentId || null) as EntitySchema.OrganizationUnitId;
-
-            await this.onUnitFieldChange();
+            this.nameInvalid = false;
         },
-
-        async onUnitFieldChange(): Promise<void> {
-            const unit = this.selectedUnit;
-
-            if (!unit || this.isSavingUnit) {
+        onCancel(): void {
+            if (this.isBusy) {
                 return;
             }
-
-            this.isSavingUnit = true;
-
+            const parentId = this.newUnit?.parentId ?? null;
+            const wasUnit = !!this.selectedUnit;
+            this.resetEntityChanges();
+            if (wasUnit && this.organizationId) {
+                void this.$router.push({
+                    name: 'sw.settings.organization.detail',
+                    params: { id: this.organizationId },
+                    query: parentId ? { unitId: parentId } : {},
+                });
+            } else {
+                this.organization = null;
+                void this.$router.push({ name: 'sw.settings.organization.index' });
+            }
+        },
+        confirmRouteNavigation(next: NavigationGuardNext): void {
+            if (this.isBusy) {
+                next(false);
+                return;
+            }
+            if (this.hasChanges) {
+                this.keepEditing();
+                this.pendingAction = () => next();
+                this.cancelPendingAction = () => next(false);
+            } else {
+                next();
+            }
+        },
+        keepEditing(): void {
+            const cancel = this.cancelPendingAction;
+            this.pendingAction = null;
+            this.cancelPendingAction = null;
+            cancel?.();
+        },
+        discardChanges(): void {
+            const action = this.pendingAction;
+            this.pendingAction = null;
+            this.cancelPendingAction = null;
+            this.resetEntityChanges();
+            action?.();
+        },
+        onSelectOrganization(organization: Organization): void {
+            if (!this.isBusy && !organization.isNew()) {
+                void this.$router.push({ name: 'sw.settings.organization.detail', params: { id: organization.id } });
+            }
+        },
+        onSelectUnit(unit: Unit): void {
+            if (!this.isBusy && !unit.isNew()) {
+                void this.$router.push({
+                    name: 'sw.settings.organization.detail',
+                    params: { id: unit.organizationId },
+                    query: { unitId: unit.id },
+                });
+            }
+        },
+        onAddOrganization(): void {
+            if (this.canCreate && !this.isBusy) {
+                void this.$router.push({ name: 'sw.settings.organization.create' });
+            }
+        },
+        onAddRootUnit(organization?: Organization): void {
+            const target = organization ?? this.organization;
+            if (target && !target.isNew()) {
+                this.onAddUnit(target.id, null);
+            }
+        },
+        onAddChild(parent: Unit): void {
+            if (!parent.isNew()) {
+                this.onAddUnit(parent.organizationId, parent.id);
+            }
+        },
+        onAddUnit(organizationId: string, parentId: string | null): void {
+            if (this.canCreate && !this.isBusy) {
+                void this.$router.push({
+                    name: 'sw.settings.organization.detail',
+                    params: { id: organizationId },
+                    query: { unitId: 'create', ...(parentId ? { parentId } : {}) },
+                });
+            }
+        },
+        onParentChange(parentId: string | null): void {
+            if (this.selectedUnit && (!parentId || this.organizationUnits.some((unit) => unit.id === parentId))) {
+                this.selectedUnit.parentId = (parentId || null) as EntitySchema.OrganizationUnitId;
+            }
+        },
+        abortOnLanguageChange(): boolean {
+            return this.hasChanges || this.isBusy;
+        },
+        async onChangeLanguage(): Promise<void> {
+            this.units = [];
+            this.loadedOrganizationIds = [];
+            await this.createdComponent();
+        },
+        async saveOnLanguageChange(): Promise<void> {
+            if (!(await this.onSave())) {
+                throw new Error('Organization changes could not be saved');
+            }
+        },
+        canSaveEntity(): boolean {
+            return this.allowSave && !this.isBusy && !!this.editableEntity;
+        },
+        async onSave(): Promise<boolean> {
+            if (!this.canSaveEntity()) {
+                return false;
+            }
+            const entity = this.editableEntity;
+            if (!entity) {
+                return false;
+            }
+            this.nameInvalid = !entity.name?.trim();
+            if (this.nameInvalid) {
+                return false;
+            }
+            if (this.selectedUnit && this.descendantIdsOfSelected.has(this.selectedUnit.parentId ?? '')) {
+                return false;
+            }
+            entity.name = entity.name.trim();
+            const wasNewUnit = !!this.newUnit;
+            const wasUnit = !!this.selectedUnit;
+            this.isSaving = true;
             try {
-                await this.unitRepository.save(unit);
+                if (wasUnit) {
+                    await this.unitRepository.save(entity as Unit);
+                } else {
+                    await this.organizationRepository.save(entity as Organization);
+                }
+                this.loadedOrganizationIds = this.loadedOrganizationIds.filter((id) => id !== this.organizationId);
+                if (this.createOrganization || wasNewUnit) {
+                    this.newUnit = null;
+                    this.selectedUnitId = null;
+                    this.organization = null;
+                    this.isSaving = false;
+                    await this.$router.replace({
+                        name: 'sw.settings.organization.detail',
+                        params: { id: wasUnit ? this.organizationId : entity.id },
+                        query: wasUnit ? { unitId: entity.id } : {},
+                    });
+                } else {
+                    await this.createdComponent();
+                }
+                return !this.loadFailed;
             } catch {
-                this.createNotificationError({
-                    message: this.$t('sw-settings-organization.detail.messageUnitSaveError'),
+                useNotification().createNotificationError({
+                    message: this.$t(
+                        wasUnit
+                            ? 'sw-settings-organization.detail.messageUnitSaveError'
+                            : 'sw-settings-organization.list.messageSaveError',
+                    ),
                 });
+                return false;
             } finally {
-                this.isSavingUnit = false;
+                this.isSaving = false;
             }
         },
-
-        onOpenDeleteModal(): void {
-            this.showDeleteModal = true;
+        onDeleteUnit(unit: Unit): void {
+            if (this.canDelete && !this.isBusy && !unit.isNew()) {
+                this.deleteTarget = { unit };
+            }
         },
-
+        onDeleteOrganization(organization: Organization): void {
+            if (this.canDelete && !this.isBusy && !organization.isNew()) {
+                this.deleteTarget = { organization };
+            }
+        },
         onCloseDeleteModal(): void {
-            this.showDeleteModal = false;
+            if (!this.isDeleting) {
+                this.deleteTarget = null;
+            }
         },
-
-        async onConfirmDeleteUnit(): Promise<void> {
-            this.showDeleteModal = false;
-
-            const unit = this.selectedUnit;
-
-            if (!unit) {
+        async onConfirmDelete(): Promise<void> {
+            const target = this.deleteTarget;
+            if (!target || !this.canDelete || this.isBusy) {
                 return;
             }
-
+            this.isDeleting = true;
             try {
-                await this.unitRepository.delete(unit.id as EntitySchema.OrganizationUnitId);
-                this.selectedUnitId = null;
+                const organizationId = target.unit ? target.unit.organizationId : target.organization.id;
+                const removedIds = target.unit
+                    ? getDescendantIds(this.treeUnits, target.unit.id)
+                    : new Set(
+                          this.treeUnits.filter((unit) => unit.organizationId === organizationId).map((unit) => unit.id),
+                      );
+                if (target.unit) {
+                    await this.unitRepository.delete(target.unit.id);
+                } else {
+                    await this.organizationRepository.delete(target.organization.id);
+                }
+                this.deleteTarget = null;
+                const selectionRemoved =
+                    (this.selectedUnitId && removedIds.has(this.selectedUnitId)) ||
+                    (!target.unit && this.organizationId === organizationId);
+                this.units = this.units.filter((unit) => !removedIds.has(unit.id));
+                this.loadedOrganizationIds = this.loadedOrganizationIds.filter((id) => id !== organizationId);
+                await this.loadNavigation();
+                if (selectionRemoved) {
+                    this.newUnit = null;
+                    this.selectedUnitId = null;
+                    if (!target.unit) {
+                        this.organization = null;
+                    }
+                    this.isDeleting = false;
+                    await this.$router.replace(
+                        target.unit
+                            ? {
+                                  name: 'sw.settings.organization.detail',
+                                  params: { id: organizationId },
+                                  query: target.unit.parentId ? { unitId: target.unit.parentId } : {},
+                              }
+                            : { name: 'sw.settings.organization.index' },
+                    );
+                }
             } catch {
-                this.createNotificationError({
-                    message: this.$t('sw-settings-organization.detail.messageUnitDeleteError'),
+                useNotification().createNotificationError({
+                    message: this.$t('sw-settings-organization.detail.messageDeleteError'),
                 });
             } finally {
-                await this.createdComponent();
+                this.isDeleting = false;
             }
         },
     },

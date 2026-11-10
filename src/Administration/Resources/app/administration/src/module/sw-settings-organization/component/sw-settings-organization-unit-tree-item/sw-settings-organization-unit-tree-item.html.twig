@@ -4,6 +4,7 @@
     role="treeitem"
     :aria-label="unitName"
     :aria-current="isSelected ? 'page' : undefined"
+    :aria-selected="isSelected"
     :aria-expanded="childUnits.length > 0 ? (isOpened ? 'true' : 'false') : undefined"
 >
     {% block sw_settings_organization_unit_tree_item_row %}

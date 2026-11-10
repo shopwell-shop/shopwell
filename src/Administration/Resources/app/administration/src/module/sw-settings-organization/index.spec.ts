@@ -14,7 +14,16 @@ describe('sw-settings-organization registration', () => {
         const module = Shopwell.Module.getModuleRegistry().get('sw-settings-organization');
         const route = module?.routes.get('sw.settings.organization.index');
 
+        expect(route?.components?.default).toBe('sw-settings-organization-detail');
         expect(route?.meta).toEqual(expect.objectContaining({ privilege: 'organization.viewer' }));
+    });
+
+    it('reuses the detail page for a creator-protected create route', () => {
+        const module = Shopwell.Module.getModuleRegistry().get('sw-settings-organization');
+        const route = module?.routes.get('sw.settings.organization.create');
+
+        expect(route?.components?.default).toBe('sw-settings-organization-detail');
+        expect(route?.meta).toEqual(expect.objectContaining({ privilege: 'organization.creator' }));
     });
 
     it.each([

@@ -83,16 +83,17 @@
                         :columns="organizationColumns"
                         :repository="organizationRepository"
                         :disable-data-fetching="true"
-                        :sort-by="sortBy"
+                        :criteria-limit="limit"
+                        :sort-by="currentSortBy"
                         :sort-direction="sortDirection"
                         :full-page="false"
                         detail-route="sw.settings.organization.detail"
                         :show-selection="false"
                         :is-loading="isLoading"
-                        :allow-edit="acl.can('organization.editor') || undefined"
-                        :allow-inline-edit="acl.can('organization.editor') || undefined"
-                        :allow-delete="acl.can('organization.deleter') || undefined"
-                        :allow-view="acl.can('organization.viewer') || undefined"
+                        :allow-edit="acl.can('organization.editor')"
+                        :allow-inline-edit="acl.can('organization.editor')"
+                        :allow-delete="acl.can('organization.deleter')"
+                        :allow-view="acl.can('organization.viewer')"
                         @page-change="onPageChange"
                         @column-sort="onSortColumn"
                         @inline-edit-save="onInlineEditSave"
@@ -109,8 +110,8 @@
                                 v-if="acl.can('organization.editor')"
                                 :key="item.id"
                                 :model-value="item.active"
-                                :disabled="undefined"
-                                @change="onActiveChange(item, $event)"
+                                :disabled="savingIds.includes(item.id)"
+                                @update:model-value="onActiveChange(item, $event)"
                             />
                             <mt-icon
                                 v-else
@@ -144,44 +145,6 @@
                         </template>
                         {% endblock %}
 
-                        {% block sw_settings_organization_list_grid_action_modals %}
-                        <template #action-modals="{ item }">
-                            {% block sw_settings_organization_list_delete_modal %}
-                            <sw-modal
-                                v-if="showDeleteModal === item.id"
-                                :title="$t('global.default.warning')"
-                                variant="small"
-                                @modal-close="onCloseDeleteModal"
-                            >
-                                {% block sw_settings_organization_list_delete_modal_confirm_text %}
-                                <p class="sw-settings-organization-list__confirm-delete-text">
-                                    {{ $t('sw-settings-organization.list.textDeleteConfirm', { name: item.name }, 0) }}
-                                </p>
-                                {% endblock %}
-
-                                {% block sw_settings_organization_list_delete_modal_footer %}
-                                <template #modal-footer>
-                                    <mt-button
-                                        size="small"
-                                        variant="secondary"
-                                        @click="onCloseDeleteModal"
-                                    >
-                                        {{ $t('global.default.cancel') }}
-                                    </mt-button>
-
-                                    <mt-button
-                                        variant="critical"
-                                        size="small"
-                                        @click="onConfirmDelete(item.id)"
-                                    >
-                                        {{ $t('global.default.delete') }}
-                                    </mt-button>
-                                </template>
-                                {% endblock %}
-                            </sw-modal>
-                            {% endblock %}
-                        </template>
-                        {% endblock %}
                     </sw-entity-listing>
 
                     {% block sw_settings_organization_list_empty_message %}
@@ -218,51 +181,46 @@
             {% endblock %}
         </sw-card-view>
 
-        {% block sw_settings_organization_create_modal %}
+        {% block sw_settings_organization_list_grid_action_modals %}
+        {% block sw_settings_organization_list_delete_modal %}
         <sw-modal
-            v-if="showCreateModal && newOrganization"
-            class="sw-settings-organization-list__create-modal"
-            :title="$t('sw-settings-organization.list.modalTitleCreate')"
+            v-if="organizationToDelete"
+            :closable="!isDeleting"
+            :title="$t('global.default.warning')"
             variant="small"
-            @modal-close="onCloseCreateModal"
+            @modal-close="onCloseDeleteModal"
         >
-            {% block sw_settings_organization_create_modal_fields %}
-            <mt-text-field
-                v-model="newOrganization.name"
-                class="sw-settings-organization-list__create-name"
-                required
-                :label="$t('sw-settings-organization.list.labelName')"
-                :placeholder="$t('sw-settings-organization.list.placeholderName')"
-            />
-
-            <mt-switch
-                v-model="newOrganization.active"
-                class="sw-settings-organization-list__create-active"
-                :label="$t('sw-settings-organization.list.labelActive')"
-            />
+            {% block sw_settings_organization_list_delete_modal_confirm_text %}
+            <p class="sw-settings-organization-list__confirm-delete-text">
+                {{ $t('sw-settings-organization.list.textDeleteConfirm', { name: organizationToDelete.name }, 0) }}
+            </p>
             {% endblock %}
 
-            {% block sw_settings_organization_create_modal_footer %}
+            {% block sw_settings_organization_list_delete_modal_footer %}
             <template #modal-footer>
                 <mt-button
                     size="small"
                     variant="secondary"
-                    @click="onCloseCreateModal"
+                    :disabled="isDeleting"
+                    @click="onCloseDeleteModal"
                 >
                     {{ $t('global.default.cancel') }}
                 </mt-button>
-
                 <mt-button
-                    variant="primary"
+                    variant="critical"
+                    :disabled="isDeleting"
+                    :is-loading="isDeleting"
                     size="small"
-                    @click="onCreateSave"
+                    @click="onConfirmDelete(organizationToDelete.id)"
                 >
-                    {{ $t('global.default.save') }}
+                    {{ $t('global.default.delete') }}
                 </mt-button>
             </template>
             {% endblock %}
         </sw-modal>
         {% endblock %}
+        {% endblock %}
+
     </template>
     {% endblock %}
 

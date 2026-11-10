@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { defineComponent } from 'vue';
+import useNotification from 'src/app/composables/use-notification';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-settings-organization-list.html.twig';
@@ -13,12 +13,12 @@ const { Criteria } = Shopwell.Data;
 type OrganizationEntity = EntitySchema.Entity<'organization'>;
 
 /** @private */
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: ['repositoryFactory', 'acl'],
 
-    mixins: [Mixin.getByName('notification'), Mixin.getByName('listing'), Mixin.getByName('placeholder')],
+    mixins: [Mixin.getByName('listing'), Mixin.getByName('placeholder')],
 
     data(): {
         entityName: string;
@@ -26,9 +26,9 @@ export default defineComponent({
         sortBy: string;
         sortDirection: 'ASC' | 'DESC';
         isLoading: boolean;
-        showCreateModal: boolean;
         showDeleteModal: string | null;
-        newOrganization: OrganizationEntity | null;
+        savingIds: string[];
+        isDeleting: boolean;
     } {
         return {
             entityName: 'organization',
@@ -36,9 +36,9 @@ export default defineComponent({
             sortBy: 'name',
             sortDirection: 'ASC',
             isLoading: false,
-            showCreateModal: false,
             showDeleteModal: null,
-            newOrganization: null,
+            savingIds: [],
+            isDeleting: false,
         };
     },
 
@@ -53,6 +53,10 @@ export default defineComponent({
             return this.repositoryFactory.create('organization');
         },
 
+        organizationToDelete(): OrganizationEntity | null {
+            return this.organizations?.find((organization) => organization.id === this.showDeleteModal) ?? null;
+        },
+
         organizationColumns(): Array<Record<string, unknown>> {
             return [
                 {
@@ -61,10 +65,12 @@ export default defineComponent({
                     label: 'sw-settings-organization.list.columnName',
                     routerLink: 'sw.settings.organization.detail',
                     primary: true,
+                    inlineEdit: 'string',
                 },
                 {
                     property: 'units',
                     label: 'sw-settings-organization.list.columnUnits',
+                    sortable: false,
                     align: 'right',
                 },
                 {
@@ -92,7 +98,9 @@ export default defineComponent({
 
             criteria.setTerm(this.term ?? '');
             criteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection));
-            criteria.addAssociation('units');
+            criteria.addAggregation(
+                Criteria.terms('unitCounts', 'id', null, null, Criteria.count('unitCount', 'organization.units.id')),
+            );
 
             try {
                 const result = await this.organizationRepository.search(criteria);
@@ -100,7 +108,7 @@ export default defineComponent({
                 this.organizations = result;
                 this.total = result.total ?? 0;
             } catch {
-                this.createNotificationError({
+                useNotification().createNotificationError({
                     message: this.$t('sw-settings-organization.list.messageLoadError'),
                 });
             } finally {
@@ -109,7 +117,10 @@ export default defineComponent({
         },
 
         getUnitCount(item: OrganizationEntity): number {
-            return (item.units as unknown[] | undefined)?.length ?? 0;
+            const aggregation = this.organizations?.aggregations?.unitCounts as
+                | { buckets: Array<{ key: string; unitCount: { count: number } }> }
+                | undefined;
+            return aggregation?.buckets.find((bucket) => bucket.key === item.id)?.unitCount.count ?? 0;
         },
 
         onChangeLanguage(): void {
@@ -117,96 +128,76 @@ export default defineComponent({
         },
 
         onAddOrganization(): void {
-            this.newOrganization = this.organizationRepository.create();
-            this.newOrganization.active = true;
-            this.showCreateModal = true;
-        },
-
-        onCloseCreateModal(): void {
-            this.showCreateModal = false;
-            this.newOrganization = null;
-        },
-
-        async onCreateSave(): Promise<void> {
-            if (!this.newOrganization) {
-                return;
-            }
-
-            if (!this.newOrganization.name || this.newOrganization.name.trim() === '') {
-                this.createNotificationError({
-                    message: this.$t('sw-settings-organization.list.messageNameRequired'),
-                });
-
-                return;
-            }
-
-            try {
-                await this.organizationRepository.save(this.newOrganization);
-
-                const newOrganizationId = this.newOrganization.id;
-
-                this.onCloseCreateModal();
-
-                await this.$router.push({
-                    name: 'sw.settings.organization.detail',
-                    params: { id: newOrganizationId },
-                });
-            } catch {
-                this.createNotificationError({
-                    message: this.$t('sw-settings-organization.list.messageSaveError'),
-                });
+            if (this.acl.can('organization.creator')) {
+                void this.$router.push({ name: 'sw.settings.organization.create' });
             }
         },
 
         onInlineEditSave(promise: Promise<void>, item: OrganizationEntity): Promise<void> {
             return promise
                 .then(() => {
-                    this.createNotificationSuccess({
+                    useNotification().createNotificationSuccess({
                         message: this.$t('sw-settings-organization.list.messageSaveSuccess', { name: item.name }, 0),
                     });
                 })
                 .catch(() => {
                     void this.createdComponent();
-                    this.createNotificationError({
+                    useNotification().createNotificationError({
                         message: this.$t('sw-settings-organization.list.messageSaveError'),
                     });
                 });
         },
 
         async onActiveChange(item: OrganizationEntity, value: boolean): Promise<void> {
+            if (!this.acl.can('organization.editor') || this.savingIds.includes(item.id)) {
+                return;
+            }
+            this.savingIds.push(item.id);
             const previous = item.active;
 
             item.active = value;
 
             try {
                 await this.organizationRepository.save(item);
+                void this.getList();
             } catch {
                 item.active = previous;
-                this.createNotificationError({
+                useNotification().createNotificationError({
                     message: this.$t('sw-settings-organization.list.messageSaveError'),
                 });
+            } finally {
+                this.savingIds = this.savingIds.filter((id) => id !== item.id);
             }
         },
 
         onDelete(id: string): void {
-            this.showDeleteModal = id;
+            if (this.acl.can('organization.deleter') && !this.isDeleting) {
+                this.showDeleteModal = id;
+            }
         },
 
         onCloseDeleteModal(): void {
-            this.showDeleteModal = null;
+            if (!this.isDeleting) {
+                this.showDeleteModal = null;
+            }
         },
 
         async onConfirmDelete(id: string): Promise<void> {
-            this.showDeleteModal = null;
+            if (!this.acl.can('organization.deleter') || this.isDeleting) {
+                return;
+            }
+            this.isDeleting = true;
 
             try {
                 await this.organizationRepository.delete(id as EntitySchema.OrganizationId);
+                this.showDeleteModal = null;
+                void this.getList();
             } catch {
-                this.createNotificationError({
+                useNotification().createNotificationError({
                     message: this.$t('sw-settings-organization.list.messageDeleteError'),
                 });
             } finally {
-                this.createdComponent();
+                this.isDeleting = false;
             }
         },
     },
