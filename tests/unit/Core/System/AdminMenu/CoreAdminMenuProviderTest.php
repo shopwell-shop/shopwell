@@ -45,6 +45,18 @@ class CoreAdminMenuProviderTest extends TestCase
         );
     }
 
+    public function testMembershipSettingsCanBeAssignedToRoleMenus(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+
+        foreach (['sw-settings-membership', 'sw-settings-membership-plans'] as $key) {
+            static::assertArrayHasKey($key, $definitions);
+            static::assertSame('sw-settings', $definitions[$key]->parent);
+            static::assertSame('customer', $definitions[$key]->groupName);
+            static::assertSame('loyalty.viewer', $definitions[$key]->privilege);
+        }
+    }
+
     public function testBlogIsALocalizedFolderWithIndependentChildren(): void
     {
         $blogs = array_values(array_filter(

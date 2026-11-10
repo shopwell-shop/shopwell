@@ -32,11 +32,18 @@ class StorefrontPaymentService
      */
     public function options(PaymentContext $context): array
     {
-        return array_map(fn (array $option): array => [
-            'method' => $option['method'],
-            'label' => $this->translator->trans($option['translation_key']),
-            'flow' => $option['interaction'],
-        ], $this->cashier->options($this->platformApp->app(), self::PROFILE, $context));
+        return array_map(function (array $option): array {
+            $label = $this->translator->trans($option['translation_key']);
+            if ($label === $option['translation_key']) {
+                $label = $this->translator->trans('payment.method.' . $option['method']);
+            }
+
+            return [
+                'method' => $option['method'],
+                'label' => $label,
+                'flow' => $option['interaction'],
+            ];
+        }, $this->cashier->options($this->platformApp->app(), self::PROFILE, $context));
     }
 
     public function resolveMethod(string $method, PaymentContext $context): string

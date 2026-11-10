@@ -27,7 +27,22 @@
     }
 
     &-plans-channel {
-        min-width: 12rem;
+        flex: 0 1 18rem;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    &-plan {
+        height: 100%;
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: $spacer * 0.5;
+            padding: $spacer;
+            border: 1px solid $border-color;
+            border-radius: $border-radius;
+        }
     }
 
     &-section-title {
@@ -37,12 +52,14 @@
     }
 
     &-plan-name {
+        margin-bottom: 0;
         font-size: $font-size-base;
         font-weight: $font-weight-bold;
     }
 
     &-plan-tier,
     &-plan-duration {
+        margin-bottom: 0;
         color: $secondary;
         font-size: $font-size-sm;
     }
@@ -55,7 +72,7 @@
     }
 
     &-plan-description {
-        margin-bottom: $spacer;
+        margin-bottom: $spacer * 0.5;
         color: $secondary;
         font-size: $font-size-sm;
     }

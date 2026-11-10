@@ -30,11 +30,10 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * It refuses an overdraft, because only the balance it locked can be judged safely, and it keeps the
  * point booking idempotent by the key the caller brings.
  *
- * The paid membership is not its business either. `tier_id` and `membership_paid_until`
+ * The paid membership is not its business either. `paid_tier_id` and `membership_paid_until`
  * are written by {@see \Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService}
- * while a membership runs, and `tier_id` is also what {@see TierResolver} keeps up to date
- * with the tier the tier points reach - the column is the effective tier, the date is the paid
- * period, and neither is a balance this class owns.
+ * while a membership runs. {@see TierResolver} writes `tier_id` as the higher of the earned and
+ * valid paid tiers. Neither projection is a balance this class owns.
  *
  * @internal the write order and the row lock are the whole point of this class and cannot be varied
  *           by a caller. Bookings go through {@see LoyaltyPointService}, which keeps the rules and

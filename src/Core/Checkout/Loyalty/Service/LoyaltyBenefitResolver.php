@@ -19,7 +19,7 @@ use Shopwell\Core\Framework\Log\Package;
  * number of places that know how a benefit is stored stays one - which is what makes it possible to
  * change the storage at all.
  *
- * It reads the tier through {@see TierResolver}, so a paid membership outranking the tier points is
+ * It reads the tier through {@see TierResolver}, so the higher of the earned and valid paid tiers is
  * decided in one place and not repeated for every benefit.
  *
  * A benefit is a row of `loyalty_tier_benefit` and nothing else. The tier used to carry three fixed

@@ -207,6 +207,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(LoyaltyPointService::class),
             service(MembershipSubscriptionService::class),
             service(LoyaltyBenefitResolver::class),
+            service(TierResolver::class),
         ]);
 
     // the rewards page reads points, tiers and the redemption ladder from here; the membership offer it
@@ -220,6 +221,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(LoyaltyBenefitResolver::class),
             service(LoyaltyRedemptionCalculator::class),
             service(ExtensionDispatcher::class),
+            service(TierResolver::class),
         ]);
 
     $services->set(LoyaltyRedeemRoute::class)

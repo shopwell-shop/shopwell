@@ -101,7 +101,7 @@
                                                 "object",
                                                 "null"
                                             ],
-                                            "description": "The membership tier the customer currently belongs to, or null if none is assigned.",
+                                            "description": "The higher of the earned tier and the valid paid tier, or null if neither applies. Expired paid qualifications are ignored immediately.",
                                             "properties": {
                                                 "id": {
                                                     "type": "string"

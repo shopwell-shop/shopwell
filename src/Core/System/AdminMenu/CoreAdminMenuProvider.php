@@ -401,6 +401,26 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
             ),
 
             new AdminMenuDefinitionStruct(
+                internalKey: 'sw-settings-membership',
+                groupName: 'customer',
+                title: 'sw-membership.general.mainMenuItemGeneral',
+                icon: 'regular-star',
+                parent: 'sw-settings',
+                position: 220,
+                privilege: 'loyalty.viewer',
+            ),
+
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw-settings-membership-plans',
+                groupName: 'customer',
+                title: 'sw-membership.plan.general.mainMenuItemGeneral',
+                icon: 'regular-shopping-bag',
+                parent: 'sw-settings',
+                position: 230,
+                privilege: 'loyalty.viewer',
+            ),
+
+            new AdminMenuDefinitionStruct(
                 internalKey: 'sw-settings-delivery-times',
                 groupName: 'commerce',
                 title: 'sw-settings-delivery-time.general.mainMenuItemGeneral',

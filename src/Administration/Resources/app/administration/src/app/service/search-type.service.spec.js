@@ -13,6 +13,17 @@ describe('src/app/service/search-type.service.js', () => {
         expect(criteria.getAssociation('options').getAssociation('group')).toBeDefined();
     });
 
+    it.each([
+        ['loyalty_tier', 'sw.settings.membership.index'],
+        ['membership_plan', 'sw.settings.membership.plans'],
+    ])('registers %s as a settings search type', (entityName, listingRoute) => {
+        expect(createSearchTypeService().getTypeByName(entityName)).toMatchObject({
+            entityName,
+            listingRoute,
+            hideOnGlobalSearchBar: true,
+        });
+    });
+
     it('should merge the configuration of an upserted type', () => {
         const service = createSearchTypeService();
         const itemRoute = (item) => ({ name: 'custom.detail', params: { id: item.id } });

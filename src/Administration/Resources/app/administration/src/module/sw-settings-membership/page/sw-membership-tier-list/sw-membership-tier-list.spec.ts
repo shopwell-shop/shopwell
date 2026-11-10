@@ -14,12 +14,8 @@ type SearchRankingPoint = {
 
 type BenefitRow = { type: string; value: number };
 
-/**
- * The association as the repository hands it over: a collection, not a plain array. The list reads the
- * multiplier out of it, so the mock has to answer `getElements()` like the real one does.
- */
 function benefits(...rows: BenefitRow[]) {
-    return { getElements: () => rows };
+    return rows;
 }
 
 type TierRow = {

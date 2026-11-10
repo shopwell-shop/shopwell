@@ -117,7 +117,8 @@ class MembershipSubscriptionServiceTest extends TestCase
         // the loyalty account carries the membership, it does not own it
         $projection = $this->loyaltyAccountRepository->updates[0][0];
         static::assertSame(self::ACCOUNT_ID, $projection['id']);
-        static::assertSame(self::TIER_ID, $projection['tierId']);
+        static::assertSame(self::TIER_ID, $projection['paidTierId']);
+        static::assertArrayNotHasKey('tierId', $projection);
         static::assertEquals(new \DateTimeImmutable('2026-07-01 12:00:00'), $projection['membershipPaidUntil']);
 
         static::assertSame($created['id'], $subscription->getId());
@@ -231,7 +232,8 @@ class MembershipSubscriptionServiceTest extends TestCase
         static::assertSame(MembershipSubscriptionStates::END_EXPIRED, $update['endReason']);
 
         $projection = $this->loyaltyAccountRepository->updates[0][0];
-        static::assertNull($projection['tierId']);
+        static::assertNull($projection['paidTierId']);
+        static::assertArrayNotHasKey('tierId', $projection);
         static::assertNull($projection['membershipPaidUntil']);
     }
 
@@ -259,7 +261,7 @@ class MembershipSubscriptionServiceTest extends TestCase
 
         $update = $this->subscriptionRepository->updates[0][0];
         static::assertSame(MembershipSubscriptionStates::END_REVOKED, $update['endReason']);
-        static::assertNull($this->loyaltyAccountRepository->updates[0][0]['tierId']);
+        static::assertNull($this->loyaltyAccountRepository->updates[0][0]['paidTierId']);
     }
 
     public function testRevokingAMembershipThatAlreadyEndedChangesNothing(): void

@@ -29,6 +29,10 @@ class LoyaltyAccountEntity extends Entity
 
     protected ?LoyaltyTierEntity $tier = null;
 
+    protected ?string $paidTierId = null;
+
+    protected ?LoyaltyTierEntity $paidTier = null;
+
     protected ?\DateTimeInterface $membershipPaidUntil = null;
 
     protected ?LoyaltyPointTransactionCollection $transactions = null;
@@ -91,6 +95,26 @@ class LoyaltyAccountEntity extends Entity
     public function setTier(LoyaltyTierEntity $tier): void
     {
         $this->tier = $tier;
+    }
+
+    public function getPaidTierId(): ?string
+    {
+        return $this->paidTierId;
+    }
+
+    public function setPaidTierId(?string $paidTierId): void
+    {
+        $this->paidTierId = $paidTierId;
+    }
+
+    public function getPaidTier(): ?LoyaltyTierEntity
+    {
+        return $this->paidTier;
+    }
+
+    public function setPaidTier(?LoyaltyTierEntity $paidTier): void
+    {
+        $this->paidTier = $paidTier;
     }
 
     public function getMembershipPaidUntil(): ?\DateTimeInterface

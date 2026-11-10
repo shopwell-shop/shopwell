@@ -3,8 +3,11 @@
 namespace Shopwell\Tests\Integration\Core\Checkout\Membership\Service;
 
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Loyalty\Api\LoyaltyController;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionEntity;
@@ -119,6 +122,7 @@ class MembershipSubscriptionServiceTest extends TestCase
         $this->loyalty->update([[
             'id' => $this->accountOf($customerId)->getId(),
             'tierId' => $tierId,
+            'paidTierId' => $tierId,
             'membershipPaidUntil' => new \DateTimeImmutable('-1 day'),
         ]], $this->context);
 
@@ -136,6 +140,68 @@ class MembershipSubscriptionServiceTest extends TestCase
 
         // a second run finds nothing left to do
         static::assertSame(0, $this->service()->expireDue($this->context));
+    }
+
+    public function testGrowthContinuesDuringPaidMembershipAndSurvivesRevocation(): void
+    {
+        $customerId = $this->createCustomer();
+        $silver = $this->createTier('silver', 1, 100);
+        $gold = $this->createTier('gold', 2, 1000);
+        $this->earnTierPoints($customerId, 100);
+        static::assertSame($silver, $this->accountOf($customerId)->getTierId());
+
+        $subscription = $this->service()->open($this->order($customerId, $silver, 30), $this->context);
+        $this->earnTierPoints($customerId, 900);
+
+        $account = $this->accountOf($customerId);
+        static::assertSame(1000, $account->getTierPoints());
+        static::assertSame($gold, $account->getTierId());
+        static::assertSame($silver, $account->getPaidTierId());
+
+        $this->service()->revoke($subscription->getId(), $this->context);
+
+        $account = $this->accountOf($customerId);
+        static::assertSame(1000, $account->getTierPoints());
+        static::assertSame($gold, $account->getTierId());
+        static::assertNull($account->getPaidTierId());
+    }
+
+    public function testBuyingALowerTierDoesNotDowngradeEarnedMembership(): void
+    {
+        $customerId = $this->createCustomer();
+        $silver = $this->createTier('silver', 1, 100);
+        $gold = $this->createTier('gold', 2, 1000);
+        $this->earnTierPoints($customerId, 1000);
+
+        $this->service()->open($this->order($customerId, $silver, 30), $this->context);
+
+        static::assertSame($gold, $this->accountOf($customerId)->getTierId());
+        static::assertSame($silver, $this->accountOf($customerId)->getPaidTierId());
+    }
+
+    public function testExpiredPaidTierFallsBackBeforeTheScheduledTaskRuns(): void
+    {
+        $customerId = $this->createCustomer();
+        $silver = $this->createTier('silver', 1, 100);
+        $gold = $this->createTier('gold', 2, 1000);
+        $this->earnTierPoints($customerId, 100);
+        $this->service()->open($this->order($customerId, $gold, 30), $this->context);
+        $this->loyalty->update([[
+            'id' => $this->accountOf($customerId)->getId(),
+            'membershipPaidUntil' => new \DateTimeImmutable('-1 second'),
+        ]], $this->context);
+
+        static::assertSame($silver, static::getContainer()->get(TierResolver::class)->currentTier($customerId, $this->context)?->getId());
+        $response = static::getContainer()->get(LoyaltyController::class)->summary($customerId, $this->context);
+        $summary = json_decode((string) $response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame($silver, $summary['tier']['id']);
+        static::assertSame(100, $summary['tierPoints']);
+    }
+
+    private function earnTierPoints(string $customerId, int $points): void
+    {
+        $total = static::getContainer()->get(LoyaltyPointService::class)->addTierPoints($customerId, $points, $this->context);
+        static::getContainer()->get(TierResolver::class)->resolve($customerId, $total, $this->context);
     }
 
     private function service(): MembershipSubscriptionService
@@ -226,7 +292,7 @@ class MembershipSubscriptionServiceTest extends TestCase
         return $customerId;
     }
 
-    private function createTier(string $technicalName, int $level): string
+    private function createTier(string $technicalName, int $level, int $minTierPoints = 1000): string
     {
         $tierId = Uuid::randomHex();
 
@@ -237,7 +303,7 @@ class MembershipSubscriptionServiceTest extends TestCase
             'technicalName' => $technicalName . '-' . $tierId,
             'level' => $level,
             'active' => true,
-            'minTierPoints' => 1000,
+            'minTierPoints' => $minTierPoints,
             'translations' => [
                 Defaults::LANGUAGE_SYSTEM => ['name' => ucfirst($technicalName)],
             ],

@@ -40,8 +40,7 @@ never paid for anything would still see it. If not, it belongs in the membership
 - The route also states the **earning rules** (`pointsPerCurrencyUnit`, `tierPointsPerCurrencyUnit`,
   `tiers[].benefits`), because the page has to print them. A rate typed into a template becomes a
   lie the day the shop changes it.
-- `tierId` is read here, and that is deliberate: it is the projection, i.e. "which tier applies
-  right now", whoever wrote it. The subscription period is **not** read from the projection — it has no
+- `tierId` is resolved here through `TierResolver`: the higher of the earned and valid paid tiers applies. The subscription period is **not** read from the projection — it has no
   start, no plan name and no amount. See `Membership/AGENTS.md`.
 
 ## The balance is a projection
@@ -53,8 +52,9 @@ Nothing else may update `pointsBalance` — not a subscriber, not a route, not a
 
 - `LoyaltyLedger` — the write side: `bookPoints()`, `expireLots()`, `giveBackPoints()`, `revokeOrderPoints()`,
   `addTierPoints()`. It does **not** grant
-  memberships: `tier_id` / `membership_paid_until` are a projection of `Checkout\Membership` and
+  memberships: `paid_tier_id` / `membership_paid_until` are a projection of `Checkout\Membership` and
   only `MembershipSubscriptionService` writes them.
+  `TierResolver` alone writes the effective `tier_id`; tier points keep accumulating during paid membership.
   `addTierPoints()` carries the name of the column it writes; the concept is *tier points* and the rename
   (`tierPoints`) is planned together with the column, not before it.
 - `LoyaltyAccountService` — the account lifecycle: `account()`, `balance()`, `open()`.

@@ -47,6 +47,18 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.media.index',
         },
 
+        loyalty_tier: {
+            entityName: 'loyalty_tier',
+            placeholderSnippet: 'sw-membership.general.placeholderSearchBar',
+            listingRoute: 'sw.settings.membership.index',
+            hideOnGlobalSearchBar: true,
+        },
+        membership_plan: {
+            entityName: 'membership_plan',
+            placeholderSnippet: 'sw-membership.plan.general.placeholderSearchBar',
+            listingRoute: 'sw.settings.membership.plans',
+            hideOnGlobalSearchBar: true,
+        },
         customer_group: {
             entityName: 'customer_group',
             placeholderSnippet: 'sw-settings-customer-group.general.placeholderSearchBar',

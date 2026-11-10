@@ -2,6 +2,13 @@
 
 ## Core
 
+### Free growth alongside paid membership
+
+Customers continue earning tier points during paid membership.
+The effective tier is the higher of the earned tier and the valid paid tier; expiry falls back to the earned tier immediately when read.
+Paid tier qualification is available as `loyalty_account.paidTierId`, independently of the effective `tierId`.
+Existing running subscriptions are migrated automatically.
+
 ### After-sales refund destination
 
 Administration refund confirmations default to the original payment sources and can instead credit a registered customer's wallet.

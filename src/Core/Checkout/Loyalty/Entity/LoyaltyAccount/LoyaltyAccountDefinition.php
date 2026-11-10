@@ -57,10 +57,12 @@ class LoyaltyAccountDefinition extends EntityDefinition
             (new IntField('points_balance', 'pointsBalance'))->addFlags(new ApiAware()),
             (new IntField('tier_points', 'tierPoints'))->addFlags(new ApiAware()),
             (new FkField('tier_id', 'tierId', LoyaltyTierDefinition::class))->addFlags(new ApiAware(), new SetNullOnDelete()),
+            (new FkField('paid_tier_id', 'paidTierId', LoyaltyTierDefinition::class))->addFlags(new ApiAware(), new SetNullOnDelete()),
             (new DateTimeField('membership_paid_until', 'membershipPaidUntil'))->addFlags(new ApiAware()),
             (new OneToManyAssociationField('transactions', LoyaltyPointTransactionDefinition::class, 'customer_id', 'id'))->addFlags(new CascadeDelete()),
             new OneToOneAssociationField('customer', 'customer_id', 'id', CustomerDefinition::class, false),
             new ManyToOneAssociationField('tier', 'tier_id', LoyaltyTierDefinition::class, 'id', false),
+            new ManyToOneAssociationField('paidTier', 'paid_tier_id', LoyaltyTierDefinition::class, 'id', false),
         ]);
     }
 }

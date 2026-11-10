@@ -24,7 +24,7 @@ of `Loyalty/SalesChannel/LoyaltyRoute`, and they are deliberately two payloads r
 - `plans` / `channels` / `orders` come from `MembershipOfferService::forCustomer()` — the offer is one call
   and one presenter, not a query per section.
 - `subscription` comes from `MembershipSubscriptionService::current()` and is `null` when the customer holds
-  none. **Never** build that block out of `loyalty_account.tier_id / membership_paid_until`:
+  none. **Never** build that block out of `loyalty_account.paid_tier_id / membership_paid_until`:
   the projection exists so the rest of the platform can answer "which tier applies" without knowing that
   memberships exist. It carries no start date, no plan name and no amount, and the page shows all three.
 - `planName` is copied from the subscription row, not joined from the plan. A plan renamed later must not
@@ -43,16 +43,18 @@ never with `lint:container`: the container is happy either way.
 
 ```
 membership_purchase  ──(one purchase, never changes)──▶  membership_subscription  ──(projection)──▶  loyalty_account
-   what was bought                                    the membership itself              tierId / ValidUntil
+   what was bought                                    the membership itself              paidTierId / membershipPaidUntil
 ```
 
 - `membership_purchase` — what the customer bought: plan, tier, duration and price **copied at purchase time**.
   A later price change must not rewrite history, so the row never reads the plan again after creation.
 - `membership_subscription` — the membership that purchase bought. One row is one uninterrupted period:
   the same tier pushes `ends_at`, another tier ends it (`end_reason = superseded`) and starts a new one.
-- `loyalty_account.tier_id` / `membership_paid_until` — **a projection of the subscription, and
+- `loyalty_account.paid_tier_id` / `membership_paid_until` — **a projection of the subscription, and
   `MembershipSubscriptionService` is its only writer.** The storefront, the administration and
-  `TierResolver` read it without knowing that a membership exists; nothing else may write those two fields.
+  `TierResolver` read it without querying the subscription; nothing else may write those two fields.
+  `TierResolver` alone writes the effective `tier_id`, taking the higher of earned and valid paid tiers.
+  Free tier points continue accumulating during a paid membership.
 - the gateway's payment order — how it is collected. Its id is the membership purchase's own id (the `attach`
   marker points back at it), which is what makes settlement idempotent without a second key.
 

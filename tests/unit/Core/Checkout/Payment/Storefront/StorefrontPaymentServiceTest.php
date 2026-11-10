@@ -40,6 +40,29 @@ class StorefrontPaymentServiceTest extends TestCase
         static::assertSame([['method' => 'plugin_method', 'label' => 'Plugin payment', 'flow' => 'redirect']], $options);
     }
 
+    public function testOptionsUseStorefrontMethodLabelWhenTheProviderKeyIsNotTranslated(): void
+    {
+        $platform = static::createStub(PlatformPaymentApp::class);
+        $platform->method('app')->willReturn(new PaymentAppEntity());
+        $cashier = static::createStub(PaymentCashierService::class);
+        $cashier->method('options')->willReturn([[
+            'method' => 'alipay',
+            'translation_key' => 'sw-settings-payment-provider.provider.alipay',
+            'interaction' => 'redirect',
+        ]]);
+        $translator = static::createStub(AbstractTranslator::class);
+        $translator->method('trans')->willReturnMap([
+            ['sw-settings-payment-provider.provider.alipay', [], null, null, 'sw-settings-payment-provider.provider.alipay'],
+            ['payment.method.alipay', [], null, null, 'Alipay'],
+        ]);
+
+        $options = (new StorefrontPaymentService($platform, $cashier, $translator))->options(
+            new PaymentContext('CNY', new PaymentScene('browser', 'wap', 'browser'))
+        );
+
+        static::assertSame('Alipay', $options[0]['label']);
+    }
+
     public function testOpenPreservesPurchaseTermsAndPaysTheSelectedMethod(): void
     {
         $app = new PaymentAppEntity();

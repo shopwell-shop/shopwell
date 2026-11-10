@@ -152,12 +152,13 @@
                             <ul class="account-rewards-earn-rules">
                                 <li>
                                     {{ 'account.rewardsEarnPoints'|trans({
-                                        '%currency%': isoCode,
+                                        '%currency%': context.currency.symbol,
                                         '%points%': rewards.pointsPerCurrencyUnit
                                     })|sw_sanitize }}
                                 </li>
                                 <li>
                                     {{ 'account.rewardsEarnTierPoints'|trans({
+                                        '%currency%': context.currency.symbol,
                                         '%points%': rewards.tierPointsPerCurrencyUnit
                                     })|sw_sanitize }}
                                 </li>

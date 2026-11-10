@@ -13,7 +13,7 @@ const { Criteria } = Shopwell.Data;
 
 type LoyaltyTier = EntitySchema.Entity<'loyalty_tier'>;
 
-type GrantedBenefit = EntitySchema.Entity<'loyalty_tier_benefit'>;
+type GrantedBenefit = Pick<EntitySchema.Entity<'loyalty_tier_benefit'>, 'type' | 'value'>;
 
 /**
  * The one benefit the list shows. The rest of the grants are a detail page question - a list that
@@ -21,17 +21,8 @@ type GrantedBenefit = EntitySchema.Entity<'loyalty_tier_benefit'>;
  */
 const BENEFIT_EARN_MULTIPLIER = 'earn_multiplier';
 
-/**
- * What the list reads out of the `benefits` association: a collection that hands out its rows. Naming
- * the two members it needs keeps the read typed without reaching for the generated collection class,
- * which resolves to a bare `Collection` for this entity.
- */
-interface TierBenefitsCollection {
-    getElements: () => GrantedBenefit[];
-}
-
 interface TierGrants {
-    benefits?: TierBenefitsCollection | null;
+    benefits?: GrantedBenefit[] | null;
 }
 
 interface LoyaltyTierColumn {
@@ -175,7 +166,7 @@ export default defineComponent({
          * applies, so the list never shows an empty cell where a customer earns the base rate.
          */
         earnMultiplier(loyaltyTier: TierGrants): number {
-            const benefits = loyaltyTier.benefits?.getElements() ?? [];
+            const benefits = loyaltyTier.benefits ?? [];
             const multiplier = benefits.find((benefit) => benefit.type === BENEFIT_EARN_MULTIPLIER);
 
             return multiplier?.value ?? 1;

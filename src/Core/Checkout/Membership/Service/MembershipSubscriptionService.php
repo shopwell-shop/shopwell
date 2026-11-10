@@ -34,7 +34,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * paid for.
  *
  * The tier and the end of the membership are also written onto the loyalty account
- * (`tier_id`, `membership_paid_until`). Those two columns are a projection of this table
+ * (`paid_tier_id`, `membership_paid_until`). Those two columns are a projection of this table
  * and nothing else may write them: the storefront, the administration and the tier resolution all read
  * them without knowing that a membership exists, and a projection only stays correct when there is one
  * writer.
@@ -268,9 +268,11 @@ class MembershipSubscriptionService
 
             $this->loyaltyAccountRepository->update([[
                 'id' => $account['id'],
-                'tierId' => $purchase['loyaltyTierId'],
+                'paidTierId' => $purchase['loyaltyTierId'],
                 'membershipPaidUntil' => $endsAt,
             ]], $context);
+
+            $this->tiers->resolve($purchase['customerId'], (int) $account['tier_points'], $context);
 
             return $id;
         });
@@ -326,7 +328,7 @@ class MembershipSubscriptionService
 
         $this->loyaltyAccountRepository->update([[
             'id' => $account['id'],
-            'tierId' => null,
+            'paidTierId' => null,
             'membershipPaidUntil' => null,
         ]], $context);
 

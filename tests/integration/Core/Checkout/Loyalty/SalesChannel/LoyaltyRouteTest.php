@@ -117,6 +117,7 @@ class LoyaltyRouteTest extends TestCase
         static::assertSame(Response::HTTP_OK, $this->browser->getResponse()->getStatusCode());
         static::assertSame(250, $response['pointsBalance']);
         static::assertSame(100, $response['tierPoints']);
+        static::assertSame($tierId, $response['tierId']);
         static::assertCount(1, $response['tiers']);
         static::assertSame($tierId, $response['tiers'][0]['id']);
         static::assertSame('gold', $response['tiers'][0]['technicalName']);

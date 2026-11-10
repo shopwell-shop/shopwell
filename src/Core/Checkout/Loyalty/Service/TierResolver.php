@@ -20,15 +20,12 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 /**
  * Which tier a customer is on, and keeping that answer on the account.
  *
- * Two things decide it, and only this class combines them: a paid membership outranks the tier
- * points for as long as it runs, otherwise the tier points decide. Everything else reads the tier
- * that was written here - the storefront page, the cart's multiplier, the benefit lookup - so no
- * caller has to compare tiers or know that memberships exist.
+ * The higher of the earned tier and a valid paid tier applies. Callers use currentTier() so expiry
+ * takes effect immediately, even before the scheduled task updates the account projection.
  *
  * The column it writes is `loyalty_account.tier_id`: the *effective* tier, bought or earned. It is
- * deliberately not the same thing as `membership_paid_until`, which holds only the paid period -
- * a membership that ran out leaves the column alone until the next resolution drops the tier back
- * to what the tier points earn. A change is dispatched as {@see LoyaltyTierChangedEvent} once, when
+ * separate from `paid_tier_id` and `membership_paid_until`, which hold the paid qualification.
+ * A change is dispatched as {@see LoyaltyTierChangedEvent} once, when
  * the tier really differs, so a customer whose tier points grow inside one tier hears nothing.
  *
  * Moving the customer into the tier's customer group is a shop decision and off by default: a group
@@ -118,18 +115,24 @@ class TierResolver
     /**
      * The tier the customer belongs to right now.
      *
-     * A paid membership outranks the tier points for as long as it runs - buying a tier must not be
-     * undone by the next order that only reaches a lower one. Once it ended, the tier points decide
-     * again, which is why the end of the membership is checked here and not in a clean up task.
+     * Buying a tier must neither downgrade a customer nor stop them earning a higher tier.
+     * Expiry is checked here so the answer does not depend on the scheduled task having run.
      */
     private function resolveTier(LoyaltyAccountEntity $loyalty, int $tierPoints, Context $context): ?LoyaltyTierEntity
     {
-        return $this->findPaidTier($loyalty, $context) ?? $this->findMatchingTier($tierPoints, $context);
+        $paid = $this->findPaidTier($loyalty, $context);
+        $earned = $this->findMatchingTier($tierPoints, $context);
+
+        if ($earned !== null && ($paid === null || $earned->getLevel() > $paid->getLevel())) {
+            return $earned;
+        }
+
+        return $paid;
     }
 
     private function findPaidTier(LoyaltyAccountEntity $loyalty, Context $context): ?LoyaltyTierEntity
     {
-        $tierId = $loyalty->getTierId();
+        $tierId = $loyalty->getPaidTierId();
         $validUntil = $loyalty->getMembershipPaidUntil();
 
         if ($tierId === null || $validUntil === null || $validUntil <= $this->clock->now()) {

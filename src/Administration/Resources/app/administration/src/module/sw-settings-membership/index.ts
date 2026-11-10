@@ -106,6 +106,25 @@ Module.register('sw-settings-membership', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-membership',
+            parent: 'sw-settings',
+            path: 'sw.settings.membership.index',
+            label: 'sw-membership.general.mainMenuItemGeneral',
+            icon: 'regular-star',
+            privilege: 'loyalty.viewer',
+        },
+        {
+            id: 'sw-settings-membership-plans',
+            parent: 'sw-settings',
+            path: 'sw.settings.membership.plans',
+            label: 'sw-membership.plan.general.mainMenuItemGeneral',
+            icon: 'regular-shopping-bag',
+            privilege: 'loyalty.viewer',
+        },
+    ],
+
     settingsItem: [
         {
             id: 'sw-settings-membership',

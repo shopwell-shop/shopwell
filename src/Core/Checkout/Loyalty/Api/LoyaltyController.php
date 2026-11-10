@@ -9,6 +9,7 @@ use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyBenefitResolver;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
@@ -46,6 +47,7 @@ class LoyaltyController
         private readonly LoyaltyPointService $loyaltyPointService,
         private readonly MembershipSubscriptionService $subscriptions,
         private readonly LoyaltyBenefitResolver $benefits,
+        private readonly TierResolver $tiers,
     ) {
     }
 
@@ -153,7 +155,6 @@ class LoyaltyController
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
-        $criteria->addAssociation('tier');
         $criteria->setLimit(1);
 
         $loyalty = $this->loyaltyAccountRepository->search($criteria, $context)->getEntities()->first();
@@ -167,7 +168,7 @@ class LoyaltyController
             ]);
         }
 
-        $tier = $loyalty->getTier();
+        $tier = $this->tiers->currentTier($customerId, $context);
 
         return new JsonResponse([
             'pointsBalance' => $loyalty->getPointsBalance(),

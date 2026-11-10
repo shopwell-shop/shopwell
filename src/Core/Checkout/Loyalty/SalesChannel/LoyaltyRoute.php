@@ -11,6 +11,7 @@ use Shopwell\Core\Checkout\Loyalty\Extension\LoyaltyRouteExtension;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyBenefitResolver;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyRedemptionCalculator;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
+use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -48,6 +49,7 @@ class LoyaltyRoute
         private readonly LoyaltyBenefitResolver $benefits,
         private readonly LoyaltyRedemptionCalculator $redemption,
         private readonly ExtensionDispatcher $extensions,
+        private readonly TierResolver $tiers,
     ) {
     }
 
@@ -74,9 +76,7 @@ class LoyaltyRoute
         $data = [
             'pointsBalance' => $loyalty?->getPointsBalance() ?? 0,
             'tierPoints' => $loyalty?->getTierPoints() ?? 0,
-            // the tier is a projection of what the customer earned and what a membership grants; both
-            // write it, and the page only reads it - the paid membership itself has its own route
-            'tierId' => $loyalty?->getTierId(),
+            'tierId' => $this->tiers->currentTier($customer->getId(), $context->getContext())?->getId(),
             // the rate below the first step; the steps themselves are what the page has to show, so the
             // storefront never has to multiply the balance by one number and get a wrong amount
             'pointValueInCurrency' => $this->settings->pointValueInCurrency($context->getSalesChannelId()),

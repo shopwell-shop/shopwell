@@ -53,7 +53,9 @@ describe('src/module/sw-settings-membership/index', () => {
     it('keeps the purchases out of the settings navigation', () => {
         const module = Module.getModuleRegistry().get('sw-settings-membership');
 
-        expect(module?.manifest.navigation ?? []).toHaveLength(0);
+        expect(module?.manifest.navigation ?? []).not.toEqual(
+            expect.arrayContaining([expect.objectContaining({ path: 'sw.membership.purchases' })]),
+        );
     });
 
     it('registers the tier and plan routes', () => {
@@ -71,5 +73,24 @@ describe('src/module/sw-settings-membership/index', () => {
         });
 
         expect(routes?.has('sw.settings.membership.purchases')).toBe(false);
+    });
+
+    it.each([
+        ['sw-settings-membership', 'sw.settings.membership.index'],
+        ['sw-settings-membership-plans', 'sw.settings.membership.plans'],
+    ])('exposes %s in navigation and customer settings with the same access requirement', (id, path) => {
+        const module = Shopwell.Module.getModuleRegistry().get('sw-settings-membership');
+
+        expect(module?.routes?.has(path)).toBe(true);
+        expect(module?.manifest.navigation).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ id, parent: 'sw-settings', path, privilege: 'loyalty.viewer' }),
+            ]),
+        );
+        expect(module?.manifest.settingsItem).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ id, group: 'customer', to: path, privilege: 'loyalty.viewer' }),
+            ]),
+        );
     });
 });

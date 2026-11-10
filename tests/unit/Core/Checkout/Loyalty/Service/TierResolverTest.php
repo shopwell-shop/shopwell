@@ -125,6 +125,7 @@ class TierResolverTest extends TestCase
             $this->createLoyalty('silver', $paidTier, '2026-12-01 00:00:00'),
         ]));
         $this->tierRepository->addSearch(new LoyaltyTierCollection([$paidTier]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection());
 
         $this->tierResolver->resolve(self::CUSTOMER_ID, 0, $this->context);
 
@@ -155,6 +156,7 @@ class TierResolverTest extends TestCase
             $this->createLoyalty('silver', $paidTier, '2026-12-01 00:00:00'),
         ]));
         $this->tierRepository->addSearch(new LoyaltyTierCollection([$paidTier]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection());
 
         static::assertSame($paidTier->getId(), $this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context)?->getId());
     }
@@ -169,6 +171,19 @@ class TierResolverTest extends TestCase
         $this->tierRepository->addSearch(new LoyaltyTierCollection([$bronze]));
 
         static::assertSame($bronze->getId(), $this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context)?->getId());
+    }
+
+    public function testGrowingBeyondThePaidTierKeepsTheHigherEarnedTier(): void
+    {
+        $silver = $this->createTier('silver', 2, 1000);
+        $gold = $this->createTier('gold', 3, 5000);
+        $account = $this->createLoyalty('silver', $silver, '2026-12-01 00:00:00');
+        $account->setTierPoints(6000);
+        $this->loyaltyAccountRepository->addSearch(new LoyaltyAccountCollection([$account]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$silver]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$silver, $gold]));
+
+        static::assertSame('gold', $this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context)?->getId());
     }
 
     public function testResolveDoesNothingWhenTierIsUnchanged(): void
@@ -304,6 +319,7 @@ class TierResolverTest extends TestCase
         $loyalty->setTierId($tierId);
 
         if ($validUntil !== null) {
+            $loyalty->setPaidTierId($tierId);
             $loyalty->setMembershipPaidUntil(new \DateTimeImmutable($validUntil));
         }
 

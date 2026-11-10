@@ -76,7 +76,7 @@
                         {% endblock %}
 
                         {% block page_account_membership_plans_channel %}
-                            {% if channels is not empty %}
+                            {% if channels is not empty and membership.plans is not empty %}
                                 <div class="account-membership-plans-channel">
                                     <label class="form-label mb-1" for="membershipChannel">
                                         {{ 'account.membershipChannelLabel'|trans|sw_sanitize }}
