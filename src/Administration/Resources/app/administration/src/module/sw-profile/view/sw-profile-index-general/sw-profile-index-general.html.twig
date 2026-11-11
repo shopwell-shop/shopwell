@@ -127,7 +127,10 @@
             {% endblock %}
         </div>
         {% block sw_profile_index_general_information_navigation_layout %}
-        <sw-admin-layout-settings />
+        <sw-admin-layout-settings
+            :value="userNavigationLayout"
+            @update:value="$emit('user-navigation-layout-change', $event)"
+        />
         {% endblock %}
     </mt-card>
     {% endblock %}

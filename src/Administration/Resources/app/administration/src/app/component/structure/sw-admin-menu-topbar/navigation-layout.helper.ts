@@ -12,17 +12,11 @@ export type LayoutNavigationEntry = NavigationEntryLike & {
 };
 
 /** @private */
-export function rebaseNavigationLevels(entries: LayoutNavigationEntry[], level = 1): LayoutNavigationEntry[] {
-    return entries.map((entry) => ({
-        ...entry,
-        ...(level === 1 && !entry.icon ? { icon: 'regular-circle-xxs' } : {}),
-        level,
-        children: rebaseNavigationLevels(entry.children, level + 1),
-    }));
-}
-
-/** @private */
 export function fitNavigationEntries(widths: number[], available: number, moreWidth: number, gap: number): number {
+    const total = widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * gap;
+    if (total <= available) {
+        return widths.length;
+    }
     let used = moreWidth;
     for (let index = 0; index < widths.length; index += 1) {
         used += widths[index] + gap;

@@ -3,6 +3,7 @@
  */
 
 import { mount } from '@vue/test-utils';
+import { shallowRef } from 'vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import 'src/app/component/structure/sw-page';
 
@@ -40,10 +41,11 @@ const router = createRouter({
     history: createWebHashHistory(),
 });
 
-async function createWrapper(route = productDetailRoute, props = {}) {
+async function createWrapper(route = productDetailRoute, props = {}, target = shallowRef(null)) {
     return mount(await wrapTestComponent('sw-page', { sync: true }), {
         props,
         global: {
+            provide: { adminToolbarTarget: target },
             stubs: {
                 'sw-search-bar': true,
                 'sw-notification-center': true,
@@ -65,6 +67,26 @@ async function createWrapper(route = productDetailRoute, props = {}) {
 }
 
 describe('src/app/component/structure/sw-page', () => {
+    it('moves the same toolbar into the header and back without losing search state', async () => {
+        const destination = document.createElement('div');
+        document.body.appendChild(destination);
+        const target = shallowRef(null);
+        const wrapper = await createWrapper(productDetailRoute, {}, target);
+        const toolbar = wrapper.get('.sw-page__top-bar').element;
+        const search = wrapper.get('sw-search-bar-stub').element;
+        target.value = destination;
+        await flushPromises();
+        expect(destination.contains(toolbar)).toBe(true);
+        expect(destination.contains(search)).toBe(true);
+        expect(wrapper.classes()).toContain('has--header-toolbar');
+        target.value = null;
+        await flushPromises();
+        expect(wrapper.get('.sw-page__top-bar').element).toBe(toolbar);
+        expect(wrapper.get('sw-search-bar-stub').element).toBe(search);
+        wrapper.unmount();
+        destination.remove();
+    });
+
     it('should preserve previous path with query params and reuse them when navigating back', async () => {
         let wrapper = await createWrapper();
 

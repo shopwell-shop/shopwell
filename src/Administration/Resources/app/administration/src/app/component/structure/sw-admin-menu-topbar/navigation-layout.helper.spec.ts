@@ -1,30 +1,14 @@
 /**
  * @sw-package framework
  */
-import {
-    fitNavigationEntries,
-    firstNavigationTarget,
-    filterLayoutNavigation,
-    rebaseNavigationLevels,
-} from './navigation-layout.helper';
+import { fitNavigationEntries, firstNavigationTarget, filterLayoutNavigation } from './navigation-layout.helper';
 
 describe('horizontal navigation', () => {
-    it('rebases mixed-mode sidebar levels while keeping navigation identities', () => {
-        const source = [{ id: 'section', level: 2, children: [{ id: 'page', path: 'list', level: 3, children: [] }] }];
-        expect(rebaseNavigationLevels(source)).toEqual([
-            {
-                id: 'section',
-                level: 1,
-                icon: 'regular-circle-xxs',
-                children: [{ id: 'page', path: 'list', level: 2, children: [] }],
-            },
-        ]);
-        expect(source[0].level).toBe(2);
-    });
     it('reserves room for More and moves only the overflowing suffix', () => {
         expect(fitNavigationEntries([90, 100, 110], 300, 70, 8)).toBe(2);
         expect(fitNavigationEntries([90, 100], 60, 70, 8)).toBe(0);
         expect(fitNavigationEntries([90, 100], 400, 70, 8)).toBe(2);
+        expect(fitNavigationEntries([90, 100], 200, 70, 8)).toBe(2);
     });
 
     it('removes inaccessible routes and empty folders before splitting the tree', () => {

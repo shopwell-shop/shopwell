@@ -101,9 +101,4 @@
     &__preview--top &__preview-content {
         grid-column: 1 / -1;
     }
-
-    &__error {
-        margin-top: var(--scale-size-16);
-        color: var(--color-text-critical-default);
-    }
 }

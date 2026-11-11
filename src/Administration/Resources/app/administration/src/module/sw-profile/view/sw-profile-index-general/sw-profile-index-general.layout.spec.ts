@@ -11,7 +11,7 @@ describe('profile navigation layout preference', () => {
         wrapper?.unmount();
     });
 
-    it('switches all three layouts from User interface while retaining an unsaved profile field', async () => {
+    it('emits layout drafts while retaining unsaved profile fields', async () => {
         Shopwell.Store.get('session').currentUser = { id: 'profile-layout-user' } as Entity<'user'>;
         const configService = jest.mocked(Shopwell.Service('userConfigService'));
         configService.search.mockResolvedValue({ data: {} });
@@ -51,10 +51,12 @@ describe('profile navigation layout preference', () => {
         for (const mode of ['top', 'mixed', 'sidebar']) {
             await preference.find(`input[value="${mode}"]`).setValue(true);
             await flushPromises();
-            expect(useAdminLayout().layout.value).toBe(mode);
+            expect(wrapper.emitted('user-navigation-layout-change')?.at(-1)).toEqual([mode]);
+            expect(useAdminLayout().layout.value).toBe('sidebar');
             expect(name.element.value).toBe('Unsaved name');
             expect(wrapper.find('input[name="sw-field--user-name"]').element).toBe(name.element);
-            expect(configService.upsert.mock.calls.at(-1)).toEqual([{ 'core.adminNavigationLayout': { layout: mode } }]);
+            expect(configService.upsert.mock.calls).toHaveLength(0);
+            await wrapper.setProps({ userNavigationLayout: mode });
         }
     });
 });

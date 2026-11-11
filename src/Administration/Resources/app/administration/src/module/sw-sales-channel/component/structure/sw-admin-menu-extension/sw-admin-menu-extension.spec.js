@@ -3,6 +3,7 @@
  */
 
 import { mount } from '@vue/test-utils';
+import useAdminLayout from 'src/app/composables/use-admin-layout';
 import 'src/app/component/structure/sw-admin-menu';
 import swAdminMenuExtension from 'src/module/sw-sales-channel/component/structure/sw-admin-menu-extension';
 import createMenuService from 'src/app/service/menu.service';
@@ -17,9 +18,10 @@ global.allowedErrors = [missingGetListMethod];
 const menuService = createMenuService(Shopwell.Module);
 Shopwell.Service().register('menuService', () => menuService);
 
-async function createWrapper() {
+async function createWrapper(route = { name: 'product.list', meta: {} }) {
     return mount(await wrapTestComponent('sw-admin-menu', { sync: true }), {
         global: {
+            mocks: { $route: route },
             stubs: {
                 'sw-admin-menu-topbar': await wrapTestComponent('sw-admin-menu-topbar', { sync: true }),
                 'sw-version': true,
@@ -56,6 +58,39 @@ async function createWrapper() {
 describe('module/sw-sales-channel/component/structure/sw-admin-menu-extension', () => {
     beforeAll(() => {
         Shopwell.Store.get('session').setCurrentUser({});
+    });
+
+    beforeEach(async () => {
+        global.ResizeObserver = class {
+            observe() {}
+            disconnect() {}
+        };
+        Shopwell.Store.get('session').setCurrentUser({ id: 'channel-layout-user' });
+        Shopwell.Service('userConfigService').upsert.mockResolvedValue(undefined);
+        await useAdminLayout().saveUserLayout('sidebar');
+    });
+
+    it('does not append sales channels to another module sidebar in mixed layout', async () => {
+        global.activeAclRoles = ['sales_channel.viewer'];
+        await useAdminLayout().saveUserLayout('mixed');
+        const wrapper = await createWrapper();
+        await wrapper.setData({ viewportWidth: 1600 });
+        expect(wrapper.find('sw-sales-channel-menu-stub').exists()).toBe(false);
+        expect(wrapper.find('[data-navigation-key="sw-sales-channel-layout"]').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    it('shows the channel sidebar only on channel routes in mixed layout', async () => {
+        global.activeAclRoles = ['sales_channel.viewer'];
+        await useAdminLayout().saveUserLayout('mixed');
+        const wrapper = await createWrapper({
+            name: 'sw.sales.channel.detail.base',
+            meta: { $module: { entity: 'sales_channel' } },
+        });
+        await wrapper.setData({ viewportWidth: 1600 });
+        expect(wrapper.find('.sw-admin-menu-topbar__sidebar').exists()).toBe(true);
+        expect(wrapper.findAll('sw-sales-channel-menu-stub')).toHaveLength(1);
+        wrapper.unmount();
     });
 
     it('should not show the sw-sales-channel-menu when privilege does not exist', async () => {

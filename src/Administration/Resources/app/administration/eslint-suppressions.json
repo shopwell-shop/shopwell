@@ -2026,11 +2026,6 @@
       "count": 1
     }
   },
-  "src/app/component/structure/sw-admin-menu/merge-navigation.helper.ts": {
-    "sw-deprecation-rules/private-feature-declarations": {
-      "count": 3
-    }
-  },
   "src/app/component/structure/sw-admin-menu/sw-admin-menu.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 132
@@ -3504,9 +3499,6 @@
   },
   "src/app/store/admin-menu-config.store.ts": {
     "no-restricted-syntax": {
-      "count": 1
-    },
-    "sw-deprecation-rules/private-feature-declarations": {
       "count": 1
     }
   },
@@ -11757,19 +11749,6 @@
       "count": 1
     }
   },
-  "src/module/sw-system/acl/index.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-permissions/component/sw-permissions-menu-tree/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
   "src/module/sw-permissions/component/sw-permissions-role-mcp-reference-modal/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -11781,14 +11760,6 @@
   "src/module/sw-permissions/component/sw-permissions-role-mcp-reference-modal/sw-permissions-role-mcp-reference-modal.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 29
-    }
-  },
-  "src/module/sw-permissions/components/sw-permissions-additional/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
     }
   },
   "src/module/sw-permissions/components/sw-permissions-additional/sw-permissions-additional.spec.js": {
@@ -11839,22 +11810,6 @@
     }
   },
   "src/module/sw-user/components/sw-user-sso-status-label/index.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-system/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 2
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-permissions/page/sw-permissions-menu-list/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
     "filename-rules/not-match": {
       "count": 1
     }

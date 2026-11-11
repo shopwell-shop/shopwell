@@ -9,39 +9,44 @@
         class="sw-page__head-area"
     >
         {% block sw_page_top_bar %}
-        <div class="sw-page__top-bar">
+        <Teleport
+            :to="adminToolbarTarget || 'body'"
+            :disabled="!adminToolbarTarget"
+        >
+            <div class="sw-page__top-bar">
             {% block sw_page_search_bar %}
-            <div
-                v-if="showSearchBar"
-                class="sw-page__search-bar"
-            >
-                <slot name="search-bar">
+                <div
+                    v-if="showSearchBar"
+                    class="sw-page__search-bar"
+                >
+                    <slot name="search-bar">
                     {% block sw_page_slot_search_bar %}
-                    <sw-search-bar />
+                        <sw-search-bar />
                     {% endblock %}
-                </slot>
-            </div>
+                    </slot>
+                </div>
             {% endblock %}
 
             {% block sw_page_top_bar_actions %}
-            <div class="sw-page__top-bar-actions">
+                <div class="sw-page__top-bar-actions">
                 {% block sw_page_top_bar_app_button %}
-                <sw-app-topbar-button />
+                    <sw-app-topbar-button />
                 {% endblock %}
-                <div class="sw-page__sidebar-container">
-                    <sw-help-center-v2 />
-                </div>
+                    <div class="sw-page__sidebar-container">
+                        <sw-help-center-v2 />
+                    </div>
 
                 {% block sw_page_notification_center %}
-                <div class="sw-page__sidebar-container">
-                    <sw-notification-center />
-                </div>
+                    <div class="sw-page__sidebar-container">
+                        <sw-notification-center />
+                    </div>
                 {% endblock %}
 
-                <sw-app-topbar-sidebar />
-            </div>
+                    <sw-app-topbar-sidebar />
+                </div>
             {% endblock %}
-        </div>
+            </div>
+        </Teleport>
         {% endblock %}
 
         {% block sw_page_smart_bar %}
@@ -51,7 +56,7 @@
         >
             {% block sw_page_smart_bar_divider %}
             <div
-                v-if="showSearchBar"
+                v-if="showSearchBar && !adminToolbarTarget"
                 class="sw-page__smart-bar-divider"
             ></div>
             {% endblock %}

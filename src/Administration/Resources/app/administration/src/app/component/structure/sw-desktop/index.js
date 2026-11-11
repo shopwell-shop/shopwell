@@ -1,3 +1,4 @@
+import { computed } from 'vue';
 import template from './sw-desktop.html.twig';
 import useAdminLayout from 'src/app/composables/use-admin-layout';
 import useTheme, { THEMES, THEME_LABELS } from 'src/app/composables/use-theme';
@@ -19,8 +20,13 @@ export default {
         CT: 'onCycleTheme',
     },
 
+    provide() {
+        return { adminToolbarTarget: computed(() => this.toolbarTarget) };
+    },
+
     data() {
         return {
+            toolbarTarget: null,
             noNavigation: false,
             hasLayoutSidebar: false,
             shopIdCheck: null,

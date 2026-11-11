@@ -13,7 +13,40 @@
         }
     }
 
+    .sw-admin-menu__headline_text {
+        width: auto;
+        pointer-events: auto;
+        overflow: hidden;
+    }
+
+    .sw-admin-menu__headline-action {
+        flex-shrink: 0;
+        transition:
+            width var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier),
+            height var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier);
+
+        // Keep the pressed look while the action menu is open (reka-ui sets data-state on the trigger).
+        &[data-state="open"] {
+            background: var(--color-interaction-secondary-pressed);
+        }
+    }
+
     .sw-admin-menu__headline {
+        display: flex;
+        height: var(--scale-size-36);
+        padding: 0 var(--scale-size-6) 0 var(--scale-size-10);
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--scale-size-10);
+        flex: 1 0 0;
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+
+        // The headline text stays in layout when collapsed, so this animates with the sidebar width
+        transition:
+            padding var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier),
+            gap var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier);
         overflow: hidden;
 
         .sw-admin-menu__headline_text {

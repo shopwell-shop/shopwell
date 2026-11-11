@@ -16,6 +16,7 @@ export default {
         'new-password-change',
         'new-password-confirm-change',
         'user-theme-change',
+        'user-navigation-layout-change',
         'user-module-icon-colors-change',
         'media-upload',
         'media-remove',
@@ -78,6 +79,10 @@ export default {
         timezoneOptions: {
             type: Array,
             required: true,
+        },
+        userNavigationLayout: {
+            type: String,
+            default: 'sidebar',
         },
         userTheme: {
             type: String,

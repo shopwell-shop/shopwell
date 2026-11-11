@@ -1,11 +1,11 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import useAdminLayout from 'src/app/composables/use-admin-layout';
 
 describe('inline layout settings', () => {
-    let wrapper: Awaited<ReturnType<typeof createWrapper>>;
+    let wrapper: VueWrapper;
 
     async function createWrapper() {
         return mount(await wrapTestComponent('sw-admin-layout-settings', { sync: true }));
@@ -22,25 +22,15 @@ describe('inline layout settings', () => {
         wrapper?.unmount();
     });
 
-    it('switches layout through the visible cards and marks the current choice', async () => {
+    it('emits a draft choice without applying or persisting it', async () => {
         wrapper = await createWrapper();
         await wrapper.find('input[value="mixed"]').setValue(true);
-        await flushPromises();
-        expect(useAdminLayout().layout.value).toBe('mixed');
+        expect(wrapper.emitted('update:value')).toEqual([['mixed']]);
+        expect(useAdminLayout().layout.value).toBe('sidebar');
+        expect(jest.mocked(Shopwell.Service('userConfigService')).upsert.mock.calls).toHaveLength(0);
+        await wrapper.setProps({ value: 'mixed' });
         expect(wrapper.find<HTMLInputElement>('input[value="mixed"]').element.checked).toBe(true);
         expect(wrapper.find<HTMLInputElement>('input[value="sidebar"]').element.checked).toBe(false);
-    });
-
-    it('keeps the selected layout on save failure and offers a working retry', async () => {
-        (Shopwell.Service('userConfigService').upsert as jest.Mock).mockRejectedValueOnce(new Error('offline'));
-        wrapper = await createWrapper();
-        await wrapper.find('input[value="top"]').setValue(true);
-        await flushPromises();
-        expect(useAdminLayout().layout.value).toBe('top');
-        expect(wrapper.find('[role="alert"]').exists()).toBe(true);
-        await wrapper.find('.sw-admin-layout-settings__retry').trigger('click');
-        await flushPromises();
-        expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     });
 
     it('renders in the profile page without a modal or separate close action', async () => {

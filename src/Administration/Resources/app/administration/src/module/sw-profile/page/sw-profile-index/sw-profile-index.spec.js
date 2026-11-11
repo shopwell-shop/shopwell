@@ -7,6 +7,7 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import EntityCollection from 'src/core/data/entity-collection.data';
 import TimezoneService from 'src/core/service/timezone.service';
+import useAdminLayout from 'src/app/composables/use-admin-layout';
 import useTheme, { USER_THEME_CONFIG_KEY } from 'src/app/composables/use-theme';
 import useModuleIconColors, { USER_MODULE_ICON_COLORS_CONFIG_KEY } from 'src/app/composables/use-module-icon-colors';
 import 'src/module/sw-profile/store/sw-profile.store';
@@ -18,6 +19,7 @@ async function createWrapper(
     loginService = { loginByUsername: () => Promise.resolve({}), logout: () => {} },
     {
         featureActive = false,
+        layoutForm = false,
         routeName = 'sw.profile.index.general',
         routerPush = jest.fn(),
         changeset = [{ changes: { id: '1337' } }],
@@ -38,9 +40,16 @@ async function createWrapper(
                 'sw-card-view': {
                     template: `<div class="sw-card-view"><slot></slot></div>`,
                 },
-                'router-view': {
-                    template: `<div><slot></slot></div>`,
+                'router-view': layoutForm
+                    ? { template: `<div><slot :Component="'layout-draft-form'" /></div>` }
+                    : { template: `<div><slot></slot></div>` },
+                'layout-draft-form': {
+                    props: ['userNavigationLayout'],
+                    template: `<sw-admin-layout-settings :value="userNavigationLayout" @update:value="$emit('user-navigation-layout-change', $event)" />`,
                 },
+                'sw-admin-layout-settings': layoutForm
+                    ? await wrapTestComponent('sw-admin-layout-settings', { sync: true })
+                    : true,
                 'sw-search-bar': true,
                 'sw-notification-center': true,
                 'sw-language-switch': true,
@@ -76,7 +85,9 @@ async function createWrapper(
                     },
                 },
                 'sw-skeleton': true,
-                'sw-verify-user-modal': true,
+                'sw-verify-user-modal': layoutForm
+                    ? { template: `<button class="cancel-verification" @click="$emit('close')">Cancel</button>` }
+                    : true,
                 'sw-media-modal-v2': true,
             },
             mocks: {
@@ -483,6 +494,76 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
             await flushPromises();
 
             expect(useTheme().theme.value).toBe('system');
+            expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('navigation layout drafts', () => {
+        let wrapper;
+
+        beforeEach(async () => {
+            Shopwell.Store.get('session').currentUser = { id: '87923' };
+            Shopwell.Service('userConfigService').search.mockResolvedValue({ data: {} });
+            await useAdminLayout().loadUserLayout();
+        });
+
+        afterEach(() => {
+            wrapper?.unmount();
+        });
+
+        it.each([[[]], [['user:editor']]])('applies the draft only after saving for privileges %j', async (privileges) => {
+            wrapper = await createWrapper(privileges, { isSso: true }, undefined, undefined, { layoutForm: true });
+            await flushPromises();
+            await wrapper.find('input[value="top"]').setValue(true);
+            await flushPromises();
+            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
+            await wrapper.find('.sw-profile__save-action').trigger('click');
+            await flushPromises();
+            expect(useAdminLayout().layout.value).toBe('top');
+            expect(Shopwell.Service('userConfigService').upsert).toHaveBeenCalledWith({
+                'core.adminNavigationLayout': { layout: 'top' },
+            });
+        });
+
+        it('does not apply a draft when password verification is cancelled', async () => {
+            wrapper = await createWrapper([], undefined, undefined, undefined, { layoutForm: true });
+            await flushPromises();
+            await wrapper.find('input[value="mixed"]').setValue(true);
+            await wrapper.find('.sw-profile__save-action').trigger('click');
+            await flushPromises();
+            await wrapper.find('.cancel-verification').trigger('click');
+            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
+        });
+
+        it('retains a failed layout draft and applies it when saving is retried', async () => {
+            wrapper = await createWrapper([], { isSso: true }, undefined, undefined, { layoutForm: true });
+            await flushPromises();
+            const configService = Shopwell.Service('userConfigService');
+            configService.upsert.mockImplementation((values) =>
+                values['core.adminNavigationLayout'] ? Promise.reject(new Error('offline')) : Promise.resolve(),
+            );
+            await wrapper.find('input[value="mixed"]').setValue(true);
+            await wrapper.find('.sw-profile__save-action').trigger('click');
+            await flushPromises();
+            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(wrapper.find('input[value="mixed"]').element.checked).toBe(true);
+            configService.upsert.mockResolvedValue();
+            await wrapper.find('.sw-profile__save-action').trigger('click');
+            await flushPromises();
+            expect(useAdminLayout().layout.value).toBe('mixed');
+        });
+
+        it('keeps the draft unapplied after a failed profile save', async () => {
+            wrapper = await createWrapper([], { isSso: true }, () => Promise.reject(new Error('offline')), undefined, {
+                layoutForm: true,
+            });
+            await flushPromises();
+            await wrapper.find('input[value="mixed"]').setValue(true);
+            await wrapper.find('.sw-profile__save-action').trigger('click');
+            await flushPromises();
+            expect(useAdminLayout().layout.value).toBe('sidebar');
             expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
         });
     });

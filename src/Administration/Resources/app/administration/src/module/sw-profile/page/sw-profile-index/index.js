@@ -3,6 +3,7 @@
  */
 import { email } from 'src/core/service/validation.service';
 import { KEY_USER_SEARCH_PREFERENCE } from 'src/app/service/search-ranking.service';
+import useAdminLayout from 'src/app/composables/use-admin-layout';
 import useTheme from 'src/app/composables/use-theme';
 import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
 import template from './sw-profile-index.html.twig';
@@ -49,6 +50,7 @@ export default {
             showMediaModal: false,
             timezoneOptions: [],
             userThemeSelection: null,
+            userNavigationLayoutSelection: null,
             userModuleIconColors: useModuleIconColors().enabled.value,
         };
     },
@@ -60,6 +62,10 @@ export default {
     },
 
     computed: {
+        userNavigationLayout() {
+            return this.userNavigationLayoutSelection ?? useAdminLayout().layout.value;
+        },
+
         userTheme() {
             return this.userThemeSelection ?? useTheme().theme.value;
         },
@@ -354,6 +360,7 @@ export default {
                         await this.updateCurrentUser();
                         await this.saveUserTheme();
                         await this.saveUserModuleIconColors();
+                        await this.saveUserNavigationLayout();
 
                         this.isLoading = false;
                         this.isSaveSuccessful = true;
@@ -397,6 +404,7 @@ export default {
                     await this.updateCurrentUser();
                     await this.saveUserTheme();
                     await this.saveUserModuleIconColors();
+                    await this.saveUserNavigationLayout();
                     Shopwell.Service('localeHelper').setLocaleWithId(this.user.localeId);
 
                     this.isLoading = false;
@@ -469,6 +477,16 @@ export default {
 
         onChangeNewPasswordConfirm(newPasswordConfirm) {
             this.newPasswordConfirm = newPasswordConfirm;
+        },
+
+        onChangeUserNavigationLayout(layout) {
+            this.userNavigationLayoutSelection = layout;
+        },
+
+        async saveUserNavigationLayout() {
+            if (this.userNavigationLayoutSelection === null) return;
+            await useAdminLayout().saveUserLayout(this.userNavigationLayout);
+            this.userNavigationLayoutSelection = null;
         },
 
         onChangeUserTheme(userTheme) {

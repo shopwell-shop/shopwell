@@ -62,6 +62,10 @@ function routeNameChain(router, route) {
 export default {
     template,
 
+    inject: {
+        adminToolbarTarget: { default: null },
+    },
+
     provide() {
         return {
             setSwPageSidebarOffset: this.setSidebarOffset,
@@ -150,6 +154,7 @@ export default {
 
         pageClasses() {
             return {
+                'has--header-toolbar': !!this.adminToolbarTarget,
                 'has--head-area': this.showHeadArea,
                 'has--search-bar': this.showSearchBar,
             };

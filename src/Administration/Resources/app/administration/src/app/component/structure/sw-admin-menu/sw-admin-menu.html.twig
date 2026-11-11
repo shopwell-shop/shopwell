@@ -22,7 +22,7 @@
         :mode="layoutMode"
         :entries="layoutMenuEntries"
         :has-sidebar="hasLayoutSidebar"
-        @visible-count-change="topbarVisibleCount = $event"
+        @toolbar-target-change="$emit('toolbar-target-change', $event)"
     >
         <template #brand>
     {% block sw_admin_menu_header %}
@@ -169,6 +169,8 @@
                                     :is-expanded="isNavigationEntryExpanded(entry)"
                                     :flyout-active="isFlyoutEntryActive(entry)"
                                     :entry="entry"
+                                    :menu-depth="isHorizontal ? 2 : 1"
+                                    :display-icon="!isHorizontal"
                                     @menu-item-hover="onMenuItemHover"
                                     @branch-toggle="onMenuBranchToggle"
                                     @flyout-focus-request="onFlyoutFocusRequest"
@@ -187,6 +189,9 @@
             </div>
     {% endblock %}
 
+        </template>
+        <template #entry-panel="{ entry, close }">
+            {% block sw_admin_menu_entry_panel %}{% endblock %}
         </template>
         <template #user>
     {% block sw_admin_menu_footer %}
@@ -311,7 +316,7 @@
         <div
             id="sw-admin-menu-flyout"
             ref="swAdminMenuFlyout"
-            class="sw-admin-menu__flyout-content"
+            class="sw-admin-menu__flyout-content sw-admin-menu__floating-navigation"
             :class="flyoutContentClass"
             :style="flyoutContentStyle"
             tabindex="-1"

@@ -16,6 +16,12 @@ export default {
 
     inject: ['repositoryFactory', 'acl', 'domainLinkService'],
 
+    emits: ['modal-open'],
+
+    props: {
+        expanded: { type: Boolean, default: false },
+    },
+
     data() {
         return {
             salesChannels: [],
@@ -34,7 +40,7 @@ export default {
 
         isSidebarExpanded() {
             // The off-canvas panel always shows the expanded layout
-            return this.adminMenuStore.isExpanded || this.isMobileViewport;
+            return this.expanded || this.adminMenuStore.isExpanded || this.isMobileViewport;
         },
 
         salesChannelRepository() {
@@ -213,6 +219,7 @@ export default {
         },
 
         openSalesChannelModal() {
+            this.$emit('modal-open');
             this.showModal = true;
         },
 

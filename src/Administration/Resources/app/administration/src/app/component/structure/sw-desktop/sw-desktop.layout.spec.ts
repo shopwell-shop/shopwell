@@ -30,7 +30,16 @@ describe('desktop layout switching', () => {
                     'sw-admin-menu': true,
                     'sw-admin-layout-settings': await wrapTestComponent('sw-admin-layout-settings', { sync: true }),
                     'sw-error-boundary': { template: '<div><slot /></div>' },
-                    'router-view': { template: '<div><input aria-label="Unsaved draft"><sw-admin-layout-settings /></div>' },
+                    'router-view': {
+                        data: () => ({ draftLayout: 'sidebar' }),
+                        methods: {
+                            saveLayout(value: 'sidebar' | 'top' | 'mixed') {
+                                return useAdminLayout().saveUserLayout(value);
+                            },
+                        },
+                        template:
+                            '<div><input aria-label="Unsaved draft"><sw-admin-layout-settings v-model:value="draftLayout" /><button @click="saveLayout(draftLayout)">Save</button></div>',
+                    },
                     'sw-sidebar-renderer': true,
                     'sw-app-shop-id-change-modal': true,
                     'sw-app-wrong-app-url-modal': true,
@@ -47,6 +56,9 @@ describe('desktop layout switching', () => {
 
         for (const mode of ['top', 'mixed', 'sidebar']) {
             await wrapper.find(`input[value="${mode}"]`).setValue(true);
+            await flushPromises();
+            expect(useAdminLayout().layout.value).not.toBe(mode);
+            await wrapper.find('button').trigger('click');
             await flushPromises();
             expect(useAdminLayout().layout.value).toBe(mode);
             expect(wrapper.classes().includes('sw-desktop--horizontal')).toBe(mode !== 'sidebar');

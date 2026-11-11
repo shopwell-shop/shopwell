@@ -15,58 +15,30 @@
             :aria-label="$t('global.sw-admin-menu.navigation.label')"
             @keydown="onNavigationKeydown"
         >
-            <template
-                v-for="entry in visibleEntries"
-                :key="key(entry)"
-            >
-                <button
-                    v-if="opensPanel(entry)"
-                    type="button"
-                    class="sw-admin-menu-topbar__entry"
-                    :class="{ 'is--active': isActive(entry) }"
+            <ul class="sw-admin-menu-topbar__items">
+                <sw-admin-menu-item
+                    v-for="entry in visibleEntries"
+                    :key="key(entry)"
+                    :entry="entry"
+                    presentation="topbar"
                     :data-navigation-key="key(entry)"
-                    :aria-expanded="openKey === key(entry)"
-                    :title="label(entry)"
-                    @click="togglePanel(key(entry), $event)"
-                >
-                    <mt-icon
-                        v-if="entry.icon"
-                        :name="entry.icon"
-                        size="16px"
-                    />
-                    <span>{{ label(entry) }}</span>
-                    <mt-icon
-                        name="regular-chevron-down-xs"
-                        size="8px"
-                    />
-                </button>
-                <component
-                    :is="entry.link ? 'a' : 'router-link'"
-                    v-else
-                    class="sw-admin-menu-topbar__entry"
-                    :class="{ 'is--active': isActive(entry) }"
-                    :data-navigation-key="key(entry)"
-                    v-bind="linkAttributes(entry)"
-                    :aria-current="isActive(entry) ? 'true' : undefined"
-                    :title="label(entry)"
-                    @click="closePanel(false)"
-                >
-                    <mt-icon
-                        v-if="entry.icon"
-                        :name="entry.icon"
-                        size="16px"
-                    />
-                    <span>{{ label(entry) }}</span>
-                </component>
-            </template>
+                    :collapsible-text="false"
+                    :is-expanded="openKey === key(entry)"
+                    :navigation-target="opensPanel(entry) || entry.link ? null : target(entry)"
+                    @submenu-toggle="onSubmenuToggle"
+                    @navigation-link-click="closePanel(false)"
+                />
+            </ul>
 
             <button
                 ref="more"
                 class="sw-admin-menu-topbar__entry sw-admin-menu-topbar__more"
-                :class="{ 'is--active': hasActiveOverflow }"
+                :class="{ 'is--active': hasActiveOverflow, 'is--empty': !overflowEntries.length }"
+                :tabindex="overflowEntries.length ? 0 : -1"
+                :aria-hidden="!overflowEntries.length"
                 type="button"
                 :aria-expanded="openKey === '__more'"
-                @click="togglePanel('__more', $event)"
+                @click="togglePanel('__more', $event.currentTarget)"
             >
                 {{ $t('global.navigationLayout.more') }}
                 <mt-icon
@@ -75,32 +47,27 @@
                 />
             </button>
 
-            <div
+            <ul
                 ref="measurements"
-                class="sw-admin-menu-topbar__measurements"
+                class="sw-admin-menu-topbar__measurements sw-admin-menu-topbar__items"
                 aria-hidden="true"
                 inert
             >
-                <span
+                <sw-admin-menu-item
                     v-for="entry in entries"
                     :key="key(entry)"
-                    class="sw-admin-menu-topbar__entry"
-                >
-                    <mt-icon
-                        v-if="entry.icon"
-                        :name="entry.icon"
-                        size="16px"
-                    />
-                    <span>{{ label(entry) }}</span>
-                    <mt-icon
-                        v-if="mode === 'top' && entry.children.length"
-                        name="regular-chevron-down-xs"
-                        size="8px"
-                    />
-                </span>
-            </div>
+                    :entry="entry"
+                    presentation="topbar"
+                    :collapsible-text="false"
+                    :navigation-target="opensPanel(entry) || entry.link ? null : target(entry)"
+                />
+            </ul>
         </nav>
 
+        <div
+            ref="toolbar"
+            class="sw-admin-menu-topbar__toolbar"
+        ></div>
         <slot name="user"></slot>
     </header>
 
@@ -129,68 +96,72 @@
             tabindex="-1"
             @keydown="onPanelKeydown"
         >
-            <template v-if="mode === 'mixed'">
-                <template
+            <ul class="sw-admin-menu__navigation-list">
+                <sw-admin-menu-item
                     v-for="entry in overflowEntries"
                     :key="key(entry)"
-                >
-                    <ul
-                        v-if="opensPanel(entry)"
-                        class="sw-admin-menu__navigation-list"
-                    >
-                        <sw-admin-menu-item
-                            :entry="entry"
-                            :sidebar-expanded="true"
-                            :is-expanded="true"
-                            :collapsible-text="false"
-                            @navigation-link-click="closePanel(false)"
-                        />
-                    </ul>
-                    <component
-                        :is="entry.link ? 'a' : 'router-link'"
-                        v-else
-                        class="sw-admin-menu-topbar__entry"
-                        :class="{ 'is--active': isActive(entry) }"
-                        v-bind="linkAttributes(entry)"
-                        @click="closePanel(false)"
-                    >
-                        {{ label(entry) }}
-                    </component>
-                </template>
-            </template>
-            <slot
-                v-if="mode === 'top' || !hasSidebar"
-                name="sidebar"
-            ></slot>
+                    :entry="entry"
+                    presentation="topbar"
+                    :collapsible-text="false"
+                    :is-expanded="openKey === key(entry)"
+                    :navigation-target="opensPanel(entry) || entry.link ? null : target(entry)"
+                    @submenu-toggle="onSubmenuToggle"
+                    @navigation-link-click="closePanel(false)"
+                />
+            </ul>
         </nav>
     </mt-floating-ui>
 
     <mt-floating-ui
-        :is-opened="openKey !== null && openKey !== '__more'"
-        :anchor-element="anchor"
+        class="sw-admin-menu-topbar__panel-floating"
+        :is-opened="true"
+        :anchor-element="anchor || moreAnchor"
         :floating-ui-options="{ placement: 'bottom-start' }"
         :offset="8"
         detached
-        @close="openKey !== '__more' && onOutsideClose()"
+        @close="openKey && openKey !== '__more' && onOutsideClose()"
     >
         <nav
             ref="panel"
-            class="sw-admin-menu-topbar__panel"
-            :aria-label="activePanelEntry ? label(activePanelEntry) : $t('global.navigationLayout.more')"
+            :hidden="!openKey || openKey === '__more'"
+            class="sw-admin-menu-topbar__panel sw-admin-menu__floating-navigation"
+            :class="{ 'is--module-colored': !!panelModuleColor }"
+            :style="panelModuleColorStyle"
+            :aria-label="$t('global.sw-admin-menu.navigation.label')"
             tabindex="-1"
             @keydown="onPanelKeydown"
         >
+            <div
+                v-for="entry in customPanelEntries"
+                :key="key(entry)"
+                :hidden="activePanelEntry !== entry"
+            >
+                <slot name="entry-panel" :entry="entry" :close="closePanel"></slot>
+            </div>
             <ul
-                v-if="activePanelEntry"
+                v-if="activePanelEntry?.children.length"
                 class="sw-admin-menu__navigation-list"
             >
-                <sw-admin-menu-item
-                    :entry="activePanelEntry"
-                    :sidebar-expanded="true"
-                    :is-expanded="true"
-                    :collapsible-text="false"
-                    @navigation-link-click="closePanel(false)"
-                />
+                <template
+                    v-for="entry in activePanelEntry.children"
+                    :key="key(entry)"
+                >
+                    <li
+                        v-if="entry.groupStart"
+                        class="sw-admin-menu-item__group-heading"
+                        role="presentation"
+                    >
+                        {{ entry.groupTitle }}
+                    </li>
+                    <sw-admin-menu-item
+                        :entry="entry"
+                        :menu-depth="2"
+                        :display-icon="false"
+                        :sidebar-expanded="true"
+                        :collapsible-text="false"
+                        @navigation-link-click="closePanel(false)"
+                    />
+                </template>
             </ul>
         </nav>
     </mt-floating-ui>

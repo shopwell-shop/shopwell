@@ -27,6 +27,7 @@ export default {
     inject: ['acl', 'feature'],
 
     emits: [
+        'submenu-toggle',
         'menu-item-hover',
         'branch-toggle',
         'flyout-focus-request',
@@ -36,6 +37,16 @@ export default {
     ],
 
     props: {
+        presentation: {
+            type: String,
+            default: 'sidebar',
+            validator: (value) => ['sidebar', 'topbar'].includes(value),
+        },
+        navigationTarget: {
+            type: [Object, String],
+            default: null,
+        },
+
         entry: {
             type: Object,
             required: true,
@@ -93,6 +104,28 @@ export default {
     },
 
     computed: {
+        opensPopup() {
+            return (
+                this.presentation === 'topbar' &&
+                !this.navigationTarget &&
+                (this.children.length > 0 || this.entry.customPanel)
+            );
+        },
+
+        topbarElement() {
+            return this.opensPopup ? 'button' : this.entryPath ? 'router-link' : 'a';
+        },
+
+        topbarLinkAttributes() {
+            if (this.opensPopup) {
+                return { type: 'button', 'aria-expanded': this.isExpanded, 'aria-haspopup': 'true' };
+            }
+            if (this.entryPath) {
+                return { to: this.getLinkToProp };
+            }
+            return { href: this.entry.link, target: this.entry.target, rel: 'noopener noreferrer' };
+        },
+
         isLeafDepth() {
             // Admin menu supports at most three levels; level-3 rows are leaf items only
             return this.menuDepth >= 3;
@@ -134,6 +167,10 @@ export default {
         },
 
         getLinkToProp() {
+            if (this.navigationTarget) {
+                return this.navigationTarget;
+            }
+
             if (this.entry.params) {
                 return { name: this.entry.path, params: this.entry.params };
             }
@@ -152,7 +189,7 @@ export default {
             if (this.entry.menuPrivilege && !this.acl.can(this.entry.menuPrivilege)) {
                 return false;
             }
-            if (this.entry.link) {
+            if (this.entry.link || this.entry.customPanel) {
                 return true;
             }
             // special case for settings module, children are stored in a global state store
@@ -174,8 +211,8 @@ export default {
         },
 
         entryPath() {
-            if (this.entry.path && this.hasAccessToRoute(this.entry.path)) {
-                return this.entry.path;
+            if (this.navigationTarget || (this.entry.path && this.hasAccessToRoute(this.entry.path))) {
+                return this.entry.path || this.navigationTarget;
             }
 
             return undefined;
@@ -204,6 +241,10 @@ export default {
         },
 
         submenuVisuallyOpen() {
+            if (this.presentation === 'topbar') {
+                return false;
+            }
+
             if (this.menuDepth === 1) {
                 if (!this.sidebarExpanded) {
                     return false;
@@ -313,6 +354,14 @@ export default {
     },
 
     methods: {
+        onTopbarClick(event) {
+            if (this.opensPopup) {
+                this.$emit('submenu-toggle', { entry: this.entry, target: event.currentTarget });
+                return;
+            }
+            this.$emit('navigation-link-click');
+        },
+
         collapsedTooltipTriggerProps(tooltipProps) {
             if (this.showsCollapsedTooltip) {
                 // Focus does not bubble to the non-focusable row, focusin/focusout do
@@ -341,12 +390,10 @@ export default {
                 if (name.startsWith('regular-')) {
                     return name.replace('regular-', 'solid-');
                 }
-
                 if (name.startsWith('icon/regular/')) {
                     return name.replace('icon/regular/', 'icon/solid/');
                 }
             }
-
             return `${name}`;
         },
 

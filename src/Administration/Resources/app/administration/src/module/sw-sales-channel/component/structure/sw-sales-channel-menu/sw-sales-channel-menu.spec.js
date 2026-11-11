@@ -589,6 +589,7 @@ describe('src/module/sw-sales-channel/component/structure/sw-sales-channel-menu'
         await flushPromises();
 
         expect(wrapper.find('sw-sales-channel-modal-stub').exists()).toBe(true);
+        expect(wrapper.emitted('modal-open')).toHaveLength(1);
     });
 
     it('should not show the add channel menu item without the creator privilege', async () => {

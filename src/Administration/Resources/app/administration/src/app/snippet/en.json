@@ -2,7 +2,7 @@
     "global": {
         "navigationLayout": {
             "title": "Navigation layout",
-            "hint": "Choose how to display the navigation. Changes apply immediately and are saved to your account.",
+            "hint": "Choose how to display the navigation. Save your profile to apply changes.",
             "more": "More",
             "names": {
                 "sidebar": "Sidebar",
@@ -14,9 +14,6 @@
                 "top": "Horizontal modules with dropdown menus",
                 "mixed": "Modules at the top, pages on the left"
             },
-            "saveError": "The layout is active, but your preference could not be saved. Please try again.",
-            "retry": "Retry saving",
-            "saving": "Saving your preference…",
             "mobileHint": "On smaller screens, navigation opens in a drawer."
         },
         "error-codes": {

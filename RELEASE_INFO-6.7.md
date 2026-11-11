@@ -55,9 +55,11 @@ Register custom types through `BlogTypeRegistry::addType($type, $template, $sche
 
 ### Administration navigation layouts
 
-Administrators can choose sidebar, top, or combined navigation under My profile > User interface.
+Administrators can choose sidebar, top, or combined navigation under My profile > User interface and apply the choice by saving their profile.
 The preference is stored per user under `core.adminNavigationLayout`; smaller screens continue using the navigation drawer.
 All layouts use the configured menu order, role restrictions and registered module navigation.
+Top and combined layouts place the existing page search and toolbar actions in one compact header.
+Sales channels use their own navigation area instead of appearing in every module sidebar.
 
 ### Return settings per sales channel
 

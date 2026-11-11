@@ -1,7 +1,10 @@
 /**
  * @sw-package framework
  */
-import { readonly, ref } from 'vue';
+import { readonly, ref, type Ref } from 'vue';
+
+/** @private */
+export const USER_NAVIGATION_LAYOUT_CONFIG_KEY = 'core.adminNavigationLayout';
 
 /** @private */
 export const NAVIGATION_LAYOUTS = ['sidebar', 'top', 'mixed'] as const;
@@ -9,69 +12,76 @@ export const NAVIGATION_LAYOUTS = ['sidebar', 'top', 'mixed'] as const;
 /** @private */
 export type NavigationLayout = (typeof NAVIGATION_LAYOUTS)[number];
 
-const CONFIG_KEY = 'core.adminNavigationLayout';
-const layout = ref<NavigationLayout>('sidebar');
-let revision = 0;
+const DEFAULT_NAVIGATION_LAYOUT: NavigationLayout = 'sidebar';
 
-function currentUserId(): string | undefined {
-    return Shopwell.Store.get('session').currentUser?.id;
-}
+type UseAdminLayoutReturn = {
+    layout: Readonly<Ref<NavigationLayout>>;
+    loadUserLayout: () => Promise<void>;
+    saveUserLayout: (layout: NavigationLayout) => Promise<void>;
+};
 
-function isLayout(value: unknown): value is NavigationLayout {
-    return NAVIGATION_LAYOUTS.includes(value as NavigationLayout);
-}
+const layout = ref<NavigationLayout>(DEFAULT_NAVIGATION_LAYOUT);
+let layoutUserId: string | undefined;
 
-function cacheLayout(userId: string, value: NavigationLayout): void {
-    try {
-        localStorage.setItem(`sw-admin-layout:${userId}`, value);
-    } catch {
-        // Browser storage is optional; server-side preferences remain usable.
-    }
-}
-
-function cachedLayout(userId: string): NavigationLayout {
-    try {
-        const cached = localStorage.getItem(`sw-admin-layout:${userId}`);
-        return isLayout(cached) ? cached : 'sidebar';
-    } catch {
-        return 'sidebar';
-    }
+function isNavigationLayout(value: unknown): value is NavigationLayout {
+    return NAVIGATION_LAYOUTS.some((option) => option === value);
 }
 
 async function loadUserLayout(): Promise<void> {
-    const request = ++revision;
-    const userId = currentUserId();
-    layout.value = userId ? cachedLayout(userId) : 'sidebar';
-    if (!userId) return;
+    const userId = Shopwell.Store.get('session').currentUser?.id;
 
-    try {
-        const response = await Shopwell.Service('userConfigService').search([CONFIG_KEY]);
-        if (!response || request !== revision || userId !== currentUserId()) return;
-
-        const value = response.data?.[CONFIG_KEY] as { layout?: unknown } | undefined;
-        layout.value = isLayout(value?.layout) ? value.layout : 'sidebar';
-        cacheLayout(userId, layout.value);
-    } catch {
-        // Retain this account's cached choice when the server is unavailable.
+    if (layoutUserId !== userId) {
+        layout.value = DEFAULT_NAVIGATION_LAYOUT;
+        layoutUserId = userId;
     }
+
+    if (!userId) {
+        return;
+    }
+
+    const currentLayout = layout.value;
+    const response = await Shopwell.Service('userConfigService').search([USER_NAVIGATION_LAYOUT_CONFIG_KEY]);
+
+    if (!response || userId !== Shopwell.Store.get('session').currentUser?.id) {
+        return;
+    }
+
+    // Keep a preference saved while this request was loading.
+    if (layout.value !== currentLayout) {
+        return;
+    }
+
+    const preference = response.data?.[USER_NAVIGATION_LAYOUT_CONFIG_KEY] as { layout?: unknown } | undefined;
+    layout.value = isNavigationLayout(preference?.layout) ? preference.layout : DEFAULT_NAVIGATION_LAYOUT;
 }
 
 async function saveUserLayout(value: NavigationLayout): Promise<void> {
-    const userId = currentUserId();
-    if (!userId || !isLayout(value)) return;
+    const userId = Shopwell.Store.get('session').currentUser?.id;
 
-    // A pending preference load must never overwrite an explicit selection.
-    revision += 1;
-    layout.value = value;
-    cacheLayout(userId, value);
+    if (!userId || !isNavigationLayout(value)) {
+        return;
+    }
 
-    await Shopwell.Service('userConfigService').upsert({ [CONFIG_KEY]: { layout: value } });
+    await Shopwell.Service('userConfigService').upsert({
+        [USER_NAVIGATION_LAYOUT_CONFIG_KEY]: { layout: value },
+    });
+
+    if (userId === Shopwell.Store.get('session').currentUser?.id) {
+        layoutUserId = userId;
+        layout.value = value;
+    }
 }
 
+const layoutState: UseAdminLayoutReturn = {
+    layout: readonly(layout),
+    loadUserLayout,
+    saveUserLayout,
+};
+
 /**
- * Shared account preference; viewport adaptation never overwrites the user's choice.
+ * App-wide navigation preference for the current user.
  * @private
  */
-export default function useAdminLayout() {
-    return { layout: readonly(layout), loadUserLayout, saveUserLayout };
+export default function useAdminLayout(): UseAdminLayoutReturn {
+    return layoutState;
 }

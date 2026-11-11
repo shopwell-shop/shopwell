@@ -1,6 +1,38 @@
 {% block sw_admin_menu_item %}
+<li
+    v-if="showMenuItem && presentation === 'topbar'"
+    class="sw-admin-menu-item--topbar"
+    :class="leafLiClass"
+    :style="moduleColorStyle"
+>
+    <div class="sw-admin-menu__navigation-item-row">
+        <component
+            :is="topbarElement"
+            class="sw-admin-menu__navigation-link"
+            :class="{ 'router-link-active': rowActive }"
+            v-bind="topbarLinkAttributes"
+            :aria-current="rowActive && !opensPopup ? 'page' : undefined"
+            :title="getEntryLabel"
+            @click="onTopbarClick"
+        >
+            <mt-icon
+                v-if="displayIcon && entry.icon"
+                class="sw-admin-menu__navigation-link-icon"
+                :name="navigationIconName"
+                :color="navigationIconColor"
+                :size="iconSize"
+            />
+            <span class="sw-admin-menu__navigation-link-label">{{ getEntryLabel }}</span>
+            <mt-icon
+                v-if="opensPopup"
+                name="regular-chevron-down-xs"
+                size="8px"
+            />
+        </component>
+    </div>
+</li>
 <mt-collapsible
-    v-if="showMenuItem && hasCollapsibleSubtree"
+    v-else-if="showMenuItem && hasCollapsibleSubtree"
     as="li"
     :class="collapsibleLiClass"
     :style="moduleColorStyle"

@@ -277,42 +277,6 @@
         }
     }
 
-    .sw-admin-menu__headline {
-        display: flex;
-        height: var(--scale-size-36);
-        padding: 0 var(--scale-size-6) 0 var(--scale-size-10);
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--scale-size-10);
-        flex: 1 0 0;
-        font-weight: var(--font-weight-semibold);
-        font-size: var(--font-size-xs);
-        line-height: var(--font-line-height-xs);
-
-        // The headline text stays in layout when collapsed, so this animates with the sidebar width
-        transition:
-            padding var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier),
-            gap var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier);
-    }
-
-    .sw-admin-menu__headline_text {
-        width: auto;
-        pointer-events: auto;
-        overflow: hidden;
-    }
-
-    .sw-admin-menu__headline-action {
-        flex-shrink: 0;
-        transition:
-            width var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier),
-            height var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier);
-
-        // Keep the pressed look while the action menu is open (reka-ui sets data-state on the trigger).
-        &[data-state="open"] {
-            background: var(--color-interaction-secondary-pressed);
-        }
-    }
-
     .sw-admin-menu__navigation {
         white-space: nowrap;
     }
@@ -390,7 +354,9 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        transition: transform var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier), opacity 0.1s ease;
+        transition:
+            transform var(--sw-admin-menu-duration-inner) var(--sw-admin-menu-bezier),
+            opacity 0.1s ease;
     }
 
     .sw-admin-menu__user-custom-fields {
@@ -607,7 +573,7 @@
     .sw-admin-menu__header {
         flex-shrink: 0;
         padding: 0;
-        max-width: 280px;
+        max-width: 180px;
     }
 
     .sw-admin-menu__footer {
@@ -619,11 +585,21 @@
         min-height: 0;
     }
 
-    &.is--top .sw-admin-menu__collapse-button {
+    .sw-admin-menu__collapse-button {
         display: none;
     }
 
     &.is--collapsed .sw-admin-menu-topbar__sidebar {
         width: 60px;
+    }
+
+    .sw-admin-menu__title,
+    .sw-admin-menu__user-custom-fields,
+    .sw-admin-menu__user-actions-toggle-icon-wrapper {
+        display: none;
+    }
+
+    .sw-admin-menu__user-actions-toggle {
+        padding: 0;
     }
 }

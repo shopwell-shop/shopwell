@@ -1,6 +1,6 @@
 import { createFocusTrap } from 'focus-trap';
 import useAdminLayout from 'src/app/composables/use-admin-layout';
-import { filterLayoutNavigation, rebaseNavigationLevels } from '../sw-admin-menu-topbar/navigation-layout.helper';
+import { filterLayoutNavigation } from '../sw-admin-menu-topbar/navigation-layout.helper';
 import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
 import template from './sw-admin-menu.html.twig';
 import { getActiveRouteNames, isEntryOnActiveRoute } from '../sw-admin-menu-item/menu-item-active.helper';
@@ -35,7 +35,7 @@ export default {
 
     mixins: [Mixin.getByName('notification'), Mixin.getByName('translate-with-fallback')],
 
-    emits: ['layout-sidebar-change'],
+    emits: ['layout-sidebar-change', 'toolbar-target-change'],
 
     shortcuts: {
         S: {
@@ -48,7 +48,6 @@ export default {
 
     data() {
         return {
-            topbarVisibleCount: Number.MAX_SAFE_INTEGER,
             activeEntry: null,
             isOffCanvasShown: false,
             isUserActionsActive: false,
@@ -92,11 +91,11 @@ export default {
 
         sidebarEntries() {
             if (!this.isHorizontal) return this.mainMenuEntries;
-            if (this.layoutMode === 'top') return this.layoutMenuEntries.slice(this.topbarVisibleCount);
+            if (this.layoutMode === 'top') return [];
             const activeNames = getActiveRouteNames(this.$route, this.$router);
             const owner = this.layoutMenuEntries.find((entry) => isEntryOnActiveRoute(entry, this.$route, activeNames));
             if (!owner?.children.length) return [];
-            return rebaseNavigationLevels(owner.path ? [{ ...owner, children: [] }, ...owner.children] : owner.children);
+            return owner.children;
         },
 
         hasLayoutSidebar() {
@@ -108,9 +107,7 @@ export default {
         },
 
         isExpanded() {
-            return (
-                (this.isHorizontal && this.layoutMode === 'top') || this.adminMenuStore.isExpanded || this.isMobileViewport
-            );
+            return this.isHorizontal || this.adminMenuStore.isExpanded || this.isMobileViewport;
         },
 
         isMobileViewport() {

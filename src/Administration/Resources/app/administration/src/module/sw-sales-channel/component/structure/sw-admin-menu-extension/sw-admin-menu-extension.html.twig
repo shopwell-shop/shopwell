@@ -1,5 +1,17 @@
 {% block sw_admin_menu_navigation_main %}
 {% parent %}
 
-<sw-sales-channel-menu v-if="canViewSalesChannels" />
+<sw-sales-channel-menu
+    v-if="canViewSalesChannels && (!isHorizontal || (layoutMode === 'mixed' && isSalesChannelActive))"
+    :expanded="isHorizontal"
+/>
+{% endblock %}
+
+{% block sw_admin_menu_entry_panel %}
+{% parent %}
+<sw-sales-channel-menu
+    v-if="entry.id === 'sw-sales-channel-layout' && canViewSalesChannels"
+    expanded
+    @modal-open="close(false)"
+/>
 {% endblock %}

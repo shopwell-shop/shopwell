@@ -2,6 +2,7 @@
  * @sw-package framework
  */
 import type { PropType } from 'vue';
+import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
 import type { RouteLocationRaw } from 'vue-router';
 import { createFocusTrap, type FocusTrap } from 'focus-trap';
 import { getActiveRouteNames, isEntryOnActiveRoute } from '../sw-admin-menu-item/menu-item-active.helper';
@@ -18,7 +19,7 @@ export default Shopwell.Component.wrapComponentConfig({
 
     inject: ['acl'],
 
-    emits: ['visible-count-change'],
+    emits: ['toolbar-target-change'],
 
     props: {
         enabled: { type: Boolean, default: false },
@@ -31,6 +32,7 @@ export default Shopwell.Component.wrapComponentConfig({
         return {
             visibleCount: Number.MAX_SAFE_INTEGER,
             openKey: null as string | null,
+            panelKey: null as string | null,
             anchor: null as HTMLElement | null,
             observer: null as ResizeObserver | null,
             focusTrap: null as FocusTrap | null,
@@ -42,6 +44,9 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     computed: {
+        customPanelEntries(): LayoutNavigationEntry[] {
+            return this.mode === 'top' ? this.entries.filter((entry) => entry.customPanel) : [];
+        },
         activeEntry(): LayoutNavigationEntry | undefined {
             return this.entries.find((entry) => this.isActive(entry));
         },
@@ -52,7 +57,13 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.entries.slice(this.visibleCount);
         },
         activePanelEntry(): LayoutNavigationEntry | undefined {
-            return this.entries.find((entry) => this.key(entry) === this.openKey);
+            return this.entries.find((entry) => this.key(entry) === this.panelKey);
+        },
+        panelModuleColor(): string | undefined {
+            return useModuleIconColors().enabled.value ? (this.activePanelEntry?.color ?? undefined) : undefined;
+        },
+        panelModuleColorStyle(): Record<string, string> | undefined {
+            return this.panelModuleColor ? { '--sw-admin-menu-module-color': this.panelModuleColor } : undefined;
         },
         hasActiveOverflow(): boolean {
             return this.overflowEntries.some((entry) => this.isActive(entry));
@@ -120,25 +131,20 @@ export default Shopwell.Component.wrapComponentConfig({
     beforeUnmount() {
         this.observer?.disconnect();
         this.closePanel(false);
+        this.$emit('toolbar-target-change', null);
     },
 
     methods: {
+        onSubmenuToggle({ entry, target }: { entry: LayoutNavigationEntry; target: HTMLElement }): void {
+            this.togglePanel(this.key(entry), target);
+        },
         key(entry: LayoutNavigationEntry): string {
             return entry.id ?? entry.path ?? entry.link ?? '';
         },
-        label(entry: LayoutNavigationEntry): string {
-            if (entry.label && typeof entry.label === 'object') {
-                return entry.label.translated ? entry.label.label : this.$t(entry.label.label);
-            }
-            return entry.label ? this.$t(entry.label) : '';
-        },
-        linkAttributes(entry: LayoutNavigationEntry): Record<string, unknown> {
-            return entry.link
-                ? { href: entry.link, target: entry.target, rel: 'noopener noreferrer' }
-                : { to: this.target(entry) };
-        },
         opensPanel(entry: LayoutNavigationEntry): boolean {
-            return entry.children.length > 0 && (this.mode === 'top' || firstNavigationTarget(entry) === null);
+            return this.mode === 'top'
+                ? !!entry.customPanel || entry.children.length > 0
+                : entry.children.length > 0 && firstNavigationTarget(entry) === null;
         },
         isActive(entry: LayoutNavigationEntry): boolean {
             const route = this.$route as ActiveRoute;
@@ -167,20 +173,25 @@ export default Shopwell.Component.wrapComponentConfig({
                 query: { ...this.$route.query },
             };
         },
-        togglePanel(key: string, event: Event): void {
+        togglePanel(key: string, target: HTMLElement): void {
             if (this.openKey === key) {
                 this.closePanel();
                 return;
             }
             this.closePanel(false);
-            this.anchor = event.currentTarget as HTMLElement;
+            if (key !== '__more') {
+                this.anchor = target.closest('.sw-admin-menu-topbar__more-panel') ? this.moreAnchor : target;
+                this.panelKey = key;
+            }
             this.openKey = key;
         },
         closePanel(returnFocus = true): void {
             this.dropdownObserver?.disconnect();
             this.dropdownObserver = null;
             this.dropdownTrigger = null;
-            this.focusTrap?.deactivate({ returnFocus, onDeactivate: () => {} });
+            const trigger = this.openKey === '__more' ? this.moreAnchor : this.anchor;
+            this.focusTrap?.deactivate({ returnFocus: false, onDeactivate: () => {} });
+            if (returnFocus) trigger?.focus();
             this.focusTrap = null;
             this.openKey = null;
         },
@@ -201,10 +212,13 @@ export default Shopwell.Component.wrapComponentConfig({
         observeNavigation(): void {
             this.observer?.disconnect();
             const nav = this.$refs.navigation as HTMLElement | undefined;
+            this.$emit('toolbar-target-change', this.enabled ? this.$refs.toolbar : null);
             if (!this.enabled || !nav) return;
             this.moreAnchor = this.$refs.more as HTMLElement;
             this.observer = new ResizeObserver(() => this.measureEntries());
             this.observer.observe(nav);
+            const measurements = this.$refs.measurements as HTMLElement | undefined;
+            if (measurements) this.observer.observe(measurements);
             this.measureEntries();
         },
         measureEntries(): void {
@@ -216,15 +230,15 @@ export default Shopwell.Component.wrapComponentConfig({
             const count = fitNavigationEntries(widths, nav.clientWidth, more.getBoundingClientRect().width, 8);
             if (count !== this.visibleCount) {
                 this.visibleCount = count;
-                this.$emit('visible-count-change', count);
                 this.closePanel(false);
             }
         },
         onNavigationKeydown(event: KeyboardEvent): void {
             const nav = this.$refs.navigation as HTMLElement;
             const links = Array.from(
-                nav.querySelectorAll<HTMLElement>('[data-navigation-key], .sw-admin-menu-topbar__more'),
+                nav.querySelectorAll<HTMLElement>('[data-navigation-key] .sw-admin-menu__navigation-link'),
             );
+            if (this.overflowEntries.length && this.moreAnchor) links.push(this.moreAnchor);
             const index = links.indexOf(document.activeElement as HTMLElement);
             const next = {
                 ArrowRight: (index + 1) % links.length,
