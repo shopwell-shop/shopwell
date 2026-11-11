@@ -2,6 +2,7 @@
  * @sw-package framework
  */
 import { buildSettingsNavigation, type SettingsNavigationItem } from 'src/app/service/settings-menu.helper';
+import type { WhatsNewItem } from 'src/app/store/whats-new.store';
 import template from './sw-settings-index.html.twig';
 import './sw-settings-index.scss';
 
@@ -25,14 +26,9 @@ export default Shopwell.Component.wrapComponentConfig({
         };
     },
 
-    /**
-     * @deprecated tag:v6.8.0 - Will be removed without replacement
-     */
     created() {
         void Shopwell.Store.get('adminMenuConfig').loadVisibleTree();
-        if (!Shopwell.Feature.isActive('v6.8.0.0')) {
-            void this.getUserConfig();
-        }
+        this.createdComponent();
     },
 
     metaInfo() {
@@ -136,9 +132,71 @@ export default Shopwell.Component.wrapComponentConfig({
                     .filter(removeEmptyGroups),
             );
         },
+
+        visibleNewBadges(): WhatsNewItem[] {
+            const whatsNewStore = Shopwell.Store.get('whatsNew');
+
+            return Object.values(this.configuredSettingsGroups)
+                .flat()
+                .filter((settingsItem: SettingsItemHere) => {
+                    if (
+                        settingsItem.inheritedMenuPrivileges?.some((privilege) => !this.acl.can(privilege)) ||
+                        (settingsItem.menuPrivilege && !this.acl.can(settingsItem.menuPrivilege))
+                    ) {
+                        return false;
+                    }
+
+                    return !settingsItem.privilege || this.acl.can(settingsItem.privilege);
+                })
+                .flatMap((settingsItem) => this.getNewBadge(settingsItem) ?? [])
+                .filter((newBadge) => whatsNewStore.isVisible(newBadge));
+        },
+
+        visibleNewBadgeKeys(): Set<string> {
+            return new Set(this.visibleNewBadges.map((newBadge) => newBadge.key));
+        },
+    },
+
+    watch: {
+        visibleNewBadges: {
+            immediate: true,
+            handler(newBadges: WhatsNewItem[]) {
+                if (newBadges.length === 0) {
+                    return;
+                }
+
+                void Shopwell.Store.get('whatsNew').markSeen(newBadges);
+            },
+        },
     },
 
     methods: {
+        createdComponent() {
+            // @deprecated tag:v6.8.0 - Remove together with getUserConfig()
+            if (!Shopwell.Feature.isActive('v6.8.0.0')) {
+                void this.getUserConfig();
+            }
+
+            void Shopwell.Store.get('whatsNew').load();
+        },
+
+        showNewBadge(settingsItem: SettingsItemHere): boolean {
+            const newBadge = this.getNewBadge(settingsItem);
+
+            return newBadge !== null && this.visibleNewBadgeKeys.has(newBadge.key);
+        },
+
+        getNewBadge(settingsItem: SettingsItemHere): WhatsNewItem | null {
+            if (!settingsItem.since || !settingsItem.name) {
+                return null;
+            }
+
+            return {
+                key: `settings.${settingsItem.name}`,
+                since: settingsItem.since,
+            };
+        },
+
         /**
          * @deprecated tag:v6.8.0 - Will be removed without replacement
          */

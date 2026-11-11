@@ -116,7 +116,8 @@
         "title": "Shopwell Account session expired",
         "message": "Please log in to access your licensed extensions.",
         "actionLabel": "Login"
-      }
+      },
+      "appValidationFailed": "The app has validation errors"
     },
     "mainMenu": {
       "mainMenuItemExtensionStore": "Extensions",
@@ -293,7 +294,8 @@
           "rateLabel": "Rate extension",
           "policyExtensions": "Privacy policy extensions",
           "permissions": "See permissions",
-          "openExtension": "Open extension"
+          "openExtension": "Open extension",
+          "cancelSubscriptionLabel": "Cancel subscription"
         }
       },
       "sw-extension-card-bought": {
@@ -305,7 +307,7 @@
       "sw-extension-deactivation-modal": {
         "deactivateExtensionLabel": "Deactivate \"{extensionName}\"",
         "description": "The \"{extensionName}\" extension has a monthly subscription fee.<br>Deactivating this extension <b>will not</b> cancel your subscription and fees will continue to be collected.",
-        "descriptionCancel": "If you want to cancel your subscription, you can remove it by clicking \"{removeLabel}\" in the context menu.",
+        "descriptionCancel": "If you want to cancel your subscription, click \"{removeLabel}\" in the context menu.",
         "alertDeactivate": "Do you still want to deactivate this extension?",
         "deactivateLabel": "Deactivate"
       },
@@ -356,7 +358,10 @@
         "description": "If you remove the extension, you can no longer use it.",
         "alertCancel": "Are you sure you want to cancel and remove the extension?",
         "alertRemove": "Are you sure you want to remove the extension?",
-        "labelCancel": "Cancel and remove"
+        "labelCancel": "Cancel and remove",
+        "titleCancelSubscription": "\"{extensionName}\" cancel subscription",
+        "alertCancelSubscription": "Are you sure you want to cancel the subscription?",
+        "labelCancelSubscription": "Cancel subscription"
       },
       "sw-extension-uninstall-modal": {
         "title": "\"{extensionName}\" uninstall",

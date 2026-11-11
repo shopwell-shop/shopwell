@@ -345,8 +345,8 @@ class DebugMcpCommand extends Command
     {
         $rows = [];
         $properties = $tool->inputSchema['properties'] ?? [];
-        $required = ($tool->inputSchema + ['required' => null])['required'];
-        $required = \is_array($required) ? $required : [];
+        // the SchemaGenerator omits 'required' when no parameter is required
+        $required = $tool->inputSchema['required'] ?? [];
 
         if (\is_array($properties)) {
             foreach ($properties as $paramName => $def) {

@@ -163,7 +163,7 @@ class ShopwellClass implements CustomShopwellProperties {
          * `sw-admin` renders every registered override once, hidden, at boot. Not for author use.
          */
         registerOverrideComponent: (component: DefineComponent<unknown, unknown, unknown>) => {
-            ShopwellClass.#overrideComponents.value.push(component);
+            ShopwellClass.#overrideComponents.value.push(Vue.markRaw(component));
         },
         /**
          * @private

@@ -5,7 +5,7 @@ namespace Shopwell\Tests\Integration\Core\Content\ImportExport\Service;
 use League\Flysystem\FilesystemOperator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\ImportExportException;
 use Shopwell\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopwell\Core\Content\ImportExport\Service\FileService;
@@ -37,7 +37,7 @@ class MappingServiceTest extends TestCase
     private EntityRepository $profileRepository;
 
     /**
-     * @var EntityRepository<EntityCollection<ImportExportFileEntity>>
+     * @var EntityRepository<ImportExportFileCollection>
      */
     private EntityRepository $fileRepository;
 

@@ -21,6 +21,9 @@ class MissingUnitTests
         'RuleTestCase',
         'TestCase',
         'MiddlewareTestCase',
+        'AbstractProviderTestCase',
+        'ImportStrategyTestCase',
+        'ConstraintValidatorTestCase',
     ];
 
     private const PROJECT_TEST_BASES = [

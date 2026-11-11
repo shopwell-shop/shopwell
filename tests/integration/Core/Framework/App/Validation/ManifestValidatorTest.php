@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Integration\Core\Framework\App\Validation;
 
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
 use Shopwell\Core\Framework\App\Validation\Error\AppNameError;
 use Shopwell\Core\Framework\App\Validation\Error\ConfigurationError;
@@ -50,8 +51,14 @@ class ManifestValidatorTest extends TestCase
 
         static::assertNotNull($result->errors);
         static::assertSame(
-            [MissingTranslationError::class, AppNameError::class, ConfigurationError::class, NotHookableError::class, MissingPermissionError::class],
-            array_map(static fn (Error $error): string => $error::class, $result->errors)
+            [
+                [MissingTranslationError::class, AppException::VALIDATION_FAILED],
+                [AppNameError::class, AppException::VALIDATION_FAILED],
+                [ConfigurationError::class, AppException::INVALID_CONFIGURATION],
+                [NotHookableError::class, AppException::VALIDATION_FAILED],
+                [MissingPermissionError::class, AppException::VALIDATION_FAILED],
+            ],
+            array_map(static fn (Error $error): array => [$error::class, $error->getErrorCode()], $result->errors)
         );
     }
 }

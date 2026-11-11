@@ -580,4 +580,122 @@ describe('module/sw-settings/page/sw-settings-index', () => {
             expect(emptyState.exists()).toBe(true);
         });
     });
+
+    describe('new badge', () => {
+        const originalConfig = { ...Shopwell.Context.app.config };
+
+        beforeEach(() => {
+            Shopwell.Store.get('whatsNew').$reset();
+            Shopwell.Context.app.config.version = '6.7.17.0';
+            Shopwell.Context.app.config.versionHistory = undefined;
+            Shopwell.Store.get('settingsItems').addItem({
+                group: 'shop',
+                to: 'sw.settings.new.index',
+                icon: 'regular-cog',
+                id: 'sw-settings-new',
+                name: 'settings-new',
+                label: 'New setting',
+                since: '6.7.17.0',
+            });
+        });
+
+        afterEach(() => {
+            Shopwell.Context.app.config.version = originalConfig.version;
+            Shopwell.Context.app.config.versionHistory = originalConfig.versionHistory;
+        });
+
+        it('shows the new badge next to the new settings item once the version history arrived and remembers that the user saw it', async () => {
+            const wrapper = await createWrapper();
+            await flushPromises();
+
+            expect(wrapper.find('.sw-settings-item__new-badge').exists()).toBe(false);
+            expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
+
+            Shopwell.Context.app.config.versionHistory = [
+                { version: '6.7.16.0', recordedAt: new Date(Date.now() - 86400000 * 60).toISOString(), type: 'install' },
+                { version: '6.7.17.0', recordedAt: new Date().toISOString(), type: 'update' },
+            ];
+            await flushPromises();
+
+            expect(wrapper.findAll('.sw-settings-item__new-badge')).toHaveLength(1);
+            expect(wrapper.find('#sw-settings-new .sw-settings-item__new-badge').exists()).toBe(true);
+            expect(Shopwell.Service('userConfigService').upsert).toHaveBeenCalledWith({
+                'core.whatsNew': {
+                    'settings.settings-new': {
+                        since: '6.7.17.0',
+                        seenAt: expect.any(Number),
+                    },
+                },
+            });
+        });
+
+        it.each([
+            ['visible', true],
+            ['hidden', false],
+            ['restricted group', false],
+            ['restricted item', false],
+        ])('uses the configured settings identity for a %s new item', async (scenario, visible) => {
+            const wrapper = await createWrapper();
+            const menu = Shopwell.Store.get('adminMenuConfig');
+            menu.managedKeys = ['sw-settings-new'];
+            menu.visibleTree = [
+                {
+                    id: 'settings',
+                    internalKey: 'sw-settings',
+                    children: [
+                        {
+                            id: 'configured-shop',
+                            type: 'group',
+                            groupName: 'shop',
+                            privilege: scenario === 'restricted group' ? 'restricted.viewer' : undefined,
+                            children:
+                                scenario === 'hidden'
+                                    ? []
+                                    : [
+                                          {
+                                              id: 'configured-new',
+                                              internalKey: 'sw-settings-new',
+                                              privilege: scenario === 'restricted item' ? 'restricted.viewer' : undefined,
+                                          },
+                                      ],
+                        },
+                    ],
+                },
+            ];
+            Shopwell.Context.app.config.versionHistory = [
+                { version: '6.7.16.0', recordedAt: new Date(Date.now() - 86400000 * 60).toISOString(), type: 'install' },
+                { version: '6.7.17.0', recordedAt: new Date().toISOString(), type: 'update' },
+            ];
+            await flushPromises();
+
+            expect(wrapper.find('#configured-new .sw-settings-item__new-badge').exists()).toBe(visible);
+            const configuredBadgeUpdate = {
+                'core.whatsNew': {
+                    'settings.configured-new': { since: '6.7.17.0', seenAt: expect.any(Number) },
+                },
+            };
+            const expectedCalls = visible ? [[configuredBadgeUpdate]] : [];
+            expect(Shopwell.Service('userConfigService').upsert.mock.calls).toEqual(expectedCalls);
+            wrapper.unmount();
+        });
+
+        it('does not mark badges as seen again while the user searches', async () => {
+            Shopwell.Context.app.config.versionHistory = [
+                { version: '6.7.16.0', recordedAt: new Date(Date.now() - 86400000 * 60).toISOString(), type: 'install' },
+                { version: '6.7.17.0', recordedAt: new Date().toISOString(), type: 'update' },
+            ];
+            const markSeenSpy = jest.spyOn(Shopwell.Store.get('whatsNew'), 'markSeen');
+            const wrapper = await createWrapper();
+            await flushPromises();
+            const markSeenCalls = markSeenSpy.mock.calls.length;
+
+            await wrapper.find('input.sw-settings__content-header-search').setValue('New');
+            await flushPromises();
+            await wrapper.find('input.sw-settings__content-header-search').setValue('New set');
+            await flushPromises();
+
+            expect(markSeenSpy).toHaveBeenCalledTimes(markSeenCalls);
+            expect(wrapper.find('#sw-settings-new .sw-settings-item__new-badge').exists()).toBe(true);
+        });
+    });
 });

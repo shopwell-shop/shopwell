@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Integration\Core\Framework\App\Validation;
 
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
 use Shopwell\Core\Framework\App\Validation\Error\MissingPermissionError;
 use Shopwell\Core\Framework\App\Validation\Error\NotHookableError;
@@ -90,6 +91,7 @@ class HookableValidatorTest extends TestCase
 - commercial-license: ' . CommercialLicenseProvidedEvent::NAME,
             $validations[0]->getMessage()
         );
+        static::assertSame(AppException::VALIDATION_FAILED, $validations[0]->getErrorCode());
     }
 
     public function testCommercialLicenseWebhookIsHookableForServices(): void

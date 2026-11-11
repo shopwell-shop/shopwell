@@ -3,14 +3,13 @@
 namespace Shopwell\Tests\Integration\Core\Content\ImportExport\ScheduledTask;
 
 use League\Flysystem\FilesystemOperator;
-use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopwell\Core\Content\ImportExport\Message\DeleteFileHandler;
 use Shopwell\Core\Content\ImportExport\Message\DeleteFileMessage;
 use Shopwell\Core\Content\ImportExport\ScheduledTask\CleanupImportExportFileTaskHandler;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
@@ -30,7 +29,7 @@ class CleanupImportExportFileTaskHandlerTest extends AbstractImportExportTestCas
     private EntityRepository $logRepository;
 
     /**
-     * @var EntityRepository<EntityCollection<ImportExportFileEntity>>
+     * @var EntityRepository<ImportExportFileCollection>
      */
     private EntityRepository $fileRepository;
 

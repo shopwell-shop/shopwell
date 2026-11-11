@@ -25,6 +25,7 @@ import VirtualShopwellModulesPlugin from './build/vite-plugins/virtual-shopwell-
 import NodeEnvDefinePlugin from './build/vite-plugins/node-env-define';
 import AdminIndexHtmlPlugin from './build/vite-plugins/admin-index-html';
 import ExtglobCompatPlugin from './build/vite-plugins/extglob-compat';
+import ExtensionDevServerPlugin from './build/vite-plugins/extension-dev-server';
 import { isBundledDevActive, loadViteToolchain } from './build/vite-plugins/vite-toolchain';
 
 console.log(colors.yellow('# Compiling Administration with Vite configuration'));
@@ -105,7 +106,8 @@ export default (async ({ command }) => {
                     changeOrigin: true,
                     secure: false,
                 },
-                ...viteExtensionServerMapping.proxy,
+                // With Vite 8 the extensions are served by the ExtensionDevServerPlugin
+                ...(toolchain.isVite8 ? {} : viteExtensionServerMapping.proxy),
             },
             allowedHosts: true,
         },
@@ -155,6 +157,8 @@ export default (async ({ command }) => {
                 // dev plugins
                 return [
                     ...sharedPlugins,
+
+                    ...(toolchain.isVite8 ? [ExtensionDevServerPlugin(toolchain, extensions, useBundledDev)] : []),
 
                     ...(useBundledDev ? [NodeEnvDefinePlugin()] : []),
 

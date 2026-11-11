@@ -156,6 +156,7 @@ use Shopwell\Core\Framework\App\Url\AppUrlVerificationPrinter;
 use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\App\Validation\AppNameValidator;
 use Shopwell\Core\Framework\App\Validation\AppRequirementsValidator;
+use Shopwell\Core\Framework\App\Validation\CompatibilityValidator;
 use Shopwell\Core\Framework\App\Validation\ConfigValidator;
 use Shopwell\Core\Framework\App\Validation\ContentSystemBindingSpecificationAppValidator;
 use Shopwell\Core\Framework\App\Validation\ContentSystemElementTypeAppValidator;
@@ -295,6 +296,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             tagged_iterator('app.requirements_validator'),
             service('logger'),
             param('kernel.environment'),
+        ]);
+
+    $services->set(CompatibilityValidator::class)
+        ->args([
+            param('kernel.shopwell_version'),
         ]);
 
     $services->set(PermissionLifecycleService::class)
@@ -675,7 +681,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ScriptExecutor::class),
             param('kernel.project_dir'),
             service(CustomEntityLifecycleService::class),
-            param('kernel.shopwell_version'),
+            service(CompatibilityValidator::class),
             service(AppFeatureValidator::class),
             service(SourceResolver::class),
             service(ConfigReader::class),

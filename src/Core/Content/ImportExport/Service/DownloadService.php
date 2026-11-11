@@ -6,13 +6,13 @@ use League\Flysystem\FilesystemOperator;
 use League\Flysystem\UnableToGenerateTemporaryUrl;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
 use Shopwell\Core\Content\ImportExport\ImportExportException;
 use Shopwell\Core\Content\Media\Exception\IllegalFileNameException;
 use Shopwell\Core\Content\Media\File\DownloadResponseGenerator;
 use Shopwell\Core\Content\Media\Util\PathHelper;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
@@ -34,7 +34,7 @@ class DownloadService
     /**
      * @internal
      *
-     * @param EntityRepository<EntityCollection<ImportExportFileEntity>> $fileRepository
+     * @param EntityRepository<ImportExportFileCollection> $fileRepository
      */
     public function __construct(
         private readonly FilesystemOperator $filesystem,

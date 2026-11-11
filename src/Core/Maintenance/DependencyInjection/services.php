@@ -5,7 +5,7 @@ namespace Shopwell\Core\Maintenance\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Adapter\Cache\CacheClearer;
-use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\App\ShopIdChangeResolver\Resolver;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Store\Services\AbstractExtensionDataProvider;
 use Shopwell\Core\Framework\Store\Services\ExtensionLifecycleService;
@@ -214,10 +214,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(StagingAppHandler::class)
         ->args([
-            service(Connection::class),
-            service(ShopIdProvider::class),
+            service(Resolver::class),
         ])
-        ->tag('kernel.event_listener');
+        ->tag('kernel.event_listener', ['priority' => -100]);
 
     $services->set(StagingMailHandler::class)
         ->args([

@@ -22,6 +22,7 @@ use Shopwell\Core\Checkout\Promotion\PromotionEntity;
 use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Flow\Dispatching\BufferedFlowExecutor;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopwell\Core\Content\ImportExport\Event\EnrichExportCriteriaEvent;
@@ -75,7 +76,6 @@ use Shopwell\Core\Content\Test\ImportExport\StockSubscriber;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\Price;
@@ -208,7 +208,7 @@ class ImportExportTest extends AbstractImportExportTestCase
 
         $progress = $this->export(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, $criteria);
 
-        /** @var EntityRepository<EntityCollection<ImportExportFileEntity>> $fileRepository */
+        /** @var EntityRepository<ImportExportFileCollection> $fileRepository */
         $fileRepository = static::getContainer()->get('import_export_file.repository');
         $criteria = new Criteria(array_filter([$this->getLogEntity($progress->getLogId())->getFileId()]));
         $file = $fileRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();

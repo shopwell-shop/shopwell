@@ -37,6 +37,7 @@ import initializeMediaModal from './media-modal.init';
 import initializeConsent from './consent.init';
 import initializeTelemetry from './telemetry.init';
 import initializeTheme from './theme.init';
+import initializeWhatsNew from './whats-new.init';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
@@ -74,4 +75,5 @@ export default {
     consent: initializeConsent,
     telemetry: initializeTelemetry,
     theme: initializeTheme,
+    whatsNew: initializeWhatsNew,
 };

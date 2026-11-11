@@ -28,6 +28,7 @@
 } %}
 
 {% set attributeDefaults = {
+    id: 'product-listing',
     class: listingCVA.apply({}),
     'data-component': 'Sw:Product:Listing',
     'data-component-options': listingOptions|json_encode,

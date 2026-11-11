@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationCollection;
 use Shopwell\Core\Framework\Migration\MigrationCollectionLoader;
+use Shopwell\Core\Framework\Update\Services\VersionHistory;
 use Shopwell\Core\Installer\Database\DatabaseMigrator;
 use Shopwell\Core\Installer\Database\MigrationCollectionFactory;
 use Shopwell\Core\Installer\Requirements\IniConfigReader;
@@ -98,6 +99,10 @@ class DatabaseMigratorTest extends TestCase
         $this->migrationCollection->expects($this->once())
             ->method('getExecutableDestructiveMigrations')
             ->willReturn(['migration']);
+
+        $this->connection->method('executeStatement')->willReturnCallback(
+            static fn () => static::fail('The install must not be recorded before all migrations ran.')
+        );
 
         $result = $this->databaseMigrator->migrate(0, $this->connection);
 
@@ -188,6 +193,15 @@ class DatabaseMigratorTest extends TestCase
             ->method('getExecutableDestructiveMigrations')
             ->willReturn([]);
 
+        $writtenConfig = [];
+        $this->connection->method('executeStatement')->willReturnCallback(
+            static function (string $sql, array $params) use (&$writtenConfig): int {
+                $writtenConfig[$params['key']] = json_decode($params['value'], true);
+
+                return 1;
+            }
+        );
+
         $result = $this->databaseMigrator->migrate(6, $this->connection);
 
         static::assertSame([
@@ -195,6 +209,13 @@ class DatabaseMigratorTest extends TestCase
             'total' => 10,
             'isFinished' => true,
         ], $result);
+        static::assertSame(
+            [[Kernel::SHOPWELL_FALLBACK_VERSION, 'install']],
+            array_map(
+                static fn (array $entry) => [$entry['version'], $entry['type']],
+                $writtenConfig[VersionHistory::STORAGE_KEY],
+            ),
+        );
     }
 
     public static function maxExecutionTimeProvider(): \Generator

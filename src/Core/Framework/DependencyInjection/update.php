@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\DependencyInjection;
 
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\Adapter\Storage\AbstractKeyValueStorage;
 use Shopwell\Core\Framework\Notification\NotificationService;
 use Shopwell\Core\Framework\Store\Services\AbstractExtensionDataProvider;
 use Shopwell\Core\Framework\Store\Services\ExtensionLifecycleService;
@@ -11,7 +12,9 @@ use Shopwell\Core\Framework\Update\Api\UpdateController;
 use Shopwell\Core\Framework\Update\Services\ApiClient;
 use Shopwell\Core\Framework\Update\Services\ExtensionCompatibility;
 use Shopwell\Core\Framework\Update\Services\UpdateHtaccess;
+use Shopwell\Core\Framework\Update\Services\VersionHistory;
 use Shopwell\Core\Framework\Update\Subscriber\UpdateSubscriber;
+use Shopwell\Core\Framework\Update\Subscriber\VersionHistorySubscriber;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -63,6 +66,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(UpdateSubscriber::class)
         ->args([
             service(NotificationService::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(VersionHistory::class)
+        ->args([
+            service(AbstractKeyValueStorage::class),
+            service(ClockInterface::class),
+            param('kernel.shopwell_version'),
+        ]);
+
+    $services->set(VersionHistorySubscriber::class)
+        ->args([
+            service(VersionHistory::class),
         ])
         ->tag('kernel.event_subscriber');
 };

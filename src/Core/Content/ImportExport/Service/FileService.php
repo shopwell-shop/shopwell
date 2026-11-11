@@ -3,13 +3,13 @@
 namespace Shopwell\Core\Content\ImportExport\Service;
 
 use League\Flysystem\FilesystemOperator;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
 use Shopwell\Core\Content\ImportExport\ImportExportException;
 use Shopwell\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopwell\Core\Content\ImportExport\Processing\Writer\AbstractWriter;
 use Shopwell\Core\Content\ImportExport\Processing\Writer\CsvFileWriter;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -24,7 +24,7 @@ class FileService extends AbstractFileService
     /**
      * @internal
      *
-     * @param EntityRepository<EntityCollection<ImportExportFileEntity>> $fileRepository
+     * @param EntityRepository<ImportExportFileCollection> $fileRepository
      */
     public function __construct(
         private readonly FilesystemOperator $filesystem,

@@ -5,6 +5,7 @@ namespace Shopwell\Storefront\Theme;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Symfony\Contracts\Service\ResetInterface;
 
 #[Package('discovery')]
 /**
@@ -12,7 +13,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  *
  * @final
  */
-class DatabaseSalesChannelThemeLoader
+class DatabaseSalesChannelThemeLoader implements ResetInterface
 {
     /**
      * @var array<string, list<string>>

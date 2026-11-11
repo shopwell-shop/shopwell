@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\App\Validation\Error;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Validation\Error\ContentSystemBindingSpecificationSchemaError;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -26,5 +27,13 @@ class ContentSystemBindingSpecificationSchemaErrorTest extends TestCase
         $error = new ContentSystemBindingSpecificationSchemaError(['binding: invalid type']);
 
         static::assertSame("The following content-system binding specifications are invalid:\n- binding: invalid type", $error->getMessage());
+    }
+
+    public function testProvidesTheGenericValidationErrorContract(): void
+    {
+        $error = new ContentSystemBindingSpecificationSchemaError(['Invalid binding']);
+
+        static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
+        static::assertSame([], $error->getParameters());
     }
 }

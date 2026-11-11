@@ -42,6 +42,7 @@ use Shopwell\Core\Framework\Mcp\McpToolsetRegistry;
 use Shopwell\Core\Framework\Mcp\McpToolsetSessionStorage;
 use Shopwell\Core\Framework\Mcp\Notification\AppMcpCapabilityDetector;
 use Shopwell\Core\Framework\Mcp\Notification\AppMcpCapabilityLifecycleSubscriber;
+use Shopwell\Core\Framework\Mcp\Notification\McpHandshakeListChangedSubscriber;
 use Shopwell\Core\Framework\Mcp\Notification\McpListChangedNotifier;
 use Shopwell\Core\Framework\Mcp\Notification\McpListVersions;
 use Shopwell\Core\Framework\Mcp\Prompt\ShopwellContextPrompt;
@@ -124,6 +125,10 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('kernel.event_subscriber');
 
+    $services->set(McpHandshakeListChangedSubscriber::class)
+        ->args([service('request_stack')])
+        ->tag('kernel.event_subscriber');
+
     $services->set(McpContextProvider::class)
         ->args([service('request_stack')]);
 
@@ -171,6 +176,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service(Connection::class),
             env('APP_URL'),
+            param('shopwell.mcp.allowed_origins'),
         ]);
 
     $services->set(McpHttpTransportFactory::class)

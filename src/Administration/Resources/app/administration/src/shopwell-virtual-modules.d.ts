@@ -850,6 +850,13 @@ declare module 'shopwell:stores/tabs' {
 }
 
 /** @experimental stableVersion:v6.8.0 */
+declare module 'shopwell:stores/whatsNew' {
+    const useStore: () => PiniaRootState['whatsNew'];
+
+    export default useStore;
+}
+
+/** @experimental stableVersion:v6.8.0 */
 declare module 'shopwell:stores/session' {
     const useStore: () => PiniaRootState['session'];
 

@@ -5,11 +5,11 @@ namespace Shopwell\Core\Checkout\Document\Service;
 use Shopwell\Core\Checkout\Document\DocumentConfiguration;
 use Shopwell\Core\Checkout\Document\DocumentConfigurationFactory;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection;
-use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopwell\Core\Framework\Deprecation\BCChange\ExperimentalReplacement;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
@@ -62,17 +62,20 @@ final class DocumentConfigLoader implements EventSubscriberInterface, ResetInter
         }
 
         $criteria = (new Criteria())
-            ->addFilter(new EqualsFilter('documentType.technicalName', $documentType))
+            ->addFilter(
+                new EqualsFilter('documentType.technicalName', $documentType),
+                new OrFilter([
+                    new EqualsFilter('global', true),
+                    new EqualsFilter('salesChannels.salesChannelId', $salesChannelId),
+                ]),
+            )
             ->addAssociation('logo');
-
-        $criteria->getAssociation('salesChannels')
-            ->addFilter(new EqualsFilter('salesChannelId', $salesChannelId));
 
         $documentConfigs = $this->documentConfigRepository->search($criteria, $context)->getEntities();
 
         $globalConfig = $documentConfigs->filterByProperty('global', true)->first();
 
-        $salesChannelConfig = $documentConfigs->filter(static fn (DocumentBaseConfigEntity $config) => ((int) $config->getSalesChannels()?->count()) > 0)->first();
+        $salesChannelConfig = $documentConfigs->filterByProperty('global', false)->first();
 
         $config = DocumentConfigurationFactory::createConfiguration([], $globalConfig, $salesChannelConfig);
         $this->encodeLogoUrl($config);

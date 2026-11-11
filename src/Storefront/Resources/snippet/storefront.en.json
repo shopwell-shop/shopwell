@@ -136,7 +136,8 @@
         "breadcrumbLabel": "Breadcrumb",
         "grossTaxInformationShort": "incl. VAT plus shipping costs",
         "netTaxInformationShort": "excl. VAT plus shipping costs",
-        "toggleSubcategories": "Show or hide the subcategories of %category%"
+        "toggleSubcategories": "Show or hide the subcategories of %category%",
+        "skipToProductListing": "Skip to products"
     },
     "header": {
         "logoLink": "Go to homepage",

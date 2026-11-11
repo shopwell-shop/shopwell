@@ -1,5 +1,13 @@
 {% sw_extends '@Storefront/storefront/base.html.twig' %}
 
+{% block base_body_skip_to_content %}
+    {% if contentPage.findFirstElement('Sw:Filter:Panel') %}
+        {% set listingElement = contentPage.findFirstElement('Sw:Product:Listing') %}
+        {% set productListing = listingElement.properties.listing ?? null %}
+    {% endif %}
+    {{ parent() }}
+{% endblock %}
+
 {% block base_head %}
     {% if page.product is defined %}
         {% sw_include '@Storefront/storefront/page/product-detail/meta.html.twig' %}

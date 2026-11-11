@@ -4,7 +4,7 @@ namespace Shopwell\Tests\Integration\Core\Content\ImportExport\Api;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopwell\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopwell\Core\Framework\Context;
@@ -43,7 +43,7 @@ class ImportExportLogApiTest extends TestCase
     private EntityRepository $profileRepository;
 
     /**
-     * @var EntityRepository<EntityCollection<ImportExportFileEntity>>
+     * @var EntityRepository<ImportExportFileCollection>
      */
     private EntityRepository $fileRepository;
 

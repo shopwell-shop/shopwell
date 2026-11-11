@@ -57,11 +57,15 @@ use Shopwell\Core\Framework\MessageQueue\Stats\StatsService;
 use Shopwell\Core\Framework\Migration\MigrationInfo;
 use Shopwell\Core\Framework\Test\Store\StaticInAppPurchaseFactory;
 use Shopwell\Core\Framework\Test\TestCaseBase\EnvTestBehaviour;
+use Shopwell\Core\Framework\Update\Services\VersionHistory;
+use Shopwell\Core\Framework\Update\Services\VersionHistoryEntryType;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Stub\ContentSystem\ContentSystemElementTypeSpecificationBuilder;
+use Shopwell\Core\Test\Stub\Framework\Adapter\Storage\ArrayKeyValueStorage;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Symfony\Bundle\FrameworkBundle\Routing\AttributeRouteControllerLoader;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
@@ -84,9 +88,13 @@ class InfoControllerTest extends TestCase
 
     private EventDispatcher $eventDispatcher;
 
+    private VersionHistory $versionHistory;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->versionHistory = new VersionHistory(new ArrayKeyValueStorage(), new MockClock('2026-11-04T10:00:00+00:00'), '6.6.9999999-dev');
+        $this->versionHistory->record(VersionHistoryEntryType::INSTALL);
         $this->shopIdProvider = $this->createMock(ShopIdProvider::class);
         $this->statsService = static::createStub(StatsService::class);
         $this->migrationInfo = static::createStub(MigrationInfo::class);
@@ -578,6 +586,10 @@ class InfoControllerTest extends TestCase
         static::assertCount(1, $inAppPurchases);
         static::assertArrayHasKey('SwagApp', $inAppPurchases);
         static::assertSame(['SwagApp_premium'], $inAppPurchases['SwagApp']);
+
+        static::assertSame([
+            ['version' => '6.6.9999999-dev', 'recordedAt' => '2026-11-04T10:00:00+00:00', 'type' => 'install'],
+        ], $data['versionHistory']);
     }
 
     public function testConfigExtension(): void
@@ -950,6 +962,7 @@ class InfoControllerTest extends TestCase
             new InlineMappingTokenParser(),
             null,
             new MediaFileExtensionListProvider($this->eventDispatcher, [], ['pdf', 'epub']),
+            $this->versionHistory,
         );
     }
 }

@@ -3,9 +3,8 @@
 namespace Shopwell\Core\Content\ImportExport\Service;
 
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
@@ -18,7 +17,7 @@ use Shopwell\Core\Framework\Log\Package;
 class DeleteExpiredFilesService
 {
     /**
-     * @param EntityRepository<EntityCollection<ImportExportFileEntity>> $fileRepository
+     * @param EntityRepository<ImportExportFileCollection> $fileRepository
      */
     public function __construct(
         private readonly EntityRepository $fileRepository,

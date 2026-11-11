@@ -43,6 +43,7 @@ use Shopwell\Core\Framework\MessageQueue\Stats\StatsService;
 use Shopwell\Core\Framework\Migration\MigrationInfo;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
 use Shopwell\Core\Framework\Store\InAppPurchase;
+use Shopwell\Core\Framework\Update\Services\VersionHistory;
 use Shopwell\Core\Kernel;
 use Shopwell\Core\Maintenance\Staging\Event\SetupStagingEvent;
 use Shopwell\Core\PlatformRequest;
@@ -93,6 +94,7 @@ class InfoController extends AbstractController
         private readonly InlineMappingTokenParser $inlineMappingTokenParser,
         private readonly ?PresignedMediaUploadService $presignedMediaUploadService,
         private readonly MediaFileExtensionListProvider $mediaFileExtensionListProvider,
+        private readonly VersionHistory $versionHistory,
     ) {
     }
 
@@ -322,6 +324,7 @@ class InfoController extends AbstractController
                 'minSearchTermLength' => $this->systemConfigService->getInt('core.search.minSearchTermLength') ?: 2,
             ],
             'inAppPurchases' => $this->inAppPurchase->all(),
+            'versionHistory' => $this->versionHistory->all(),
         ];
 
         $config = $this->eventDispatcher->dispatch(new AdminInfoConfigEvent($config))->getConfig();

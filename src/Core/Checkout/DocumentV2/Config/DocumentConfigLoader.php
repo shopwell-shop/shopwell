@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Country\CountryCollection;
@@ -117,18 +118,19 @@ final class DocumentConfigLoader implements EventSubscriberInterface, ResetInter
         }
 
         $criteria = (new Criteria())
-            ->addFilter(new EqualsFilter('typeName', $documentType))
+            ->addFilter(
+                new EqualsFilter('typeName', $documentType),
+                new OrFilter([
+                    new EqualsFilter('global', true),
+                    new EqualsFilter('salesChannels.salesChannelId', $salesChannelId),
+                ]),
+            )
             ->addAssociation('logo');
-
-        $criteria->getAssociation('salesChannels')
-            ->addFilter(new EqualsFilter('salesChannelId', $salesChannelId));
 
         $rows = $this->documentConfigRepository->search($criteria, $context)->getEntities();
 
         $globalRow = $rows->filterByProperty('global', true)->first();
-        $salesChannelRow = $rows
-            ->filter(static fn (DocumentBaseConfigEntity $row): bool => ((int) $row->getSalesChannels()?->count()) > 0)
-            ->first();
+        $salesChannelRow = $rows->filterByProperty('global', false)->first();
 
         $legacyConfig = $this->mergeJsonConfig($globalRow, $salesChannelRow);
         $systemConfigCompanyInfo = $this->resolveCompanyInfoFromSystemConfig($salesChannelId);

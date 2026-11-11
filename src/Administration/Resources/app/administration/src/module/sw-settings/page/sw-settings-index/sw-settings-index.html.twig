@@ -57,6 +57,7 @@
                             :label="getLabel(settingsItem)"
                             :to="getRouteConfig(settingsItem)"
                             :href="settingsItem.href"
+                            :show-new-badge="showNewBadge(settingsItem)"
                         >
                             <template #icon>
                                 <component

@@ -4,10 +4,9 @@ namespace Shopwell\Tests\Unit\Core\Content\ImportExport\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\Service\DeleteExpiredFilesService;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
@@ -27,8 +26,7 @@ class DeleteExpiredFilesServiceTest extends TestCase
     {
         $now = new \DateTimeImmutable('2026-01-31T12:00:00+00:00');
 
-        /** @var StaticEntityRepository<EntityCollection<ImportExportFileEntity>> $repository */
-        $repository = StaticEntityRepository::of(EntityCollection::class, [
+        $repository = StaticEntityRepository::of(ImportExportFileCollection::class, [
             static function (Criteria $criteria, Context $context) use ($now): IdSearchResult {
                 static::assertSame(Criteria::TOTAL_COUNT_MODE_EXACT, $criteria->getTotalCountMode());
                 $filters = $criteria->getFilters();
@@ -50,8 +48,7 @@ class DeleteExpiredFilesServiceTest extends TestCase
     public function testDeleteFilesDeletesExpiredFileIds(): void
     {
         $ids = [Uuid::randomHex(), Uuid::randomHex()];
-        /** @var StaticEntityRepository<EntityCollection<ImportExportFileEntity>> $repository */
-        $repository = StaticEntityRepository::of(EntityCollection::class, [$ids]);
+        $repository = StaticEntityRepository::of(ImportExportFileCollection::class, [$ids]);
 
         (new DeleteExpiredFilesService($repository, new MockClock('2026-01-31 12:00:00')))->deleteFiles(Context::createDefaultContext());
 
@@ -60,8 +57,7 @@ class DeleteExpiredFilesServiceTest extends TestCase
 
     public function testDeleteFilesDeletesNothingWhenNoExpiredFilesFound(): void
     {
-        /** @var StaticEntityRepository<EntityCollection<ImportExportFileEntity>> $repository */
-        $repository = StaticEntityRepository::of(EntityCollection::class, [[]]);
+        $repository = StaticEntityRepository::of(ImportExportFileCollection::class, [[]]);
 
         (new DeleteExpiredFilesService($repository, new MockClock('2026-01-31 12:00:00')))->deleteFiles(Context::createDefaultContext());
 

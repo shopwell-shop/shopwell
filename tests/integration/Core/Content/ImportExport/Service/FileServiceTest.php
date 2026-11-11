@@ -4,11 +4,11 @@ namespace Shopwell\Tests\Integration\Core\Content\ImportExport\Service;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopwell\Core\Content\ImportExport\Service\FileService;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
@@ -50,7 +50,7 @@ class FileServiceTest extends TestCase
 
     public function testStoreFile(): void
     {
-        /** @var EntityRepository<EntityCollection<ImportExportFileEntity>> $fileRepository */
+        /** @var EntityRepository<ImportExportFileCollection> $fileRepository */
         $fileRepository = static::getContainer()->get('import_export_file.repository');
         $fileService = new FileService(
             static::getContainer()->get('shopwell.filesystem.private'),

@@ -4,9 +4,8 @@ namespace Shopwell\Tests\Integration\Core\Content\ImportExport\Api;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileCollection;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
@@ -27,7 +26,7 @@ class ImportExportFileApiTest extends TestCase
     use KernelTestBehaviour;
 
     /**
-     * @var EntityRepository<EntityCollection<ImportExportFileEntity>>
+     * @var EntityRepository<ImportExportFileCollection>
      */
     private EntityRepository $repository;
 

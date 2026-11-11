@@ -48,11 +48,37 @@ class ContentPage extends Struct
         );
     }
 
+    public function findFirstElement(string $component): ?RenderedElement
+    {
+        return $this->findElement($this->elements, $component);
+    }
+
     /**
      * @codeCoverageIgnore
      */
     public function getApiAlias(): string
     {
         return 'content_page';
+    }
+
+    /**
+     * @param list<RenderedElement> $elements
+     */
+    private function findElement(array $elements, string $component): ?RenderedElement
+    {
+        foreach ($elements as $element) {
+            if ($element->component === $component) {
+                return $element;
+            }
+
+            foreach ($element->slots as $children) {
+                $match = $this->findElement($children, $component);
+                if ($match !== null) {
+                    return $match;
+                }
+            }
+        }
+
+        return null;
     }
 }

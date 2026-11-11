@@ -14,7 +14,6 @@ use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\LegacyTestsInSrc;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingIntegrationTestInSplitSuite;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingMigrationTests;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingPackageAttributeInTests;
-use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingPullRequestDescription;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingReleaseInfo;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingUnitTests;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\PhpstanBaselineGrowth;
@@ -41,7 +40,6 @@ return (new Config())
     ->useRule(new CompletePullRequestFiles())
     ->useRule(new DangerConfigChanged())
     ->useRule(new InlineRuleInDangerConfig())
-    ->useRule(new MissingPullRequestDescription())
     ->useRule(new DeprecatedChangelogFormat())
     ->useRule(new MissingReleaseInfo())
     ->useRule(new IgnoredPhpstanErrorsInTouchedFiles())

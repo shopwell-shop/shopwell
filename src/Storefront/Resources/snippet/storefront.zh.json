@@ -136,7 +136,8 @@
         "breadcrumbLabel": "当前位置",
         "grossTaxInformationShort": "含税，另计运费",
         "netTaxInformationShort": "未含税，另计运费",
-        "toggleSubcategories": "展开或收起 %category% 的子分类"
+        "toggleSubcategories": "展开或收起 %category% 的子分类",
+        "skipToProductListing": "跳转到商品"
     },
     "header": {
         "logoLink": "返回首页",

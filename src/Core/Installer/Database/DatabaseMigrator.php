@@ -5,7 +5,10 @@ namespace Shopwell\Core\Installer\Database;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Adapter\Storage\MySQLKeyValueStorage;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Update\Services\VersionHistory;
+use Shopwell\Core\Framework\Update\Services\VersionHistoryEntryType;
 use Shopwell\Core\Installer\Requirements\IniConfigReader;
 use Shopwell\Core\Maintenance\System\Service\SetupDatabaseAdapter;
 
@@ -70,11 +73,17 @@ class DatabaseMigrator
         }
 
         $total = $coreMigrations->getTotalMigrationCount() * 2;
+        $isFinished = $coreMigrations->getExecutableDestructiveMigrations() === [];
+
+        if ($isFinished) {
+            // The installer kernel has no core container, so VersionHistorySubscriber never sees an install event here.
+            (new VersionHistory(new MySQLKeyValueStorage($connection), $this->clock, $this->version))->record(VersionHistoryEntryType::INSTALL);
+        }
 
         return [
             'offset' => $executedMigrations,
             'total' => $total,
-            'isFinished' => $coreMigrations->getExecutableDestructiveMigrations() === [],
+            'isFinished' => $isFinished,
         ];
     }
 }

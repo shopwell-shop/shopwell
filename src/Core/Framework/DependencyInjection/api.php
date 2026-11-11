@@ -115,6 +115,7 @@ use Shopwell\Core\Framework\Sso\TokenService\ExternalTokenService;
 use Shopwell\Core\Framework\Sso\UserService\UserService;
 use Shopwell\Core\Framework\Store\InAppPurchase;
 use Shopwell\Core\Framework\SystemCheck\SystemChecker;
+use Shopwell\Core\Framework\Update\Services\VersionHistory;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Framework\Validation\HappyPathValidator;
 use Shopwell\Core\System\SalesChannel\Api\StructEncoder;
@@ -359,6 +360,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(InlineMappingTokenParser::class),
             service(PresignedMediaUploadService::class)->nullOnInvalid(),
             service(MediaFileExtensionListProvider::class),
+            service(VersionHistory::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

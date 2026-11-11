@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\App\Validation\Error;
 
+use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -25,5 +26,15 @@ class AppNameError implements Error
     public function getMessage(): string
     {
         return $this->message;
+    }
+
+    public function getErrorCode(): string
+    {
+        return AppException::VALIDATION_FAILED;
+    }
+
+    public function getParameters(): array
+    {
+        return [];
     }
 }

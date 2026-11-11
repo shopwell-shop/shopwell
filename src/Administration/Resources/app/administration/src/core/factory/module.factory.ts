@@ -82,6 +82,7 @@ interface SettingsItem {
     id?: string;
     name?: string;
     label?: string;
+    since?: string;
 }
 
 /**

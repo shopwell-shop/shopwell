@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\App\Validation\Error;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Validation\Error\ContentSystemLayoutPresetSchemaError;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -21,5 +22,13 @@ class ContentSystemLayoutPresetSchemaErrorTest extends TestCase
         $error = new ContentSystemLayoutPresetSchemaError('/path/to/presets', 'YAML syntax invalid');
 
         static::assertSame('Invalid layout preset in "/path/to/presets": YAML syntax invalid', $error->getMessage());
+    }
+
+    public function testProvidesTheGenericValidationErrorContract(): void
+    {
+        $error = new ContentSystemLayoutPresetSchemaError('/path/to/schema', 'Invalid schema');
+
+        static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
+        static::assertSame([], $error->getParameters());
     }
 }

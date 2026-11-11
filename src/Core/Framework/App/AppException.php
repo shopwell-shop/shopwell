@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\App\Exception\AppNotFoundException;
 use Shopwell\Core\Framework\App\Exception\AppRegistrationException;
 use Shopwell\Core\Framework\App\Exception\AppRegistrationRejectedException;
 use Shopwell\Core\Framework\App\Exception\AppUrlFailedVerificationException;
+use Shopwell\Core\Framework\App\Exception\AppValidationRefusedException;
 use Shopwell\Core\Framework\App\Exception\AppXmlParsingException;
 use Shopwell\Core\Framework\App\Exception\InvalidAppFlowActionVariableException;
 use Shopwell\Core\Framework\App\Exception\ShopIdChangeStrategyNotFoundException;
@@ -19,6 +20,8 @@ use Shopwell\Core\Framework\App\ShopId\ShopId;
 use Shopwell\Core\Framework\App\Url\VerificationState;
 use Shopwell\Core\Framework\App\Url\VerificationStatus;
 use Shopwell\Core\Framework\App\Validation\Error\Error;
+use Shopwell\Core\Framework\App\Validation\Error\IncompatibleAppError;
+use Shopwell\Core\Framework\App\Validation\Error\UnmetRequirementError;
 use Shopwell\Core\Framework\App\Validation\Requirements\UnmetRequirement;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\HttpException;
@@ -33,6 +36,7 @@ class AppException extends HttpException
 {
     public const CANNOT_DELETE_COMPOSER_MANAGED = 'FRAMEWORK__APP_CANNOT_DELETE_COMPOSER_MANAGED';
     public const NOT_COMPATIBLE = 'FRAMEWORK__APP_NOT_COMPATIBLE';
+    public const VALIDATION_FAILED = 'FRAMEWORK__APP_VALIDATION_FAILED';
     public const NOT_FOUND = 'FRAMEWORK__APP_NOT_FOUND';
     public const ALREADY_INSTALLED = 'FRAMEWORK__APP_ALREADY_INSTALLED';
     public const REGISTRATION_FAILED = 'FRAMEWORK__APP_REGISTRATION_FAILED';
@@ -108,11 +112,20 @@ class AppException extends HttpException
 
     public static function notCompatible(string $pluginName): self
     {
-        return new self(
+        return self::validationFailedFromError(new IncompatibleAppError($pluginName));
+    }
+
+    /**
+     * The error decides how the refusal is reported, so a check that already had its own API error
+     * code keeps reporting under it.
+     */
+    public static function validationFailedFromError(Error $error): AppValidationRefusedException
+    {
+        return new AppValidationRefusedException(
             Response::HTTP_BAD_REQUEST,
-            self::NOT_COMPATIBLE,
-            'App {{ name }} is not compatible with this Shopwell version',
-            ['name' => $pluginName]
+            $error->getErrorCode(),
+            $error->getMessage(),
+            $error->getParameters()
         );
     }
 
@@ -818,23 +831,13 @@ class AppException extends HttpException
         );
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed without replacement in next major version as it is unused
+     */
     public static function requirementsNotMet(UnmetRequirement ...$violations): self
     {
-        $violationDetails = array_map(
-            fn (UnmetRequirement $v) => \sprintf(
-                'App "%s" - Requirement "%s": %s',
-                $v->appName,
-                $v->requirementName,
-                $v->actionableResolution
-            ),
-            $violations
-        );
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0'));
 
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::APP_REQUIREMENTS_NOT_MET,
-            'The app requirements are not met: {{ violations }}',
-            ['violations' => implode('; ', $violationDetails)]
-        );
+        return self::validationFailedFromError(new UnmetRequirementError(...$violations));
     }
 }

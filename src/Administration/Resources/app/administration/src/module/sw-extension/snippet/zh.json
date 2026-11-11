@@ -116,7 +116,8 @@
         "title": "Shopwell 账户会话已过期",
         "message": "请登录以访问已授权的扩展。",
         "actionLabel": "登录"
-      }
+      },
+      "appValidationFailed": "应用验证失败"
     },
     "mainMenu": {
       "mainMenuItemExtensionStore": "扩展",
@@ -293,7 +294,8 @@
           "rateLabel": "评价扩展",
           "policyExtensions": "隐私补充说明",
           "permissions": "查看权限",
-          "openExtension": "打开扩展"
+          "openExtension": "打开扩展",
+          "cancelSubscriptionLabel": "取消订阅"
         }
       },
       "sw-extension-card-bought": {
@@ -305,7 +307,7 @@
       "sw-extension-deactivation-modal": {
         "deactivateExtensionLabel": "停用 \"{extensionName}\"",
         "description": "扩展 \"{extensionName}\" 按月收取订阅费用。<br>停用该扩展<b>不会</b>取消订阅，费用仍会继续收取。",
-        "descriptionCancel": "如果想改为取消租用，可在上下文菜单的 \"{removeLabel}\" 项中操作。",
+        "descriptionCancel": "如需取消订阅，请在操作菜单中点击“{removeLabel}”。",
         "alertDeactivate": "确定要停用该扩展吗？",
         "deactivateLabel": "禁用"
       },
@@ -356,7 +358,10 @@
         "description": "移除扩展后将无法再使用它。",
         "alertCancel": "确定要取消并移除该扩展吗？",
         "alertRemove": "确定要移除该扩展吗？",
-        "labelCancel": "取消并移除"
+        "labelCancel": "取消并移除",
+        "titleCancelSubscription": "取消订阅“{extensionName}”",
+        "alertCancelSubscription": "确定取消订阅吗？",
+        "labelCancelSubscription": "取消订阅"
       },
       "sw-extension-uninstall-modal": {
         "title": "卸载 \"{extensionName}\"",
