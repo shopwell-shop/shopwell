@@ -1,0 +1,67 @@
+{% block sw_admin_layout_settings %}
+<div class="sw-admin-layout-settings">
+    <fieldset
+        class="sw-admin-layout-settings__options"
+        :aria-busy="isSaving"
+    >
+        <legend>{{ $t('global.navigationLayout.title') }}</legend>
+        <p class="sw-admin-layout-settings__hint">
+            {{ $t('global.navigationLayout.hint') }}
+        </p>
+
+        <label
+            v-for="option in layouts"
+            :key="option"
+            :for="'admin-layout-' + option"
+            class="sw-admin-layout-settings__option"
+            :class="{ 'is--selected': selectedLayout === option }"
+        >
+            <input
+                :id="'admin-layout-' + option"
+                type="radio"
+                name="admin-navigation-layout"
+                :value="option"
+                :checked="selectedLayout === option"
+                :disabled="isSaving"
+                @change="selectLayout(option)"
+            >
+            <span
+                class="sw-admin-layout-settings__preview"
+                :class="'sw-admin-layout-settings__preview--' + option"
+                aria-hidden="true"
+            >
+                <span class="sw-admin-layout-settings__preview-top"></span>
+                <span class="sw-admin-layout-settings__preview-side"></span>
+                <span class="sw-admin-layout-settings__preview-content"></span>
+            </span>
+            <span class="sw-admin-layout-settings__label">
+                <strong>{{ $t('global.navigationLayout.names.' + option) }}</strong>
+                <span>{{ $t('global.navigationLayout.descriptions.' + option) }}</span>
+            </span>
+        </label>
+    </fieldset>
+
+    <div
+        v-if="hasSaveError"
+        class="sw-admin-layout-settings__error"
+        role="alert"
+    >
+        <p>{{ $t('global.navigationLayout.saveError') }}</p>
+        <mt-button
+            class="sw-admin-layout-settings__retry"
+            variant="secondary"
+            size="small"
+            :disabled="isSaving"
+            @click="selectLayout(selectedLayout)"
+        >
+            {{ $t('global.navigationLayout.retry') }}
+        </mt-button>
+    </div>
+    <p
+        class="sw-admin-layout-settings__hint"
+        role="status"
+    >
+        {{ $t(isSaving ? 'global.navigationLayout.saving' : 'global.navigationLayout.mobileHint') }}
+    </p>
+</div>
+{% endblock %}

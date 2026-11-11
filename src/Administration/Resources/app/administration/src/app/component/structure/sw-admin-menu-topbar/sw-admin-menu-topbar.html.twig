@@ -1,0 +1,198 @@
+{% block sw_admin_menu_topbar %}
+<template v-if="!enabled">
+    <slot name="brand"></slot>
+    <slot name="sidebar"></slot>
+    <slot name="user"></slot>
+</template>
+
+<template v-else>
+    <header class="sw-admin-menu-topbar">
+        <slot name="brand"></slot>
+
+        <nav
+            ref="navigation"
+            class="sw-admin-menu-topbar__navigation"
+            :aria-label="$t('global.sw-admin-menu.navigation.label')"
+            @keydown="onNavigationKeydown"
+        >
+            <template
+                v-for="entry in visibleEntries"
+                :key="key(entry)"
+            >
+                <button
+                    v-if="opensPanel(entry)"
+                    type="button"
+                    class="sw-admin-menu-topbar__entry"
+                    :class="{ 'is--active': isActive(entry) }"
+                    :data-navigation-key="key(entry)"
+                    :aria-expanded="openKey === key(entry)"
+                    :title="label(entry)"
+                    @click="togglePanel(key(entry), $event)"
+                >
+                    <mt-icon
+                        v-if="entry.icon"
+                        :name="entry.icon"
+                        size="16px"
+                    />
+                    <span>{{ label(entry) }}</span>
+                    <mt-icon
+                        name="regular-chevron-down-xs"
+                        size="8px"
+                    />
+                </button>
+                <component
+                    :is="entry.link ? 'a' : 'router-link'"
+                    v-else
+                    class="sw-admin-menu-topbar__entry"
+                    :class="{ 'is--active': isActive(entry) }"
+                    :data-navigation-key="key(entry)"
+                    v-bind="linkAttributes(entry)"
+                    :aria-current="isActive(entry) ? 'true' : undefined"
+                    :title="label(entry)"
+                    @click="closePanel(false)"
+                >
+                    <mt-icon
+                        v-if="entry.icon"
+                        :name="entry.icon"
+                        size="16px"
+                    />
+                    <span>{{ label(entry) }}</span>
+                </component>
+            </template>
+
+            <button
+                ref="more"
+                class="sw-admin-menu-topbar__entry sw-admin-menu-topbar__more"
+                :class="{ 'is--active': hasActiveOverflow }"
+                type="button"
+                :aria-expanded="openKey === '__more'"
+                @click="togglePanel('__more', $event)"
+            >
+                {{ $t('global.navigationLayout.more') }}
+                <mt-icon
+                    name="regular-chevron-down-xs"
+                    size="8px"
+                />
+            </button>
+
+            <div
+                ref="measurements"
+                class="sw-admin-menu-topbar__measurements"
+                aria-hidden="true"
+                inert
+            >
+                <span
+                    v-for="entry in entries"
+                    :key="key(entry)"
+                    class="sw-admin-menu-topbar__entry"
+                >
+                    <mt-icon
+                        v-if="entry.icon"
+                        :name="entry.icon"
+                        size="16px"
+                    />
+                    <span>{{ label(entry) }}</span>
+                    <mt-icon
+                        v-if="mode === 'top' && entry.children.length"
+                        name="regular-chevron-down-xs"
+                        size="8px"
+                    />
+                </span>
+            </div>
+        </nav>
+
+        <slot name="user"></slot>
+    </header>
+
+    <div
+        v-if="mode === 'mixed' && hasSidebar"
+        class="sw-admin-menu-topbar__sidebar"
+    >
+        <slot name="sidebar"></slot>
+    </div>
+
+    <mt-floating-ui
+        v-if="moreAnchor"
+        class="sw-admin-menu-topbar__more-floating"
+        :is-opened="true"
+        :anchor-element="moreAnchor"
+        :floating-ui-options="{ placement: 'bottom-start' }"
+        :offset="8"
+        detached
+        @close="openKey === '__more' && onOutsideClose()"
+    >
+        <nav
+            ref="morePanel"
+            class="sw-admin-menu-topbar__more-panel"
+            :hidden="openKey !== '__more'"
+            :aria-label="$t('global.navigationLayout.more')"
+            tabindex="-1"
+            @keydown="onPanelKeydown"
+        >
+            <template v-if="mode === 'mixed'">
+                <template
+                    v-for="entry in overflowEntries"
+                    :key="key(entry)"
+                >
+                    <ul
+                        v-if="opensPanel(entry)"
+                        class="sw-admin-menu__navigation-list"
+                    >
+                        <sw-admin-menu-item
+                            :entry="entry"
+                            :sidebar-expanded="true"
+                            :is-expanded="true"
+                            :collapsible-text="false"
+                            @navigation-link-click="closePanel(false)"
+                        />
+                    </ul>
+                    <component
+                        :is="entry.link ? 'a' : 'router-link'"
+                        v-else
+                        class="sw-admin-menu-topbar__entry"
+                        :class="{ 'is--active': isActive(entry) }"
+                        v-bind="linkAttributes(entry)"
+                        @click="closePanel(false)"
+                    >
+                        {{ label(entry) }}
+                    </component>
+                </template>
+            </template>
+            <slot
+                v-if="mode === 'top' || !hasSidebar"
+                name="sidebar"
+            ></slot>
+        </nav>
+    </mt-floating-ui>
+
+    <mt-floating-ui
+        :is-opened="openKey !== null && openKey !== '__more'"
+        :anchor-element="anchor"
+        :floating-ui-options="{ placement: 'bottom-start' }"
+        :offset="8"
+        detached
+        @close="openKey !== '__more' && onOutsideClose()"
+    >
+        <nav
+            ref="panel"
+            class="sw-admin-menu-topbar__panel"
+            :aria-label="activePanelEntry ? label(activePanelEntry) : $t('global.navigationLayout.more')"
+            tabindex="-1"
+            @keydown="onPanelKeydown"
+        >
+            <ul
+                v-if="activePanelEntry"
+                class="sw-admin-menu__navigation-list"
+            >
+                <sw-admin-menu-item
+                    :entry="activePanelEntry"
+                    :sidebar-expanded="true"
+                    :is-expanded="true"
+                    :collapsible-text="false"
+                    @navigation-link-click="closePanel(false)"
+                />
+            </ul>
+        </nav>
+    </mt-floating-ui>
+</template>
+{% endblock %}

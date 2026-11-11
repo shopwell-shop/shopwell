@@ -1,0 +1,26 @@
+<div class="sw-permissions-role-view-detailed">
+    <mt-banner
+        variant="info"
+        class="sw-permissions-role-view-detailed__banner"
+    >
+        {{ $t('sw-permissions.roles.view.detailed.alertText') }}
+    </mt-banner>
+
+    <sw-permissions-detailed-grid
+        v-if="role || isLoading"
+        :role="role"
+        :detailed-privileges="detailedPrivileges"
+        :is-loading="isLoading"
+        :disabled="!acl.can('permissions.editor') || undefined"
+    />
+
+    {% block sw_permissions_role_role_view_general_card_view_additional_permissions %}
+    <sw-permissions-detailed-additional
+        v-if="role || isLoading"
+        :role="role"
+        :detailed-privileges="detailedPrivileges"
+        :is-loading="isLoading"
+        :disabled="!acl.can('permissions.editor') || undefined"
+    />
+    {% endblock %}
+</div>

@@ -1,0 +1,128 @@
+{
+  "openapi": "3.2.0",
+  "info": [],
+  "paths": {
+    "/acl-role": {
+      "post": {
+        "tags": [
+          "Roles and permissions"
+        ],
+        "operationId": "createAclRole",
+        "summary": "Save role permissions and menu selection",
+        "description": "Requires a user-verified access token and acl_role:create or acl_role:update. Menu selections narrow navigation and do not grant page or API privileges. Menu selections combine across roles, with ancestor containers included automatically. A role with no selected menus contributes no navigation. Role fields and menu mappings are saved in one transaction.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "privileges": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "menuIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "description": "Full selection of menu entry IDs. An empty list clears the selection; omitting this field retains it. Replaced atomically with the role fields."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Role and menu selection saved."
+          },
+          "400": {
+            "description": "Invalid role fields or menu IDs."
+          },
+          "403": {
+            "description": "Missing role write privileges or user verification."
+          }
+        }
+      }
+    },
+    "/acl-role/{id}": {
+      "patch": {
+        "tags": [
+          "Roles and permissions"
+        ],
+        "operationId": "updateAclRole",
+        "summary": "Save role permissions and menu selection",
+        "description": "Requires a user-verified access token and acl_role:create or acl_role:update. Menu selections narrow navigation and do not grant page or API privileges. Menu selections combine across roles, with ancestor containers included automatically. A role with no selected menus contributes no navigation. Role fields and menu mappings are saved in one transaction.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "privileges": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "menuIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "description": "Full selection of menu entry IDs. An empty list clears the selection; omitting this field retains it. Replaced atomically with the role fields."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Role and menu selection saved."
+          },
+          "400": {
+            "description": "Invalid role fields or menu IDs."
+          },
+          "403": {
+            "description": "Missing role write privileges or user verification."
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

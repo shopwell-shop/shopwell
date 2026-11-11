@@ -1,0 +1,276 @@
+{% block sw_permissions_menu_list %}
+<sw-page
+    class="sw-permissions-menu-list"
+>
+    <template #search-bar>
+        {% block sw_permissions_menu_list_search_bar %}
+        <sw-search-bar
+            initial-search-type="admin_menu_item"
+            :initial-search="searchTerm"
+            @search="searchTerm = $event"
+        />
+        {% endblock %}
+    </template>
+    {% block sw_permissions_menu_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>{{ selectedItem ? selectedItem.label : $t('sw-permissions.menu.headline') }}</h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_permissions_menu_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            :disabled="isBusy"
+            :save-changes-function="saveOnLanguageChange"
+            :abort-change-function="abortOnLanguageChange"
+            @on-change="onLanguageChange"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_permissions_menu_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_permissions_menu_list_smart_bar_actions_cancel %}
+        <mt-button
+            v-if="draft"
+            class="sw-permissions-menu-list__button-cancel"
+            size="default"
+            variant="secondary"
+            :disabled="isBusy || undefined"
+            @click="onCancelEdit"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_permissions_menu_list_smart_bar_actions_save %}
+        <mt-button
+            v-if="draft && canSaveDraft"
+            class="sw-permissions-menu-list__button-save"
+            size="default"
+            variant="primary"
+            :is-loading="isSaving"
+            :disabled="isBusy || undefined"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_permissions_menu_list_smart_bar_actions_create %}
+        <mt-button
+            v-if="canCreate"
+            class="sw-permissions-menu-list__button-create"
+            size="default"
+            variant="primary"
+            :disabled="isBusy || undefined"
+            @click="onCreateNew"
+        >
+            {{ $t('sw-permissions.menu.createAction') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_permissions_menu_list_side_content %}
+    <template #side-content>
+        {% block sw_permissions_menu_list_collapse %}
+        <section class="sw-permissions-menu-list__navigation">
+            <header class="sw-permissions-menu-list__tree-header">
+                <div class="sw-permissions-menu-list__tree-heading">
+                    <h3>{{ $t('sw-permissions.menu.treeHeadline') }}</h3>
+                    <mt-button
+                        class="sw-permissions-menu-list__button-expand"
+                        variant="tertiary"
+                        square
+                        size="small"
+                        :disabled="!hasTree || isSearching || undefined"
+                        :aria-label="isAllExpanded ? $t('sw-permissions.menu.collapseAll') : $t('sw-permissions.menu.expandAll')"
+                        @click="onToggleAll"
+                    >
+                        <mt-icon
+                            :name="isAllExpanded ? 'regular-chevron-down-xs' : 'regular-chevron-right-xs'"
+                            size="12px"
+                        />
+                    </mt-button>
+                </div>
+
+            </header>
+            <div class="sw-permissions-menu-list__tree-content">
+                {% block sw_permissions_menu_list_tree %}
+                <sw-extension-component-section position-identifier="sw-permissions-menu-list-tree" />
+                <mt-skeleton-bar v-if="isLoading" />
+                <mt-banner
+                    v-else-if="store.isLoadFailed"
+                    variant="critical"
+                >
+                    {{ $t('sw-permissions.menu.notification.loadError') }}
+                    <mt-button
+                        variant="secondary"
+                        size="small"
+                        @click="loadTree"
+                    >
+                        {{ $t('sw-permissions.menu.retry') }}
+                    </mt-button>
+                </mt-banner>
+                <sw-permissions-menu-tree
+                    v-else-if="hasTree"
+                    :items="filteredTree"
+                    :expanded-ids="effectiveExpandedIds"
+                    :selected-id="selectedId"
+                    :sortable="canEdit && !isSearching && !isBusy"
+                    :editable="canEdit && !isBusy"
+                    :creatable="canCreate && !isBusy"
+                    :deletable="canDelete && !isBusy"
+                    @toggle="onToggle"
+                    @select="onItemSelect"
+                    @edit="onItemSelect"
+                    @create-above="onCreateAbove"
+                    @create-below="onCreateBelow"
+                    @add-child="onAddChild"
+                    @remove="onDelete"
+                    @move="onMove"
+                />
+                <mt-empty-state
+                    v-else
+                    icon="regular-list"
+                    :headline="$t(isSearching ? 'sw-permissions.menu.searchEmptyHeadline' : 'sw-permissions.menu.treeEmpty')"
+                />
+                {% endblock %}
+            </div>
+        </section>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_permissions_menu_list_content %}
+    <template #content>
+        <template v-if="isLoading">
+            <mt-skeleton-bar />
+        </template>
+
+        <div
+            v-else
+            class="sw-permissions-menu-list__content"
+        >
+            <sw-permissions-menu-detail
+                v-if="draft"
+                :draft="draft"
+                :disabled="!canEditDraft"
+                :locked="isLocked"
+                :provenance="provenance"
+                :target-privilege="targetPrivilege"
+                :language-label="languageLabel"
+                :type-options="typeOptions"
+                :parent-options="parentOptions"
+                :route-options="routeOptions"
+                :field-errors="fieldErrors"
+                @update-draft="updateDraft"
+                @type-change="onTypeChange"
+                @parent-change="onParentChange"
+            />
+
+            {% block sw_permissions_menu_list_content_empty %}
+            <mt-empty-state
+                v-else
+                class="sw-permissions-menu-list__empty-state"
+                centered
+                icon="regular-list"
+                :headline="$t('sw-permissions.menu.emptyStateHeadline')"
+                :description="$t('sw-permissions.menu.emptyStateDescription')"
+            >
+                <template
+                    v-if="canCreate"
+                    #button
+                >
+                    <mt-button
+                        variant="primary"
+                        size="default"
+                        @click="onCreateNew"
+                    >
+                        {{ $t('sw-permissions.menu.createAction') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            {% endblock %}
+        </div>
+
+        {% block sw_permissions_menu_list_delete_modal %}
+        <mt-modal-root
+            v-if="showDeleteModal"
+            is-open
+            @change="onCloseDeleteModal"
+        >
+            <mt-modal
+                :title="$t('sw-permissions.menu.deleteModalTitle')"
+                width="s"
+                class="sw-permissions-menu-list__delete-modal"
+            >
+                <p class="sw-permissions-menu-list__delete-confirm">
+                    {{ deleteConfirmMessage }}
+                </p>
+
+                <template #footer>
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        @click="onCloseDeleteModal"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-button>
+
+                    <mt-button
+                        class="sw-permissions-menu-list__confirm-delete-button"
+                        variant="critical"
+                        size="small"
+                        :is-loading="isDeleting"
+                        @click="onConfirmDelete"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </mt-button>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
+        {% endblock %}
+        <mt-modal-root
+            v-if="showUnsavedModal"
+            is-open
+            @change="onKeepEditing"
+        >
+            <mt-modal
+                class="sw-permissions-menu-list__unsaved-modal"
+                width="s"
+                :title="$t('sw-permissions.menu.unsavedTitle')"
+            >
+                <p>{{ $t('sw-permissions.menu.unsavedDescription') }}</p>
+                <template #footer>
+                    <mt-button
+                        variant="secondary"
+                        @click="onKeepEditing"
+                    >
+                        {{ $t('sw-permissions.menu.keepEditing') }}
+                    </mt-button>
+                    <mt-button
+                        class="sw-permissions-menu-list__discard-changes"
+                        variant="critical"
+                        :disabled="isBusy || undefined"
+                        @click="onDiscardChanges"
+                    >
+                        {{ $t('sw-permissions.menu.discardChanges') }}
+                    </mt-button>
+                    <mt-button
+                        variant="primary"
+                        :is-loading="isSaving"
+                        @click="onSaveChanges"
+                    >
+                        {{ $t('global.default.save') }}
+                    </mt-button>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
+
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

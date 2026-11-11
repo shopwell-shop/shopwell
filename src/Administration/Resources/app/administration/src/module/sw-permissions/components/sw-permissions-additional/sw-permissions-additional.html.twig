@@ -1,0 +1,172 @@
+{% block sw_permissions_additional %}
+<mt-card
+    class="sw-permissions-additional mt-card--future-ignore-max-width"
+    position-identifier="sw-permissions-additional"
+    :is-loading="isLoading"
+    :title="$t('sw-permissions.roles.additional-permissions.title')"
+>
+    <template v-if="role">
+        <p class="sw-permissions-additional__description">
+            {{ $t('sw-permissions.roles.additional-permissions.description') }}
+        </p>
+        <mt-search
+            v-if="privilegeIds === null || privilegeIds.length > 6"
+            v-model="term"
+            class="sw-permissions-additional__search"
+            size="small"
+            :placeholder="$t('sw-permissions.roles.additional-permissions.searchPlaceholder')"
+            :aria-label="$t('sw-permissions.roles.additional-permissions.searchPlaceholder')"
+        />
+        <p
+            v-if="!additionalPermissions.length && !appPermissions.length"
+            role="status"
+        >
+            {{ $t('sw-permissions.roles.additional-permissions.noResults') }}
+        </p>
+        {% block sw_permissions_additional_additional_privileges %}
+        <template
+            v-for="privilege in additionalPermissions"
+            :key="`head-${privilege.key}`"
+        >
+            {% block sw_permissions_additional_additional_privileges_headline %}
+            <h4
+                class="sw-permissions-additional__headline"
+                :class="' sw-permissions-additional_' + privilege.key"
+            >
+                {% block sw_permissions_additional_additional_privileges_headline_content %}
+                {{ $t('sw-privileges.additional_permissions.' + privilege.key + '.label') }}
+                {% endblock %}
+            </h4>
+            {% endblock %}
+
+            {% block sw_permissions_additional_additional_privileges_switches %}
+            <div
+                class="sw-permissions-additional__switches"
+                :class="{ 'sw-permissions-additional__switches--single': Object.keys(privilege.roles).length === 1 }"
+            >
+                {% block sw_permissions_additional_additional_privileges_switches_content %}
+                <template
+                    v-for="(value, roleName) in privilege.roles"
+                    :key="roleName"
+                >
+                    {% block sw_permissions_additional_additional_privileges_switches_content_switch %}
+                    <div class="sw-permissions-additional__row">
+                        <mt-switch
+                            v-tooltip="{
+                                message: lockedPrivilegeTooltip(privilege.key + '.' + roleName),
+                                disabled: !isPrivilegeLocked(privilege.key + '.' + roleName) || disabled,
+                                showOnDisabledElements: false
+                            }"
+                            :disabled="isPrivilegeLocked(privilege.key + '.' + roleName) || disabled"
+                            :class="'sw_permissions_additional_' + privilege.key + '_' + roleName"
+                            :model-value="isPrivilegeSelected(privilege.key + '.' + roleName)"
+                            :label="$t('sw-privileges.additional_permissions.' + privilege.key + '.' + roleName)"
+                            :bordered="false"
+                            @update:model-value="onSelectPrivilege(privilege.key + '.' + roleName, $event)"
+                        />
+                        <p
+                            v-if="privilege.key === 'system' && roleName === 'system_config'"
+                            class="sw-permissions-additional__hint"
+                        >
+                            {{ $t('sw-permissions.roles.additional-permissions.systemConfigDescription') }}
+                        </p>
+                        <template v-if="relatedPages[privilege.key + '.' + roleName]?.length > 1">
+                            <mt-button
+                                class="sw-permissions-additional__scope-toggle"
+                                variant="tertiary"
+                                size="small"
+                                :aria-expanded="expandedScopes.includes(privilege.key + '.' + roleName)"
+                                @click="toggleScope(privilege.key + '.' + roleName)"
+                            >
+                                {{ $t('sw-permissions.roles.additional-permissions.relatedPageCount', { count: relatedPages[privilege.key + '.' + roleName].length }) }}
+                            </mt-button>
+                            <p
+                                v-if="expandedScopes.includes(privilege.key + '.' + roleName)"
+                                class="sw-permissions-additional__hint"
+                            >
+                                {{ $t('sw-permissions.roles.additional-permissions.relatedPages', { pages: relatedPages[privilege.key + '.' + roleName].join('、') }) }}
+                            </p>
+                        </template>
+                        <p
+                            v-if="isPrivilegeLocked(privilege.key + '.' + roleName)"
+                            class="sw-permissions-additional__hint"
+                        >
+                            {{ lockedPrivilegeTooltip(privilege.key + '.' + roleName) }}
+                        </p>
+                    </div>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </template>
+        {% endblock %}
+
+        {% block sw_permissions_additional_app_privileges %}
+        <template
+            v-for="privilege in appPermissions"
+            :key="privilege.key"
+        >
+            {% block sw_permissions_additional_app_privileges_headline %}
+            <h4
+                class="sw-permissions-additional-app"
+            >
+                {% block sw_permissions_additional_app_privileges_headline_content %}
+                {{ $t('sw-privileges.additional_permissions.app.label') }}
+                {% endblock %}
+            </h4>
+            {% endblock %}
+
+            {% block sw_permissions_additional_app_privileges_switches %}
+            <div
+                class="sw-permissions-additional__switches"
+                :class="{ 'sw-permissions-additional__switches--single': Object.keys(privilege.roles).length === 1 }"
+            >
+                {% block sw_permissions_additional_app_privileges_switches_content %}
+                <template
+                    v-for="(key, roleName) in privilege.roles"
+                    :key="roleName"
+                >
+                    {% block sw_permissions_additional_app_privileges_switches_content_switch %}
+                    <div class="sw-permissions-additional__row">
+                        <mt-switch
+                            v-if="roleName === 'all'"
+                            :disabled="disabled || isPrivilegeLocked('app.all')"
+                            class="sw_permissions_additional_app_all"
+                            :model-value="isPrivilegeSelected('app.' + roleName)"
+                            :label="$t('sw-privileges.additional_permissions.app.all')"
+                            :bordered="false"
+                            @update:model-value="changeAllAppPermissionsForKey('app.' + roleName, $event)"
+                        />
+
+                        <mt-switch
+                            v-else
+                            v-tooltip="{
+                                message: $t('sw-privileges.additional_permissions.app.disabledCheckboxMessage'),
+                                disabled: !isPrivilegeSelected('app.all') || disabled,
+                                showOnDisabledElements: false
+                            }"
+                            :disabled="isPrivilegeSelected('app.all') || isPrivilegeLocked('app.' + roleName) || disabled"
+                            :class="'sw_permissions_additional_app_' + roleName"
+                            :model-value="isPrivilegeSelected('app.' + roleName)"
+                            :label="roleName"
+                            :bordered="false"
+                            @update:model-value="onSelectPrivilege('app.' + roleName, $event)"
+                        />
+                        <p
+                            v-if="isPrivilegeLocked('app.' + roleName)"
+                            class="sw-permissions-additional__hint"
+                        >
+                            {{ lockedPrivilegeTooltip('app.' + roleName) }}
+                        </p>
+                    </div>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </template>
+        {% endblock %}
+    </template>
+</mt-card>
+{% endblock %}

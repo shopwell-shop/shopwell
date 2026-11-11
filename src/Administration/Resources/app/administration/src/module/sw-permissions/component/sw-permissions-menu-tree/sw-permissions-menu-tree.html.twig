@@ -1,0 +1,196 @@
+{% block sw_permissions_menu_tree %}
+<div
+    class="sw-permissions-menu-tree"
+    role="tree"
+    :aria-label="$t('sw-permissions.menu.treeLabel')"
+>
+    {% block sw_permissions_menu_tree_rows %}
+    <template
+        v-for="row in rows"
+        :key="row.item.id"
+    >
+        <div
+            v-if="row.groupHeader"
+            class="sw-permissions-menu-tree__group"
+            role="presentation"
+        >
+            {{ row.groupHeader }}
+        </div>
+        <div
+            ref="rows"
+            :data-id="row.item.id"
+            class="sw-permissions-menu-tree__row"
+            :class="[rowClasses(row.item), `sw-permissions-menu-tree__row--depth-${row.depth}`]"
+            role="treeitem"
+            :tabindex="row.item.id === focusableId ? 0 : -1"
+            :aria-level="row.depth + 1"
+            :aria-selected="row.item.id === selectedId ? 'true' : undefined"
+            :aria-expanded="row.hasChildren ? String(isExpanded(row.item)) : undefined"
+            @focus="focusedId = row.item.id"
+            @click="onSelect(row.item)"
+            @keydown="onRowKeydown($event, row)"
+            @dragover.prevent="onDragOver($event, row.item)"
+            @dragleave="onDragLeave(row.item)"
+            @drop.prevent="onDrop($event, row.item)"
+            @dragend="onDragEnd"
+        >
+            <mt-button
+                v-if="isSortableItem(row.item)"
+                class="sw-permissions-menu-tree__drag-handle"
+                variant="tertiary"
+                size="x-small"
+                square
+                draggable="true"
+                :aria-label="$t('sw-permissions.menu.moveItem', { name: row.item.label })"
+                @click.stop
+                @dragstart.stop="onDragStart($event, row.item)"
+                @dragend="onDragEnd"
+            >
+                <mt-icon
+                    name="regular-grip-horizontal"
+                    size="16px"
+                />
+            </mt-button>
+            <slot
+                name="selection"
+                :item="row.item"
+            ></slot>
+        {% block sw_permissions_menu_tree_row_toggle %}
+            <mt-button
+                v-if="row.hasChildren"
+                variant="tertiary"
+                size="x-small"
+                square
+                class="sw-permissions-menu-tree__toggle"
+                :aria-label="isExpanded(row.item) ? $t('sw-permissions.menu.collapse') : $t('sw-permissions.menu.expand')"
+                @click.stop="toggle(row.item)"
+            >
+                <mt-icon
+                    :name="isExpanded(row.item) ? 'regular-chevron-down-xs' : 'regular-chevron-right-xs'"
+                    size="12px"
+                />
+            </mt-button>
+            <span
+                v-else
+                class="sw-permissions-menu-tree__toggle-spacer"
+            ></span>
+        {% endblock %}
+
+        {% block sw_permissions_menu_tree_row_icon %}
+            <mt-icon
+                v-tooltip="rowTooltip(row.item)"
+                class="sw-permissions-menu-tree__icon"
+                :name="iconOf(row.item)"
+                size="16px"
+            />
+        {% endblock %}
+
+        {% block sw_permissions_menu_tree_row_label %}
+            <mt-button
+                variant="tertiary"
+                class="sw-permissions-menu-tree__label"
+                size="x-small"
+                :title="row.item.label"
+                @click.stop="onSelect(row.item)"
+            >
+                {{ row.item.label }}
+            </mt-button>
+        {% endblock %}
+
+        {% block sw_permissions_menu_tree_row_meta %}
+            <span class="sw-permissions-menu-tree__meta">
+                <mt-icon
+                    v-if="row.item.sysLocked"
+                    v-tooltip="{ message: $t('sw-permissions.menu.tooltipLockedItem') }"
+                    name="regular-lock"
+                    size="12px"
+                />
+
+                <mt-status-dot
+                    class="sw-permissions-menu-tree__status"
+                    :class="row.item.active ? 'is--active' : 'is--inactive'"
+                    :label="$t(row.item.active ? 'sw-permissions.menu.labelActive' : 'sw-permissions.menu.labelInactive')"
+                    :variant="row.item.active ? 'positive' : 'neutral'"
+                    size="s"
+                />
+            </span>
+        {% endblock %}
+
+        {% block sw_permissions_menu_tree_row_actions %}
+            <div
+                class="sw-permissions-menu-tree__context"
+                @click.stop
+                @keydown.stop
+            >
+                <mt-dropdown-menu-root v-if="editable || creatable || deletable">
+                    <mt-dropdown-menu-trigger as-child>
+                        <mt-button
+                            class="sw-permissions-menu-tree__action-trigger"
+                            variant="tertiary"
+                            size="x-small"
+                            square
+                            :aria-label="$t('sw-permissions.menu.itemActions', { name: row.item.label })"
+                        >
+                            <mt-icon
+                                name="solid-ellipsis-h-s"
+                                size="16px"
+                            />
+                        </mt-button>
+                    </mt-dropdown-menu-trigger>
+                    <mt-dropdown-menu-portal>
+                        <mt-action-menu>
+            {% block sw_permissions_menu_tree_row_actions_edit %}
+                            <mt-action-menu-item
+                                v-if="editable"
+                                @click="onEdit(row.item)"
+                            >
+                                {{ $t('global.default.edit') }}
+                            </mt-action-menu-item>
+            {% endblock %}
+
+            {% block sw_permissions_menu_tree_row_actions_create_above %}
+                            <mt-action-menu-item
+                                v-if="creatable"
+                                @click="onCreateAbove(row.item)"
+                            >
+                                {{ $t('sw-permissions.menu.createAbove') }}
+                            </mt-action-menu-item>
+            {% endblock %}
+
+            {% block sw_permissions_menu_tree_row_actions_create_below %}
+                            <mt-action-menu-item
+                                v-if="creatable"
+                                @click="onCreateBelow(row.item)"
+                            >
+                                {{ $t('sw-permissions.menu.createBelow') }}
+                            </mt-action-menu-item>
+            {% endblock %}
+
+            {% block sw_permissions_menu_tree_row_actions_add_child %}
+                            <mt-action-menu-item
+                                v-if="creatable && canHaveChildren(row.item)"
+                                @click="onAddChild(row.item)"
+                            >
+                                {{ $t('sw-permissions.menu.addChild') }}
+                            </mt-action-menu-item>
+            {% endblock %}
+
+            {% block sw_permissions_menu_tree_row_actions_delete %}
+                            <mt-action-menu-item
+                                v-if="deletable && !row.item.sysLocked"
+                                variant="critical"
+                                @click="onRemove(row.item)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </mt-action-menu-item>
+            {% endblock %}
+                        </mt-action-menu>
+                    </mt-dropdown-menu-portal>
+                </mt-dropdown-menu-root>
+            </div>
+        {% endblock %}
+        </div>
+    </template>
+    {% endblock %}
+</div>
+{% endblock %}

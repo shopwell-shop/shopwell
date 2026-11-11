@@ -1,0 +1,144 @@
+.sw-user-detail {
+    .sw-user-detail__cards {
+        container: sw-user-detail-cards / inline-size;
+    }
+
+    .sw-user-detail__tabs {
+        max-width: 60rem;
+        margin: 0 auto var(--scale-size-24);
+    }
+
+    .sw-user-detail__inactive-badge {
+        margin-left: var(--scale-size-8);
+        vertical-align: middle;
+    }
+
+    .sw-user-detail__roles-hint {
+        margin-bottom: var(--scale-size-20);
+    }
+
+    .sw-user-detail__grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;
+        grid-column-gap: var(--scale-size-32);
+    }
+
+    .sw-user-detail__information-grid {
+        grid-template-areas:
+            "Name ProfilePicture"
+            "EMail EMail"
+            "PhoneNumber PhoneNumber"
+            "Username Password"
+            "Active Active";
+    }
+
+    .sw-user-detail__user-interface-grid {
+        grid-template-areas:
+            "Language Timezone"
+            "Theme ModuleIconColors";
+    }
+
+    .sw-user-detail__roles-permissions-grid {
+        grid-template-areas:
+            "AclRoles JobTitle"
+            "IsAdmin IsAdmin";
+    }
+
+    .sw-user-detail__grid-name {
+        grid-area: Name;
+    }
+
+    .sw-user-detail__grid-eMail {
+        grid-area: EMail;
+    }
+
+    .sw-user-detail__grid-phoneNumber {
+        grid-area: PhoneNumber;
+    }
+
+    .sw-user-detail__grid-username {
+        grid-area: Username;
+    }
+
+    .sw-user-detail__grid-password {
+        grid-area: Password;
+    }
+
+    .sw-user-detail__grid-language {
+        grid-area: Language;
+    }
+
+    .sw-user-detail__grid-theme {
+        grid-area: Theme;
+    }
+
+    .sw-user-detail__grid-module-icon-colors {
+        grid-area: ModuleIconColors;
+    }
+
+    .sw-user-detail__grid-profile-picture {
+        grid-area: ProfilePicture;
+        margin-bottom: var(--scale-size-32);
+    }
+
+    .sw-user-detail__grid-jobTitle {
+        grid-area: JobTitle;
+    }
+
+    .sw-user-detail__grid-aclRoles {
+        grid-area: AclRoles;
+    }
+
+    .sw-user-detail__grid-is-admin {
+        grid-area: IsAdmin;
+    }
+
+    .sw-user-detail__grid-active {
+        grid-area: Active;
+    }
+
+    .mt-switch {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    &__grid-timezone {
+        grid-area: Timezone;
+        margin-top: 0;
+    }
+}
+
+// Stack every field to full width once the cards get too narrow for two columns.
+@container sw-user-detail-cards (max-width: 600px) {
+    .sw-user-detail .sw-user-detail__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sw-user-detail .sw-user-detail__information-grid {
+        grid-template-areas:
+            "ProfilePicture"
+            "Name"
+            "EMail"
+            "PhoneNumber"
+            "Username"
+            "Password"
+            "Active";
+    }
+
+    .sw-user-detail .sw-user-detail__user-interface-grid {
+        grid-template-areas:
+            "Language"
+            "Timezone"
+            "Theme"
+            "ModuleIconColors";
+    }
+
+    .sw-user-detail .sw-user-detail__roles-permissions-grid {
+        grid-template-areas:
+            "AclRoles"
+            "JobTitle"
+            "IsAdmin";
+    }
+}

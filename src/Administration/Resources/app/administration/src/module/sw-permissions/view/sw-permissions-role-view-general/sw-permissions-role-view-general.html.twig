@@ -1,0 +1,59 @@
+<div class="sw-permissions-role-view-general">
+    {% block sw_permissions_role_role_view_general_card_view_basic_information %}
+    <mt-card
+        :title="$t('sw-permissions.roles.detail.basicInformation')"
+        position-identifier="sw-permissions-role-view-general"
+        :is-loading="isLoading"
+    >
+        <template v-if="role">
+        {% block sw_permissions_role_role_view_general_mcp_hint %}
+            <mt-banner
+                v-if="shouldShowMcpHint"
+                variant="info"
+                class="sw-permissions-role-view-general__mcp-hint"
+            >
+                <span>{{ $t('sw-permissions.roles.mcpHint.text', { count: mcpIntegrations.length }) }}</span>
+
+                <mt-link
+                    as="a"
+                    class="sw-permissions-role-view-general__mcp-hint-link"
+                    @click.prevent="onOpenMcpModal"
+                >
+                    {{ $t('sw-permissions.roles.mcpHint.linkText') }}
+                </mt-link>
+            </mt-banner>
+        {% endblock %}
+
+        {% block sw_permissions_role_role_view_general_card_view_basic_information_name %}
+            <mt-text-field
+                v-model="role.name"
+                name="sw-field--role-name"
+                :error="roleNameError"
+                :disabled="isReadOnly"
+                :label="$t('sw-permissions.roles.detail.labelName')"
+                required
+            />
+        {% endblock %}
+
+        {% block sw_permissions_role_role_view_general_card_view_basic_information_description %}
+            <mt-textarea
+                v-model="role.description"
+                name="sw-field--role-description"
+                :error="roleDescriptionError"
+                :disabled="isReadOnly"
+                :label="$t('sw-permissions.roles.detail.labelDescription')"
+            />
+        {% endblock %}
+        </template>
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_permissions_role_role_view_general_mcp_modal %}
+    <sw-permissions-role-mcp-reference-modal
+        v-if="showMcpModal"
+        :role="role"
+        :mcp-integrations="mcpIntegrations"
+        @modal-close="onCloseMcpModal"
+    />
+    {% endblock %}
+</div>

@@ -1,0 +1,316 @@
+{
+    "sw-permissions": {
+        "general": {
+            "label": "Roles and permissions"
+        },
+        "roles": {
+            "general": {
+                "labelCreateNewRole": "Create role",
+                "cardLabel": "Roles",
+                "placeholderSearchBar": "Find roles…",
+                "label": "Roles"
+            },
+            "role-grid": {
+                "labelName": "Name",
+                "labelDescription": "Description",
+                "messageEmptyTitle": "No roles yet",
+                "messageEmptySubline": "Create roles to start managing user rights.",
+                "titleModalDelete": "Delete role",
+                "textModalDelete": "Do you really want to delete the role \"{name}\"?",
+                "notification": {
+                    "deleteSuccess": {
+                        "message": "Role \"{name}\" deleted."
+                    },
+                    "deleteError": {
+                        "message": "The role \"{name}\" could not be deleted."
+                    }
+                },
+                "labelPrivileges": "Privileges",
+                "actionDuplicate": "Duplicate role",
+                "noResultTitle": "No matching roles",
+                "textModalDeleteAffectedUsers": "This role is assigned to {count} user(s). They will lose the permissions of this role after deletion."
+            },
+            "detail": {
+                "role": "Role",
+                "basicInformation": "Basic information",
+                "labelName": "Name",
+                "labelDescription": "Description",
+                "permissions": "Permissions",
+                "notification": {
+                    "dependencyOutOfSync": {
+                        "message": "The permissions changed while this page was open. Reload the page before saving."
+                    }
+                }
+            },
+            "grid": {
+                "title": "Permissions",
+                "disabledCheckboxMessage": "Required by the selected {roles} permission. Uncheck it to uncheck this option.",
+                "tooltipParentRole": "All {role} rights for {parent}",
+                "tooltipParentAll": "All rights for {parent} ({roles})",
+                "tooltipEntityAll": "All rights for {entity} ({roles})",
+                "notification": {
+                    "keptDependencies": {
+                        "message": "Kept {count} permission(s) because other selected permissions depend on them."
+                    }
+                }
+            },
+            "additional-permissions": {
+                "title": "Operation permissions",
+                "description": "Grant access by capability. Required permissions are selected together; save the role to apply changes.",
+                "searchPlaceholder": "Search operations…",
+                "noResults": "No matching operations",
+                "systemConfigDescription": "Shared permission: allows reading and changing multiple system settings pages, beyond basic information.",
+                "relatedPages": "Related pages: {pages}",
+                "relatedPageCount": "Shared by {count} pages"
+            },
+            "detailed-additional-permissions": {
+                "title": "API operation permissions"
+            },
+            "detailed-grid": {
+                "coveredByGeneralMessage": "Already granted in Menus and permissions."
+            },
+            "view": {
+                "detailed": {
+                    "alertText": "Configure detailed entity and API permissions here. Permissions already granted in Menus and permissions cannot be changed here."
+                }
+            },
+            "tabs": {
+                "general": "Basic information",
+                "detailed": "Advanced permissions",
+                "menus": "Menus and permissions"
+            },
+            "mcpHint": {
+                "text": "This role is assigned to {count} MCP-enabled integration(s). ",
+                "linkText": "Show MCP tool requirements"
+            },
+            "mcpModal": {
+                "title": "MCP Tool Requirements",
+                "description": "The following tools are allowlisted on integrations that use this role.",
+                "legendLabel": "Legend:",
+                "legendGranted": "granted",
+                "legendGrantedHint": "This privilege is already granted on the role.",
+                "legendMissing": "missing",
+                "legendMissingHint": "This privilege is not yet granted on the role.",
+                "legendDynamic": "dynamic",
+                "legendDynamicHint": "This privilege depends on the entity parameter passed at runtime.",
+                "noToolsHeadline": "No tools found",
+                "noToolsDescription": "No tools are currently allowlisted on the integrations using this role.",
+                "dynamicPrivilegeHint": "This privilege depends on the entity parameter passed at runtime.",
+                "viewByPermission": "By Permission",
+                "viewByTool": "By Tool",
+                "grantAllMissing": "Grant all missing",
+                "grant": "Grant",
+                "saveReminder": "Permissions pre-selected. Click Save on the role to apply."
+            },
+            "menus": {
+                "navigation": "Navigation menus",
+                "allPermissions": "All business permissions",
+                "otherPermissions": "Other features and global operations",
+                "selectMenu": "Select menu “{name}”",
+                "missingPermissions": "This role is missing permissions required to open the selected page.",
+                "grantRequired": "Add required page permissions",
+                "loadFailed": "Could not load menus. Please retry.",
+                "assignmentHint": "Menu selection controls navigation. Permissions on the right control access and operations. Removing a menu keeps shared permissions.",
+                "noOperations": "This menu declares no operation permissions."
+            }
+        },
+        "menu": {
+            "headline": "Menu",
+            "createAction": "Add item",
+            "treeLabel": "Stored navigation",
+            "labelUntitled": "Untitled",
+            "labelInactive": "hidden",
+            "expand": "Expand",
+            "collapse": "Collapse",
+            "emptyStateHeadline": "No menu item selected",
+            "emptyStateDescription": "Select an entry on the left to edit it, or create a new one.",
+            "treeHeadline": "Navigation",
+            "treeEmpty": "There are no menu items yet.",
+            "createAbove": "Add above",
+            "createBelow": "Add below",
+            "tooltipLockedItem": "This entry belongs to a core module. It can be customised, but not deleted.",
+            "hintLockedItem": "This entry is declared by a core module. Changes are kept, a plugin update will not overwrite them.",
+            "labelTitle": "Title",
+            "placeholderTitle": "Label shown in the navigation",
+            "labelType": "Type",
+            "types": {
+                "menu": "Menu",
+                "folder": "Folder",
+                "link": "Link",
+                "hidden": "Hidden",
+                "group": "Group"
+            },
+            "labelIcon": "Icon",
+            "placeholderIcon": "regular-products",
+            "helpIcon": "Name of a Meteor icon",
+            "labelTarget": "Open page",
+            "helpTarget": "Choose a registered module page.",
+            "helpHiddenTarget": "Optional identifier of the entry",
+            "labelLinkTarget": "Link URL",
+            "placeholderLinkTarget": "https://example.com",
+            "labelParent": "Parent menu",
+            "labelActive": "Show in navigation",
+            "helpActive": "Navigation only. Assign menus and business permissions in the role details.",
+            "deleteModalTitle": "Delete menu item",
+            "deleteConfirmMessage": "The menu item is removed from the navigation.",
+            "deleteConfirmMessageWithChildren": "The menu item and its {count} child entries are removed from the navigation.",
+            "notification": {
+                "loadError": "The navigation could not be loaded.",
+                "titleRequired": "A title is required.",
+                "targetRequired": "Select a page to open.",
+                "linkRequired": "A link address is required.",
+                "saveSuccess": "The menu item has been saved.",
+                "saveError": "The menu item could not be saved.",
+                "moveError": "The menu item could not be moved.",
+                "deleteSuccess": "The menu item has been deleted.",
+                "deleteError": "The menu item could not be deleted."
+            },
+            "expandAll": "Expand all",
+            "collapseAll": "Collapse all",
+            "searchEmptyHeadline": "No matching menu items",
+            "addChild": "Add subitem",
+            "sectionBasics": "Basics",
+            "helpTitle": "Name shown in {language}.",
+            "labelGroup": "Group",
+            "placeholderGroup": "general",
+            "helpGroup": "Top level entries only. Entries sharing the key are listed as one group in the navigation.",
+            "labelGroupTitle": "Group name",
+            "placeholderGroupTitle": "General",
+            "helpGroupTitle": "Shown as the group heading in {language}.",
+            "placeholderSearchBar": "Search menu items...",
+            "groups": {
+                "general": "General",
+                "customer": "Customer",
+                "automation": "Automation",
+                "localization": "Localisation",
+                "content": "Content",
+                "commerce": "Commerce",
+                "system": "System",
+                "account": "Account",
+                "plugins": "Extensions",
+                "payment": "Payment"
+            },
+            "moveItem": "Move {name}",
+            "itemActions": "Actions for {name}",
+            "createGroup": "Create group",
+            "discardChanges": "Discard changes",
+            "groupNone": "No group",
+            "iconDefault": "Default icon",
+            "keepEditing": "Keep editing",
+            "retry": "Retry",
+            "searchPlaceholder": "Search menus…",
+            "unsavedDescription": "Save your changes before continuing, or discard them.",
+            "unsavedTitle": "Unsaved changes",
+            "labelPagePrivilege": "Required page permission",
+            "labelSource": "Source",
+            "sourceSystem": "System",
+            "sourceCustom": "Custom",
+            "placeholderTarget": "Select a page",
+            "placeholderParent": "Select a parent menu (optional)",
+            "helpParent": "Leave empty to display this item at the navigation root."
+        }
+    },
+    "sw-privileges": {
+        "roles": {
+            "all": "All",
+            "viewer": "View",
+            "editor": "Edit",
+            "creator": "Create",
+            "deleter": "Delete"
+        },
+        "permissionType": {
+            "read": "Read",
+            "update": "Update",
+            "create": "Create",
+            "delete": "Delete"
+        },
+        "permissions": {
+            "parents": {
+                "content": "Content",
+                "customers": "Customers",
+                "marketing": "Marketing",
+                "other": "Other",
+                "orders": "Orders",
+                "products": "Products",
+                "settings": "Settings",
+                "system": "System",
+                "payment_gateway": "Payments"
+            },
+            "permissions": {
+                "label": "Roles and permissions"
+            },
+            "admin_menu": {
+                "label": "Navigation"
+            },
+            "routes": {
+                "label": "Routes"
+            },
+            "user": {
+                "label": "Users"
+            },
+            "blog": {
+                "label": "Articles"
+            },
+            "experience_studio": {
+                "label": "Experience Studio"
+            },
+            "dictionary": {
+                "label": "Dictionaries"
+            },
+            "organization": {
+                "label": "Organizations"
+            },
+            "position": {
+                "label": "Positions"
+            },
+            "payment_order": {
+                "label": "Payment orders"
+            },
+            "payment_refund": {
+                "label": "Payment refunds"
+            },
+            "order_return": {
+                "label": "Returns"
+            }
+        },
+        "additional_permissions": {
+            "system": {
+                "label": "Settings"
+            },
+            "user": {
+                "label": "User"
+            },
+            "marketing": {
+                "label": "Marketing"
+            },
+            "orders": {
+                "label": "Orders"
+            },
+            "routes": {
+                "label": "Routes",
+                "api_action_access-key_integration": "Create API keys",
+                "api_acl_privileges_get": "Read all ACL privileges",
+                "api_acl_privileges_route_get": "Read ACL route privileges",
+                "api_action_cache_info": "Read cache info",
+                "api_action_cache_index": "Trigger indexer",
+                "api_action_cache_delete": "Delete cache",
+                "api_action_cache_cleanup": "Clean up cache",
+                "api_action_container-cache_delete": "Delete container cache",
+                "api_info_me": "Read own api user info",
+                "api_info_ping": "Refresh auth token",
+                "system:clear:cache": "Clear cache",
+                "api_proxy_switch-customer": "Act on behalf of a customer",
+                "api_proxy_imitate-customer": "Imitate a customer login",
+                "api_feature_flag_toggle": "Toggle feature flags"
+            },
+            "app": {
+                "label": "Apps",
+                "all": "All",
+                "disabledCheckboxMessage": "To deactivate this option, you must first deactivate the All option."
+            },
+            "payment_gateway": {
+                "label": "Payments"
+            }
+        }
+    }
+}

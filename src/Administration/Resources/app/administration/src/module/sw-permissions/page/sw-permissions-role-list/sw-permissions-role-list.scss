@@ -1,0 +1,43 @@
+.sw-permissions-role-list {
+    .sw-permissions-role-list__card {
+        .mt-card__content {
+            padding: 0;
+        }
+    }
+
+    .sw-data-grid {
+        border-radius: var(--border-radius-card);
+    }
+
+    &__toolbar {
+        display: flex;
+        gap: var(--scale-size-16);
+        align-items: center;
+        padding: var(--scale-size-16) var(--scale-size-24);
+        background-color: var(--color-elevation-surface-sunken);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__search {
+        flex: 1 1 240px;
+        max-width: 420px;
+    }
+
+    &__privilege-count {
+        color: var(--color-text-secondary-default);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__empty-state {
+        padding: var(--scale-size-48) var(--scale-size-24);
+    }
+
+    &__confirm-delete-text {
+        margin-bottom: var(--scale-size-12);
+    }
+
+    &__affected-users {
+        color: var(--color-text-secondary-default);
+        margin-bottom: var(--scale-size-24);
+    }
+}

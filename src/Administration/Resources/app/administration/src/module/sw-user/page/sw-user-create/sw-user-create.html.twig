@@ -1,0 +1,14 @@
+{% block sw_user_detail_content_tabs %}{% endblock %}
+
+{% block sw_user_detail_content_password %}
+<mt-password-field
+    v-model="user.password"
+    name="sw-field--user-password"
+    :label="$t('sw-user.users.user-detail.labelPassword')"
+    class="sw-user-detail__grid-password"
+    :error="userPasswordError"
+    required
+    :password-toggle-able="true"
+    autocomplete="new-password"
+/>
+{% endblock %}

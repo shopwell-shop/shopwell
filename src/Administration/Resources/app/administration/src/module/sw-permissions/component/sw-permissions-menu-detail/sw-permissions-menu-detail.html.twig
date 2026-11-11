@@ -1,0 +1,110 @@
+{% block sw_permissions_menu_list_detail_form %}
+<div class="sw-permissions-menu-list__form">
+    {% block sw_permissions_menu_list_detail_form_locked %}
+    <mt-banner
+        v-if="locked"
+        class="sw-permissions-menu-list__locked-hint"
+        variant="info"
+    >
+        {{ $t('sw-permissions.menu.hintLockedItem') }}
+    </mt-banner>
+    {% endblock %}
+    {% block sw_permissions_menu_list_detail_form_basics %}
+    <mt-card
+        class="sw-permissions-menu-list__card"
+        position-identifier="sw-permissions-menu-list-basics"
+        :title="$t('sw-permissions.menu.sectionBasics')"
+    >
+        <div class="sw-permissions-menu-list__form-grid">
+            {% block sw_permissions_menu_list_detail_form_title %}
+            <mt-text-field
+                :model-value="draft.title"
+                class="sw-permissions-menu-list__field-title"
+                name="sw-field--menu-item-title"
+                :label="$t('sw-permissions.menu.labelTitle')"
+                :placeholder="$t('sw-permissions.menu.placeholderTitle')"
+                :help-text="$t('sw-permissions.menu.helpTitle', { language: languageLabel })"
+                :disabled="disabled || undefined"
+                :error="fieldErrors.title"
+                required
+                @update:model-value="updateField('title', $event)"
+            />
+            {% endblock %}
+            {% block sw_permissions_menu_list_detail_form_icon %}
+            <sw-icon-picker
+                v-if="draft.type !== 'group'"
+                :model-value="draft.icon"
+                :label="$t('sw-permissions.menu.labelIcon')"
+                :disabled="disabled"
+                @update:model-value="updateField('icon', $event)"
+            />
+            {% endblock %}
+            {% block sw_permissions_menu_list_detail_form_type %}
+            <mt-select
+                class="sw-permissions-menu-list__field-type"
+                :label="$t('sw-permissions.menu.labelType')"
+                :model-value="draft.type"
+                :options="typeOptions"
+                :disabled="disabled || undefined"
+                required
+                @update:model-value="$emit('type-change', $event)"
+            />
+            {% endblock %}
+            {% block sw_permissions_menu_list_detail_form_target %}
+            {% block sw_permissions_menu_list_detail_form_target_fields %}
+            <sw-tree-select
+                v-if="draft.type === 'menu'"
+                class="sw-permissions-menu-list__field-target"
+                :label="$t('sw-permissions.menu.labelTarget')"
+                :placeholder="$t('sw-permissions.menu.placeholderTarget')"
+                :help-text="$t('sw-permissions.menu.helpTarget')"
+                :model-value="draft.routeKey ?? ''"
+                :options="routeOptions"
+                :disabled="disabled"
+                required
+                @update:model-value="updateField('routeKey', $event)"
+            />
+            <mt-url-field
+                v-else-if="draft.type === 'link'"
+                class="sw-permissions-menu-list__field-target"
+                :model-value="draft.linkTarget"
+                :label="$t('sw-permissions.menu.labelLinkTarget')"
+                :placeholder="$t('sw-permissions.menu.placeholderLinkTarget')"
+                :disabled="disabled || undefined"
+                required
+                @update:model-value="updateField('linkTarget', $event)"
+            />
+            {% endblock %}
+            {% endblock %}
+            {% block sw_permissions_menu_list_detail_form_parent %}
+            <sw-tree-select
+                class="sw-permissions-menu-list__field-parent sw-permissions-menu-list__field-wide"
+                :label="$t('sw-permissions.menu.labelParent')"
+                :model-value="draft.parentId ?? ''"
+                :placeholder="$t('sw-permissions.menu.placeholderParent')"
+                :help-text="$t('sw-permissions.menu.helpParent')"
+                clearable
+                :options="parentOptions"
+                :disabled="disabled"
+                @update:model-value="$emit('parent-change', $event)"
+            />
+            {% endblock %}
+            <mt-switch
+                :model-value="draft.active"
+                class="sw-permissions-menu-list__field-active"
+                :label="$t('sw-permissions.menu.labelActive')"
+                :help-text="$t('sw-permissions.menu.helpActive')"
+                :disabled="disabled || undefined"
+                @update:model-value="updateField('active', $event)"
+            />
+            <mt-text-field
+                v-if="provenance"
+                :model-value="provenance"
+                :label="$t('sw-permissions.menu.labelSource')"
+                disabled
+            />
+        </div>
+    </mt-card>
+    {% endblock %}
+</div>
+{% endblock %}

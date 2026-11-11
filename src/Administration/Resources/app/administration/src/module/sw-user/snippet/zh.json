@@ -1,0 +1,182 @@
+{
+    "sw-user": {
+        "general": {
+            "label": "用户"
+        },
+        "users": {
+            "general": {
+                "placeholderSearchBar": "搜索用户…",
+                "labelCreateNewUser": "创建用户"
+            },
+            "list": {
+                "titleSidebarItemRefresh": "刷新列表"
+            },
+            "user-grid": {
+                "labelUsername": "用户名",
+                "labelName": "姓名",
+                "labelRoles": "角色",
+                "labelEmail": "邮箱地址",
+                "status": "状态",
+                "labelCreatedAt": "创建时间",
+                "titleModalDelete": "删除用户",
+                "textModalDelete": "确定要删除用户 \"{name}\" 吗？",
+                "notification": {
+                    "deleteSuccess": {
+                        "message": "用户 \"{name}\" 已删除。"
+                    },
+                    "deleteError": {
+                        "message": "用户 \"{name}\" 无法删除。"
+                    },
+                    "deleteUserLoggedInError": {
+                        "message": "用户不能删除自己。"
+                    },
+                    "enableSuccess": {
+                        "message": "用户 \"{name}\" 已启用。"
+                    },
+                    "disableSuccess": {
+                        "message": "用户 \"{name}\" 已停用。"
+                    },
+                    "toggleActiveError": {
+                        "message": "用户 \"{name}\" 的状态无法修改。"
+                    },
+                    "toggleActiveSelfError": {
+                        "message": "不能停用当前登录的用户。"
+                    }
+                },
+                "labelUser": "用户",
+                "noRoles": "无角色",
+                "actionEnable": "启用",
+                "actionDisable": "停用"
+            },
+            "user-detail": {
+                "labelCard": "信息",
+                "tabs": {
+                    "general": "资料",
+                    "permissions": "访问权限",
+                    "organization": "组织归属"
+                },
+                "labelInactiveBadge": "已停用",
+                "hintPermissionsFromRoles": "权限来自角色：如需给该用户不同的权限组合，请调整其角色或新建一个专用角色。",
+                "labelIntegrationsCard": "集成",
+                "labelRolesPermissionsCard": "角色与权限",
+                "labelName": "姓名",
+                "labelEmail": "邮箱地址",
+                "labelPhoneNumber": "手机号",
+                "errorEmailUsed": "该邮箱地址已被使用。",
+                "errorUsernameUsed": "该用户名已被使用。",
+                "labelUsername": "用户名",
+                "labelPassword": "密码",
+                "labelProfilePicture": "头像",
+                "labelUserInterface": "用户界面",
+                "labelLanguage": "语言",
+                "labelLanguagePlaceholder": "选择语言...",
+                "labelChangePassword": "修改密码",
+                "labelActive": "启用",
+                "labelAdministrator": "管理员",
+                "labelTimezone": "时区",
+                "labelJobTitle": "职位",
+                "labelRoles": "角色",
+                "labelNewPassword": "新密码",
+                "labelNewUser": "新用户",
+                "placeholderNewPassword": "输入新密码 ...",
+                "placeholderNewPasswordConfirm": "确认新密码 ...",
+                "labelButtonChangePassword": "修改",
+                "writeAccess": "写入",
+                "readAccess": "读取",
+                "contextMenuEdit": "编辑集成",
+                "textChangePassword": "点击 '修改' 会直接保存密码。",
+                "addAccessKey": "创建访问密钥",
+                "noAccessKeysTitle": "暂无访问密钥",
+                "noAccessKeysSubline": "在此创建访问密钥",
+                "labelAccessKey": "访问密钥",
+                "labelPermissions": "权限",
+                "disabledRoleSelectWarning": "角色仅对没有管理员权限的用户可用。",
+                "passwordConfirmation": {
+                    "titleConfirmPasswordModal": "确认密码",
+                    "labelConfirmPassword": "密码",
+                    "placeholderConfirmPassword": "输入当前密码 ...",
+                    "notificationPasswordErrorMessage": "请输入正确的当前密码。"
+                },
+                "modal": {
+                    "detailModalTitle": "创建集成",
+                    "confirmDelete": "确定要删除该集成吗？",
+                    "buttonApply": "保存集成",
+                    "buttonApplyEdit": "保存修改",
+                    "buttonCreateNewApiKeys": "重新生成 API 凭证",
+                    "hintCreateNewApiKeys": "重新生成 API 凭证需要更新所有相关脚本或应用。",
+                    "labelFieldLabel": "名称",
+                    "idFieldLabel": "访问密钥 ID",
+                    "secretFieldLabel": "安全密钥",
+                    "secretHelpText": "请立即复制你的安全密钥！出于安全考虑，保存后不再显示。",
+                    "messageSaveSuccess": "集成已保存。",
+                    "messageSaveError": "集成无法保存。",
+                    "messageCreateNewError": "集成无法创建。"
+                },
+                "mcpAllowlistTitle": "MCP 工具白名单",
+                "mcpAllowlistSaveError": "MCP 白名单无法保存。",
+                "cardOrganizationUnits": "所属组织单元",
+                "labelOrganizationUnits": "组织单元",
+                "placeholderSelectUnits": "搜索并选择组织单元...",
+                "helperNoUnit": "未分配组织单元。",
+                "labelPrimaryUnit": "主归属单元",
+                "placeholderSelectPrimaryUnit": "请选择主归属单元...",
+                "helperPrimaryUnit": "主归属单元标识用户的主要隶属关系，用于统计与汇报线。",
+                "cardPositions": "岗位",
+                "labelPositions": "岗位",
+                "placeholderSelectPositions": "搜索并选择岗位...",
+                "notification": {
+                    "saveError": {
+                        "message": "用户 \"{name}\" 无法保存。"
+                    },
+                    "saveSuccess": {
+                        "message": "用户 \"{name}\" 已保存。"
+                    },
+                    "themeSaveError": {
+                        "message": "设计设置无法保存。"
+                    },
+                    "invalidEmailErrorMessage": "请输入有效的邮箱地址。",
+                    "duplicateEmailErrorMessage": "该邮箱地址已被使用。"
+                }
+            },
+            "filter": {
+                "labelRole": "角色",
+                "labelStatus": "状态"
+            },
+            "emptyState": {
+                "noUserTitle": "还没有用户",
+                "noResultTitle": "没有匹配的用户",
+                "description": "调整筛选条件，或创建一个新的后台用户。"
+            }
+        },
+        "sso": {
+            "inviteButtonLabel": "邀请用户",
+            "invitationNotYetAccepted": "该用户尚未接受你的邀请。接受后，缺失信息会自动补全。",
+            "error": {
+                "cannotInviteUser": "用户无法邀请。"
+            },
+            "user-listing": {
+                "status-label": {
+                    "invited": "已邀请",
+                    "active": "已激活",
+                    "inactive": "已停用"
+                }
+            },
+            "user-detail": {
+                "cards-title": {
+                    "information": "信息",
+                    "userinterface": "用户界面",
+                    "rolesAndPermission": "角色与用户权限"
+                }
+            },
+            "modal": {
+                "title": "向用户发送邀请",
+                "labelEmail": "邮箱",
+                "placeholderEmail": "输入邮箱…",
+                "labelLanguage": "用户界面语言",
+                "placeholderLanguage": "选择语言...",
+                "labelButtonInvite": "邀请用户",
+                "accountPermissionHint": "请确保该用户在 Shopwell 账户中也属于你的公司，以便其无限制使用本店铺的后台。"
+            }
+        }
+    }
+}

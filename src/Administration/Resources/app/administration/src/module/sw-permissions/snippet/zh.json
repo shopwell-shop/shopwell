@@ -1,0 +1,316 @@
+{
+    "sw-permissions": {
+        "general": {
+            "label": "角色与权限"
+        },
+        "roles": {
+            "general": {
+                "labelCreateNewRole": "创建角色",
+                "cardLabel": "角色",
+                "placeholderSearchBar": "搜索角色…",
+                "label": "角色"
+            },
+            "role-grid": {
+                "labelName": "名称",
+                "labelDescription": "描述",
+                "messageEmptyTitle": "暂无角色",
+                "messageEmptySubline": "创建角色以管理用户权限。",
+                "titleModalDelete": "删除角色",
+                "textModalDelete": "确定要删除角色 \"{name}\" 吗？",
+                "notification": {
+                    "deleteSuccess": {
+                        "message": "角色 \"{name}\" 已删除。"
+                    },
+                    "deleteError": {
+                        "message": "角色 \"{name}\" 无法删除。"
+                    }
+                },
+                "labelPrivileges": "权限数",
+                "actionDuplicate": "复制角色",
+                "noResultTitle": "没有匹配的角色",
+                "textModalDeleteAffectedUsers": "该角色当前分配给了 {count} 个用户，删除后这些用户将失去该角色的权限。"
+            },
+            "detail": {
+                "role": "角色",
+                "basicInformation": "基本信息",
+                "labelName": "名称",
+                "labelDescription": "描述",
+                "permissions": "权限",
+                "notification": {
+                    "dependencyOutOfSync": {
+                        "message": "页面打开期间权限配置已变更，请刷新页面后再保存。"
+                    }
+                }
+            },
+            "grid": {
+                "title": "权限",
+                "disabledCheckboxMessage": "该权限被已勾选的「{roles}」依赖，取消「{roles}」后才能取消此项。",
+                "tooltipParentRole": "{parent} 的所有 {role} 权限",
+                "tooltipParentAll": "{parent} ({roles}) 的所有权限",
+                "tooltipEntityAll": "{entity} ({roles}) 的所有权限",
+                "notification": {
+                    "keptDependencies": {
+                        "message": "已保留 {count} 项权限，它们被其他已勾选的权限依赖。"
+                    }
+                }
+            },
+            "additional-permissions": {
+                "title": "操作权限",
+                "description": "按实际功能授权；依赖权限会联动勾选，修改后需保存角色。",
+                "searchPlaceholder": "搜索操作权限…",
+                "noResults": "没有匹配的操作权限",
+                "systemConfigDescription": "共享权限：允许读取和修改多个系统设置页面，影响范围不限于“基础设置”。",
+                "relatedPages": "关联页面：{pages}",
+                "relatedPageCount": "共享权限 · 关联 {count} 个页面"
+            },
+            "detailed-additional-permissions": {
+                "title": "接口操作权限"
+            },
+            "detailed-grid": {
+                "coveredByGeneralMessage": "已在“菜单与权限”中授予。"
+            },
+            "view": {
+                "detailed": {
+                    "alertText": "在此配置实体和接口的详细权限。已在“菜单与权限”中授予的项目不可重复修改。"
+                }
+            },
+            "tabs": {
+                "general": "基本信息",
+                "detailed": "高级权限",
+                "menus": "菜单与权限"
+            },
+            "mcpHint": {
+                "text": "该角色已分配给 {count} 个启用 MCP 的集成。 ",
+                "linkText": "查看 MCP 工具要求"
+            },
+            "mcpModal": {
+                "title": "MCP 工具要求",
+                "description": "使用该角色的集成允许以下工具。",
+                "legendLabel": "图例：",
+                "legendGranted": "已分配",
+                "legendGrantedHint": "该角色已分配此权限。",
+                "legendMissing": "缺失",
+                "legendMissingHint": "该角色尚未分配此权限。",
+                "legendDynamic": "动态",
+                "legendDynamicHint": "此权限取决于运行时传入的实体参数。",
+                "noToolsHeadline": "未找到工具",
+                "noToolsDescription": "使用该角色的集成目前不允许任何工具。",
+                "dynamicPrivilegeHint": "此权限取决于运行时传入的实体参数。",
+                "viewByPermission": "按权限",
+                "viewByTool": "按工具",
+                "grantAllMissing": "授予全部缺失权限",
+                "grant": "授予",
+                "saveReminder": "权限已预选。保存角色以应用。"
+            },
+            "menus": {
+                "navigation": "导航菜单",
+                "allPermissions": "全部业务权限",
+                "otherPermissions": "其他功能与全局操作",
+                "selectMenu": "选择菜单「{name}」",
+                "missingPermissions": "此角色尚未具备打开所选页面的全部权限。",
+                "grantRequired": "补齐页面所需权限",
+                "loadFailed": "菜单加载失败，请重试。",
+                "assignmentHint": "菜单勾选控制导航入口，右侧权限控制页面访问和操作；取消菜单不会收回共享权限。",
+                "noOperations": "该菜单没有声明操作权限。"
+            }
+        },
+        "menu": {
+            "headline": "菜单",
+            "createAction": "新建菜单项",
+            "treeLabel": "已存储的导航",
+            "labelUntitled": "未命名",
+            "labelInactive": "已隐藏",
+            "expand": "展开",
+            "collapse": "折叠",
+            "emptyStateHeadline": "未选择菜单项",
+            "emptyStateDescription": "在左侧选择一个条目进行编辑，或新建一个。",
+            "treeHeadline": "导航",
+            "treeEmpty": "当前没有菜单项。",
+            "createAbove": "在上方新增",
+            "createBelow": "在下方新增",
+            "tooltipLockedItem": "该条目由核心模块声明，可以自定义，但不能删除。",
+            "hintLockedItem": "该条目由核心模块声明。你的修改会被保留，插件升级不会覆盖。",
+            "labelTitle": "标题",
+            "placeholderTitle": "导航中显示的名称",
+            "labelType": "类型",
+            "types": {
+                "menu": "菜单",
+                "folder": "目录",
+                "link": "链接",
+                "hidden": "隐藏",
+                "group": "分组"
+            },
+            "labelIcon": "图标",
+            "placeholderIcon": "regular-products",
+            "helpIcon": "Meteor 图标名称",
+            "labelTarget": "打开页面",
+            "helpTarget": "选择模块已注册的页面。",
+            "helpHiddenTarget": "可选的条目标识",
+            "labelLinkTarget": "链接地址",
+            "placeholderLinkTarget": "https://example.com",
+            "labelParent": "上级菜单",
+            "labelActive": "在导航中显示",
+            "helpActive": "仅控制导航显示，菜单分配和业务权限请在角色中配置。",
+            "deleteModalTitle": "删除菜单项",
+            "deleteConfirmMessage": "该菜单项将从导航中移除。",
+            "deleteConfirmMessageWithChildren": "该菜单项及其 {count} 个子条目将一起从导航中移除。",
+            "notification": {
+                "loadError": "导航加载失败。",
+                "titleRequired": "标题不能为空。",
+                "targetRequired": "请选择要打开的页面。",
+                "linkRequired": "链接地址不能为空。",
+                "saveSuccess": "菜单项已保存。",
+                "saveError": "菜单项保存失败。",
+                "moveError": "菜单项移动失败。",
+                "deleteSuccess": "菜单项已删除。",
+                "deleteError": "菜单项删除失败。"
+            },
+            "expandAll": "全部展开",
+            "collapseAll": "全部折叠",
+            "searchEmptyHeadline": "没有匹配的菜单项",
+            "addChild": "新建子项",
+            "sectionBasics": "通用",
+            "helpTitle": "在「{language}」下显示的名称。",
+            "labelGroup": "分组",
+            "placeholderGroup": "general",
+            "helpGroup": "仅顶级条目有效。同一分组键的条目在导航中归为一组。",
+            "labelGroupTitle": "分组名称",
+            "placeholderGroupTitle": "常规",
+            "helpGroupTitle": "在「{language}」下作为分组标题显示。",
+            "placeholderSearchBar": "搜索菜单项…",
+            "groups": {
+                "general": "通用",
+                "customer": "客户",
+                "automation": "自动化",
+                "localization": "国际化",
+                "content": "内容",
+                "commerce": "电子商务",
+                "system": "系统",
+                "account": "账号",
+                "plugins": "扩展",
+                "payment": "支付"
+            },
+            "moveItem": "移动「{name}」",
+            "itemActions": "「{name}」的操作",
+            "createGroup": "新建菜单组",
+            "discardChanges": "放弃修改",
+            "groupNone": "不分组",
+            "iconDefault": "默认图标",
+            "keepEditing": "继续编辑",
+            "retry": "重试",
+            "searchPlaceholder": "搜索菜单…",
+            "unsavedDescription": "当前修改尚未保存，请保存后继续，或放弃修改。",
+            "unsavedTitle": "有未保存的修改",
+            "labelPagePrivilege": "页面所需权限",
+            "labelSource": "来源",
+            "sourceSystem": "系统内置",
+            "sourceCustom": "自定义",
+            "placeholderTarget": "选择要打开的页面",
+            "placeholderParent": "选择上级菜单（可选）",
+            "helpParent": "留空时显示在导航根层级。"
+        }
+    },
+    "sw-privileges": {
+        "roles": {
+            "all": "全部",
+            "viewer": "查看",
+            "editor": "编辑",
+            "creator": "创建",
+            "deleter": "删除"
+        },
+        "permissionType": {
+            "read": "读取",
+            "update": "写入",
+            "create": "创建",
+            "delete": "删除"
+        },
+        "permissions": {
+            "parents": {
+                "content": "内容",
+                "customers": "客户",
+                "marketing": "营销",
+                "other": "其他",
+                "orders": "订单",
+                "products": "商品",
+                "settings": "设置",
+                "system": "系统",
+                "payment_gateway": "支付"
+            },
+            "permissions": {
+                "label": "角色与权限"
+            },
+            "admin_menu": {
+                "label": "导航菜单"
+            },
+            "routes": {
+                "label": "路由"
+            },
+            "user": {
+                "label": "用户"
+            },
+            "blog": {
+                "label": "文章"
+            },
+            "experience_studio": {
+                "label": "体验工作室"
+            },
+            "dictionary": {
+                "label": "数据字典"
+            },
+            "organization": {
+                "label": "组织"
+            },
+            "position": {
+                "label": "岗位"
+            },
+            "payment_order": {
+                "label": "支付订单"
+            },
+            "payment_refund": {
+                "label": "支付退款"
+            },
+            "order_return": {
+                "label": "售后申请"
+            }
+        },
+        "additional_permissions": {
+            "system": {
+                "label": "设置"
+            },
+            "user": {
+                "label": "用户"
+            },
+            "marketing": {
+                "label": "营销"
+            },
+            "orders": {
+                "label": "订单"
+            },
+            "routes": {
+                "label": "路由",
+                "api_action_access-key_integration": "重新生成 API 凭证",
+                "api_acl_privileges_get": "读取全部 ACL 权限",
+                "api_acl_privileges_route_get": "读取 ACL 端点权限",
+                "api_action_cache_info": "读取缓存信息",
+                "api_action_cache_index": "触发索引器",
+                "api_action_cache_delete": "清除缓存",
+                "api_action_cache_cleanup": "清理缓存",
+                "api_action_container-cache_delete": "清除容器缓存",
+                "api_info_me": "读取自己的 API 用户信息",
+                "api_info_ping": "续期 API 令牌",
+                "system:clear:cache": "清空缓存",
+                "api_proxy_switch-customer": "以客户身份操作",
+                "api_proxy_imitate-customer": "模拟客户登录",
+                "api_feature_flag_toggle": "展开/收起功能开关"
+            },
+            "app": {
+                "label": "应用",
+                "all": "全部",
+                "disabledCheckboxMessage": "要停用此选项，你必须先停用 '全部' 选项。"
+            },
+            "payment_gateway": {
+                "label": "支付"
+            }
+        }
+    }
+}

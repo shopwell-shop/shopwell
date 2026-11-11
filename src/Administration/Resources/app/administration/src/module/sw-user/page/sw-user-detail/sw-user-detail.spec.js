@@ -1,0 +1,890 @@
+/* eslint-disable sw-test-rules/test-file-max-lines-warning */
+
+/**
+ * @sw-package fundamentals@framework
+ */
+import { mount } from '@vue/test-utils';
+import TimezoneService from 'src/core/service/timezone.service';
+import EntityCollection from 'src/core/data/entity-collection.data';
+import useModuleIconColors, { USER_MODULE_ICON_COLORS_CONFIG_KEY } from 'src/app/composables/use-module-icon-colors';
+
+let wrapper;
+
+const mockedLoginService = {
+    verifyUserToken: jest.fn(() => Promise.resolve('verifiedToken')),
+    getBearerAuthentication: jest.fn(),
+    setBearerAuthentication: jest.fn(),
+};
+
+async function createWrapper(
+    privileges = [],
+    options = {
+        global: {
+            stubs: {},
+        },
+    },
+    saveUser = () => Promise.resolve(),
+) {
+    wrapper = mount(
+        await wrapTestComponent('sw-user-detail', {
+            sync: true,
+        }),
+        {
+            global: {
+                config: options.global.config,
+                directives: {
+                    tooltip: {
+                        beforeMount(el, binding) {
+                            el.setAttribute('data-tooltip-message', binding.value.message);
+                            el.setAttribute('data-tooltip-disabled', binding.value.disabled);
+                        },
+                        mounted(el, binding) {
+                            el.setAttribute('data-tooltip-message', binding.value.message);
+                            el.setAttribute('data-tooltip-disabled', binding.value.disabled);
+                        },
+                        updated(el, binding) {
+                            el.setAttribute('data-tooltip-message', binding.value.message);
+                            el.setAttribute('data-tooltip-disabled', binding.value.disabled);
+                        },
+                    },
+                },
+                renderStubDefaultSlot: true,
+                provide: {
+                    acl: {
+                        can: (identifier) => {
+                            if (!identifier) {
+                                return true;
+                            }
+
+                            return privileges.includes(identifier);
+                        },
+                        isAdmin: () => !!Shopwell.Store.get('session').currentUser?.admin,
+                    },
+                    loginService: mockedLoginService,
+                    userService: {
+                        getUser: () => Promise.resolve({ data: {} }),
+                    },
+                    mediaDefaultFolderService: {
+                        getDefaultFolderId: () => Promise.resolve('1234'),
+                    },
+                    userValidationService: {
+                        checkUserEmail: () => Promise.resolve({ emailIsUnique: true }),
+                    },
+                    integrationService: {},
+                    repositoryFactory: {
+                        create: (entityName) => {
+                            if (entityName === 'user') {
+                                return {
+                                    search: () => Promise.resolve(),
+                                    get: () => {
+                                        return Promise.resolve({
+                                            active: true,
+                                            localeId: '7dc07b43229843d387bb5f59233c2d66',
+                                            username: 'admin',
+                                            name: 'admin',
+                                            email: 'info@shopwell.cn',
+                                            accessKeys: {
+                                                entity: 'product',
+                                            },
+                                        });
+                                    },
+                                    save: saveUser,
+                                };
+                            }
+
+                            if (entityName === 'language') {
+                                return {
+                                    search: () =>
+                                        Promise.resolve(new EntityCollection('', '', Shopwell.Context.api, null, [], 0)),
+                                    get: () => Promise.resolve(),
+                                };
+                            }
+
+                            if (entityName === 'media') {
+                                return {
+                                    get: () =>
+                                        Promise.resolve({
+                                            id: '2142',
+                                        }),
+                                };
+                            }
+
+                            if (entityName === 'user_organization_unit') {
+                                return {
+                                    search: () => Promise.resolve([]),
+                                    save: () => Promise.resolve(),
+                                    delete: () => Promise.resolve(),
+                                    create: () => ({}),
+                                };
+                            }
+
+                            if (entityName === 'organization_unit' || entityName === 'position') {
+                                return {
+                                    search: () => Promise.resolve([]),
+                                };
+                            }
+
+                            return {};
+                        },
+                    },
+                    validationService: {},
+                },
+                mocks: {
+                    $route: {
+                        params: {
+                            id: '1a2b3c4d',
+                        },
+                        meta: {
+                            $module: {
+                                icon: 'regular-content',
+                            },
+                        },
+                    },
+                    $device: {
+                        getSystemKey: () => 'STRG',
+                    },
+                    ...options.global.mocks,
+                },
+                stubs: {
+                    'sw-page': {
+                        template: `
+<div>
+    <slot name="smart-bar-header"></slot>
+    <slot name="smart-bar-actions"></slot>
+    <slot name="content"></slot>
+</div>`,
+                    },
+                    'sw-card-view': true,
+                    'mt-card': {
+                        template: `
+    <div class="sw-card-stub">
+        <slot></slot>
+        <slot name="grid"></slot>
+    </div>
+    `,
+                    },
+                    'sw-button-process': await wrapTestComponent('sw-button-process'),
+                    'sw-text-field': await wrapTestComponent('sw-text-field', {
+                        sync: true,
+                    }),
+                    'sw-contextual-field': await wrapTestComponent('sw-contextual-field'),
+                    'sw-block-field': await wrapTestComponent('sw-block-field'),
+                    'sw-base-field': await wrapTestComponent('sw-base-field'),
+                    'sw-field-error': await wrapTestComponent('sw-field-error'),
+                    'sw-upload-listener': true,
+                    'sw-media-upload-v2': true,
+                    'sw-select-field': true,
+
+                    'sw-entity-multi-select': true,
+                    'sw-single-select': true,
+                    'sw-data-grid': {
+                        props: ['dataSource'],
+                        template: `
+                        <div>
+                            <template v-for="item in dataSource">
+                                <slot name="actions" v-bind="{ item }"></slot>
+                            </template>
+                        </div>
+                    `,
+                    },
+                    'sw-context-menu-item': true,
+                    'sw-skeleton': true,
+                    'sw-loader': true,
+                    'sw-verify-user-modal': true,
+                    'sw-media-modal-v2': true,
+                    'sw-extension-component-section': {
+                        template: '<div class="extension-component-section-stub"></div>',
+                    },
+
+                    'sw-text-field-deprecated': true,
+                    'sw-help-text': true,
+                    'sw-inheritance-switch': true,
+                    'sw-field-copyable': true,
+                    'sw-ai-copilot-badge': true,
+                    'mt-tabs': {
+                        name: 'mt-tabs',
+                        emits: ['new-item-active'],
+                        props: {
+                            defaultItem: {
+                                type: String,
+                                required: false,
+                                default: undefined,
+                            },
+                            items: {
+                                type: Array,
+                                required: true,
+                            },
+                            positionIdentifier: {
+                                type: String,
+                                required: true,
+                            },
+                        },
+                        template: '<div class="mt-tabs"></div>',
+                    },
+                    ...options.global.stubs,
+                },
+            },
+        },
+    );
+
+    // wait until all loading promises are done
+    await flushPromises();
+
+    return wrapper;
+}
+
+// The page keeps its three sections in tabs; a test that asserts on a field has to open that tab first.
+async function selectTab(tabName) {
+    wrapper.getComponent({ name: 'mt-tabs' }).vm.$emit('new-item-active', tabName);
+    await flushPromises();
+}
+
+describe('modules/sw-user/page/sw-user-detail', () => {
+    beforeAll(() => {
+        Shopwell.Service().register('timezoneService', () => {
+            return new TimezoneService();
+        });
+    });
+
+    beforeEach(async () => {
+        // Setup spy before each test since restoreMocks: true in jest.config.js
+        // automatically restores mocks after each test
+        jest.spyOn(Shopwell.ExtensionAPI, 'publishData').mockImplementation(() => {});
+
+        Shopwell.Store.get('session').languageId = '123456789';
+        wrapper = await createWrapper();
+    });
+
+    afterEach(async () => {
+        // Unmount need to be called here manually because the publishData cleanup does
+        // not work with automatic unmount
+        await wrapper.unmount();
+        Shopwell.Store.get('session').languageId = '';
+        Shopwell.Store.get('session').removeCurrentUser();
+    });
+
+    it.each([
+        [[], false],
+        [['user.editor', 'integration_mcp.editor'], true],
+    ])('only mounts MCP configuration with discovery permission %s', async (privileges, visible) => {
+        await wrapper.unmount();
+        wrapper = await createWrapper(privileges, {
+            global: { stubs: { 'sw-integration-mcp-allowlist': true } },
+        });
+        await selectTab('permissions');
+        expect(wrapper.find('sw-integration-mcp-allowlist-stub').exists()).toBe(visible);
+    });
+
+    it('should open on the general tab', async () => {
+        expect(wrapper.vm.activeTab).toBe('general');
+        expect(wrapper.find('.sw-user-detail__grid-name').exists()).toBe(true);
+        expect(wrapper.find('.sw-user-detail__grid-aclRoles').exists()).toBe(false);
+        expect(wrapper.find('.sw-user-detail__organization-units-card').exists()).toBe(false);
+    });
+
+    it('should only show the section that belongs to the selected tab', async () => {
+        await selectTab('permissions');
+
+        expect(wrapper.find('.sw-user-detail__grid-aclRoles').exists()).toBe(true);
+        expect(wrapper.find('.sw-user-detail__grid-name').exists()).toBe(false);
+        expect(wrapper.find('.sw-user-detail__organization-units-card').exists()).toBe(false);
+
+        await selectTab('organization');
+
+        expect(wrapper.find('.sw-user-detail__organization-units-card').exists()).toBe(true);
+        expect(wrapper.find('.sw-user-detail__grid-aclRoles').exists()).toBe(false);
+        expect(wrapper.find('.sw-user-detail__grid-name').exists()).toBe(false);
+    });
+
+    it('should tell that permissions are granted through roles', async () => {
+        await selectTab('permissions');
+
+        const hint = wrapper.find('.sw-user-detail__roles-hint');
+        expect(hint.exists()).toBe(true);
+        expect(hint.text()).toBe('sw-user.users.user-detail.hintPermissionsFromRoles');
+    });
+
+    it('should hand a tab it does not own over to the extension section', async () => {
+        await wrapper.setData({ activeTab: 'some-extension-section' });
+
+        expect(wrapper.find('.sw-user-detail__grid-name').exists()).toBe(false);
+        expect(wrapper.find('.sw-user-detail__grid-aclRoles').exists()).toBe(false);
+        expect(wrapper.find('.extension-component-section-stub').attributes('position-identifier')).toBe(
+            'some-extension-section',
+        );
+    });
+
+    it('should highlight a disabled user in the smart bar', async () => {
+        expect(wrapper.find('.sw-user-detail__inactive-badge').exists()).toBe(false);
+
+        await wrapper.setData({ isLoading: false, user: { active: false } });
+
+        expect(wrapper.find('.sw-user-detail__inactive-badge').exists()).toBe(true);
+    });
+
+    it.each([
+        [true, false],
+        [false, true],
+    ])('should render the admin switch with admin %s as disabled %s', async (isAdmin, expectedDisabled) => {
+        Shopwell.Store.get('session').setCurrentUser({ admin: isAdmin });
+
+        wrapper = await createWrapper(['user.editor']);
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+        await selectTab('permissions');
+
+        const adminSwitch = wrapper.find('.sw-user-detail__grid-is-admin input');
+
+        expect(adminSwitch.exists()).toBe(true);
+        expect(adminSwitch.element.disabled).toBe(expectedDisabled);
+    });
+
+    it('should contain all fields', async () => {
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+
+        const fieldName = wrapper.findComponent('.sw-user-detail__grid-name');
+        const fieldEmail = wrapper.findComponent('.sw-user-detail__grid-eMail');
+        const fieldPhoneNumber = wrapper.findComponent('.sw-user-detail__grid-phoneNumber');
+        const fieldUsername = wrapper.findComponent('.sw-user-detail__grid-username');
+        const fieldProfilePicture = wrapper.findComponent('.sw-user-detail__grid-profile-picture');
+        const fieldPassword = wrapper.findComponent('.sw-user-detail__grid-password');
+        const fieldLanguage = wrapper.findComponent('.sw-user-detail__grid-language');
+        const fieldActive = wrapper.findComponent('.sw-user-detail__grid-active');
+
+        expect(fieldName.exists()).toBeTruthy();
+        expect(fieldEmail.exists()).toBeTruthy();
+        expect(fieldPhoneNumber.exists()).toBeTruthy();
+        expect(fieldUsername.exists()).toBeTruthy();
+        expect(fieldProfilePicture.exists()).toBeTruthy();
+        expect(fieldPassword.exists()).toBeTruthy();
+        expect(fieldLanguage.exists()).toBeTruthy();
+        expect(fieldActive.exists()).toBeTruthy();
+
+        expect(fieldName.props('modelValue')).toBe('admin');
+        expect(fieldEmail.props('modelValue')).toBe('info@shopwell.cn');
+        expect(fieldUsername.props('modelValue')).toBe('admin');
+        expect(fieldProfilePicture.attributes('value')).toBeUndefined();
+        expect(fieldPassword.attributes('value')).toBeUndefined();
+        expect(fieldLanguage.props('modelValue')).toBe('7dc07b43229843d387bb5f59233c2d66');
+        expect(fieldActive.props('modelValue')).toBe(true);
+    });
+
+    it('should contain all fields with a given user', async () => {
+        await wrapper.setData({
+            user: {
+                localeId: '12345',
+                username: 'maxmuster',
+                name: 'Max Mustermann',
+                email: 'max@mustermann.com',
+                phoneNumber: '0170123456',
+                active: false,
+            },
+            isLoading: false,
+        });
+        await flushPromises();
+
+        const fieldName = wrapper.findComponent('.sw-user-detail__grid-name');
+        const fieldEmail = wrapper.findComponent('.sw-user-detail__grid-eMail');
+        const fieldPhoneNumber = wrapper.findComponent('.sw-user-detail__grid-phoneNumber');
+        const fieldUsername = wrapper.findComponent('.sw-user-detail__grid-username');
+        const fieldProfilePicture = wrapper.findComponent('.sw-user-detail__grid-profile-picture');
+        const fieldPassword = wrapper.findComponent('.sw-user-detail__grid-password');
+        const fieldLanguage = wrapper.findComponent('.sw-user-detail__grid-language');
+        const fieldActive = wrapper.findComponent('.sw-user-detail__grid-active');
+
+        expect(fieldName.exists()).toBeTruthy();
+        expect(fieldEmail.exists()).toBeTruthy();
+        expect(fieldPhoneNumber.exists()).toBeTruthy();
+        expect(fieldUsername.exists()).toBeTruthy();
+        expect(fieldProfilePicture.exists()).toBeTruthy();
+        expect(fieldPassword.exists()).toBeTruthy();
+        expect(fieldLanguage.exists()).toBeTruthy();
+        expect(fieldActive.exists()).toBeTruthy();
+
+        expect(fieldName.props('modelValue')).toBe('Max Mustermann');
+        expect(fieldEmail.props('modelValue')).toBe('max@mustermann.com');
+        expect(fieldPhoneNumber.props('modelValue')).toBe('0170123456');
+        expect(fieldUsername.props('modelValue')).toBe('maxmuster');
+        expect(fieldProfilePicture.attributes('value')).toBeUndefined();
+        expect(fieldPassword.attributes('value')).toBeUndefined();
+        expect(fieldLanguage.props('modelValue')).toBe('12345');
+        expect(fieldActive.props('modelValue')).toBe(false);
+    });
+
+    it('should enable the tooltip warning when user is admin', async () => {
+        wrapper = await createWrapper('user.editor');
+        await wrapper.setData({
+            user: {
+                admin: true,
+                localeId: '12345',
+                username: 'maxmuster',
+                name: 'Max Mustermann',
+                email: 'max@mustermann.com',
+            },
+            isLoading: false,
+        });
+        await selectTab('permissions');
+
+        const aclRolesSelect = wrapper.find('.sw-user-detail__grid-aclRoles');
+
+        expect(aclRolesSelect.attributes()['data-tooltip-message']).toBe(
+            'sw-user.users.user-detail.disabledRoleSelectWarning',
+        );
+        expect(aclRolesSelect.attributes()['data-tooltip-disabled']).toBe('false');
+    });
+
+    it('should disable the tooltip warning when user is not admin', async () => {
+        wrapper = await createWrapper('user.editor');
+        await wrapper.setData({
+            user: {
+                admin: false,
+                localeId: '12345',
+                username: 'maxmuster',
+                name: 'Max Mustermann',
+                email: 'max@mustermann.com',
+            },
+            isLoading: false,
+        });
+        await selectTab('permissions');
+
+        const aclRolesSelect = wrapper.find('.sw-user-detail__grid-aclRoles');
+
+        expect(aclRolesSelect.attributes()['data-tooltip-disabled']).toBe('true');
+    });
+
+    it('should disable all fields when user has not editor rights', async () => {
+        await wrapper.setData({
+            isLoading: false,
+            user: {
+                admin: false,
+                localeId: '12345',
+                username: 'maxmuster',
+                name: 'Max Mustermann',
+                email: 'max@mustermann.com',
+                active: true,
+            },
+            integrations: [{}],
+        });
+        await flushPromises();
+
+        const fieldName = wrapper.findComponent('.sw-user-detail__grid-name');
+        const fieldEmail = wrapper.findComponent('.sw-user-detail__grid-eMail');
+        const fieldUsername = wrapper.findComponent('.sw-user-detail__grid-username');
+        const fieldProfilePicture = wrapper.findComponent('.sw-user-detail__grid-profile-picture');
+        const fieldPassword = wrapper.findByLabel('sw-user.users.user-detail.labelPassword');
+        const fieldLanguage = wrapper.findComponent('.sw-user-detail__grid-language');
+        const fieldActive = wrapper.findComponent('.sw-user-detail__grid-active');
+
+        expect(fieldName.props('disabled')).toBe(true);
+        expect(fieldEmail.props('disabled')).toBe(true);
+        expect(fieldUsername.props('disabled')).toBe(true);
+        expect(fieldProfilePicture.attributes().disabled).toBe('true');
+        expect(fieldPassword.attributes('disabled')).toBeDefined();
+        expect(fieldLanguage.props().disabled).toBe(true);
+        expect(fieldActive.props().disabled).toBe(true);
+
+        await selectTab('permissions');
+
+        const contextMenuItemEdit = wrapper.findComponent('.sw-user-detail__grid-context-menu-edit');
+        const contextMenuItemDelete = wrapper.findComponent('.sw-user-detail__grid-context-menu-delete');
+
+        expect(contextMenuItemEdit.attributes().disabled).toBe('true');
+        expect(contextMenuItemDelete.attributes().disabled).toBe('true');
+    });
+
+    it('should enable all fields when user has not editor rights', async () => {
+        wrapper = await createWrapper('user.editor');
+
+        await wrapper.setData({
+            isLoading: false,
+            user: {
+                admin: false,
+                localeId: '12345',
+                username: 'maxmuster',
+                name: 'Max Mustermann',
+                email: 'max@mustermann.com',
+                active: true,
+            },
+            integrations: [{}],
+        });
+
+        const fieldName = wrapper.find('.sw-user-detail__grid-name');
+        const fieldEmail = wrapper.find('.sw-user-detail__grid-eMail');
+        const fieldUsername = wrapper.find('.sw-user-detail__grid-username');
+        const fieldProfilePicture = wrapper.find('.sw-user-detail__grid-profile-picture');
+        const fieldPassword = wrapper.find('.sw-user-detail__grid-password');
+        const fieldLanguage = wrapper.find('.sw-user-detail__grid-language');
+        const fieldActive = wrapper.find('.sw-user-detail__grid-active');
+
+        expect(fieldName.attributes().disabled).toBeUndefined();
+        expect(fieldEmail.attributes().disabled).toBeUndefined();
+        expect(fieldUsername.attributes().disabled).toBeUndefined();
+        expect(fieldProfilePicture.attributes().disabled).toBeUndefined();
+        expect(fieldPassword.attributes().disabled).toBeUndefined();
+        expect(fieldLanguage.attributes().disabled).toBeUndefined();
+        expect(fieldActive.attributes().disabled).toBeUndefined();
+
+        await selectTab('permissions');
+
+        const contextMenuItemEdit = wrapper.find('.sw-user-detail__grid-context-menu-edit');
+        const contextMenuItemDelete = wrapper.find('.sw-user-detail__grid-context-menu-delete');
+
+        expect(contextMenuItemEdit.attributes().disabled).toBeUndefined();
+        expect(contextMenuItemDelete.attributes().disabled).toBeUndefined();
+    });
+
+    it('should not allow deactivating the current user', async () => {
+        wrapper = await createWrapper('user.editor');
+
+        await wrapper.setData({
+            isLoading: false,
+            userId: 'current-user-id',
+            currentUser: {
+                id: 'current-user-id',
+            },
+            user: {
+                id: 'current-user-id',
+                admin: false,
+                localeId: '12345',
+                username: 'maxmuster',
+                name: 'Max Mustermann',
+                email: 'max@mustermann.com',
+                active: true,
+            },
+        });
+
+        const fieldActive = wrapper.findComponent('.sw-user-detail__grid-active');
+
+        expect(fieldActive.props().disabled).toBe(true);
+    });
+
+    it('should show the theme select only for the own user', async () => {
+        wrapper = await createWrapper('user.editor');
+
+        await wrapper.setData({
+            isLoading: false,
+            userId: 'current-user-id',
+            currentUser: { id: 'current-user-id' },
+            user: { id: 'current-user-id', localeId: '12345' },
+        });
+
+        expect(wrapper.find('.sw-user-detail__grid-theme').exists()).toBe(true);
+
+        await wrapper.setData({
+            userId: 'other-user-id',
+            user: { id: 'other-user-id', localeId: '12345' },
+        });
+
+        expect(wrapper.find('.sw-user-detail__grid-theme').exists()).toBe(false);
+    });
+
+    it('should show the module icon colors select only for the own user', async () => {
+        wrapper = await createWrapper('user.editor');
+
+        await wrapper.setData({
+            isLoading: false,
+            userId: 'current-user-id',
+            currentUser: { id: 'current-user-id' },
+            user: { id: 'current-user-id', localeId: '12345' },
+        });
+
+        expect(wrapper.find('.sw-user-detail__grid-module-icon-colors').exists()).toBe(true);
+
+        await wrapper.setData({
+            userId: 'other-user-id',
+            user: { id: 'other-user-id', localeId: '12345' },
+        });
+
+        expect(wrapper.find('.sw-user-detail__grid-module-icon-colors').exists()).toBe(false);
+    });
+
+    it('should map the module icon colors preference to the select options', async () => {
+        useModuleIconColors().enabled.value = true;
+
+        expect(wrapper.vm.userModuleIconColors).toBe('module');
+
+        wrapper.vm.userModuleIconColors = 'neutral';
+
+        expect(wrapper.vm.userModuleIconColorsSelection).toBe(false);
+        expect(wrapper.vm.userModuleIconColors).toBe('neutral');
+
+        useModuleIconColors().enabled.value = false;
+    });
+
+    it('should persist the selected module icon colors as a boolean on save', async () => {
+        Shopwell.Application.$container.resetProviders();
+        Shopwell.Application.addServiceProvider('localeHelper', () => ({ setLocaleWithId: () => Promise.resolve() }));
+        const upsert = jest.spyOn(Shopwell.Service('userConfigService'), 'upsert').mockResolvedValue();
+        useModuleIconColors().enabled.value = true;
+
+        wrapper.vm.userModuleIconColors = 'neutral';
+        await wrapper.vm.saveUser();
+        await flushPromises();
+
+        expect(upsert).toHaveBeenCalledWith({
+            [USER_MODULE_ICON_COLORS_CONFIG_KEY]: { enabled: false },
+        });
+        expect(useModuleIconColors().enabled.value).toBe(false);
+        expect(wrapper.vm.userModuleIconColorsSelection).toBeNull();
+        expect(wrapper.vm.userModuleIconColors).toBe('neutral');
+    });
+
+    it('should change the password', async () => {
+        wrapper = await createWrapper('user.editor', {
+            global: {
+                stubs: {
+                    'sw-text-field-deprecated': await wrapTestComponent('sw-text-field-deprecated', { sync: true }),
+                },
+            },
+        });
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBeUndefined();
+
+        const fieldPasswordInput = wrapper.find('.sw-user-detail__grid-password input');
+        expect(fieldPasswordInput.element.value).toBe('');
+
+        await fieldPasswordInput.setValue('fooBar');
+        await fieldPasswordInput.trigger('change');
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBe('fooBar');
+    });
+
+    it('should delete the password when input is empty', async () => {
+        wrapper = await createWrapper('user.editor', {
+            global: {
+                stubs: {
+                    'sw-text-field-deprecated': await wrapTestComponent('sw-text-field-deprecated', { sync: true }),
+                },
+            },
+        });
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBeUndefined();
+
+        const fieldPasswordInput = wrapper.find('.sw-user-detail__grid-password input');
+        expect(fieldPasswordInput.element.value).toBe('');
+
+        await fieldPasswordInput.setValue('fooBar');
+        await fieldPasswordInput.trigger('change');
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBe('fooBar');
+
+        await fieldPasswordInput.setValue('');
+        await fieldPasswordInput.trigger('change');
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBeUndefined();
+    });
+
+    it('should send a request with the new password', async () => {
+        wrapper = await createWrapper('user.editor', {
+            global: {
+                stubs: {
+                    'sw-text-field-deprecated': await wrapTestComponent('sw-text-field-deprecated', { sync: true }),
+                },
+            },
+        });
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBeUndefined();
+
+        const fieldPasswordInput = wrapper.find('.sw-user-detail__grid-password input');
+        expect(fieldPasswordInput.element.value).toBe('');
+
+        await fieldPasswordInput.setValue('fooBar');
+        await fieldPasswordInput.trigger('change');
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBe('fooBar');
+    });
+
+    it('should not send a request when user clears the password field', async () => {
+        wrapper = await createWrapper('user.editor', {
+            global: {
+                stubs: {
+                    'sw-text-field-deprecated': await wrapTestComponent('sw-text-field-deprecated', { sync: true }),
+                },
+            },
+        });
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBeUndefined();
+
+        const fieldPasswordInput = wrapper.find('.sw-user-detail__grid-password input');
+        expect(fieldPasswordInput.element.value).toBe('');
+
+        await fieldPasswordInput.setValue('fooBar');
+        await fieldPasswordInput.trigger('change');
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBe('fooBar');
+
+        await fieldPasswordInput.setValue('');
+        await fieldPasswordInput.trigger('change');
+        await flushPromises();
+
+        expect(wrapper.vm.user.password).toBeUndefined();
+    });
+
+    it('should update data onDropMedia item', async () => {
+        const mediaId = '2142';
+        const mediaItem = { id: mediaId };
+
+        wrapper = await createWrapper('user.editor');
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+
+        wrapper.vm.onDropMedia(mediaItem);
+        await flushPromises();
+
+        expect(wrapper.vm.user.avatarId).toBe(mediaId);
+        expect(wrapper.vm.user.avatarMedia.id).toBe(mediaId);
+        expect(wrapper.vm.mediaItem.id).toBe(mediaId);
+    });
+
+    it('should set media data', async () => {
+        const mediaId = '2142';
+        const mediaItem = { id: mediaId };
+
+        wrapper = await createWrapper('user.editor');
+        await wrapper.setData({ isLoading: false });
+        await flushPromises();
+
+        expect(wrapper.vm.mediaDefaultFolderId).toBe('1234');
+
+        wrapper.vm.onMediaSelectionChange([mediaItem]);
+        await flushPromises();
+
+        expect(wrapper.vm.mediaItem.id).toBe(mediaId);
+        expect(wrapper.vm.user.avatarId).toBe(mediaId);
+        expect(wrapper.vm.user.avatarMedia.id).toBe(mediaId);
+    });
+
+    it('should publish current user and editing user', async () => {
+        expect(Shopwell.ExtensionAPI.publishData).toHaveBeenCalledTimes(2);
+
+        expect(Shopwell.ExtensionAPI.publishData).toHaveBeenNthCalledWith(1, {
+            id: 'sw-user-detail__currentUser',
+            path: 'currentUser',
+            scope: expect.anything(),
+        });
+
+        expect(Shopwell.ExtensionAPI.publishData).toHaveBeenNthCalledWith(2, {
+            id: 'sw-user-detail__user',
+            path: 'user',
+            scope: expect.anything(),
+        });
+    });
+
+    it('should update the auth token if user password is changed', async () => {
+        Shopwell.Application.$container.resetProviders();
+        Shopwell.Application.addServiceProvider('localeHelper', () => ({ setLocaleWithId: () => Promise.resolve() }));
+        wrapper.vm.user.password = 'newPassword';
+        await wrapper.vm.saveUser();
+        await flushPromises();
+
+        expect(mockedLoginService.verifyUserToken).toHaveBeenCalledWith('newPassword');
+        expect(mockedLoginService.setBearerAuthentication).toHaveBeenCalledWith({ access: 'verifiedToken' });
+    });
+
+    it('should not update the auth token if user password is not changed', async () => {
+        Shopwell.Application.$container.resetProviders();
+        Shopwell.Application.addServiceProvider('localeHelper', () => ({ setLocaleWithId: () => Promise.resolve() }));
+        await wrapper.vm.saveUser();
+        await flushPromises();
+
+        expect(mockedLoginService.verifyUserToken).not.toHaveBeenCalled();
+        expect(mockedLoginService.setBearerAuthentication).not.toHaveBeenCalled();
+    });
+
+    it('should not update the auth token if user a different user then the currently logged in user is changed', async () => {
+        Shopwell.Application.$container.resetProviders();
+        Shopwell.Application.addServiceProvider('localeHelper', () => ({ setLocaleWithId: () => Promise.resolve() }));
+        wrapper.vm.user.password = 'newPassword';
+        wrapper.vm.user.id = 'randomId';
+        await wrapper.vm.saveUser();
+        await flushPromises();
+
+        expect(mockedLoginService.verifyUserToken).not.toHaveBeenCalled();
+        expect(mockedLoginService.setBearerAuthentication).not.toHaveBeenCalled();
+    });
+
+    it('should stop loading when the email is already used', async () => {
+        const saveSpy = jest.spyOn(wrapper.vm.userRepository, 'save');
+        jest.spyOn(wrapper.vm, 'checkEmail').mockResolvedValue(false);
+
+        await wrapper.setData({
+            currentUser: { id: 'current-user-id' },
+            user: {
+                id: 'edited-user-id',
+                email: 'info@shopwell.cn',
+            },
+            isLoading: false,
+        });
+
+        await wrapper.vm.saveUser();
+
+        expect(wrapper.vm.isLoading).toBe(false);
+        expect(saveSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['USER__USERNAME_NOT_UNIQUE', 'global.error-codes.USER__USERNAME_NOT_UNIQUE'],
+        ['OTHER_ERROR', 'sw-user.users.user-detail.notification.saveError.message'],
+    ])('shows the expected save notification for %s', async (code, message) => {
+        jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const error = { response: { data: { errors: [{ code }] } } };
+        const save = jest.fn().mockRejectedValue(error);
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
+        await wrapper.unmount();
+        wrapper = await createWrapper(
+            ['user.editor'],
+            {
+                global: {
+                    config: { errorHandler: jest.fn() },
+                    stubs: {
+                        'sw-verify-user-modal': {
+                            template: '<button class="confirm-save" @click="$emit(\'verified\')">Confirm</button>',
+                        },
+                    },
+                },
+            },
+            save,
+        );
+
+        await wrapper.find('.sw-user-detail__save-action').trigger('click');
+        await wrapper.find('.confirm-save').trigger('click');
+        await flushPromises();
+
+        expect(notification).toHaveBeenCalledWith(expect.objectContaining({ message }));
+        expect(save).toHaveBeenCalled();
+    });
+
+    it('should stop loading when email validation fails', async () => {
+        jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const saveSpy = jest.spyOn(wrapper.vm.userRepository, 'save');
+        jest.spyOn(wrapper.vm, 'checkEmail').mockRejectedValue(new Error('Email validation failed'));
+
+        await wrapper.setData({
+            currentUser: { id: 'current-user-id' },
+            user: {
+                id: 'edited-user-id',
+                email: 'info@shopwell.cn',
+            },
+            isLoading: false,
+        });
+
+        await expect(wrapper.vm.saveUser()).rejects.toThrow('Email validation failed');
+
+        expect(wrapper.vm.isLoading).toBe(false);
+        expect(saveSpy).not.toHaveBeenCalled();
+    });
+});
