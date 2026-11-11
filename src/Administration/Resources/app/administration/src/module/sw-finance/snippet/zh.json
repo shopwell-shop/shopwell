@@ -64,10 +64,6 @@
                     "alipay_open_id": "支付宝 OpenID",
                     "alipay_user_id": "支付宝用户 ID",
                     "bankcard": "银行卡",
-                    "paypal_email": "PayPal 邮箱",
-                    "paypal_payer_id": "PayPal 付款方 ID",
-                    "paypal_phone": "PayPal 手机号",
-                    "stripe_account": "Stripe 账户",
                     "wechat_open_id": "微信 OpenID"
                 },
                 "labelNoRecipients": "该服务商下还没有可用的收款账号，请改用「新建账号」。",

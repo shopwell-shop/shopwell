@@ -61,7 +61,7 @@ export default Shopwell.Component.wrapComponentConfig({
             return buildSettingsNavigation(
                 Shopwell.Store.get('settingsItems').settingsGroups,
                 store.visibleTree,
-                store.isVisibleLoadFailed ? [] : store.managedKeys,
+                { managedKeys: store.isVisibleLoadFailed ? [] : store.managedKeys, allowUnmanaged: store.allowUnmanaged },
                 Shopwell.Store.get('adminMenu').adminModuleNavigation,
             );
         },

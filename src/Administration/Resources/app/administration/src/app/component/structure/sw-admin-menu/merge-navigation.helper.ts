@@ -5,14 +5,13 @@
  * declare in code.
  *
  * The two sources answer different questions. The database owns what an administrator may
- * change - wording, icon, colour, order, visibility, role binding - while the code owns what
+ * change - wording, icon, colour, order, global visibility - while the code owns what
  * only code can know: the route behind an entry and the privilege guarding it. Neither can
  * replace the other, so the merge keeps the stored properties where a row exists and falls
  * back to the declaration where it does not.
  *
- * Entries the database carries nothing about (app modules, extensions, custom entities) are
- * passed through untouched: they are not manageable, so the stored tree has no opinion about
- * them and must not be able to hide them.
+ * Automatic navigation preserves unmanaged app and extension declarations. Custom role
+ * selection suppresses these fallbacks using the server policy.
  */
 
 /** @private */
@@ -53,6 +52,9 @@ export type DatabaseMenuNode = {
     groupTitle?: string | null;
     children?: DatabaseMenuNode[];
 };
+
+/** @private */
+export type NavigationPolicy = { managedKeys?: string[]; allowUnmanaged?: boolean };
 
 /** Keeps the gap between two siblings the declarations use as well (10, 20, 30, …) */
 const POSITION_STEP = 10;
@@ -128,13 +130,9 @@ export function mergeDatabaseNavigation(
     declared: NavigationEntryLike[],
     databaseTree: DatabaseMenuNode[],
     translate: (key: string) => string = (key) => key,
-    managedKeys: string[] = [],
+    { managedKeys = [], allowUnmanaged = true }: NavigationPolicy = {},
 ): NavigationEntryLike[] {
-    const declaredById = new Map<string, NavigationEntryLike>();
-
-    declared.forEach((entry) => {
-        if (entry.id !== undefined) declaredById.set(entry.id, entry);
-    });
+    const declaredById = new Map(declared.flatMap((entry) => (entry.id ? [[entry.id, entry] as const] : [])));
 
     const declaredByPath = new Map(declared.filter((entry) => entry.path).map((entry) => [entry.path, entry]));
     const managed = new Set(managedKeys);
@@ -209,6 +207,7 @@ export function mergeDatabaseNavigation(
 
     declared.forEach((entry) => {
         if (
+            !allowUnmanaged ||
             (entry.id !== undefined && (matched.has(entry.id) || managed.has(entry.id))) ||
             (entry.path && (managed.has(entry.path) || matched.has(entry.path)))
         ) {

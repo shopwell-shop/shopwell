@@ -878,7 +878,7 @@ export default {
 /**
  * @sw-package fundamentals@framework
  */
-import template from './sw-system-role-view-general.html.twig';
+import template from './sw-permissions-role-view-general.html.twig';
 
 const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
 
@@ -915,7 +915,7 @@ export default {
                 ' * @sw-package fundamentals@framework\n' +
                 ' */\n' +
                 "import { inject } from 'vue';\n" +
-                "import template from './sw-system-role-view-general.html.twig';\n" +
+                "import template from './sw-permissions-role-view-general.html.twig';\n" +
                 '\n' +
                 'const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();\n' +
                 '\n' +
@@ -954,8 +954,8 @@ export default {
         {
             name: 'Invalid: Real world example 2',
             code: `
-import template from './sw-system-user-detail.html.twig';
-import './sw-system-user-detail.scss';
+import template from './sw-user-detail.html.twig';
+import './sw-user-detail.scss';
 
 const { Component, Mixin } = Shopwell;
 const { mapPropertyErrors } = Component.getComponentHelper();
@@ -1073,8 +1073,8 @@ export default {
             output: '' +
                 '\n' +
                 "import { ref, inject, computed, onBeforeMount, watch } from 'vue';\n" +
-                "import template from './sw-system-user-detail.html.twig';\n" +
-                "import './sw-system-user-detail.scss';\n" +
+                "import template from './sw-user-detail.html.twig';\n" +
+                "import './sw-user-detail.scss';\n" +
                 '\n' +
                 'const { Component, Mixin } = Shopwell;\n' +
                 'const { mapPropertyErrors } = Component.getComponentHelper();\n' +

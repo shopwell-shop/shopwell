@@ -66,9 +66,8 @@ class AdminMenuControllerTest extends TestCase
         static::assertTrue(array_is_list($items));
         static::assertSame(self::ITEM_ID, $items[0]['id']);
         static::assertSame(['language-id' => ['title' => '客户', 'groupTitle' => '业务']], $items[0]['translations']);
-        static::assertSame([], $items[0]['roleIds']);
         static::assertNull($items[0]['pluginName']);
-        static::assertSame(['roles', 'plugin', 'translations'], array_keys($repository->searchedCriteria[0]->getAssociations()));
+        static::assertSame(['plugin', 'translations'], array_keys($repository->searchedCriteria[0]->getAssociations()));
     }
 
     public function testMoveForwardsValidatedIdentityAndNullablePlacement(): void
@@ -105,28 +104,6 @@ class AdminMenuControllerTest extends TestCase
         $this->controller($service)->move(new Request([], $payload), Context::createDefaultContext());
     }
 
-    public function testRoleAssignmentDiscardsNonStringValuesAndNormalizesTheList(): void
-    {
-        $context = Context::createDefaultContext();
-        $service = $this->createMock(AdminMenuConfigService::class);
-        $service->expects($this->once())->method('assignRoles')->with($context, self::ITEM_ID, ['role-a', 'role-b']);
-
-        $response = $this->controller($service)->assignRoles(new Request([], [
-            'id' => self::ITEM_ID,
-            'roleIds' => [5 => 'role-a', 6 => null, 9 => 3, 12 => 'role-b'],
-        ]), $context);
-        static::assertSame(204, $response->getStatusCode());
-    }
-
-    public function testMalformedRoleListBecomesAnEmptyAssignment(): void
-    {
-        $context = Context::createDefaultContext();
-        $service = $this->createMock(AdminMenuConfigService::class);
-        $service->expects($this->once())->method('assignRoles')->with($context, self::ITEM_ID, []);
-
-        $this->controller($service)->assignRoles(new Request([], ['id' => self::ITEM_ID, 'roleIds' => 'role-a']), $context);
-    }
-
     public function testWhitelistExposesTheDeclaredRouteContract(): void
     {
         $registry = static::createStub(AdminMenuRouteRegistry::class);
@@ -153,7 +130,7 @@ class AdminMenuControllerTest extends TestCase
         $context = Context::createDefaultContext();
         $tree = [['id' => self::ITEM_ID, 'children' => []]];
         $builder = $this->createMock(VisibleMenuTreeBuilder::class);
-        $builder->expects($this->once())->method('build')->with($context)->willReturn($tree);
+        $builder->expects($this->once())->method('buildNavigation')->with($context)->willReturn(['menu' => $tree, 'allowUnmanaged' => false]);
         $controller = new AdminMenuController(
             StaticEntityRepository::of(AdminMenuItemCollection::class),
             static::createStub(AdminMenuConfigService::class),
@@ -161,7 +138,7 @@ class AdminMenuControllerTest extends TestCase
             $builder
         );
 
-        static::assertSame(json_encode(['menu' => $tree, 'managedKeys' => []], \JSON_THROW_ON_ERROR), $controller->visible($context)->getContent());
+        static::assertSame(json_encode(['menu' => $tree, 'allowUnmanaged' => false, 'managedKeys' => []], \JSON_THROW_ON_ERROR), $controller->visible($context)->getContent());
         $route = (new AttributeRouteControllerLoader())->load(AdminMenuController::class)->get('api.action.admin-menu.visible');
         static::assertNotNull($route);
         static::assertTrue($route->getDefault('auth_required'));

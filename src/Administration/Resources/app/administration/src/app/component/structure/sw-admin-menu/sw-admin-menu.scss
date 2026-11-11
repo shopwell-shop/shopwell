@@ -600,3 +600,30 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.sw-admin-menu.is--horizontal {
+    display: contents;
+
+    .sw-admin-menu__header {
+        flex-shrink: 0;
+        padding: 0;
+        max-width: 280px;
+    }
+
+    .sw-admin-menu__footer {
+        flex-shrink: 0;
+        max-width: 240px;
+    }
+
+    .sw-admin-menu-topbar__sidebar .sw-admin-menu__body-container {
+        min-height: 0;
+    }
+
+    &.is--top .sw-admin-menu__collapse-button {
+        display: none;
+    }
+
+    &.is--collapsed .sw-admin-menu-topbar__sidebar {
+        width: 60px;
+    }
+}

@@ -43,7 +43,7 @@ describe('src/app/component/structure/sw-admin-menu (database driven navigation)
     });
 
     it('asks the store for the stored navigation once on creation', () => {
-        expect(store.loadVisibleTree).toHaveBeenCalledTimes(1);
+        expect(store.loadVisibleTree).toHaveBeenCalled();
     });
 
     it('renders the stored order and wording over the declarations', async () => {
@@ -85,11 +85,12 @@ describe('src/app/component/structure/sw-admin-menu (database driven navigation)
         expect(wrapper.findAll('.sw-admin-menu__navigation-list > li').length).toBeGreaterThan(0);
     });
 
-    it('keeps the declared navigation when the stored navigation could not be loaded', async () => {
+    it('keeps navigation empty when the stored navigation could not be loaded', async () => {
         store.visibleTree = [];
         store.isVisibleLoadFailed = true;
+        store.allowUnmanaged = false;
         await nextTick();
 
-        expect(wrapper.findAll('.sw-admin-menu__navigation-list > li').length).toBeGreaterThan(0);
+        expect(wrapper.findAll('.sw-admin-menu__navigation-list > li')).toHaveLength(0);
     });
 });

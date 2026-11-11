@@ -26,6 +26,12 @@ export function registerAdminModules() {
  * @private
  */
 export default async function createWrapper(options = {}) {
+    const navigation = Shopwell.Store.get('adminMenuConfig');
+    navigation.allowUnmanaged = true;
+    jest.spyOn(navigation, 'api').mockReturnValue({
+        getNavigation: () => Promise.resolve({ menu: [], managedKeys: [], allowUnmanaged: true }),
+    });
+
     const router = createRouter({
         routes: [
             ...Shopwell.Module.getModuleRoutes(),
@@ -55,6 +61,7 @@ export default async function createWrapper(options = {}) {
     return mount(await wrapTestComponent('sw-admin-menu', { sync: true }), {
         global: {
             stubs: {
+                'sw-admin-menu-topbar': await wrapTestComponent('sw-admin-menu-topbar', { sync: true }),
                 'sw-version': true,
                 'sw-admin-menu-item': await wrapTestComponent('sw-admin-menu-item'),
                 'mt-loader': true,

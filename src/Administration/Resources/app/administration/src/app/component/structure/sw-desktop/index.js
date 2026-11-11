@@ -1,4 +1,5 @@
 import template from './sw-desktop.html.twig';
+import useAdminLayout from 'src/app/composables/use-admin-layout';
 import useTheme, { THEMES, THEME_LABELS } from 'src/app/composables/use-theme';
 import './sw-desktop.scss';
 
@@ -21,6 +22,7 @@ export default {
     data() {
         return {
             noNavigation: false,
+            hasLayoutSidebar: false,
             shopIdCheck: null,
             isShopIdCheckPending: true,
         };
@@ -30,6 +32,8 @@ export default {
         desktopClasses() {
             return {
                 'sw-desktop--no-nav': this.noNavigation,
+                'sw-desktop--horizontal': !this.noNavigation && useAdminLayout().layout.value !== 'sidebar',
+                'sw-desktop--layout-sidebar': this.hasLayoutSidebar,
                 'sw-desktop--staging': this.isStaging,
             };
         },
@@ -52,6 +56,12 @@ export default {
     },
 
     watch: {
+        'currentUser.id': {
+            handler() {
+                void useAdminLayout().loadUserLayout();
+            },
+            immediate: true,
+        },
         $route() {
             this.checkRouteSettings();
         },

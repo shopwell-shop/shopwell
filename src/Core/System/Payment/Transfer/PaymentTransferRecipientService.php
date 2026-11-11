@@ -147,19 +147,12 @@ final class PaymentTransferRecipientService
     }
 
     /**
-     * Mirrors what stripe says about the account a payout goes to. It is called by the
-     * `account.updated` webhook - nothing else may change these fields, they belong to the channel.
-     *
-     * `restricted` is not expressible here on purpose: `payouts_enabled` alone can not tell an account
-     * that is still onboarding from one stripe has restricted. The discriminating signal is
-     * `requirements.disabled_reason` on the account object - non-empty means restricted - which this
-     * call does not receive yet; it becomes available when T3 wires the `account.updated` webhook, and
-     * the mapping belongs here then. Until it arrives, `pending` is the honest mirror of "not payable,
-     * not yet onboarded".
+     * Records the provider account reference and its current payout readiness.
+     * Providers call this after verifying the account status with their own protocol.
      *
      * @throws PaymentException
      */
-    public function markStripeAccountReady(string $recipientId, string $accountId, bool $payoutEnabled): void
+    public function markProviderAccountReady(string $recipientId, string $accountId, bool $payoutEnabled): void
     {
         $this->getById($recipientId);
 

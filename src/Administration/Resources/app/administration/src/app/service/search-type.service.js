@@ -203,14 +203,14 @@ export default function createSearchTypeService() {
         },
         user: {
             entityName: 'user',
-            placeholderSnippet: 'sw-system.users.general.placeholderSearchBar',
-            listingRoute: 'sw.system.user',
+            placeholderSnippet: 'sw-user.users.general.placeholderSearchBar',
+            listingRoute: 'sw.user.index',
             hideOnGlobalSearchBar: true,
         },
         admin_menu_item: {
             entityName: 'admin_menu_item',
-            placeholderSnippet: 'sw-system.menu.placeholderSearchBar',
-            listingRoute: 'sw.system.menu',
+            placeholderSnippet: 'sw-permissions.menu.placeholderSearchBar',
+            listingRoute: 'sw.permissions.menu',
             hideOnGlobalSearchBar: true,
         },
         blog: {

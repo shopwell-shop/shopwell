@@ -1249,9 +1249,7 @@
     "payment": {
         "method": {
             "alipay": "Alipay",
-            "wechat": "WeChat Pay",
-            "paypal": "PayPal",
-            "stripe": "Card payment"
+            "wechat": "WeChat Pay"
         },
         "channel": {
             "alipay_h5": "Alipay (mobile web)",
@@ -1263,9 +1261,7 @@
             "wechat_native": "WeChat Pay (scan to pay)",
             "wechat_jsapi": "WeChat Pay (in-app browser)",
             "wechat_mini": "WeChat Pay (mini program)",
-            "wechat_app": "WeChat Pay (app)",
-            "stripe_checkout": "Card payment (Stripe)",
-            "paypal_checkout": "PayPal"
+            "wechat_app": "WeChat Pay (app)"
         }
     },
     "theme": {

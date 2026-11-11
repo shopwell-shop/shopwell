@@ -97,12 +97,6 @@ test(
 
         await AdminFirstRunWizard.configureLaterButton.click();
 
-        // PayPal setup part
-        await ShopAdmin.expects(AdminFirstRunWizard.payPalSetupHeader).toBeVisible();
-        await ShopAdmin.expects(AdminFirstRunWizard.payPalInfoCard).toBeVisible();
-        await ShopAdmin.expects(AdminFirstRunWizard.payPalPaymethods).toHaveCount(4);
-        await AdminFirstRunWizard.skipButton.click();
-
         // Extensions part
         await ShopAdmin.expects(AdminFirstRunWizard.extensionsHeader).toBeVisible();
         await AdminFirstRunWizard.germanRegionSelector.click();

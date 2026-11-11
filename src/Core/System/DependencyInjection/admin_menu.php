@@ -57,14 +57,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('admin_menu_item.repository'),
             service(AdminMenuRouteRegistry::class),
             service(AclRoleLoader::class),
+            service('acl_role.repository'),
         ]);
 
     $services->set(AdminMenuConfigService::class)
-        ->args([
-            service('admin_menu_item.repository'),
-            service('acl_role.repository'),
-            service('admin_menu_item_role.repository'),
-        ]);
+        ->args([service('admin_menu_item.repository')]);
 
     $services->set(PluginMenuSynchronizer::class)
         ->args([

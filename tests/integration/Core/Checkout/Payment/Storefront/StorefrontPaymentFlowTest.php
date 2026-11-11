@@ -112,10 +112,6 @@ class StorefrontPaymentFlowTest extends TestCase
         yield 'Alipay browser uses H5' => ['Mozilla/5.0 AlipayClient', 'alipay', 'alipay_h5', 'redirect'];
         yield 'desktop WeChat uses a QR code' => ['Mozilla/5.0 Windows', 'wechat', 'wechat_native', 'qrcode'];
         yield 'mobile WeChat uses H5' => ['Mozilla/5.0 Android Mobile', 'wechat', 'wechat_h5', 'redirect'];
-        yield 'desktop PayPal uses hosted checkout' => ['Mozilla/5.0 Windows', 'paypal', 'paypal_checkout', 'redirect'];
-        yield 'mobile PayPal uses hosted checkout' => ['Mozilla/5.0 iPhone', 'paypal', 'paypal_checkout', 'redirect'];
-        yield 'desktop Stripe uses hosted checkout' => ['Mozilla/5.0 Windows', 'stripe', 'stripe_checkout', 'redirect'];
-        yield 'mobile Stripe uses hosted checkout' => ['Mozilla/5.0 Android', 'stripe', 'stripe_checkout', 'redirect'];
     }
 
     public function testDesktopCanUseAlipayQrWhenTheMerchantDisablesWebsitePayment(): void
@@ -142,7 +138,7 @@ class StorefrontPaymentFlowTest extends TestCase
         $options = static::getContainer()->get(PaymentRouteResolver::class)->options($this->app, $context);
         $methods = array_map(static fn (PaymentRoute $route): string => $route->config->product->method, $options);
         sort($methods);
-        static::assertSame(['paypal', 'stripe'], $methods);
+        static::assertSame([], $methods);
     }
 
     /**

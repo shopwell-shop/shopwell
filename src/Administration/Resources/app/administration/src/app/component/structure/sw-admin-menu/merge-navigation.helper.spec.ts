@@ -24,6 +24,10 @@ function node(overrides: Partial<DatabaseMenuNode> & { id: string }): DatabaseMe
 }
 
 describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', () => {
+    it('does not restore unmanaged declarations for custom roles', () => {
+        expect(mergeDatabaseNavigation(declared, [], undefined, { managedKeys: [], allowUnmanaged: false })).toEqual([]);
+    });
+
     it('returns the declarations untouched when the database renders nothing', () => {
         expect(mergeDatabaseNavigation(declared, [])).toEqual(declared);
     });
@@ -228,11 +232,13 @@ describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', ()
     });
 
     it('does not restore managed entries absent from the visible tree', () => {
-        const merged = mergeDatabaseNavigation(declared, [], (key) => key, [
-            'sw-dashboard',
-            'sw.product.index',
-            'sw-catalogue',
-        ]);
+        const merged = mergeDatabaseNavigation(declared, [], (key) => key, {
+            managedKeys: [
+                'sw-dashboard',
+                'sw.product.index',
+                'sw-catalogue',
+            ],
+        });
         expect(merged.map((entry) => entry.id)).toEqual(['sw-order', 'custom-app-entry']);
     });
 

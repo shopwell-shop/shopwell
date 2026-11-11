@@ -40,7 +40,7 @@ final class MenuGroupNormalizer
                 $groups[$key] = new AdminMenuDefinitionStruct(
                     internalKey: $key,
                     type: AdminMenuItemDefinition::TYPE_GROUP,
-                    title: \in_array($definition->groupName, ['general', 'system', 'localization', 'content', 'customer', 'automation', 'commerce', 'account', 'plugins', 'payment'], true) ? 'sw-system.menu.groups.' . $definition->groupName : $definition->groupName,
+                    title: \in_array($definition->groupName, ['general', 'system', 'localization', 'content', 'customer', 'automation', 'commerce', 'account', 'plugins', 'payment'], true) ? 'sw-permissions.menu.groups.' . $definition->groupName : $definition->groupName,
                     parent: $definition->parent,
                     position: $definition->position,
                     groupName: $definition->groupName,

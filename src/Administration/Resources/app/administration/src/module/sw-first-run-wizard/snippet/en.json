@@ -42,21 +42,6 @@
         "mailerLocal": {
             "headline": "Local email agent"
         },
-        "paypalInfo": {
-            "modalTitle": "Setup PayPal",
-            "headline": "Now pre-integrated in Shopwell with even easier and faster activation of the most popular payment methods*",
-            "paymethod": {
-                "paypal": "PayPal",
-                "debit": "Debit",
-                "creditcard": "Credit card",
-                "invoice": "Invoice"
-            },
-            "disclaimerLineOne": "* ECC Cologne: ECC-Payment-Study Vol. 20, Cologne, 2016",
-            "disclaimerLineTwo": "** subject to a positive risk assessment by PayPal"
-        },
-        "paypalInstall": {
-            "loadingMessage": "Configuring PayPal<br>This may take a while..."
-        },
         "recommendedPlugins": {
             "headline": "Our recommendations",
             "modalTitle": "Extensions",
@@ -121,7 +106,6 @@
         "stepItemTitle": {
             "dataImport": "Data import",
             "mailer": "Mailer configuration",
-            "setupPaypal": "PayPal setup",
             "plugins": "Extensions",
             "shopwell": "Shopwell Account",
             "store": "Shopwell Store",

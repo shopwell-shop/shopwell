@@ -115,6 +115,14 @@ export default () => {
     );
     Shopwell.Component.register('sw-block', () => import('src/app/component/structure/sw-block-override/sw-block/index'));
     Shopwell.Component.register('sw-admin-menu-item', () => import('src/app/component/structure/sw-admin-menu-item/index'));
+    Shopwell.Component.register(
+        'sw-admin-menu-topbar',
+        () => import('src/app/component/structure/sw-admin-menu-topbar/index'),
+    );
+    Shopwell.Component.register(
+        'sw-admin-layout-settings',
+        () => import('src/app/component/structure/sw-admin-layout-settings/index'),
+    );
     Shopwell.Component.register('sw-admin-menu', () => import('src/app/component/structure/sw-admin-menu/index'));
     Shopwell.Component.register('sw-admin', () => import('src/app/component/structure/sw-admin/index'));
     Shopwell.Component.register(

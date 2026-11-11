@@ -64,10 +64,6 @@
                     "alipay_open_id": "Alipay open id",
                     "alipay_user_id": "Alipay user id",
                     "bankcard": "Bank card",
-                    "paypal_email": "PayPal e-mail",
-                    "paypal_payer_id": "PayPal payer id",
-                    "paypal_phone": "PayPal phone",
-                    "stripe_account": "Stripe account",
                     "wechat_open_id": "Wechat open id"
                 },
                 "labelNoRecipients": "No payable account of this provider exists yet - register a new one.",

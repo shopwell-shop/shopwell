@@ -35,7 +35,7 @@ export default {
                 return 'sw.first.run.wizard.index.shopwell.account';
             }
 
-            return 'sw.first.run.wizard.index.paypal.info';
+            return 'sw.first.run.wizard.index.plugins';
         },
 
         buttonConfig() {

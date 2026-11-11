@@ -7,8 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Integration\Alipay\AlipayProvider;
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
-use Shopwell\Core\System\Payment\Integration\Paypal\PaypalProvider;
-use Shopwell\Core\System\Payment\Integration\Stripe\StripeProvider;
 use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecoder;
 use Shopwell\Core\System\Payment\Integration\Wechat\WechatProvider;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
@@ -40,23 +38,9 @@ use Symfony\Component\DependencyInjection\Reference;
 class PayParamsDecoderWiringTest extends TestCase
 {
     /**
-     * Interfaces that deliberately ship without a decoder, with the reason a returning payer is
-     * captured again instead of being handed to the recorded answer.
-     *
-     * - paypal: the capture records the raw body of the create order call, and the approval url is
-     *   only one of its links. Reading it here would be a second parser of paypal's response next to
-     *   the capture action - a second capture is the acceptable price until that action records the
-     *   approval url itself.
-     * - stripe: the checkout opens a payment intent whose client secret is signed per call for the
-     *   page that consumes it. There is no browser parameter that survives a reopen, so there is
-     *   nothing to hand the payer to.
-     *
      * @var array<string, class-string<AbstractPaymentProvider>>
      */
-    private const WITHOUT_DECODER = [
-        PaypalProvider::class => PaypalProvider::class,
-        StripeProvider::class => StripeProvider::class,
-    ];
+    private const WITHOUT_DECODER = [];
 
     public function testEveryDeclarationOfThePlatformIsWiredWithItsDecoder(): void
     {

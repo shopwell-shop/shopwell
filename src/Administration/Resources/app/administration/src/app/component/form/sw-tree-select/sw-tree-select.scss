@@ -13,9 +13,25 @@
         width: 100%;
     }
 
+    &__control {
+        position: relative;
+    }
+
+    &__clear.mt-button {
+        position: absolute;
+        right: var(--scale-size-36);
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
     &__trigger.mt-button {
         width: 100%;
         text-align: start;
+        min-height: var(--scale-size-48);
+        background: var(--color-elevation-surface-raised);
+        border-color: var(--color-border-primary-default);
+        color: var(--color-text-primary-default);
+        font-weight: var(--font-weight-regular);
     }
 
     &__trigger .mt-button__content {
@@ -24,6 +40,7 @@
     }
 
     &__value {
+        padding-inline-end: var(--scale-size-24);
         overflow: hidden;
         text-overflow: ellipsis;
         flex: 1;

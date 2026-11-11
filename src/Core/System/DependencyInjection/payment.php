@@ -45,24 +45,6 @@ use Shopwell\Core\System\Payment\Integration\Alipay\AlipayProvider;
 use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayNotificationExtractor;
 use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayTransferNotificationVerifier;
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalCaptureAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalNotifyAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalQueryAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalRefundAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferQueryAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalNotificationExtractor;
-use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Integration\Paypal\PaypalProvider;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeCaptureAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeNotifyAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeQueryAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeRefundAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferQueryAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
-use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Integration\Stripe\StripeProvider;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCloseAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatNotifyAction;
@@ -243,8 +225,6 @@ return static function (ContainerConfigurator $container): void {
     // live in the Gateway section below, together with the api they talk to.
     $services->set(AlipayNotificationExtractor::class);
     $services->set(WechatNotificationExtractor::class);
-    $services->set(PaypalNotificationExtractor::class);
-    $services->set(StripeNotificationExtractor::class);
 
     // An interface that can hand a returning payer back to the answer it already gave registers the
     // decoder here; an interface without one is simply captured again on a reopen.
@@ -253,7 +233,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(PaymentConfigReader::class);
 
-    foreach (['alipay', 'wechat', 'paypal', 'stripe'] as $method) {
+    foreach (['alipay', 'wechat'] as $method) {
         $services->set('shopwell.payment.method.' . $method, PaymentMethod::class)
             ->args([$method, 'sw-settings-payment-provider.provider.' . $method])
             ->tag('shopwell.payment.method_definition');
@@ -432,51 +412,6 @@ return static function (ContainerConfigurator $container): void {
             service(WechatTransferNotificationVerifier::class),
         ])
         ->tag('shopwell.payment.provider', ['key' => 'wechat', 'priority' => -100]);
-
-    $services->set(PaypalCaptureAction::class);
-    $services->set(PaypalRefundAction::class);
-    $services->set(PaypalNotifyAction::class);
-    $services->set(PaypalQueryAction::class);
-    $services->set(PaypalTransferAction::class)
-        ->args([service(PaymentCredentialCipher::class)]);
-    $services->set(PaypalTransferQueryAction::class);
-
-    // the api of paypal fetches the certificate a webhook is signed with, so its declaration hands the
-    // http client over to it
-    $services->set(PaypalProvider::class)
-        ->args([
-            service(PaypalCaptureAction::class),
-            service(PaypalRefundAction::class),
-            service(PaypalNotifyAction::class),
-            service(PaypalQueryAction::class),
-            service(PaypalTransferAction::class),
-            service(PaypalTransferQueryAction::class),
-            service(PaypalNotificationExtractor::class),
-            service(PaypalTransferNotificationVerifier::class),
-            service('http_client'),
-        ])
-        ->tag('shopwell.payment.provider', ['key' => 'paypal', 'priority' => -100]);
-
-    $services->set(StripeCaptureAction::class)
-        ->args([service(ClockInterface::class)]);
-    $services->set(StripeRefundAction::class);
-    $services->set(StripeNotifyAction::class);
-    $services->set(StripeQueryAction::class);
-    $services->set(StripeTransferAction::class);
-    $services->set(StripeTransferQueryAction::class);
-
-    $services->set(StripeProvider::class)
-        ->args([
-            service(StripeCaptureAction::class),
-            service(StripeRefundAction::class),
-            service(StripeNotifyAction::class),
-            service(StripeQueryAction::class),
-            service(StripeTransferAction::class),
-            service(StripeTransferQueryAction::class),
-            service(StripeNotificationExtractor::class),
-            service(StripeTransferNotificationVerifier::class),
-        ])
-        ->tag('shopwell.payment.provider', ['key' => 'stripe', 'priority' => -100]);
 
     $services->set(PaymentProductEligibility::class);
     $services->set(DefaultPaymentRoutingPolicy::class)
@@ -819,13 +754,6 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(WechatTransferNotificationVerifier::class)
         ->args([service('logger')])
-        ->tag('shopwell.payment.transfer_notification_verifier');
-
-    $services->set(StripeTransferNotificationVerifier::class)
-        ->tag('shopwell.payment.transfer_notification_verifier');
-
-    $services->set(PaypalTransferNotificationVerifier::class)
-        ->args([service('http_client')])
         ->tag('shopwell.payment.transfer_notification_verifier');
 
     $services->set(PaymentTransferNotificationVerifierRegistry::class)

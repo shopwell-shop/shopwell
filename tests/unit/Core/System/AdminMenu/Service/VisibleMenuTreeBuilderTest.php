@@ -68,7 +68,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         static::assertSame('localization', $tree[0]['groupName']);
         static::assertSame('Regional settings', $tree[0]['groupTitle']);
         static::assertSame('group', $tree[1]['type']);
-        static::assertSame('sw-system.menu.groups.localization', $tree[1]['title']);
+        static::assertSame('sw-permissions.menu.groups.localization', $tree[1]['title']);
         static::assertSame('sw-settings-currency', $tree[1]['children'][0]['internalKey']);
     }
 
@@ -87,7 +87,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         $tree = $builder->build($this->context);
 
-        static::assertSame('sw-system.menu.groups.customer', $tree[0]['children'][0]['title']);
+        static::assertSame('sw-permissions.menu.groups.customer', $tree[0]['children'][0]['title']);
         static::assertSame('customer', $tree[0]['children'][0]['groupName']);
 
         $group->setTitle('Customer tools');
@@ -160,30 +160,111 @@ class VisibleMenuTreeBuilderTest extends TestCase
         static::assertSame(['sw-product'], $this->flatten($tree));
     }
 
-    public function testHidesEntriesBoundToRolesTheUserDoesNotHold(): void
+    public function testRoleWithoutMenusSeesNoNavigation(): void
     {
-        $items = [$this->createItem('item', internalKey: 'sw-product', roles: $this->createRoles('role-b'))];
+        $role = $this->createRoles('role-a')->first();
+        static::assertInstanceOf(AclRoleEntity::class, $role);
+        $role->setAdminMenuItems(new AdminMenuItemCollection());
 
         $tree = $this->createBuilder(
-            $items,
+            [$this->createItem('item', internalKey: 'sw-product')],
             $this->createRegistry(new AdminMenuDefinitionStruct('sw-product')),
-            ['role-a']
+            ['role-a'],
+            new AclRoleCollection([$role])
         )->build($this->createUserContext());
 
         static::assertSame([], $tree);
     }
 
-    public function testShowsEntriesBoundToARoleTheUserHolds(): void
+    public function testRoleKeepsSelectedMenusAndTheirAncestorsOnly(): void
     {
-        $items = [$this->createItem('item', internalKey: 'sw-product', roles: $this->createRoles('role-a', 'role-b'))];
+        $folder = $this->createItem('folder', type: 'folder', internalKey: 'sw-content');
+        $page = $this->createItem('page', internalKey: 'sw-product', parentId: 'folder');
+        $role = $this->createRoles('role-a')->first();
+        static::assertInstanceOf(AclRoleEntity::class, $role);
+        $role->setAdminMenuItems(new AdminMenuItemCollection([$page]));
+
+        $tree = $this->createBuilder(
+            [$folder, $page, $this->createItem('other', internalKey: 'sw-other')],
+            $this->createRegistry(...$this->definitionsFor('sw-content', 'sw-product', 'sw-other')),
+            ['role-a'],
+            new AclRoleCollection([$role])
+        )->build($this->createUserContext());
+
+        static::assertSame(['sw-content', 'sw-product'], $this->flatten($tree));
+    }
+
+    public function testMenusAssignedToOtherRolesStayHidden(): void
+    {
+        $role = $this->createRoles('role-a')->first();
+        static::assertInstanceOf(AclRoleEntity::class, $role);
+        $items = [$this->createItem('item', internalKey: 'sw-product', roles: $this->createRoles('role-b'))];
 
         $tree = $this->createBuilder(
             $items,
             $this->createRegistry(new AdminMenuDefinitionStruct('sw-product')),
-            ['role-a']
+            ['role-a'],
+            new AclRoleCollection([$role])
         )->build($this->createUserContext());
 
-        static::assertSame(['sw-product'], $this->flatten($tree));
+        static::assertSame([], $tree);
+    }
+
+    public function testRolesDisallowUnmanagedNavigation(): void
+    {
+        $roles = $this->createRoles('role-a');
+        $roleA = $roles->get('role-a');
+        static::assertInstanceOf(AclRoleEntity::class, $roleA);
+        $navigation = $this->createBuilder([], $this->createRegistry(), ['role-a'], $roles)->buildNavigation($this->createUserContext());
+        static::assertSame(['menu' => [], 'allowUnmanaged' => false], $navigation);
+    }
+
+    public function testAdministratorsAllowUnmanagedNavigation(): void
+    {
+        $navigation = $this->createBuilder([], $this->createRegistry(), ['role-a'], $this->createRoles('role-a'))->buildNavigation($this->context);
+        static::assertSame(['menu' => [], 'allowUnmanaged' => true], $navigation);
+    }
+
+    public function testRolesCombineTheirMenuSelections(): void
+    {
+        $first = $this->createItem('first', internalKey: 'sw-product');
+        $second = $this->createItem('second', internalKey: 'sw-other');
+        $roles = $this->createRoles('role-a', 'role-b');
+        $roleA = $roles->get('role-a');
+        $roleB = $roles->get('role-b');
+        static::assertInstanceOf(AclRoleEntity::class, $roleA);
+        static::assertInstanceOf(AclRoleEntity::class, $roleB);
+        $roleA->setAdminMenuItems(new AdminMenuItemCollection([$first]));
+        $roleB->setAdminMenuItems(new AdminMenuItemCollection([$second]));
+
+        $tree = $this->createBuilder(
+            [$first, $second],
+            $this->createRegistry(...$this->definitionsFor('sw-product', 'sw-other')),
+            ['role-a', 'role-b'],
+            $roles
+        )->build($this->createUserContext());
+
+        static::assertSame(['sw-product', 'sw-other'], $this->flatten($tree));
+    }
+
+    public function testAnAdditionalRoleWithoutMenusDoesNotWidenNavigation(): void
+    {
+        $selected = $this->createItem('selected', internalKey: 'sw-product');
+        $other = $this->createItem('other', internalKey: 'sw-other');
+        $roles = $this->createRoles('role-a', 'role-b');
+        $role = $roles->get('role-a');
+        static::assertInstanceOf(AclRoleEntity::class, $role);
+        $role->setAdminMenuItems(new AdminMenuItemCollection([$selected]));
+
+        $navigation = $this->createBuilder(
+            [$selected, $other],
+            $this->createRegistry(...$this->definitionsFor('sw-product', 'sw-other')),
+            ['role-a', 'role-b'],
+            $roles
+        )->buildNavigation($this->createUserContext());
+
+        static::assertSame(['sw-product'], $this->flatten($navigation['menu']));
+        static::assertFalse($navigation['allowUnmanaged']);
     }
 
     public function testAdministratorsSeeEntriesBoundToAnyRole(): void
@@ -247,7 +328,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
      * @param list<AdminMenuItemEntity> $items
      * @param list<string>|null $roleIds null for an unrestricted administrator
      */
-    private function createBuilder(array $items, AdminMenuRouteRegistry $registry, ?array $roleIds = null): VisibleMenuTreeBuilder
+    private function createBuilder(array $items, AdminMenuRouteRegistry $registry, ?array $roleIds = null, ?AclRoleCollection $roles = null): VisibleMenuTreeBuilder
     {
         $roleLoader = static::createStub(AclRoleLoader::class);
         $roleLoader->method('getUserRoles')->willReturn([
@@ -257,7 +338,8 @@ class VisibleMenuTreeBuilderTest extends TestCase
         return new VisibleMenuTreeBuilder(
             StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection($items)]),
             $registry,
-            $roleLoader
+            $roleLoader,
+            StaticEntityRepository::of(AclRoleCollection::class, [$roles ?? new AclRoleCollection()])
         );
     }
 

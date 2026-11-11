@@ -10,8 +10,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeCaptureAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
@@ -31,12 +31,12 @@ class PaymentGatewayFactoryTest extends TestCase
 {
     public function testTheFactoryNamesItselfAfterItsInterface(): void
     {
-        $factory = new PaymentGatewayFactory('stripe', StripeApi::class, []);
+        $factory = new PaymentGatewayFactory('alipay', AlipayApi::class, []);
 
-        static::assertSame('stripe', $factory->provider());
+        static::assertSame('alipay', $factory->provider());
         static::assertSame([
-            'payum.factory_name' => 'stripe',
-            'payum.factory_title' => 'stripe',
+            'payum.factory_name' => 'alipay',
+            'payum.factory_title' => 'alipay',
             PaymentGatewayFactory::CONFIG_RESOLVED => null,
             PaymentGatewayFactory::CONFIG_NOTIFY_URL => '',
             PaymentGatewayFactory::CONFIG_RETURN_URL => '',
@@ -45,24 +45,24 @@ class PaymentGatewayFactoryTest extends TestCase
 
     public function testTheGivenConfigWinsOverTheDefaults(): void
     {
-        $factory = new PaymentGatewayFactory('stripe', StripeApi::class, []);
+        $factory = new PaymentGatewayFactory('alipay', AlipayApi::class, []);
 
         $config = $factory->createConfig([
-            'payum.factory_title' => 'Stripe',
+            'payum.factory_title' => 'Alipay',
             PaymentGatewayFactory::CONFIG_NOTIFY_URL => 'https://shop.example.com/notify',
         ]);
 
-        static::assertSame('stripe', $config['payum.factory_name']);
-        static::assertSame('Stripe', $config['payum.factory_title']);
+        static::assertSame('alipay', $config['payum.factory_name']);
+        static::assertSame('Alipay', $config['payum.factory_title']);
         static::assertSame('https://shop.example.com/notify', $config[PaymentGatewayFactory::CONFIG_NOTIFY_URL]);
         static::assertSame('', $config[PaymentGatewayFactory::CONFIG_RETURN_URL]);
     }
 
     public function testCreateForPaymentAssemblesTheGatewayThatDispatchesToTheActions(): void
     {
-        $factory = new PaymentGatewayFactory('stripe', StripeApi::class, [new StripeCaptureAction()]);
+        $factory = new PaymentGatewayFactory('alipay', AlipayApi::class, [new AlipayCaptureAction()]);
 
-        $gateway = $factory->createForPayment($this->resolved('stripe', 'stripe_checkout'), '', '');
+        $gateway = $factory->createForPayment($this->resolved('alipay', 'alipay_web'), '', '');
 
         static::assertInstanceOf(Gateway::class, $gateway);
 
@@ -75,13 +75,13 @@ class PaymentGatewayFactoryTest extends TestCase
 
         try {
             $gateway->execute(new Capture($model));
-            static::fail('The capture was expected to fail without stripe credentials.');
+            static::fail('The capture was expected to fail without Alipay credentials.');
         } catch (PaymentException $exception) {
             static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
         }
 
         // the action ran behind the api of the payment, so the request it built was recorded on the model
-        static::assertSame('redirect', $model->request()['flow']);
+        static::assertSame(AlipayCaptureAction::METHOD_PAGE_PAY, $model->request()['method']);
     }
 
     public function testCreateForPaymentHandsTheResolvedParametersToTheApi(): void

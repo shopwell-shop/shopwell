@@ -39,8 +39,6 @@ final class PaymentMethodIconInstaller
     final public const ICONS = [
         'alipay' => 'payment-alipay.svg',
         'wechat' => 'payment-wechat.svg',
-        'paypal' => 'payment-paypal.svg',
-        'stripe' => 'payment-stripe.svg',
     ];
 
     /**
@@ -52,12 +50,15 @@ final class PaymentMethodIconInstaller
     /**
      * @param EntityRepository<PaymentMethodCollection> $paymentMethodRepository
      * @param EntityRepository<MediaCollection> $mediaRepository
+     * @param array<string, string> $icons
      */
     public function __construct(
         private readonly MediaService $mediaService,
         private readonly EntityRepository $paymentMethodRepository,
         private readonly EntityRepository $mediaRepository,
         private readonly LoggerInterface $logger,
+        private readonly array $icons = self::ICONS,
+        private readonly string $iconDirectory = __DIR__ . '/../Resources/payment-icons',
     ) {
     }
 
@@ -75,7 +76,7 @@ final class PaymentMethodIconInstaller
     public function install(Context $context): void
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsAnyFilter('technicalName', array_keys(self::ICONS)));
+        $criteria->addFilter(new EqualsAnyFilter('technicalName', array_keys($this->icons)));
 
         $methods = $this->paymentMethodRepository->search($criteria, $context);
 
@@ -86,7 +87,7 @@ final class PaymentMethodIconInstaller
                 continue;
             }
 
-            $fileName = self::ICONS[$method->getTechnicalName()] ?? null;
+            $fileName = $this->icons[$method->getTechnicalName()] ?? null;
 
             if ($fileName === null) {
                 continue;
@@ -136,7 +137,7 @@ final class PaymentMethodIconInstaller
             return $existing;
         }
 
-        $file = __DIR__ . '/../Resources/payment-icons/' . $fileName;
+        $file = $this->iconDirectory . '/' . $fileName;
 
         if (!is_file($file) || !is_readable($file)) {
             return null;

@@ -38,6 +38,20 @@ describe('menu refinements', () => {
         expect(wrapper.emitted('update:model-value')).toEqual([['page']]);
         wrapper.unmount();
     });
+    it('clears an optional parent without a synthetic root option', async () => {
+        const wrapper = mount(await wrapTestComponent('sw-tree-select', { sync: true }), {
+            props: {
+                label: 'Parent',
+                modelValue: 'folder',
+                clearable: true,
+                options: [{ value: 'folder', label: 'Folder' }],
+            },
+        });
+        await wrapper.get('.sw-tree-select__clear').trigger('click');
+        expect(wrapper.emitted('update:model-value')).toEqual([['']]);
+        expect(wrapper.get('[role="combobox"]').attributes('aria-expanded')).toBe('false');
+        wrapper.unmount();
+    });
     it('renders the real Meteor popup and moves keyboard focus from search to the tree', async () => {
         const wrapper = mount(await wrapTestComponent('sw-tree-select', { sync: true }), {
             attachTo: document.body,

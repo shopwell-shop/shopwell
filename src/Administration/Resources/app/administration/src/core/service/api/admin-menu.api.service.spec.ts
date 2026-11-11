@@ -47,25 +47,18 @@ describe('menu entity persistence', () => {
         roles.get.mockImplementation((id: string) => Promise.resolve({ id }));
     });
 
-    it('replaces the roles through the repository and writes the selected language', async () => {
+    it('writes structural fields and the selected language without loading roles', async () => {
         const client = createHTTPClient(Shopwell.Context.api);
         const service = new AdminMenuApiService(client, createLoginService(client, Shopwell.Context.api));
         jest.spyOn(service, 'repositories').mockReturnValue(
             factory as unknown as ReturnType<AdminMenuApiService['repositories']>,
         );
-        // Entity collections implement these association operations.
-        const collection = Object.assign([{ id: 'old-role' }], {
-            remove: jest.fn(),
-            add: jest.fn(),
-        });
-        entity.roles = collection;
         await service.updateItem('menu-id', {
-            roles: [{ id: 'new-role' }],
             translations: [{ languageId: 'translation-language', title: '菜单' }],
         });
-        expect(collection.remove).toHaveBeenCalledWith('old-role');
-        expect(collection.add).toHaveBeenCalledWith({ id: 'new-role' });
         expect(entity.title).toBe('菜单');
+        expect(repository.get).toHaveBeenCalledWith('menu-id', context());
+        expect(roles.get).not.toHaveBeenCalled();
         expect(repository.save).toHaveBeenCalledWith(entity, context());
     });
 
@@ -93,7 +86,6 @@ describe('menu entity persistence', () => {
             service.createItem({
                 id: undefined,
                 type: 'group',
-                roles: [],
                 translations: [{ languageId: 'translation-language', title: '工具' }],
             }),
         ).resolves.toBe('menu-id');

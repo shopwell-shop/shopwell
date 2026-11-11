@@ -17,9 +17,7 @@
             "resetModalTitle": "Clear provider credentials",
             "resetModalMessage": "Clear all credentials of “{name}”? Apps that pay with the platform credentials will no longer be able to collect through this provider.",
             "alipay": "Alipay",
-            "wechat": "WeChat Pay",
-            "paypal": "PayPal",
-            "stripe": "Stripe"
+            "wechat": "WeChat Pay"
         },
         "channel": {
             "emptyStateTitle": "No payment products",
@@ -48,9 +46,7 @@
             "wechat_native": "WeChat Pay Native (QR code)",
             "wechat_jsapi": "WeChat Pay JSAPI",
             "wechat_mini": "WeChat Pay Mini Program",
-            "wechat_app": "WeChat Pay App",
-            "paypal_checkout": "PayPal Checkout",
-            "stripe_checkout": "Stripe Checkout"
+            "wechat_app": "WeChat Pay App"
         },
         "danger": {
             "title": "Clear platform account",

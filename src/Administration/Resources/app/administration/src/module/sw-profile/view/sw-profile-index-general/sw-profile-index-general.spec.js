@@ -8,6 +8,7 @@ async function createWrapper(privileges = [], isSso = false) {
     return mount(await wrapTestComponent('sw-profile-index-general', { sync: true }), {
         global: {
             stubs: {
+                'sw-admin-layout-settings': true,
                 'sw-container': await wrapTestComponent('sw-container'),
                 'sw-text-field': true,
                 'sw-select-field': true,

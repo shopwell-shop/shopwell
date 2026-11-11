@@ -80,7 +80,7 @@ describe('module/sw-first-run-wizard/view/sw-first-run-wizard-modal', () => {
         expect(wrapper.emitted('frw-redirect').at(0)).not.toContain(frwRedirectLocal);
     });
 
-    it('handleSelection: should emit redirect to paypal when user has select an local mailAgent', async () => {
+    it('handleSelection: should emit redirect to local mailer settings when user has select an local mailAgent', async () => {
         const wrapper = await createWrapper();
         await wrapper.setData({ mailAgent: 'local' });
 

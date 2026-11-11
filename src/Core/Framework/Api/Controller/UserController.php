@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
 use Shopwell\Core\Framework\Sso\SsoService;
@@ -40,6 +41,7 @@ class UserController extends AbstractController
      * @param EntityRepository<EntityCollection<Entity>> $userRoleRepository
      * @param EntityRepository<AclRoleCollection> $roleRepository
      * @param EntityRepository<UserAccessKeyCollection> $keyRepository
+     * @param EntityRepository<EntityCollection<Entity>> $menuRoleRepository
      */
     public function __construct(
         private readonly EntityRepository $userRepository,
@@ -49,6 +51,7 @@ class UserController extends AbstractController
         private readonly UserDefinition $userDefinition,
         private readonly SsoService $ssoService,
         private readonly Connection $connection,
+        private readonly EntityRepository $menuRoleRepository,
     ) {
     }
 
@@ -293,9 +296,34 @@ class UserController extends AbstractController
             $data['id'] = $roleId;
         }
 
-        $events = $this->roleRepository->upsert([$data], $context);
-        $eventIds = $events->getEventByEntityName(AclRoleDefinition::ENTITY_NAME)?->getIds() ?? [];
-        $entityId = array_last($eventIds);
+        $menuIds = $data['menuIds'] ?? null;
+        unset($data['menuIds']);
+        if ($menuIds !== null && (!\is_array($menuIds) || !array_is_list($menuIds)
+            || array_filter($menuIds, static fn (mixed $id): bool => !\is_string($id) || !Uuid::isValid($id)))) {
+            throw ApiException::invalidIdsParameter();
+        }
+
+        $entityId = $this->connection->transactional(function () use ($data, $menuIds, $context): ?string {
+            $events = $this->roleRepository->upsert([$data], $context);
+            $eventIds = $events->getEventByEntityName(AclRoleDefinition::ENTITY_NAME)?->getIds() ?? [];
+            $id = array_last($eventIds);
+            if ($id !== null && $menuIds !== null) {
+                $criteria = new Criteria();
+                $criteria->addFilter(new EqualsFilter('aclRoleId', $id));
+                $existing = $this->menuRoleRepository->searchIds($criteria, $context)->getPrimaryKeyData();
+                if ($existing !== []) {
+                    $this->menuRoleRepository->delete($existing, $context);
+                }
+                if ($menuIds !== []) {
+                    $this->menuRoleRepository->create(array_map(
+                        static fn (string $menuId): array => ['aclRoleId' => $id, 'adminMenuItemId' => $menuId],
+                        array_values(array_unique($menuIds))
+                    ), $context);
+                }
+            }
+
+            return $id;
+        });
         \assert($entityId !== null);
 
         return $factory->createRedirectResponse($this->roleRepository->getDefinition(), $entityId, $request, $context);

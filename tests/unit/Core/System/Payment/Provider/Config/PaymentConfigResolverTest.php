@@ -14,9 +14,9 @@ use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChann
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
-use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
-use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Product\PaymentInteraction;
@@ -239,7 +239,7 @@ class PaymentConfigResolverTest extends TestCase
 
     private function resolver(): PaymentConfigResolver
     {
-        $providers = new PaymentProviderRegistry([new PaymentProvider('stripe', 'Stripe', [], ['stripe_checkout' => $this->product], new PaymentGatewayFactory('stripe', StripeApi::class, []), new StripeNotificationExtractor())]);
+        $providers = new PaymentProviderRegistry([new PaymentProvider('stripe', 'Stripe', [], ['stripe_checkout' => $this->product], new PaymentGatewayFactory('stripe', AbstractPaymentApi::class, []), static::createStub(PaymentNotificationExtractorInterface::class))]);
 
         return new PaymentConfigResolver(
             $providers,

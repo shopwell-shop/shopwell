@@ -11,6 +11,8 @@ use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
@@ -22,7 +24,7 @@ use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
- * The registry the payout services read their rules from, built from the real declarations.
+ * A payout registry with built-in declarations and protocol-independent external-provider fixtures.
  *
  * A test that books a payout has to validate against the very matrix production uses. Hand written
  * lists of identity types, required fields and currencies in the tests would be a second truth that
@@ -44,11 +46,9 @@ final class PaymentTransferRulesFixture extends TestCase
                     return new ResolvedPaymentConfig($provider, $provider->products[$productName], [], [], $runtimeParams, [], $accountId ?? 'account-id');
                 }
             }
-            foreach (self::declarations() as $declaration) {
-                foreach ($declaration->getProducts() as $product) {
-                    if ($product->technicalName === $productName) {
-                        return new ResolvedPaymentConfig(self::provider($declaration), $product, [], [], $runtimeParams, [], $accountId ?? 'account-id');
-                    }
+            foreach (self::registry()->all() as $provider) {
+                if (isset($provider->products[$productName])) {
+                    return new ResolvedPaymentConfig($provider, $provider->products[$productName], [], [], $runtimeParams, [], $accountId ?? 'account-id');
                 }
             }
             throw new \LogicException('Unknown payment product ' . $productName);
@@ -82,7 +82,12 @@ final class PaymentTransferRulesFixture extends TestCase
 
     public static function registry(): PaymentProviderRegistry
     {
-        return self::registryOf(self::declarations());
+        return new PaymentProviderRegistry([
+            self::provider(PlatformProviders::alipay()),
+            self::provider(PlatformProviders::wechat()),
+            self::externalProvider('stripe', ['stripe_account'], true),
+            self::externalProvider('paypal', ['paypal_email', 'paypal_phone', 'paypal_payer_id'], false),
+        ]);
     }
 
     /**
@@ -91,13 +96,9 @@ final class PaymentTransferRulesFixture extends TestCase
      */
     public static function rulesOf(string $technicalName): ?PaymentTransferRules
     {
-        foreach (self::declarations() as $declaration) {
-            if ($declaration->getName() === $technicalName) {
-                return $declaration->getTransferRules();
-            }
-        }
+        $registry = self::registry();
 
-        return null;
+        return $registry->has($technicalName) ? $registry->get($technicalName)->transferRules : null;
     }
 
     /**
@@ -125,7 +126,7 @@ final class PaymentTransferRulesFixture extends TestCase
             technicalName: $name,
             label: $name,
             credentials: [],
-            products: [],
+            products: array_column($declaration->getProducts(), null, 'technicalName'),
             gatewayFactory: new PaymentGatewayFactory($name, AbstractPaymentApi::class, []),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             transferRules: $declaration->getTransferRules(),
@@ -133,17 +134,22 @@ final class PaymentTransferRulesFixture extends TestCase
     }
 
     /**
-     * The real declarations, assembled by the shared fixture with their real actions.
+     * External protocols are test data here; their actual declarations are covered by their plugin.
      *
-     * @return list<AbstractPaymentProvider>
+     * @param list<string> $identities
      */
-    private static function declarations(): array
+    private static function externalProvider(string $name, array $identities, bool $onboarding): PaymentProvider
     {
-        return [
-            PlatformProviders::alipay(),
-            PlatformProviders::wechat(),
-            PlatformProviders::stripe(),
-            PlatformProviders::paypal(),
-        ];
+        $product = new PaymentProduct($name . '_checkout', $name, $name, [PaymentInteraction::REDIRECT], $name);
+
+        return new PaymentProvider(
+            technicalName: $name,
+            label: $name,
+            credentials: [],
+            products: [$product->technicalName => $product],
+            gatewayFactory: new PaymentGatewayFactory($name, AbstractPaymentApi::class, []),
+            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            transferRules: new PaymentTransferRules(identityTypes: $identities, requiresOnboarding: $onboarding),
+        );
     }
 }

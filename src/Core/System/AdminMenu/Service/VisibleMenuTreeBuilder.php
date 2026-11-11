@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\AdminMenu\Service;
 
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Acl\AclRoles;
+use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -38,11 +39,13 @@ class VisibleMenuTreeBuilder
      * @internal
      *
      * @param EntityRepository<AdminMenuItemCollection> $menuItemRepository
+     * @param EntityRepository<AclRoleCollection> $roleRepository
      */
     public function __construct(
         private readonly EntityRepository $menuItemRepository,
         private readonly AdminMenuRouteRegistry $routeRegistry,
         private readonly AclRoleLoader $aclRoleLoader,
+        private readonly EntityRepository $roleRepository,
     ) {
     }
 
@@ -50,6 +53,14 @@ class VisibleMenuTreeBuilder
      * @return list<array<string, mixed>>
      */
     public function build(Context $context): array
+    {
+        return $this->buildNavigation($context)['menu'];
+    }
+
+    /**
+     * @return array{menu: list<array<string, mixed>>, allowUnmanaged: bool}
+     */
+    public function buildNavigation(Context $context): array
     {
         $items = $this->menuItemRepository
             ->search($this->createCriteria(), $context)
@@ -73,7 +84,7 @@ class VisibleMenuTreeBuilder
 
         $nodes = [];
         foreach ($items as $item) {
-            if (!$this->isVisible($item, $roles)) {
+            if (!$this->isVisible($item)) {
                 continue;
             }
 
@@ -107,7 +118,7 @@ class VisibleMenuTreeBuilder
             $nodes
         );
 
-        return $this->renderLevel(null, $nodes);
+        return $this->filterForRoles($this->renderLevel(null, $nodes), $roles, $context);
     }
 
     /**
@@ -118,18 +129,12 @@ class VisibleMenuTreeBuilder
     private function createCriteria(): Criteria
     {
         $criteria = new Criteria();
-        $criteria->addAssociation('roles');
         $criteria->addAssociation('plugin');
 
         return $criteria;
     }
 
-    /**
-     * Entries without a role binding are visible to everyone; bound entries are only
-     * visible to users who hold at least one of the bound roles. The administration
-     * ACL additionally guards every route behind the entry.
-     */
-    private function isVisible(AdminMenuItemEntity $item, AclRoles $roles): bool
+    private function isVisible(AdminMenuItemEntity $item): bool
     {
         if (!$item->isActive() || $item->isArchived()) {
             return false;
@@ -155,13 +160,54 @@ class VisibleMenuTreeBuilder
             }
         }
 
-        $boundRoleIds = $item->getRoles()?->getIds() ?? [];
+        return true;
+    }
 
-        if ($boundRoleIds === [] || $roles->unrestricted) {
-            return true;
+    /**
+     * Menu selection only narrows navigation. Page and API ACL remain authoritative.
+     *
+     * @param list<array<string, mixed>> $tree
+     *
+     * @return array{menu: list<array<string, mixed>>, allowUnmanaged: bool}
+     */
+    private function filterForRoles(array $tree, AclRoles $roles, Context $context): array
+    {
+        if ($roles->unrestricted) {
+            return ['menu' => $tree, 'allowUnmanaged' => true];
+        }
+        if ($roles->roleIds === []) {
+            return ['menu' => [], 'allowUnmanaged' => false];
+        }
+        $criteria = new Criteria($roles->roleIds);
+        $criteria->addAssociation('adminMenuItems');
+        $selections = [];
+        foreach ($this->roleRepository->search($criteria, $context)->getEntities() as $role) {
+            foreach ($role->getAdminMenuItems()?->getIds() ?? [] as $id) {
+                $selections[$id] = true;
+            }
         }
 
-        return array_intersect($boundRoleIds, $roles->roleIds) !== [];
+        return ['menu' => $this->filterSelection($tree, $selections), 'allowUnmanaged' => false];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $nodes
+     * @param array<string, true> $selection
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function filterSelection(array $nodes, array $selection): array
+    {
+        $result = [];
+        foreach ($nodes as $node) {
+            $node['children'] = $this->filterSelection($node['children'], $selection);
+            $container = \in_array($node['type'], ['folder', 'group'], true);
+            if ($node['children'] !== [] || (!$container && isset($selection[$node['id']]))) {
+                $result[] = $node;
+            }
+        }
+
+        return $result;
     }
 
     private function resolveRoles(Context $context): AclRoles

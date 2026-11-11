@@ -59,9 +59,9 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         $flattened = $this->flatten($tree);
 
-        static::assertCount(\count((new CoreAdminMenuProvider())->getDefinitions()), $flattened);
+        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider()]))->collectCore()), $flattened);
         static::assertArrayHasKey('sw-system', $flattened);
-        static::assertArrayHasKey('sw-system-menu', $flattened);
+        static::assertArrayHasKey('sw-permissions-menu', $flattened);
     }
 
     public function testRendersTheSeededNavigationInTheDeclaredOrder(): void
@@ -71,7 +71,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         $tree = $this->builder()->build($this->context);
         $flattened = $this->flatten($tree);
 
-        static::assertCount(\count((new CoreAdminMenuProvider())->getDefinitions()), $flattened);
+        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider()]))->collectCore()), $flattened);
 
         // the first level follows the declared positions
         static::assertSame('sw-dashboard', $tree[0]['internalKey']);
@@ -80,7 +80,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         // and the system menu carries the three sub menus of the redesign
         $system = $flattened['sw-system'];
         static::assertSame(
-            ['sw-system-user', 'sw-system-role', 'sw-system-menu'],
+            ['sw-user', 'sw-permissions-role', 'sw-permissions-menu'],
             array_map(static fn (array $node): ?string => $node['internalKey'], $system['children'])
         );
     }
@@ -101,7 +101,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         // a hidden parent and its children would be unreachable, so neither is rendered
         static::assertArrayNotHasKey('sw-system', $flattened);
-        static::assertArrayNotHasKey('sw-system-menu', $flattened);
+        static::assertArrayNotHasKey('sw-permissions-menu', $flattened);
     }
 
     private function createSynchronizer(): CoreMenuSynchronizer
@@ -114,7 +114,8 @@ class VisibleMenuTreeBuilderTest extends TestCase
         return new VisibleMenuTreeBuilder(
             $this->menuItemRepository,
             $this->registry(),
-            static::getContainer()->get(AclRoleLoader::class)
+            static::getContainer()->get(AclRoleLoader::class),
+            static::getContainer()->get('acl_role.repository')
         );
     }
 

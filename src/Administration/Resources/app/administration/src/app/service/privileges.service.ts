@@ -10,6 +10,8 @@ const { object } = Shopwell.Utils;
 type GetPrivilegesWithDependenciesSignature = () => string[];
 
 type PrivilegeRole = {
+    /** Business resource owning this operation; presentation only, never grants access. */
+    resource?: string;
     dependencies: Array<string>;
     privileges: Array<string | GetPrivilegesWithDependenciesSignature>;
 };

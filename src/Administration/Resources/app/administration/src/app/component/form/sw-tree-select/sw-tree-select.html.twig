@@ -11,28 +11,45 @@
         @close="isOpen = false"
     >
         <template #trigger>
-            <mt-button
-                :id="fieldId"
-                ref="trigger"
-                class="sw-tree-select__trigger"
-                variant="secondary"
-                size="default"
-                :disabled="disabled || undefined"
-                role="combobox"
-                aria-haspopup="tree"
-                :aria-expanded="isOpen"
-                :aria-controls="fieldId + '-tree'"
-                :aria-labelledby="fieldId + '-label'"
-                :aria-required="required"
-                @click="open"
-                @keydown.down.prevent="!isOpen && open()"
-            >
-                <span class="sw-tree-select__value">{{ selectedPath || placeholder }}</span>
-                <mt-icon
-                    name="regular-chevron-down-xs"
-                    size="12px"
-                />
-            </mt-button>
+            <div class="sw-tree-select__control">
+                <mt-button
+                    :id="fieldId"
+                    ref="trigger"
+                    class="sw-tree-select__trigger"
+                    variant="secondary"
+                    size="default"
+                    :disabled="disabled || undefined"
+                    role="combobox"
+                    aria-haspopup="tree"
+                    :aria-expanded="isOpen"
+                    :aria-controls="fieldId + '-tree'"
+                    :aria-labelledby="fieldId + '-label'"
+                    :aria-required="required"
+                    @click="open"
+                    @keydown.down.prevent="!isOpen && open()"
+                >
+                    <span class="sw-tree-select__value">{{ selectedPath || placeholder }}</span>
+                    <mt-icon
+                        name="regular-chevron-down-xs"
+                        size="12px"
+                    />
+                </mt-button>
+                <mt-button
+                    v-if="clearable && modelValue && !required"
+                    class="sw-tree-select__clear"
+                    variant="tertiary"
+                    size="x-small"
+                    square
+                    :disabled="disabled"
+                    :aria-label="$t('global.sw-tree-select.clear')"
+                    @click.stop="clear"
+                >
+                    <mt-icon
+                        name="regular-times-xs"
+                        size="12px"
+                    />
+                </mt-button>
+            </div>
         </template>
         <template #default>
             <div

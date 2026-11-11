@@ -28,7 +28,7 @@ class MenuGroupNormalizerTest extends TestCase
         static::assertCount(2, $groups);
         static::assertSame('settings', $groups[0]->parent);
         static::assertSame(10, $groups[0]->position);
-        static::assertSame('sw-system.menu.groups.system', $groups[0]->title);
+        static::assertSame('sw-permissions.menu.groups.system', $groups[0]->title);
         static::assertSame('system', $groups[0]->groupName);
         static::assertSame($groups[0]->internalKey, $pages[0]->parent);
         static::assertSame($groups[0]->internalKey, $pages[1]->parent);

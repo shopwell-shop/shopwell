@@ -33,15 +33,17 @@ class CoreMenuRowsBuilder
      * @param array<string, string> $anchors internal key to id of rows the caller must not re-place
      *                                       (a customized item keeps its position but still occupies the chain for the entry
      *                                       that follows it)
+     * @param array<string, string> $storedIds existing identities retained when an internal key changes
      *
      * @return list<CoreMenuRow> parents before their children, siblings in declared order
      */
-    public function build(array $declarations, array $anchors = []): array
+    public function build(array $declarations, array $anchors = [], array $storedIds = []): array
     {
         $ids = [];
 
         foreach ($declarations as $declaration) {
             $ids[$declaration->internalKey] = $anchors[$declaration->internalKey]
+                ?? $storedIds[$declaration->internalKey]
                 ?? $this->idFor($declaration->internalKey);
         }
 

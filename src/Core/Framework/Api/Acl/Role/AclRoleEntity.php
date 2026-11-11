@@ -113,10 +113,19 @@ class AclRoleEntity extends Entity
         $this->deletedAt = $deletedAt;
     }
 
+    public function jsonSerialize(): array
+    {
+        return [...parent::jsonSerialize(), 'menuIds' => $this->getMenuIds()];
+    }
+
     /**
-     * The menu items this role is limited to. The relation is the write side of
-     * `AdminMenuItemDefinition::roles`, so an operator hides a menu item from a role there.
+     * @return list<string>
      */
+    public function getMenuIds(): array
+    {
+        return array_values($this->adminMenuItems?->getIds() ?? []);
+    }
+
     public function getAdminMenuItems(): ?AdminMenuItemCollection
     {
         return $this->adminMenuItems;

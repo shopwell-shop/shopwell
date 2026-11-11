@@ -21,6 +21,7 @@ async function createWrapper() {
     return mount(await wrapTestComponent('sw-admin-menu', { sync: true }), {
         global: {
             stubs: {
+                'sw-admin-menu-topbar': await wrapTestComponent('sw-admin-menu-topbar', { sync: true }),
                 'sw-version': true,
                 'sw-loader': true,
                 'sw-avatar': true,

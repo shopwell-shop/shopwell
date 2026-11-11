@@ -1,6 +1,6 @@
 {% block sw_verify_user_modal %}
 <sw-modal
-    :title="$t('sw-system.users.user-detail.passwordConfirmation.titleConfirmPasswordModal')"
+    :title="$t('sw-user.users.user-detail.passwordConfirmation.titleConfirmPasswordModal')"
     variant="small"
     @modal-close="onCloseConfirmPasswordModal"
 >
@@ -8,12 +8,12 @@
     {% block sw_verify_user_modal_field_password %}
     <mt-password-field
         v-model="confirmPassword"
-        class="sw-system-user-detail__confirm-password"
+        class="sw-user-detail__confirm-password"
         name="sw-field--confirm-password"
         :password-toggle-able="true"
         autocomplete="current-password"
-        :label="$t('sw-system.users.user-detail.passwordConfirmation.labelConfirmPassword')"
-        :placeholder="$t('sw-system.users.user-detail.passwordConfirmation.placeholderConfirmPassword')"
+        :label="$t('sw-user.users.user-detail.passwordConfirmation.labelConfirmPassword')"
+        :placeholder="$t('sw-user.users.user-detail.passwordConfirmation.placeholderConfirmPassword')"
         @keypress.enter="onSubmitConfirmPassword"
     />
     {% endblock %}

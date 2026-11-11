@@ -63,11 +63,16 @@
                         "type": "string"
                       },
                       "description": "Provider-owned internal keys, including entries hidden from the current user. Clients use these to suppress declaration fallbacks."
+                    },
+                    "allowUnmanaged": {
+                      "type": "boolean",
+                      "description": "Whether module declarations absent from the managed tree may be shown. False for explicit role menu selections, including an empty selection."
                     }
                   },
                   "required": [
                     "menu",
-                    "managedKeys"
+                    "managedKeys",
+                    "allowUnmanaged"
                   ]
                 }
               }
@@ -186,47 +191,6 @@
           }
         }
       }
-    },
-    "/_action/admin-menu/assign-roles": {
-      "post": {
-        "tags": [
-          "Admin menu"
-        ],
-        "operationId": "assignAdminMenuItemRoles",
-        "summary": "Assign administration menu roles",
-        "description": "Requires admin_menu_item:update. Replaces the menu role assignments; omitted or empty roleIds removes all role bindings.",
-        "responses": {
-          "204": {
-            "description": "The role assignments were saved."
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "pattern": "^[0-9a-f]{32}$"
-                  },
-                  "roleIds": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "pattern": "^[0-9a-f]{32}$"
-                    }
-                  }
-                },
-                "required": [
-                  "id"
-                ]
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -319,13 +283,6 @@
           "configOverridden": {
             "type": "boolean"
           },
-          "roleIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{32}$"
-            }
-          },
           "translations": {
             "type": "object",
             "additionalProperties": {
@@ -376,7 +333,6 @@
           "sysLocked",
           "archived",
           "configOverridden",
-          "roleIds",
           "translations"
         ]
       },

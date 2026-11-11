@@ -537,6 +537,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(UserDefinition::class),
             service(SsoService::class),
             service(Connection::class),
+            service('admin_menu_item_role.repository'),
         ])
         ->call('setContainer', [service('service_container')]);
 

@@ -7,6 +7,7 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     key: 'integration_mcp',
     roles: {
         editor: {
+            resource: 'integration',
             privileges: ['api_action_integration_mcp-allowlist'],
             dependencies: ['integration.viewer'],
         },

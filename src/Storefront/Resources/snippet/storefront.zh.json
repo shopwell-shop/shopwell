@@ -1249,9 +1249,7 @@
     "payment": {
         "method": {
             "alipay": "支付宝",
-            "wechat": "微信支付",
-            "paypal": "PayPal",
-            "stripe": "银行卡支付"
+            "wechat": "微信支付"
         },
         "channel": {
             "alipay_h5": "支付宝（手机网页）",
@@ -1263,9 +1261,7 @@
             "wechat_native": "微信支付（扫码）",
             "wechat_jsapi": "微信支付（公众号）",
             "wechat_mini": "微信支付（小程序）",
-            "wechat_app": "微信支付（App）",
-            "stripe_checkout": "银行卡支付（Stripe）",
-            "paypal_checkout": "PayPal"
+            "wechat_app": "微信支付（App）"
         }
     },
     "theme": {

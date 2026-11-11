@@ -16,6 +16,7 @@ export default Shopwell.Component.wrapComponentConfig({
         placeholder: { type: String, default: '' },
         disabled: { type: Boolean, default: false },
         required: { type: Boolean, default: false },
+        clearable: { type: Boolean, default: false },
         helpText: { type: String, default: '' },
     },
     data() {
@@ -38,6 +39,11 @@ export default Shopwell.Component.wrapComponentConfig({
         },
     },
     methods: {
+        clear() {
+            if (this.disabled || this.required) return;
+            this.isOpen = false;
+            this.$emit('update:model-value', '');
+        },
         open() {
             if (this.disabled) return;
             this.isOpen = !this.isOpen;

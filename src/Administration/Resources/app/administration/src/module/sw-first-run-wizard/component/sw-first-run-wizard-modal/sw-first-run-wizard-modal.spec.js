@@ -16,7 +16,7 @@ const swFirstRunWizardWelcomeButtonConfig = [
     },
 ];
 
-async function createWrapper(routerViewComponent = 'sw-first-run-wizard-welcome') {
+async function createWrapper(routerViewComponent = 'sw-first-run-wizard-welcome', router = { push: jest.fn() }) {
     return mount(await wrapTestComponent('sw-first-run-wizard-modal', { sync: true }), {
         global: {
             stubs: {
@@ -44,6 +44,7 @@ async function createWrapper(routerViewComponent = 'sw-first-run-wizard-welcome'
                 'sw-help-text': true,
             },
             mocks: {
+                $router: router,
                 $route: { name: 'sw.first.run.wizard.index.welcome' },
             },
             provide: {
@@ -123,7 +124,7 @@ describe('module/sw-first-run-wizard/component/sw-first-run-wizard-modal', () =>
     it('stepper has less steps with disabled extension management', async () => {
         const wrapper = await createWrapper();
 
-        expect(Object.keys(wrapper.vm.stepper)).toHaveLength(13);
+        expect(Object.keys(wrapper.vm.stepper)).toHaveLength(11);
 
         Shopwell.Store.get('context').app.config.settings.disableExtensionManagement = true;
 
@@ -491,8 +492,6 @@ describe('module/sw-first-run-wizard/component/sw-first-run-wizard-modal', () =>
             'mailer.selection',
             'mailer.smtp',
             'mailer.local',
-            'paypal.info',
-            'paypal.credentials',
             'plugins',
             'shopwell.account',
             'shopwell.domain',
@@ -501,6 +500,18 @@ describe('module/sw-first-run-wizard/component/sw-first-run-wizard-modal', () =>
         ];
 
         expect(Object.keys(wrapper.vm.stepper)).toStrictEqual(steps);
+    });
+
+    it('continues to plugin selection after skipping mail configuration', async () => {
+        Shopwell.Context.app.firstRunWizard = false;
+        const router = { push: jest.fn() };
+        const wrapper = await createWrapper('sw-first-run-wizard-mailer-selection', router);
+        await flushPromises();
+        await wrapper.findByText('button', 'sw-first-run-wizard.general.buttonConfigureLater').trigger('click');
+        await flushPromises();
+        expect(router.push).toHaveBeenCalledWith({
+            name: 'sw.first.run.wizard.index.plugins',
+        });
     });
 
     it('should redirect to smtp mailer settings', async () => {

@@ -48,6 +48,7 @@ class AdminMenuApiService {
         return this.httpClient.get('/_action/admin-menu/visible', { headers: this.getHeaders() }).then((response) => ({
             menu: response.data.menu ?? [],
             managedKeys: response.data.managedKeys ?? [],
+            allowUnmanaged: response.data.allowUnmanaged === true,
         }));
     }
 
@@ -81,13 +82,11 @@ class AdminMenuApiService {
     }
 
     async writeItem(id, payload) {
-        const { translations = [], roles, ...fields } = payload;
+        const { translations = [], ...fields } = payload;
         const translation = translations[0];
         const context = { ...Shopwell.Context.api, languageId: translation?.languageId ?? Shopwell.Context.api.languageId };
         const repository = this.repositories().create('admin_menu_item');
-        const criteria = new Shopwell.Data.Criteria();
-        criteria.addAssociation('roles');
-        const entity = id ? await repository.get(id, context, criteria) : repository.create(context);
+        const entity = id ? await repository.get(id, context) : repository.create(context);
 
         // The repository owns the identity, including the generated id of a new draft.
         delete fields.id;
@@ -96,17 +95,6 @@ class AdminMenuApiService {
             if ('title' in translation) entity.title = translation.title;
             if ('groupTitle' in translation) entity.groupTitle = translation.groupTitle;
         }
-        if (roles) {
-            const selected = new Set(roles.map((role) => role.id));
-            const existing = new Set(entity.roles.map((role) => role.id));
-            [...existing].filter((roleId) => !selected.has(roleId)).forEach((roleId) => entity.roles.remove(roleId));
-            const roleRepository = this.repositories().create('acl_role');
-            const additions = await Promise.all(
-                [...selected].filter((roleId) => !existing.has(roleId)).map((roleId) => roleRepository.get(roleId, context)),
-            );
-            additions.forEach((role) => entity.roles.add(role));
-        }
-
         await repository.save(entity, context);
         return entity.id;
     }
@@ -121,18 +109,6 @@ class AdminMenuApiService {
         const headers = this.getHeaders();
 
         return this.httpClient.post('/_action/admin-menu/move', { id, parentId, afterMenuItemId }, { headers });
-    }
-
-    /**
-     * Replaces the roles a menu item is bound to. An empty list makes the item visible to
-     * every role.
-     *
-     * @param {{ id: string, roleIds: Array<string> }} assignment
-     */
-    assignRoles({ id, roleIds }) {
-        const headers = this.getHeaders();
-
-        return this.httpClient.post('/_action/admin-menu/assign-roles', { id, roleIds }, { headers });
     }
 
     getHeaders() {

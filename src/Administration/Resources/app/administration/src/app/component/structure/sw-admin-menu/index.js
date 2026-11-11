@@ -1,4 +1,6 @@
 import { createFocusTrap } from 'focus-trap';
+import useAdminLayout from 'src/app/composables/use-admin-layout';
+import { filterLayoutNavigation, rebaseNavigationLevels } from '../sw-admin-menu-topbar/navigation-layout.helper';
 import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
 import template from './sw-admin-menu.html.twig';
 import { getActiveRouteNames, isEntryOnActiveRoute } from '../sw-admin-menu-item/menu-item-active.helper';
@@ -33,6 +35,8 @@ export default {
 
     mixins: [Mixin.getByName('notification'), Mixin.getByName('translate-with-fallback')],
 
+    emits: ['layout-sidebar-change'],
+
     shortcuts: {
         S: {
             active(event) {
@@ -44,6 +48,7 @@ export default {
 
     data() {
         return {
+            topbarVisibleCount: Number.MAX_SAFE_INTEGER,
             activeEntry: null,
             isOffCanvasShown: false,
             isUserActionsActive: false,
@@ -66,12 +71,46 @@ export default {
     },
 
     computed: {
+        layoutMode() {
+            return useAdminLayout().layout.value;
+        },
+
+        isHorizontal() {
+            return !this.isMobileViewport && this.viewportWidth !== null && this.layoutMode !== 'sidebar';
+        },
+
+        layoutMenuEntries() {
+            return filterLayoutNavigation(
+                this.mainMenuEntries,
+                (name) => {
+                    const route = this.$router.getRoutes().find((candidate) => candidate.name === name);
+                    return !route?.meta?.privilege || this.acl.can(route.meta.privilege);
+                },
+                this.acl.hasActiveSettingModules?.() ?? true,
+            );
+        },
+
+        sidebarEntries() {
+            if (!this.isHorizontal) return this.mainMenuEntries;
+            if (this.layoutMode === 'top') return this.layoutMenuEntries.slice(this.topbarVisibleCount);
+            const activeNames = getActiveRouteNames(this.$route, this.$router);
+            const owner = this.layoutMenuEntries.find((entry) => isEntryOnActiveRoute(entry, this.$route, activeNames));
+            if (!owner?.children.length) return [];
+            return rebaseNavigationLevels(owner.path ? [{ ...owner, children: [] }, ...owner.children] : owner.children);
+        },
+
+        hasLayoutSidebar() {
+            return this.isHorizontal && this.layoutMode === 'mixed' && this.sidebarEntries.length > 0;
+        },
+
         currentUser() {
             return Shopwell.Store.get('session').currentUser;
         },
 
         isExpanded() {
-            return this.adminMenuStore.isExpanded || this.isMobileViewport;
+            return (
+                (this.isHorizontal && this.layoutMode === 'top') || this.adminMenuStore.isExpanded || this.isMobileViewport
+            );
         },
 
         isMobileViewport() {
@@ -153,7 +192,10 @@ The admin menu only supports up to three levels of nesting.`,
                 this.navigationEntries,
                 store?.visibleTree ?? [],
                 (key) => this.tWithFallback(key),
-                store?.isVisibleLoadFailed ? [] : (store?.managedKeys ?? []),
+                {
+                    managedKeys: store?.isVisibleLoadFailed ? [] : (store?.managedKeys ?? []),
+                    allowUnmanaged: store?.allowUnmanaged ?? true,
+                },
             );
         },
 
@@ -194,6 +236,8 @@ The admin menu only supports up to three levels of nesting.`,
 
         adminMenuClasses() {
             return {
+                'is--horizontal': this.isHorizontal,
+                'is--top': this.isHorizontal && this.layoutMode === 'top',
                 'is--expanded': this.isExpanded,
                 'is--collapsed': !this.isExpanded,
                 'is--off-canvas-shown': this.isOffCanvasShown,
@@ -249,6 +293,20 @@ The admin menu only supports up to three levels of nesting.`,
     },
 
     watch: {
+        hasLayoutSidebar: {
+            handler(value) {
+                this.$emit('layout-sidebar-change', value);
+            },
+            immediate: true,
+        },
+        layoutMode() {
+            this.onFlyoutLeave();
+            this.isUserActionsActive = false;
+            this.$nextTick(() => this.expandAncestorBranchesForCurrentRoute());
+        },
+        'currentUser.id'() {
+            void Shopwell.Store.get('adminMenuConfig').loadVisibleTree();
+        },
         isExpanded() {
             this.toggleSidebar();
             this.startSidebarToggleWindow();
@@ -579,6 +637,7 @@ The admin menu only supports up to three levels of nesting.`,
         },
 
         addScrollbarOffset() {
+            if (!this.$refs.swAdminMenuBody) return;
             // A negative offset pulls the scrollbar outside the menu so it does not eat into the visible width
             const scrollbarWidthPx = dom.getScrollbarWidth(this.$refs.swAdminMenuBody);
 
@@ -611,7 +670,7 @@ The admin menu only supports up to three levels of nesting.`,
                         return false;
                     }
 
-                    const menuEntry = this.mainMenuEntries.find((entry) => (entry.id ?? entry.path) === key);
+                    const menuEntry = this.sidebarEntries.find((entry) => (entry.id ?? entry.path) === key);
 
                     return !menuEntry || !isEntryOnActiveRoute(menuEntry, this.$route, activeNames);
                 })
@@ -868,7 +927,7 @@ The admin menu only supports up to three levels of nesting.`,
             }
 
             const activeNames = getActiveRouteNames(this.$route, this.$router);
-            const activeEntries = this.mainMenuEntries.filter((entry) =>
+            const activeEntries = this.sidebarEntries.filter((entry) =>
                 isEntryOnActiveRoute(entry, this.$route, activeNames),
             );
 

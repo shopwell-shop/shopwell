@@ -13,12 +13,6 @@ Shopwell.Component.register(
 );
 Shopwell.Component.register('sw-first-run-wizard-mailer-smtp', () => import('./view/sw-first-run-wizard-mailer-smtp'));
 Shopwell.Component.register('sw-first-run-wizard-mailer-local', () => import('./view/sw-first-run-wizard-mailer-local'));
-Shopwell.Component.register('sw-first-run-wizard-paypal-base', () => import('./view/sw-first-run-wizard-paypal-base'));
-Shopwell.Component.register('sw-first-run-wizard-paypal-info', () => import('./view/sw-first-run-wizard-paypal-info'));
-Shopwell.Component.register(
-    'sw-first-run-wizard-paypal-credentials',
-    () => import('./view/sw-first-run-wizard-paypal-credentials'),
-);
 Shopwell.Component.register('sw-first-run-wizard-plugins', () => import('./view/sw-first-run-wizard-plugins'));
 Shopwell.Component.register('sw-first-run-wizard-shopwell-base', () => import('./view/sw-first-run-wizard-shopwell-base'));
 Shopwell.Component.register(
@@ -97,36 +91,6 @@ Module.register('sw-first-run-wizard', {
                         local: {
                             component: 'sw-first-run-wizard-mailer-local',
                             path: 'local',
-                            meta: {
-                                privilege: 'admin',
-                            },
-                        },
-                    },
-                },
-                paypal: {
-                    component: 'sw-first-run-wizard-paypal-base',
-                    path: 'paypal',
-                    meta: {
-                        privilege: 'admin',
-                    },
-                    children: {
-                        info: {
-                            component: 'sw-first-run-wizard-paypal-info',
-                            path: 'info',
-                            meta: {
-                                privilege: 'admin',
-                            },
-                        },
-                        install: {
-                            component: 'sw-first-run-wizard-paypal-install',
-                            path: 'install',
-                            meta: {
-                                privilege: 'admin',
-                            },
-                        },
-                        credentials: {
-                            component: 'sw-first-run-wizard-paypal-credentials',
-                            path: 'credentials',
                             meta: {
                                 privilege: 'admin',
                             },

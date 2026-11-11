@@ -6237,35 +6237,6 @@
       "count": 11
     }
   },
-  "src/module/sw-first-run-wizard/view/sw-first-run-wizard-paypal-base/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-first-run-wizard/view/sw-first-run-wizard-paypal-credentials/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-first-run-wizard/view/sw-first-run-wizard-paypal-info/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-first-run-wizard/view/sw-first-run-wizard-paypal-info/sw-first-run-wizard-paypal-info.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 3
-    }
-  },
   "src/module/sw-first-run-wizard/view/sw-first-run-wizard-plugins/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -11791,7 +11762,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/component/sw-system-menu-tree/index.js": {
+  "src/module/sw-permissions/component/sw-permissions-menu-tree/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11799,7 +11770,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/component/sw-system-role-mcp-reference-modal/index.js": {
+  "src/module/sw-permissions/component/sw-permissions-role-mcp-reference-modal/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11807,12 +11778,12 @@
       "count": 1
     }
   },
-  "src/module/sw-system/component/sw-system-role-mcp-reference-modal/sw-system-role-mcp-reference-modal.spec.js": {
+  "src/module/sw-permissions/component/sw-permissions-role-mcp-reference-modal/sw-permissions-role-mcp-reference-modal.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 29
     }
   },
-  "src/module/sw-system/components/sw-system-additional-permissions/index.js": {
+  "src/module/sw-permissions/components/sw-permissions-additional/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11820,12 +11791,12 @@
       "count": 1
     }
   },
-  "src/module/sw-system/components/sw-system-additional-permissions/sw-system-additional-permissions.spec.js": {
+  "src/module/sw-permissions/components/sw-permissions-additional/sw-permissions-additional.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 14
     }
   },
-  "src/module/sw-system/components/sw-system-detailed-additional-permissions/index.js": {
+  "src/module/sw-permissions/components/sw-permissions-detailed-additional/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11833,7 +11804,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/components/sw-system-detailed-permissions-grid/index.js": {
+  "src/module/sw-permissions/components/sw-permissions-detailed-grid/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11841,7 +11812,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/components/sw-system-permissions-grid/index.js": {
+  "src/module/sw-permissions/components/sw-permissions-grid/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11849,7 +11820,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/components/sw-system-permissions-grid/sw-system-permissions-grid.spec.js": {
+  "src/module/sw-permissions/components/sw-permissions-grid/sw-permissions-grid.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11857,17 +11828,17 @@
       "count": 50
     }
   },
-  "src/module/sw-system/components/sw-system-user-sso-access-key-create-modal/index.js": {
+  "src/module/sw-user/components/sw-user-sso-access-key-create-modal/index.js": {
     "filename-rules/not-match": {
       "count": 1
     }
   },
-  "src/module/sw-system/components/sw-system-user-sso-invitation-modal/index.js": {
+  "src/module/sw-user/components/sw-user-sso-invitation-modal/index.js": {
     "filename-rules/not-match": {
       "count": 1
     }
   },
-  "src/module/sw-system/components/sw-system-user-sso-status-label/index.js": {
+  "src/module/sw-user/components/sw-user-sso-status-label/index.js": {
     "filename-rules/not-match": {
       "count": 1
     }
@@ -11880,7 +11851,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-menu-list/index.js": {
+  "src/module/sw-permissions/page/sw-permissions-menu-list/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11888,7 +11859,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-role-detail/index.js": {
+  "src/module/sw-permissions/page/sw-permissions-role-detail/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11896,7 +11867,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-role-detail/sw-system-role-detail.spec.js": {
+  "src/module/sw-permissions/page/sw-permissions-role-detail/sw-permissions-role-detail.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11904,7 +11875,7 @@
       "count": 46
     }
   },
-  "src/module/sw-system/page/sw-system-role-list/index.js": {
+  "src/module/sw-permissions/page/sw-permissions-role-list/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11912,17 +11883,17 @@
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-sso-user-detail/index.js": {
+  "src/module/sw-user/page/sw-user-sso-detail/index.js": {
     "filename-rules/not-match": {
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-sso-user-detail/sw-system-sso-user-detail.spec.js": {
+  "src/module/sw-user/page/sw-user-sso-detail/sw-user-sso-detail.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 22
     }
   },
-  "src/module/sw-system/page/sw-system-user-create/index.js": {
+  "src/module/sw-user/page/sw-user-create/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11930,12 +11901,12 @@
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-user-create/sw-system-user-create.spec.js": {
+  "src/module/sw-user/page/sw-user-create/sw-user-create.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 6
     }
   },
-  "src/module/sw-system/page/sw-system-user-detail/index.js": {
+  "src/module/sw-user/page/sw-user-detail/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11946,7 +11917,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-user-detail/sw-system-user-detail.spec.js": {
+  "src/module/sw-user/page/sw-user-detail/sw-user-detail.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11954,7 +11925,7 @@
       "count": 42
     }
   },
-  "src/module/sw-system/view/sw-system-role-view-detailed/index.js": {
+  "src/module/sw-permissions/view/sw-permissions-role-view-detailed/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11962,7 +11933,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/view/sw-system-role-view-general/index.js": {
+  "src/module/sw-permissions/view/sw-permissions-role-view-general/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -11970,7 +11941,7 @@
       "count": 1
     }
   },
-  "src/module/sw-system/view/sw-system-role-view-general/sw-system-role-view-general.spec.js": {
+  "src/module/sw-permissions/view/sw-permissions-role-view-general/sw-permissions-role-view-general.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 4
     }

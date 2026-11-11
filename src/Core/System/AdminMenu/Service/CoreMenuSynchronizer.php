@@ -106,7 +106,7 @@ class CoreMenuSynchronizer
         $writes = [];
         $placements = [];
 
-        foreach ($this->rowsBuilder->build($declarations, $anchors) as $row) {
+        foreach ($this->rowsBuilder->build($declarations, $anchors, array_map(static fn (AdminMenuItemEntity $item): string => $item->getId(), $stored)) as $row) {
             $existing = $stored[$row->internalKey] ?? null;
 
             if ($existing === null) {

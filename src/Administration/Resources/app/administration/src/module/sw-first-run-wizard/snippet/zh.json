@@ -42,21 +42,6 @@
     "mailerLocal": {
       "headline": "本地邮件代理"
     },
-    "paypalInfo": {
-      "modalTitle": "设置 PayPal",
-      "headline": "现已预集成到 Shopwell，更轻松快捷地启用最受欢迎的支付方式*",
-      "paymethod": {
-        "paypal": "PayPal",
-        "debit": "银行扣款",
-        "creditcard": "信用卡",
-        "invoice": "发票"
-      },
-      "disclaimerLineOne": "* ECC 科隆：ECC 支付研究 第20卷，科隆，2016",
-      "disclaimerLineTwo": "** 以 PayPal 风险审核通过为前提"
-    },
-    "paypalInstall": {
-      "loadingMessage": "正在配置 PayPal<br>可能需要一会儿 ..."
-    },
     "recommendedPlugins": {
       "headline": "我们的推荐",
       "modalTitle": "扩展",
@@ -121,7 +106,6 @@
     "stepItemTitle": {
       "dataImport": "数据导入",
       "mailer": "邮件发送设置",
-      "setupPaypal": "设置 PayPal",
       "plugins": "扩展",
       "shopwell": "Shopwell 账户",
       "store": "Shopwell Store",

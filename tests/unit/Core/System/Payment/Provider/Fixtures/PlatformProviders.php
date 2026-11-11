@@ -16,24 +16,6 @@ use Shopwell\Core\System\Payment\Integration\Alipay\AlipayProvider;
 use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayNotificationExtractor;
 use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayTransferNotificationVerifier;
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalCaptureAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalNotifyAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalQueryAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalRefundAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferQueryAction;
-use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalNotificationExtractor;
-use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Integration\Paypal\PaypalProvider;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeCaptureAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeNotifyAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeQueryAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeRefundAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferQueryAction;
-use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
-use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Integration\Stripe\StripeProvider;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCloseAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatNotifyAction;
@@ -50,14 +32,13 @@ use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\HttpClient\NativeHttpClient;
 
 /**
- * Builds the four declarations the platform ships with their real actions.
+ * Builds the two declarations the platform ships with their real actions.
  *
  * The declarations are final and take their actions as constructor arguments - the container normally
  * provides them. A test that wants to look at what an interface declares has to assemble that graph
- * itself, and doing it once here keeps the four declaration tests readable.
+ * itself, and doing it once here keeps the two declaration tests readable.
  *
  * @internal
  */
@@ -73,7 +54,7 @@ final class PlatformProviders
     {
         $methods = new PaymentMethodRegistry(array_map(
             static fn (string $name): PaymentMethod => new PaymentMethod($name, 'payment.method.' . $name),
-            ['alipay', 'wechat', 'paypal', 'stripe', 'testpay'],
+            ['alipay', 'wechat', 'testpay'],
         ));
 
         return new PaymentProviderFactory(new PaymentConfigReader(), $methods, new EventDispatcher());
@@ -108,35 +89,6 @@ final class PlatformProviders
             new WechatNotificationExtractor(),
             new WechatPayParamsDecoder(),
             new WechatTransferNotificationVerifier(new NullLogger()),
-        );
-    }
-
-    public static function paypal(): PaypalProvider
-    {
-        return new PaypalProvider(
-            new PaypalCaptureAction(),
-            new PaypalRefundAction(),
-            new PaypalNotifyAction(),
-            new PaypalQueryAction(),
-            new PaypalTransferAction(self::cipher()),
-            new PaypalTransferQueryAction(),
-            new PaypalNotificationExtractor(),
-            new PaypalTransferNotificationVerifier(),
-            new NativeHttpClient(),
-        );
-    }
-
-    public static function stripe(): StripeProvider
-    {
-        return new StripeProvider(
-            new StripeCaptureAction(),
-            new StripeRefundAction(),
-            new StripeNotifyAction(),
-            new StripeQueryAction(),
-            new StripeTransferAction(),
-            new StripeTransferQueryAction(),
-            new StripeNotificationExtractor(),
-            new StripeTransferNotificationVerifier(),
         );
     }
 

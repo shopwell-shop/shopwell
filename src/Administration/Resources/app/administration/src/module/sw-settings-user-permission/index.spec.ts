@@ -8,7 +8,7 @@ describe('sw-settings-user-permission registration', () => {
         const module = Shopwell.Module.getModuleRegistry().get('sw-settings-user-permission');
         const route = module?.routes.get('sw.settings.user.permission.index');
 
-        expect(route?.meta).toEqual(expect.objectContaining({ privilege: 'users_and_permissions.viewer' }));
+        expect(route?.meta).toEqual(expect.objectContaining({ privilege: 'user.viewer' }));
     });
 
     it.each(['sw-settings-user-permission'])('registers %s for extension resolution', (component) => {

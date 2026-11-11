@@ -177,40 +177,30 @@ export default {
                     variant: 'large',
                     navigationIndex: 3,
                 },
-                'paypal.info': {
-                    name: 'sw.first.run.wizard.index.paypal.info',
-                    variant: 'large',
-                    navigationIndex: 4,
-                },
-                'paypal.credentials': {
-                    name: 'sw.first.run.wizard.index.paypal.credentials',
-                    variant: 'large',
-                    navigationIndex: 4,
-                },
                 plugins: {
                     name: 'sw.first.run.wizard.index.plugins',
                     variant: 'large',
-                    navigationIndex: 5,
+                    navigationIndex: 4,
                 },
                 'shopwell.account': {
                     name: 'sw.first.run.wizard.index.shopwell.account',
                     variant: 'large',
-                    navigationIndex: 6,
+                    navigationIndex: 5,
                 },
                 'shopwell.domain': {
                     name: 'sw.first.run.wizard.index.shopwell.domain',
                     variant: 'large',
-                    navigationIndex: 6,
+                    navigationIndex: 5,
                 },
                 store: {
                     name: 'sw.first.run.wizard.index.store',
                     variant: 'large',
-                    navigationIndex: 7,
+                    navigationIndex: 6,
                 },
                 finish: {
                     name: 'sw.first.run.wizard.index.finish',
                     variant: 'large',
-                    navigationIndex: 8,
+                    navigationIndex: 7,
                 },
             };
         },

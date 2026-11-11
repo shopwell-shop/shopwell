@@ -17,9 +17,7 @@
             "resetModalTitle": "清除接口账户信息",
             "resetModalMessage": "确定要清除「{name}」的全部账户信息吗？清除后使用平台账户的应用将无法通过该接口收款。",
             "alipay": "支付宝",
-            "wechat": "微信支付",
-            "paypal": "PayPal",
-            "stripe": "Stripe"
+            "wechat": "微信支付"
         },
         "channel": {
             "emptyStateTitle": "暂无支付产品",
@@ -48,9 +46,7 @@
             "wechat_native": "微信支付 Native（扫码）",
             "wechat_jsapi": "微信支付 JSAPI（公众号）",
             "wechat_mini": "微信支付 小程序",
-            "wechat_app": "微信支付 APP",
-            "paypal_checkout": "PayPal 结账",
-            "stripe_checkout": "Stripe Checkout"
+            "wechat_app": "微信支付 APP"
         },
         "danger": {
             "title": "清除平台账户",

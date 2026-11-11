@@ -2,7 +2,11 @@
  * @sw-package framework
  */
 import type { SettingsItem } from '../store/settings-item.store';
-import type { DatabaseMenuNode, NavigationEntryLike } from '../component/structure/sw-admin-menu/merge-navigation.helper';
+import type {
+    DatabaseMenuNode,
+    NavigationEntryLike,
+    NavigationPolicy,
+} from '../component/structure/sw-admin-menu/merge-navigation.helper';
 
 /** @private */
 export type SettingsNavigationItem = Omit<SettingsItem, 'label'> & {
@@ -70,7 +74,7 @@ function settingsTarget(node: DatabaseMenuNode, source: Partial<SettingsNavigati
 export function buildSettingsNavigation(
     declaredGroups: Record<string, SettingsNavigationItem[]>,
     tree: DatabaseMenuNode[],
-    managedKeys: string[],
+    { managedKeys = [], allowUnmanaged = true }: NavigationPolicy,
     navigation: NavigationEntryLike[] = [],
 ): Record<string, SettingsNavigationItem[]> {
     const declared = Object.values(declaredGroups).flat();
@@ -136,6 +140,7 @@ export function buildSettingsNavigation(
     visit(settings?.node.children ?? [], { group: 'general', title: null, privileges: settings?.privileges ?? [] });
     declared.forEach((item) => {
         if (
+            !allowUnmanaged ||
             matched.has(item) ||
             managed.has(item.id ?? '') ||
             managed.has(routeOf(item) ?? '') ||

@@ -25,7 +25,7 @@
             variant="primary"
             :is-loading="isLoading"
             :process-success="isSaveSuccessful"
-            :disabled="!acl.can('users_and_permissions.editor') || undefined"
+            :disabled="!acl.can('user.editor') || undefined"
             @click="onSave"
             @update:process-success="onSaveFinish"
         >
@@ -47,7 +47,7 @@
                 <sw-system-config
                     ref="systemConfig"
                     domain="core.userPermission"
-                    :class="{ 'is--disabled': !acl.can('users_and_permissions.editor') }"
+                    :class="{ 'is--disabled': !acl.can('user.editor') }"
                     @loading-changed="onChangeLoading"
                 />
                 {% endblock %}

@@ -76,7 +76,7 @@ export default {
                     label: this.$t('global.default.back'),
                     position: 'left',
                     variant: 'secondary',
-                    action: 'sw.first.run.wizard.index.paypal.info',
+                    action: 'sw.first.run.wizard.index.mailer.selection',
                     disabled: false,
                 },
                 {

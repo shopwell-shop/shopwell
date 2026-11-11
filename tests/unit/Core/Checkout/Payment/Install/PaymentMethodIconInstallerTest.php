@@ -64,9 +64,34 @@ class PaymentMethodIconInstallerTest extends TestCase
         $this->installer($mediaService, $methods)->install(Context::createDefaultContext());
     }
 
+    public function testAnExtensionCanInstallItsOwnIcon(): void
+    {
+        $method = $this->method('external');
+        $mediaService = $this->createMock(MediaService::class);
+        $mediaService->expects($this->once())->method('saveFile')
+            ->with(static::stringContains('<svg'), 'svg', 'image/svg+xml', 'payment-alipay')
+            ->willReturn('0190f0f0f0f0f0f0f0f0f0f0f0f0f0f0');
+        $methods = $this->createMock(EntityRepository::class);
+        $methods->method('search')->willReturn($this->searchResult($method));
+        $methods->expects($this->once())->method('update')
+            ->with([['id' => $method->getId(), 'mediaId' => '0190f0f0f0f0f0f0f0f0f0f0f0f0f0f0']]);
+        $media = static::createStub(EntityRepository::class);
+        $media->method('searchIds')->willReturn($this->idSearchResult());
+
+        $installer = new PaymentMethodIconInstaller(
+            $mediaService,
+            $methods,
+            $media,
+            static::createStub(LoggerInterface::class),
+            ['external' => 'payment-alipay.svg'],
+            __DIR__ . '/../../../../../../src/Core/Checkout/Payment/Resources/payment-icons',
+        );
+        $installer->install(Context::createDefaultContext());
+    }
+
     public function testKeepsTheIconAMethodAlreadyCarries(): void
     {
-        $method = $this->method('paypal', '0190f0f0f0f0f0f0f0f0f0f0f0f0f0f1');
+        $method = $this->method('alipay', '0190f0f0f0f0f0f0f0f0f0f0f0f0f0f1');
 
         $mediaService = $this->createMock(MediaService::class);
         $mediaService->expects($this->never())->method('saveFile');
@@ -84,7 +109,7 @@ class PaymentMethodIconInstallerTest extends TestCase
 
     public function testReusesAnIconTheShopAlreadyHas(): void
     {
-        $method = $this->method('stripe');
+        $method = $this->method('wechat');
 
         $mediaService = $this->createMock(MediaService::class);
         $mediaService->expects($this->never())->method('saveFile');
@@ -179,7 +204,7 @@ class PaymentMethodIconInstallerTest extends TestCase
         }
 
         return new IdSearchResult(1, [
-            $mediaId => ['primaryKey' => $mediaId, 'data' => ['fileName' => 'payment-stripe']],
+            $mediaId => ['primaryKey' => $mediaId, 'data' => ['fileName' => 'payment-wechat']],
         ], new Criteria(), Context::createDefaultContext());
     }
 }

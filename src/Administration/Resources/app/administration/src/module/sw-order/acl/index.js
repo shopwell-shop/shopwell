@@ -9,6 +9,7 @@ Shopwell.Service('privileges')
         key: 'orders',
         roles: {
             create_discounts: {
+                resource: 'order',
                 privileges: ['order:create:discount'],
                 dependencies: [],
             },

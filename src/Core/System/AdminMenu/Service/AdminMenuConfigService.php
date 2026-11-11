@@ -2,10 +2,7 @@
 
 namespace Shopwell\Core\System\AdminMenu\Service;
 
-use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -19,7 +16,7 @@ use Symfony\Component\Validator\ConstraintViolationList;
 /**
  * Performs the administration actions on the navigation that are more than a plain field
  * write: moving an item has to repair the `after_menu_item_id` chain of both affected
- * levels and must not create a cycle, and assigning roles writes a mapping collection.
+ * levels and must not create a cycle.
  *
  * Creating, updating and deleting items goes through the generated DAL routes; this
  * service only exists for the actions where the payload of a single row is not enough.
@@ -35,60 +32,13 @@ class AdminMenuConfigService
 
     final public const VIOLATION_AFTER_NOT_SIBLING = 'admin-menu-after-not-sibling-violation';
 
-    final public const VIOLATION_UNKNOWN_ROLE = 'admin-menu-unknown-role-violation';
-
     /**
      * @internal
      *
      * @param EntityRepository<AdminMenuItemCollection> $menuItemRepository
-     * @param EntityRepository<AclRoleCollection> $aclRoleRepository
-     * @param EntityRepository<EntityCollection<Entity>> $menuItemRoleRepository
      */
-    public function __construct(
-        private readonly EntityRepository $menuItemRepository,
-        private readonly EntityRepository $aclRoleRepository,
-        private readonly EntityRepository $menuItemRoleRepository,
-    ) {
-    }
-
-    /**
-     * @param list<string> $roleIds
-     */
-    public function assignRoles(Context $context, string $itemId, array $roleIds): void
+    public function __construct(private readonly EntityRepository $menuItemRepository)
     {
-        $item = $this->requireItem($context, $itemId);
-
-        $roleIds = array_values(array_unique($roleIds));
-
-        if ($roleIds !== []) {
-            $missing = array_diff($roleIds, $this->aclRoleRepository->searchIds(new Criteria($roleIds), $context)->getIds());
-
-            if ($missing !== []) {
-                throw $this->violation(
-                    \sprintf('The ACL roles %s do not exist.', implode(', ', $missing)),
-                    self::VIOLATION_UNKNOWN_ROLE,
-                    '/roles',
-                    implode(', ', $missing)
-                );
-            }
-        }
-
-        $existing = $item->getRoles()?->getIds() ?? [];
-        $added = array_values(array_diff($roleIds, $existing));
-        if ($added !== []) {
-            $this->menuItemRepository->update([[
-                'id' => $itemId,
-                'roles' => array_map(static fn (string $id): array => ['id' => $id], $added),
-            ]], $context);
-        }
-
-        $removed = array_values(array_diff($existing, $roleIds));
-        if ($removed !== []) {
-            $this->menuItemRoleRepository->delete(array_map(
-                static fn (string $id): array => ['adminMenuItemId' => $itemId, 'aclRoleId' => $id],
-                $removed
-            ), $context);
-        }
     }
 
     public function move(Context $context, string $itemId, ?string $parentId, ?string $afterMenuItemId): void
@@ -150,7 +100,7 @@ class AdminMenuConfigService
     private function requireItem(Context $context, string $itemId): AdminMenuItemEntity
     {
         $item = $this->menuItemRepository
-            ->search((new Criteria([$itemId]))->addAssociation('roles'), $context)
+            ->search(new Criteria([$itemId]), $context)
             ->getEntities()
             ->get($itemId);
 

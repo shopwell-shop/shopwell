@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ListField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
@@ -86,6 +87,7 @@ class AclRoleDefinition extends EntityDefinition
             (new StringField('name', 'name'))->addFlags(new Required())->setDescription('Name of the ACL role defined.'),
             (new LongTextField('description', 'description'))->setDescription('A short description of the ACL role.'),
             (new ListField('privileges', 'privileges', StringField::class))->addFlags(new Required())->setDescription('Privileges like read, write, delete, etc.'),
+            (new ListField('menu_ids', 'menuIds', IdField::class))->addFlags(new Runtime())->setDescription('Complete menu selection, replaced atomically by the verified role endpoint.'),
             (new DateTimeField('deleted_at', 'deletedAt'))->setDescription('Time and date when the ACL role was deleted.'),
             new ManyToManyAssociationField('users', UserDefinition::class, AclUserRoleDefinition::class, 'acl_role_id', 'user_id'),
             (new OneToOneAssociationField('app', 'id', 'acl_role_id', AppDefinition::class, false))->addFlags(new RestrictDelete()),

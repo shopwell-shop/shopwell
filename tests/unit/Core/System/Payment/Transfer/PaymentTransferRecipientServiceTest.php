@@ -364,7 +364,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
         $this->service(static::createStub(EntityRepository::class))->assertPayoutReady($recipient, 200000);
     }
 
-    public function testMarkStripeAccountReadyMirrorsTheAccount(): void
+    public function testMarkProviderAccountReadyMirrorsTheAccount(): void
     {
         $recipient = $this->recipient(['provider' => 'stripe', 'identityType' => 'stripe_account']);
 
@@ -379,7 +379,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
                 return true;
             }));
 
-        $this->service($repository)->markStripeAccountReady('recipient-id', 'acct_1A2B3C', true);
+        $this->service($repository)->markProviderAccountReady('recipient-id', 'acct_1A2B3C', true);
 
         static::assertSame('acct_1A2B3C', $written['providerAccountId']);
         static::assertTrue($written['payoutEnabled']);
@@ -393,7 +393,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
      * The interface can disable payouts again - the mirror has to say so, and a recipient that is not
      * payable has not been verified either.
      */
-    public function testMarkStripeAccountReadyMirrorsADisabledAccount(): void
+    public function testMarkProviderAccountReadyMirrorsADisabledAccount(): void
     {
         $recipient = $this->recipient(['provider' => 'stripe', 'identityType' => 'stripe_account']);
 
@@ -406,7 +406,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
             return $this->written();
         });
 
-        $this->service($repository)->markStripeAccountReady('recipient-id', 'acct_1A2B3C', false);
+        $this->service($repository)->markProviderAccountReady('recipient-id', 'acct_1A2B3C', false);
 
         static::assertFalse($written['payoutEnabled']);
         static::assertSame(PaymentTransferStates::ONBOARDING_PENDING, $written['onboardingStatus']);
@@ -456,7 +456,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
         $repository->method('search')->willReturn($this->searchResult([]));
 
         try {
-            $this->service($repository)->markStripeAccountReady('recipient-id', 'acct_1A2B3C', true);
+            $this->service($repository)->markProviderAccountReady('recipient-id', 'acct_1A2B3C', true);
             static::fail('an unknown recipient has to be reported');
         } catch (PaymentException $exception) {
             static::assertSame(PaymentException::TRANSFER_RECIPIENT_NOT_FOUND, $exception->getErrorCode());

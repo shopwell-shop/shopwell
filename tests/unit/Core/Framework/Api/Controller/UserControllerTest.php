@@ -218,6 +218,7 @@ class UserControllerTest extends TestCase
             $userDefinition ?? static::createStub(UserDefinition::class),
             $ssoService ?? static::createStub(SsoService::class),
             $connection,
+            static::createStub(EntityRepository::class),
         );
     }
 }

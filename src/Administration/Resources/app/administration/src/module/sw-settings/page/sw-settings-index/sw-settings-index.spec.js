@@ -16,6 +16,7 @@ async function createWrapper(
         'shipping.viewer',
     ],
 ) {
+    Shopwell.Store.get('adminMenuConfig').allowUnmanaged = true;
     const settingsItemsMock = [
         {
             group: 'system',
@@ -164,6 +165,8 @@ async function createWrapper(
 describe('module/sw-settings/page/sw-settings-index', () => {
     beforeEach(async () => {
         Shopwell.Store.get('settingsItems').settingsGroups = {};
+        Shopwell.Store.get('adminMenuConfig').$reset();
+        jest.spyOn(Shopwell.Store.get('adminMenuConfig'), 'loadVisibleTree').mockResolvedValue();
         jest.spyOn(Shopwell.Service('userConfigService'), 'search').mockResolvedValue({ data: {} });
         jest.spyOn(Shopwell.Service('userConfigService'), 'upsert').mockResolvedValue();
     });

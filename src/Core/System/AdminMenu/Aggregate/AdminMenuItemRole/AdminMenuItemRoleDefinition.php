@@ -3,6 +3,9 @@
 namespace Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemRole;
 
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\WriteProtection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
@@ -30,6 +33,13 @@ class AdminMenuItemRoleDefinition extends MappingEntityDefinition
     public function since(): ?string
     {
         return '6.7.18.0';
+    }
+
+    protected function defineProtections(): EntityProtectionCollection
+    {
+        return new EntityProtectionCollection([
+            new WriteProtection(Context::SYSTEM_SCOPE, Context::USER_SCOPE),
+        ]);
     }
 
     protected function defineFields(): FieldCollection

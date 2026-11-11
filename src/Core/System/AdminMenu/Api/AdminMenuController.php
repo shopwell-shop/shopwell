@@ -25,7 +25,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * Creating, updating and deleting items goes through the generated DAL routes of the
  * `admin_menu_item` entity; this controller only serves the actions where a plain row
  * write is not enough - reading the management tree, moving an item with its ordering
- * chain, assigning roles - and the route whitelist the management UI offers as choices.
+ * chain - and the route whitelist the management UI offers as choices.
  */
 #[Package('fundamentals@framework')]
 class AdminMenuController extends AbstractController
@@ -52,7 +52,6 @@ class AdminMenuController extends AbstractController
     public function tree(Context $context): JsonResponse
     {
         $criteria = (new Criteria())
-            ->addAssociation('roles')
             ->addAssociation('plugin')
             ->addAssociation('translations');
 
@@ -81,7 +80,6 @@ class AdminMenuController extends AbstractController
                 'configOverridden' => $item->isConfigOverridden(),
                 'pluginId' => $item->getPluginId(),
                 'pluginName' => $item->getPlugin()?->getName(),
-                'roleIds' => $item->getRoles()?->getIds() ?? [],
             ], iterator_to_array($items, false))),
         ]);
     }
@@ -101,30 +99,6 @@ class AdminMenuController extends AbstractController
             $this->requireUuid($payload['id'] ?? null),
             isset($payload['parentId']) ? $this->requireUuid($payload['parentId']) : null,
             isset($payload['afterMenuItemId']) ? $this->requireUuid($payload['afterMenuItemId']) : null
-        );
-
-        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
-    }
-
-    #[Route(
-        path: '/api/_action/admin-menu/assign-roles',
-        name: 'api.action.admin-menu.assign-roles',
-        defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['admin_menu_item:update']],
-        methods: [Request::METHOD_POST]
-    )]
-    public function assignRoles(Request $request, Context $context): JsonResponse
-    {
-        $payload = $request->request->all();
-        $roleIds = $payload['roleIds'] ?? [];
-
-        if (!\is_array($roleIds)) {
-            $roleIds = [];
-        }
-
-        $this->configService->assignRoles(
-            $context,
-            $this->requireUuid($payload['id'] ?? null),
-            array_values(array_filter($roleIds, \is_string(...)))
         );
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
@@ -165,7 +139,7 @@ class AdminMenuController extends AbstractController
     public function visible(Context $context): JsonResponse
     {
         return new JsonResponse([
-            'menu' => $this->treeBuilder->build($context),
+            ...$this->treeBuilder->buildNavigation($context),
             'managedKeys' => array_map(
                 static fn ($definition): string => $definition->internalKey,
                 $this->routeRegistry->getDefinitions()

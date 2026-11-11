@@ -26,6 +26,10 @@ const declared = {
 };
 
 describe('settings menu navigation', () => {
+    it('does not restore unmanaged settings for custom roles', () => {
+        expect(buildSettingsNavigation(declared, [], { managedKeys: [], allowUnmanaged: false }, [])).toEqual({});
+    });
+
     it('uses configured groups, labels and ordering while preserving app settings', () => {
         const groups = buildSettingsNavigation(
             declared,
@@ -51,7 +55,7 @@ describe('settings menu navigation', () => {
                     ],
                 },
             ],
-            ['sw-settings-tax'],
+            { managedKeys: ['sw-settings-tax'] },
             [{ id: 'currency-menu', path: 'sw.settings.currency.index', privilege: 'currency.viewer' }],
         );
         expect(Object.keys(groups)).toEqual(['regional', 'plugins']);
@@ -69,7 +73,9 @@ describe('settings menu navigation', () => {
     });
 
     it('does not bring back hidden settings or settings moved out of the settings page', () => {
-        expect(buildSettingsNavigation(declared, [], ['sw-settings-tax'])).toEqual({ plugins: declared.plugins });
+        expect(buildSettingsNavigation(declared, [], { managedKeys: ['sw-settings-tax'] })).toEqual({
+            plugins: declared.plugins,
+        });
     });
 
     it('matches a settings module by its declared route when its navigation id differs', () => {
@@ -92,7 +98,7 @@ describe('settings menu navigation', () => {
                     children: [{ id: 'delivery', internalKey: 'sw-settings-delivery-times', groupName: 'commerce' }],
                 },
             ],
-            ['sw-settings-delivery-times'],
+            { managedKeys: ['sw-settings-delivery-times'] },
             [{ id: 'sw-settings-delivery-times', path: 'sw.settings.delivery.time.index', label: 'Delivery time' }],
         );
         expect(groups.commerce).toHaveLength(1);
@@ -113,14 +119,14 @@ describe('settings menu navigation', () => {
                 ],
             },
             [],
-            ['plural'],
+            { managedKeys: ['plural'] },
             [{ id: 'plural', path: 'delivery.index' }],
         );
         expect(groups).toEqual({});
     });
 
     it('keeps declarations when the navigation request failed', () => {
-        expect(buildSettingsNavigation(declared, [], [])).toEqual(declared);
+        expect(buildSettingsNavigation(declared, [], { managedKeys: [] })).toEqual(declared);
     });
 
     it('turns custom folders into settings sections and supports external links', () => {
@@ -140,7 +146,7 @@ describe('settings menu navigation', () => {
                     ],
                 },
             ],
-            [],
+            { managedKeys: [] },
         );
         expect(groups.resources[0]).toMatchObject({
             groupTitle: 'Resources',
@@ -174,7 +180,7 @@ describe('settings menu navigation', () => {
                     ],
                 },
             ],
-            ['sw-settings-tax'],
+            { managedKeys: ['sw-settings-tax'] },
         );
         expect(groups.restricted[0]).toMatchObject({
             to: 'sw.settings.tax.index',
@@ -193,7 +199,7 @@ describe('settings menu navigation', () => {
                     ],
                 },
             ],
-            ['sw-settings-tax'],
+            { managedKeys: ['sw-settings-tax'] },
         );
         expect(groups[groupName]).toHaveLength(1);
     });
@@ -217,7 +223,7 @@ describe('settings menu navigation', () => {
                     ],
                 },
             ],
-            ['sw-settings-tax'],
+            { managedKeys: ['sw-settings-tax'] },
         );
         expect(groups.general[0].inheritedMenuPrivileges).toEqual(['system.viewer', 'settings.viewer']);
     });
@@ -249,7 +255,7 @@ describe('menu refinements', () => {
                     ],
                 },
             ],
-            ['customer-groups'],
+            { managedKeys: ['customer-groups'] },
         );
 
         expect(Object.keys(groups)).toEqual(['customer-group-id']);
@@ -286,7 +292,7 @@ describe('menu refinements', () => {
                     ],
                 },
             ],
-            [],
+            { managedKeys: [] },
         );
         expect(Object.keys(groups)).toEqual(['first', 'second']);
         expect(groups.first).toHaveLength(1);
@@ -310,7 +316,7 @@ describe('menu refinements', () => {
                     ],
                 },
             ],
-            [],
+            { managedKeys: [] },
         );
         expect(Object.keys(result)).toEqual(['regional']);
         expect(result.regional[0].groupTitle).toBe('Regional tools');

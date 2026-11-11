@@ -103,7 +103,7 @@ return McpAllowlist::blocked();
 POST /api/_action/user/{userId}/mcp-allowlist
 ```
 
-ACL: `api_action_user_mcp-allowlist` (mapped to `users_and_permissions.editor`).
+ACL: `api_action_user_mcp-allowlist` (mapped to `user.editor`).
 
 Body: `{ "allowlist": { "tools": [...], "resources": [...], "prompts": [...] } | null }`.
 
@@ -119,7 +119,7 @@ The previous `UserAccessKeyMcpAllowlistController` (`POST /api/_action/user-acce
 <mt-card :title="...">
     <sw-integration-mcp-allowlist
         :allowlist="user.mcpAllowlist"
-        :disabled="!acl.can('users_and_permissions.editor') || !$route.params.id"
+        :disabled="!acl.can('user.editor') || !$route.params.id"
         :is-admin="user.admin"
         :granted-privileges="mcpGrantedPrivileges"
         @update:allowlist="onMcpAllowlistUpdate"
@@ -133,7 +133,7 @@ The per-key "Edit MCP allowlist" context menu item and its modal were removed fr
 
 **`user.api.service.js`** — `saveMcpAllowlist(userId, allowlist)` calls `POST /api/_action/user/{id}/mcp-allowlist`.
 
-**ACL entry** in `sw-system/acl/index.js`: `api_action_user_mcp-allowlist` under `editor`.
+**ACL entry** in `sw-user/acl/index.ts`: `api_action_user_mcp-allowlist` under `editor`.
 
 ## Files created / modified
 
@@ -149,10 +149,10 @@ The per-key "Edit MCP allowlist" context menu item and its modal were removed fr
 | Delete | `src/Core/Framework/Mcp/Controller/UserAccessKeyMcpAllowlistController.php` |
 | Create | `src/Core/Framework/Mcp/Controller/UserMcpAllowlistController.php` |
 | Modify | `src/Core/Framework/Mcp/McpException.php` (removed `missingCredentials()`) |
-| Modify | `src/Administration/.../sw-system-user-detail.html.twig` |
-| Modify | `src/Administration/.../sw-system-user-detail/index.js` |
-| Modify | `src/Administration/.../sw-system/acl/index.js` |
-| Modify | `src/Administration/.../sw-system/snippet/en.json` + `de.json` |
+| Modify | `src/Administration/.../sw-user-detail.html.twig` |
+| Modify | `src/Administration/.../sw-user-detail/index.js` |
+| Modify | `src/Administration/.../sw-user/acl/index.ts` |
+| Modify | `src/Administration/.../sw-user/snippet/en.json` + `de.json` |
 | Modify | `src/Administration/Resources/app/administration/src/core/service/api/user.api.service.js` |
 
 ## Known gaps / parking lot

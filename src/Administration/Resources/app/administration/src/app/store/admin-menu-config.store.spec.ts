@@ -24,7 +24,7 @@ describe('admin menu configuration', () => {
         Object.values(api).forEach((mock) => mock.mockReset());
         api.getTree.mockResolvedValue([]);
         api.getRouteAllowlist.mockResolvedValue([]);
-        api.getNavigation.mockResolvedValue({ menu: [], managedKeys: ['sw-settings-tax'] });
+        api.getNavigation.mockResolvedValue({ menu: [], managedKeys: ['sw-settings-tax'], allowUnmanaged: false });
         api.updateItem.mockImplementation((id: string) => Promise.resolve(id));
         jest.spyOn(Shopwell.Store.get('adminMenuConfig'), 'api').mockReturnValue(api);
     });
@@ -33,10 +33,42 @@ describe('admin menu configuration', () => {
         const store = Shopwell.Store.get('adminMenuConfig');
         await store.loadVisibleTree();
         expect(store.managedKeys).toEqual(['sw-settings-tax']);
+        expect(store.allowUnmanaged).toBe(false);
         api.getNavigation.mockRejectedValueOnce(new Error('offline'));
         await store.loadVisibleTree(true);
         expect(store.managedKeys).toEqual([]);
         expect(store.isVisibleLoadFailed).toBe(true);
+        expect(store.allowUnmanaged).toBe(false);
+    });
+
+    it('reloads navigation when the authenticated account changes', async () => {
+        const store = Shopwell.Store.get('adminMenuConfig');
+        Shopwell.Store.get('session').currentUser = { id: 'reader' } as Entity<'user'>;
+        await store.loadVisibleTree();
+        Shopwell.Store.get('session').currentUser = { id: 'empty' } as Entity<'user'>;
+        api.getNavigation.mockResolvedValueOnce({ menu: [], managedKeys: [], allowUnmanaged: false });
+        await store.loadVisibleTree();
+        expect(api.getNavigation).toHaveBeenCalledTimes(2);
+        expect(store.managedKeys).toEqual([]);
+    });
+
+    it('discards an obsolete account response after a newer request completes', async () => {
+        const store = Shopwell.Store.get('adminMenuConfig');
+        let resolvePrevious!: (value: unknown) => void;
+        api.getNavigation.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolvePrevious = resolve;
+                }),
+        );
+        Shopwell.Store.get('session').currentUser = { id: 'reader' } as Entity<'user'>;
+        const previous = store.loadVisibleTree();
+        Shopwell.Store.get('session').currentUser = { id: 'empty' } as Entity<'user'>;
+        await store.loadVisibleTree();
+        resolvePrevious({ menu: [], managedKeys: ['previous-account'], allowUnmanaged: true });
+        await previous;
+        expect(store.managedKeys).toEqual(['sw-settings-tax']);
+        expect(store.allowUnmanaged).toBe(false);
     });
 
     it('returns a created identity before refresh or group writes can fail', async () => {

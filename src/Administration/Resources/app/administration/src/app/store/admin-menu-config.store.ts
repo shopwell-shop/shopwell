@@ -32,7 +32,6 @@ export type AdminMenuItem = {
     configOverridden: boolean;
     pluginId: string | null;
     pluginName: string | null;
-    roleIds: Array<string>;
 };
 
 /** @private */
@@ -74,7 +73,7 @@ type VisibleMenuNode = {
 
 type AdminMenuApi = {
     getTree: () => Promise<Array<AdminMenuItem>>;
-    getNavigation: () => Promise<{ menu: VisibleMenuNode[]; managedKeys: string[] }>;
+    getNavigation: () => Promise<{ menu: VisibleMenuNode[]; managedKeys: string[]; allowUnmanaged: boolean }>;
     getRouteAllowlist: () => Promise<Array<RouteAllowlistEntry>>;
     move: (move: { id: string; parentId: string | null; afterMenuItemId: string | null }) => Promise<unknown>;
     createItem: (payload: Record<string, unknown>) => Promise<string>;
@@ -167,7 +166,10 @@ const adminMenuConfigStore = Shopwell.Store.register({
         routeAllowlist: [] as Array<RouteAllowlistEntry>,
         visibleTree: [] as Array<VisibleMenuNode>,
         managedKeys: [] as string[],
+        allowUnmanaged: false,
         isVisibleLoaded: false,
+        visibleUserId: null as string | null,
+        visibleRequestId: 0,
         isLoadFailed: false,
         isVisibleLoadFailed: false,
         isLoading: false,
@@ -227,28 +229,43 @@ const adminMenuConfigStore = Shopwell.Store.register({
         /**
          * Loads the navigation tree of the current user.
          *
-         * Failure is swallowed on purpose: the administration navigation is rendered from the
-         * module declarations as well, so a failed request must degrade to that fallback
-         * instead of leaving the user without a sidebar. `isVisibleLoadFailed` is what the
-         * caller uses to tell "the database knows nothing" from "the database could not be
-         * asked".
+         * A failed request leaves navigation empty until it can be loaded. Declaration
+         * fallbacks must not restore entries excluded by a custom role selection.
          */
         async loadVisibleTree(force = false) {
-            if (this.isVisibleLoaded && !force) {
+            const userId = Shopwell.Store.get('session').currentUser?.id ?? null;
+            if (this.isVisibleLoaded && this.visibleUserId === userId && !force) {
                 return;
             }
 
-            try {
-                const navigation = await this.api().getNavigation();
-                this.visibleTree = navigation.menu;
-                this.managedKeys = navigation.managedKeys;
-                this.isVisibleLoadFailed = false;
-            } catch {
+            if (this.visibleUserId !== userId) {
                 this.visibleTree = [];
                 this.managedKeys = [];
+                this.allowUnmanaged = false;
+                this.isVisibleLoaded = false;
+                this.isVisibleLoadFailed = false;
+                this.visibleUserId = userId;
+            }
+
+            const requestId = ++this.visibleRequestId;
+            const isCurrentRequest = () =>
+                requestId === this.visibleRequestId && userId === (Shopwell.Store.get('session').currentUser?.id ?? null);
+
+            try {
+                const navigation = await this.api().getNavigation();
+                if (!isCurrentRequest()) return;
+                this.visibleTree = navigation.menu;
+                this.managedKeys = navigation.managedKeys;
+                this.allowUnmanaged = navigation.allowUnmanaged;
+                this.isVisibleLoadFailed = false;
+            } catch {
+                if (!isCurrentRequest()) return;
+                this.visibleTree = [];
+                this.managedKeys = [];
+                this.allowUnmanaged = false;
                 this.isVisibleLoadFailed = true;
             } finally {
-                this.isVisibleLoaded = true;
+                if (isCurrentRequest()) this.isVisibleLoaded = true;
             }
         },
 

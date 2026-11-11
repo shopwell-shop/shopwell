@@ -20,7 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * Saves the per-user MCP allowlist (tools, resources, prompts).
  *
  * Requires `api_action_user_mcp-allowlist` and `user:update`, both of which
- * `users_and_permissions.editor` grants. The route writes an arbitrary `{userId}`, so the
+ * `user.editor` grants. The route writes an arbitrary `{userId}`, so the
  * entity privilege has to be part of the gate: since the allowlist decides what a principal
  * may reach over MCP, writing someone else's is a permission change.
  */

@@ -59,6 +59,20 @@ class CoreMenuSynchronizerTest extends TestCase
         static::assertFalse($payload['configOverridden']);
     }
 
+    public function testRenamedCoreEntriesKeepTheirStoredIdentityAndFollowingSibling(): void
+    {
+        $item = $this->item('sw-user');
+        $item->setId('original-menu-id');
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection([$item])]);
+        $this->synchronizer(
+            $repository,
+            new AdminMenuDefinitionStruct('sw-user', icon: 'new-icon', position: 1),
+            new AdminMenuDefinitionStruct('sw-next', position: 2)
+        )->synchronize();
+        static::assertSame('original-menu-id', $repository->upserts[0][0]['id']);
+        static::assertSame('original-menu-id', $repository->upserts[0][1]['afterMenuItemId']);
+    }
+
     public function testMatchingRowsDoNotWriteAndTranslatedTitlesAreNotReset(): void
     {
         $item = $this->item('sw-customer');

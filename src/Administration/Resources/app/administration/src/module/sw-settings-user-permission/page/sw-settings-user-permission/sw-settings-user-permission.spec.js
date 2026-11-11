@@ -70,7 +70,7 @@ describe('module/sw-settings-user-permission/page/sw-settings-user-permission', 
 
     it('should save all config values', async () => {
         const saveAll = jest.fn(() => Promise.resolve());
-        wrapper = await createWrapper({ privileges: ['users_and_permissions.editor'], saveAll });
+        wrapper = await createWrapper({ privileges: ['user.editor'], saveAll });
         await flushPromises();
 
         wrapper.vm.onSave();

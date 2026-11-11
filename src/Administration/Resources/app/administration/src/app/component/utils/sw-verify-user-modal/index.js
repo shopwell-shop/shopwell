@@ -43,15 +43,17 @@ export default {
                         access: verifiedToken,
                     };
 
-                    this.loginService.setBearerAuthentication(authObject);
+                    // Stored expiry is a timestamp; the setter expects a lifetime in seconds.
+                    this.loginService.setBearerAuthentication({
+                        ...authObject,
+                        expiry: Math.max(0, (authObject.expiry - Date.now()) / 1000),
+                    });
 
                     this.$emit('verified', context);
                 })
                 .catch(() => {
                     this.createNotificationError({
-                        message: this.$t(
-                            'sw-system.users.user-detail.passwordConfirmation.notificationPasswordErrorMessage',
-                        ),
+                        message: this.$t('sw-user.users.user-detail.passwordConfirmation.notificationPasswordErrorMessage'),
                     });
                 })
                 .finally(() => {

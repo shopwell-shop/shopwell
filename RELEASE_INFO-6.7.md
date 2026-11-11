@@ -2,19 +2,19 @@
 
 ## Core
 
-### Free growth alongside paid membership
-
-Customers continue earning tier points during paid membership.
-The effective tier is the higher of the earned tier and the valid paid tier; expiry falls back to the earned tier immediately when read.
-Paid tier qualification is available as `loyalty_account.paidTierId`, independently of the effective `tierId`.
-Existing running subscriptions are migrated automatically.
-
 ### After-sales refund destination
 
 Administration refund confirmations default to the original payment sources and can instead credit a registered customer's wallet.
 The approve, receive and refund actions accept optional `refundDestination` (`original` or `wallet`); the first payout attempt fixes this value on the return.
 Wallet payouts also reduce the collected payment's refundable amount and use the return number for idempotency.
 Guest returns support the original payment sources only.
+
+### Free growth alongside paid membership
+
+Customers continue earning tier points during paid membership.
+The effective tier is the higher of the earned tier and the valid paid tier; expiry falls back to the earned tier immediately when read.
+Paid tier qualification is available as `loyalty_account.paidTierId`, independently of the effective `tierId`.
+Existing running subscriptions are migrated automatically.
 
 ### SMS provider extension contract
 
@@ -24,6 +24,17 @@ The provider metadata endpoint includes `optionDefinitions`.
 Template sending and template approval are independent capabilities under `Provider\Audit`.
 The development baseline removes the former gateway factory registration and uses `Routing\SmsGatewayResolverInterface` for routing.
 The `SelectSmsGatewayExtension` extension can reorder or remove eligible accounts.
+
+
+### PayPal and Stripe integrations moved to SwagPayments
+
+PayPal and Stripe are provided by the separate `swag/payments` plugin and are no longer bundled with Core.
+Install and activate `SwagPayments` and configure your merchant accounts to use their checkout, refund, payout and notification capabilities.
+The SDK dependencies, payment method initialization, icons and Administration translations are owned by the plugin.
+Integration classes now use `Swag\Payments\Integration` instead of `Shopwell\Core\System\Payment\Integration`.
+The Core installation baseline seeds only Alipay and WeChat Pay, and the first-run wizard no longer installs the legacy `SwagPayPal` plugin.
+The generic recipient readiness method is named `PaymentTransferRecipientService::markProviderAccountReady()`.
+
 
 ### Blog publishing and content layouts
 
@@ -42,11 +53,30 @@ Register custom types through `BlogTypeRegistry::addType($type, $template, $sche
 
 ## Administration
 
+### Administration navigation layouts
+
+Administrators can choose sidebar, top, or combined navigation under My profile > User interface.
+The preference is stored per user under `core.adminNavigationLayout`; smaller screens continue using the navigation drawer.
+All layouts use the configured menu order, role restrictions and registered module navigation.
+
 ### Return settings per sales channel
 
 Return rules support sales channel overrides and inheritance from the global configuration.
 Return reasons have a separate settings entry and remain shared across sales channels.
 The return rules page uses the standard `system.system_config` permission; reason management continues to use the return permissions.
+
+### Role-based menu assignments and separate user management
+
+User management now uses the `sw-user` module and `user.*` privileges.
+Roles, business permissions and menu configuration use `sw-permissions`, `permissions.*` and `admin_menu.*` respectively.
+Role details combine explicit menu selection with the existing permission matrix and dependency handling.
+Role details now display special operations alongside their owning page and show the pages sharing a capability.
+Modules can declare an optional `resource` on an operation privilege role to associate it with a business permission key; this metadata does not grant access.
+The verified role write endpoint accepts a complete `menuIds` selection, saved atomically with role privileges.
+Menu selections do not grant page or API access, and an empty selection hides navigation.
+Role menu selections combine across roles; a role without selected menus contributes no navigation.
+The visible menu response includes `allowUnmanaged` to control client declaration fallbacks.
+Menu-side role assignment and the `/_action/admin-menu/assign-roles` endpoint were removed.
 
 ### Configurable administration menus
 

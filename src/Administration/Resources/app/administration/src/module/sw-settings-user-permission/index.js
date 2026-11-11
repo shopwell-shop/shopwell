@@ -22,7 +22,7 @@ Shopwell.Module.register('sw-settings-user-permission', {
             path: 'index',
             meta: {
                 parentPath: 'sw.settings.index.system',
-                privilege: 'users_and_permissions.viewer',
+                privilege: 'user.viewer',
             },
         },
     },
@@ -35,7 +35,7 @@ Shopwell.Module.register('sw-settings-user-permission', {
             path: 'sw.settings.user.permission.index',
             icon: 'regular-lock',
             position: 790,
-            privilege: 'users_and_permissions.viewer',
+            privilege: 'user.viewer',
         },
     ],
 
@@ -43,6 +43,6 @@ Shopwell.Module.register('sw-settings-user-permission', {
         group: 'system',
         to: 'sw.settings.user.permission.index',
         icon: 'regular-lock',
-        privilege: 'users_and_permissions.viewer',
+        privilege: 'user.viewer',
     },
 });

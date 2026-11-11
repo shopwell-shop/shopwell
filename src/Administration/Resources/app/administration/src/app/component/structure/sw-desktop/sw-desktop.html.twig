@@ -11,7 +11,10 @@
     </div>
 
     {% block sw_desktop_sidebar %}
-    <sw-admin-menu v-if="!noNavigation" />
+    <sw-admin-menu
+        v-if="!noNavigation"
+        @layout-sidebar-change="hasLayoutSidebar = $event"
+    />
     {% endblock %}
 
     {% block sw_desktop_content %}
