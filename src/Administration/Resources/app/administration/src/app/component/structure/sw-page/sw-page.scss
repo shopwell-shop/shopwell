@@ -261,6 +261,10 @@ $sw-page-search-bar-z-index: $z-index-sw-page-search-bar;
 }
 
 .sw-page.has--header-toolbar {
+    .sw-page__head-area:not(:has(.sw-page__smart-bar)) {
+        border-bottom: 0;
+    }
+
     .sw-page__smart-bar {
         grid-row: 1;
     }
