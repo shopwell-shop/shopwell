@@ -57,6 +57,25 @@
         overflow-y: auto;
     }
 
+    .sw-meteor-page__top-bar {
+        display: contents;
+    }
+
+    &.has--header-toolbar .sw-meteor-page__head-area {
+        padding-block-start: var(--scale-size-24);
+
+        &::before {
+            content: none;
+        }
+    }
+
+    &.has--header-toolbar.sw-meteor-page--hide-smart-bar:not(:has(.sw-meteor-page__smart-bar-tabs)) {
+        .sw-meteor-page__head-area {
+            padding-block-start: 0;
+            border-bottom: 0;
+        }
+    }
+
     .sw-meteor-page__head-area {
         color: var(--color-text-primary-default);
         position: sticky;

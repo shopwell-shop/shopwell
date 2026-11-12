@@ -11,25 +11,32 @@
             ref="pageHeader"
             class="sw-meteor-page__head-area"
         >
-            <div class="sw-meteor-page__head-area-top-bar-content">
-                <slot name="search-bar">
-                    {% block sw_meteor_page_seach_bar %}
-                    <sw-search-bar />
-                    {% endblock %}
-                </slot>
-            </div>
+            <Teleport
+                :to="adminToolbarTarget || 'body'"
+                :disabled="!adminToolbarTarget"
+            >
+                <div class="sw-meteor-page__top-bar">
+                    <div class="sw-meteor-page__head-area-top-bar-content">
+                        <slot name="search-bar">
+                            {% block sw_meteor_page_seach_bar %}
+                            <sw-search-bar />
+                            {% endblock %}
+                        </slot>
+                    </div>
 
-            <div class="sw-meteor-page__head-area-global-actions">
-                <sw-app-topbar-button />
+                    <div class="sw-meteor-page__head-area-global-actions">
+                        <sw-app-topbar-button />
 
-                <sw-help-center-v2 />
+                        <sw-help-center-v2 />
 
-                {% block sw_meteor_page_notification_center %}
-                <sw-notification-center />
-                {% endblock %}
+                        {% block sw_meteor_page_notification_center %}
+                        <sw-notification-center />
+                        {% endblock %}
 
-                <sw-app-topbar-sidebar />
-            </div>
+                        <sw-app-topbar-sidebar />
+                    </div>
+                </div>
+            </Teleport>
 
             <div
                 v-if="!hideSmartBar"

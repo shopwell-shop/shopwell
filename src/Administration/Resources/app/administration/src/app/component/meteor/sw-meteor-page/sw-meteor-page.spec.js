@@ -3,6 +3,7 @@
  */
 
 import { mount } from '@vue/test-utils';
+import { shallowRef } from 'vue';
 import 'src/app/component/meteor/sw-meteor-page';
 import 'src/app/component/base/sw-tabs';
 import 'src/app/component/base/sw-tabs-item';
@@ -31,9 +32,10 @@ const pageTabsSlotWithTitle = `
 </sw-tabs-item>
 `;
 
-async function createWrapper(slotsData = {}, { routeName = undefined } = {}) {
+async function createWrapper(slotsData = {}, { routeName = undefined, toolbarTarget = shallowRef(null) } = {}) {
     return mount(await wrapTestComponent('sw-meteor-page', { sync: true }), {
         global: {
+            provide: { adminToolbarTarget: toolbarTarget },
             stubs: {
                 'sw-search-bar': true,
                 'sw-notification-center': true,
@@ -120,6 +122,56 @@ describe('src/app/component/meteor/sw-meteor-page', () => {
                 );
             },
         });
+    });
+
+    it('moves the toolbar to the navigation header and back without resetting its contents', async () => {
+        const destination = document.createElement('div');
+        document.body.appendChild(destination);
+        const toolbarTarget = shallowRef(null);
+        const wrapper = await createWrapper({ 'search-bar': '<input aria-label="Search extensions" />' }, { toolbarTarget });
+        const search = wrapper.get('input');
+        const actions = wrapper.get('.sw-meteor-page__head-area-global-actions').element;
+        await search.setValue('payment');
+
+        try {
+            toolbarTarget.value = destination;
+            await flushPromises();
+
+            expect(destination.contains(search.element)).toBe(true);
+            expect(destination.contains(actions)).toBe(true);
+            expect(wrapper.find('input').exists()).toBe(false);
+            expect(wrapper.classes()).toContain('has--header-toolbar');
+            expect(wrapper.find('.sw-meteor-page__smart-bar').exists()).toBe(true);
+
+            toolbarTarget.value = null;
+            await flushPromises();
+
+            expect(wrapper.get('input').element).toBe(search.element);
+            expect(wrapper.get('input').element.value).toBe('payment');
+            expect(wrapper.get('.sw-meteor-page__head-area-global-actions').element).toBe(actions);
+            expect(wrapper.classes()).not.toContain('has--header-toolbar');
+            expect(destination.children).toHaveLength(0);
+        } finally {
+            wrapper.unmount();
+            destination.remove();
+        }
+    });
+
+    it('renders the initial toolbar in the navigation header and removes it when leaving the page', async () => {
+        const destination = document.createElement('div');
+        document.body.appendChild(destination);
+        const wrapper = await createWrapper({}, { toolbarTarget: shallowRef(destination) });
+
+        try {
+            expect(destination.querySelector('sw-search-bar-stub')).not.toBeNull();
+            expect(destination.querySelector('sw-help-center-v2-stub')).not.toBeNull();
+            expect(destination.querySelector('sw-notification-center-stub')).not.toBeNull();
+            expect(wrapper.find('.sw-meteor-page__head-area-global-actions').exists()).toBe(false);
+        } finally {
+            wrapper.unmount();
+            expect(destination.children).toHaveLength(0);
+            destination.remove();
+        }
     });
 
     it('should be in full width', async () => {

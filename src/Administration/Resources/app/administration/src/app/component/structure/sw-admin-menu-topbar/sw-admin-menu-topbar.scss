@@ -124,18 +124,21 @@
         flex: 0 0 auto;
         min-width: 0;
 
-        .sw-page__top-bar {
+        .sw-page__top-bar,
+        .sw-meteor-page__top-bar {
             display: flex;
             align-items: center;
             gap: var(--scale-size-12);
         }
 
-        .sw-page__search-bar {
+        .sw-page__search-bar,
+        .sw-meteor-page__head-area-top-bar-content {
             width: clamp(240px, 18vw, 300px);
             min-width: 0;
         }
 
-        .sw-page__top-bar-actions {
+        .sw-page__top-bar-actions,
+        .sw-meteor-page__head-area-global-actions {
             display: flex;
             align-items: center;
             gap: var(--scale-size-4);

@@ -37,7 +37,10 @@ type VNodeChildrenWithDefaultSlot = {
 export default Shopwell.Component.wrapComponentConfig({
     template,
 
-    inject: ['feature'],
+    inject: {
+        feature: { from: 'feature' },
+        adminToolbarTarget: { default: null },
+    },
 
     emits: ['new-item-active'],
 
@@ -77,6 +80,7 @@ export default Shopwell.Component.wrapComponentConfig({
     computed: {
         pageClasses(): object {
             return {
+                'has--header-toolbar': !!this.adminToolbarTarget,
                 'sw-meteor-page--full-width': this.fullWidth,
                 'sw-meteor-page--hide-smart-bar': this.hideSmartBar,
             };
