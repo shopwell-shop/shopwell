@@ -5,6 +5,7 @@ import { mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import type EntityCollection from 'src/core/data/entity-collection.data';
 import type Criteria from 'src/core/data/criteria.data';
+import FilterFactory from 'src/core/data/filter-factory.data';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- double of a framework service, registered once for the file
 Shopwell.Service().register('filterService', () => {
@@ -21,7 +22,7 @@ const STATES = [
 /**
  * The filter set the panel hands over when the merchant applies one.
  */
-const APPLIED_FILTERS = [{ type: 'equalsAny', field: 'paymentOrder.channelTechnicalName', value: ['wechat_h5'] }];
+const APPLIED_FILTERS = [{ type: 'equalsAny', field: 'paymentAttempt.channelTechnicalName', value: ['wechat_h5'] }];
 
 function buildRefunds(): Array<Record<string, unknown>> {
     return [
@@ -34,7 +35,8 @@ function buildRefunds(): Array<Record<string, unknown>> {
             currency: 'CNY',
             refundedAt: '2026-01-03T00:00:00.000Z',
             createdAt: '2026-01-02T03:04:05.000Z',
-            paymentOrder: { paymentNo: 'P-1', outTradeNo: 'T-1', channelTechnicalName: 'wechat_h5' },
+            paymentOrder: { paymentNo: 'P-1', outTradeNo: 'T-1' },
+            paymentAttempt: { channelTechnicalName: 'wechat_h5' },
         },
     ];
 }
@@ -45,6 +47,8 @@ function buildRefunds(): Array<Record<string, unknown>> {
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
 }
+
+const wrappers: VueWrapper[] = [];
 
 async function createWrapper(rows: Array<Record<string, unknown>> = buildRefunds()): Promise<{
     wrapper: VueWrapper;
@@ -127,9 +131,7 @@ async function createWrapper(rows: Array<Record<string, unknown>> = buildRefunds
                         return entity === 'state_machine_state' ? { search: stateSearch } : { search };
                     },
                 },
-                filterFactory: {
-                    create: (_entity: string, filters: Record<string, unknown>) => Object.values(filters),
-                },
+                filterFactory: new FilterFactory(),
                 searchRankingService: {
                     getSearchFieldsByEntity: () => Promise.resolve({}),
                     buildSearchQueriesForEntity: (_searchFields: unknown, _term: string, criteria: unknown) => criteria,
@@ -150,6 +152,7 @@ async function createWrapper(rows: Array<Record<string, unknown>> = buildRefunds
         },
     });
 
+    wrappers.push(wrapper);
     await flushPromises();
 
     return { wrapper, search, stateSearch };
@@ -177,6 +180,10 @@ describe('module/sw-payment/page/sw-payment-refund-list', () => {
         (globalThis as { activeAclRoles?: string[] }).activeAclRoles = ['payment_refund.viewer'];
     });
 
+    afterEach(() => {
+        wrappers.splice(0).forEach((wrapper) => wrapper.unmount());
+    });
+
     it('should hand the panel one filter per filterable column', async () => {
         const { wrapper } = await createWrapper();
 
@@ -188,6 +195,11 @@ describe('module/sw-payment/page/sw-payment-refund-list', () => {
             'channel-filter',
             'state-filter',
         ]);
+        expect(panel.props('filters')).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ name: 'channel-filter', property: 'paymentAttempt.channelTechnicalName' }),
+            ]),
+        );
         expect(panel.props('filters')).toHaveLength(4);
     });
 

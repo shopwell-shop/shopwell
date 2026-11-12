@@ -5,6 +5,7 @@ import { mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import type EntityCollection from 'src/core/data/entity-collection.data';
 import type Criteria from 'src/core/data/criteria.data';
+import FilterFactory from 'src/core/data/filter-factory.data';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- double of a framework service, registered once for the file
 Shopwell.Service().register('filterService', () => {
@@ -26,7 +27,11 @@ const SEARCH_TERM = 'P-1';
 /**
  * The filter set the panel hands over when the merchant applies one.
  */
-const APPLIED_FILTERS = [{ type: 'equals', field: 'stateId', value: 'state-paid' }];
+const APPLIED_FILTERS = [
+    { type: 'equals', field: 'stateId', value: 'state-paid' },
+    { type: 'contains', field: 'activeAttempt.channelTechnicalName', value: 'alipay_h5' },
+    { type: 'contains', field: 'activeAttempt.providerTechnicalName', value: 'alipay' },
+];
 
 function buildOrders(): Array<Record<string, unknown>> {
     return [
@@ -35,7 +40,7 @@ function buildOrders(): Array<Record<string, unknown>> {
             paymentNo: 'P-1',
             outTradeNo: 'T-1',
             stateId: 'state-paid',
-            channelTechnicalName: 'alipay_h5',
+            activeAttempt: { channelTechnicalName: 'alipay_h5', providerTechnicalName: 'alipay' },
             amount: 1234,
             currency: 'CNY',
             createdAt: '2026-01-02T03:04:05.000Z',
@@ -50,6 +55,8 @@ function buildOrders(): Array<Record<string, unknown>> {
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
 }
+
+const wrappers: VueWrapper[] = [];
 
 async function createWrapper(rows: Array<Record<string, unknown>> = buildOrders()): Promise<{
     wrapper: VueWrapper;
@@ -142,9 +149,7 @@ async function createWrapper(rows: Array<Record<string, unknown>> = buildOrders(
                         return entity === 'state_machine_state' ? { search: stateSearch } : { search };
                     },
                 },
-                filterFactory: {
-                    create: (_entity: string, filters: Record<string, unknown>) => Object.values(filters),
-                },
+                filterFactory: new FilterFactory(),
                 searchRankingService: {
                     getSearchFieldsByEntity: () => Promise.resolve({}),
                     buildSearchQueriesForEntity: (_searchFields: unknown, _term: string, criteria: unknown) => criteria,
@@ -162,6 +167,7 @@ async function createWrapper(rows: Array<Record<string, unknown>> = buildOrders(
         },
     });
 
+    wrappers.push(wrapper);
     await flushPromises();
 
     return { wrapper, search, stateSearch, router };
@@ -198,6 +204,10 @@ describe('module/sw-payment/page/sw-payment-order-list', () => {
         (globalThis as { activeAclRoles?: string[] }).activeAclRoles = ['payment_order.viewer'];
     });
 
+    afterEach(() => {
+        wrappers.splice(0).forEach((wrapper) => wrapper.unmount());
+    });
+
     /**
      * The panel renders the defaults in the order the merchant sees them, and a stored selection
      * refers to those names.
@@ -215,6 +225,12 @@ describe('module/sw-payment/page/sw-payment-order-list', () => {
             'channel-filter',
             'state-filter',
         ]);
+        expect(panel.props('filters')).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ name: 'channel-filter', property: 'activeAttempt.channelTechnicalName' }),
+                expect.objectContaining({ name: 'provider-filter', property: 'activeAttempt.providerTechnicalName' }),
+            ]),
+        );
         expect(panel.props('filters')).toHaveLength(6);
     });
 
@@ -225,6 +241,12 @@ describe('module/sw-payment/page/sw-payment-order-list', () => {
         expect(stateSearch).toHaveBeenCalledTimes(1);
         expect(wrapper.findComponent({ name: 'SwEntityListing' }).props('isLoading')).toBe(false);
         expect(cells(wrapper, 'cell-app')).toEqual(['演示应用']);
+        expect(wrapper.findComponent({ name: 'SwEntityListing' }).props('columns')).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ property: 'activeAttempt.providerTechnicalName' }),
+                expect.objectContaining({ property: 'activeAttempt.channelTechnicalName' }),
+            ]),
+        );
     });
 
     /**
@@ -246,7 +268,9 @@ describe('module/sw-payment/page/sw-payment-order-list', () => {
         const criteria = lastCriteria(search);
 
         expect(criteria.sortings).toEqual([{ field: 'createdAt', order: 'DESC', naturalSorting: false }]);
-        expect(criteria.associations.map((association) => association.association)).toContain('paymentApp');
+        expect(criteria.associations.map((association) => association.association)).toEqual(
+            expect.arrayContaining(['paymentApp', 'activeAttempt']),
+        );
         expect(wrapper.findComponent({ name: 'SwEntityListing' }).props('sortBy')).toBe('createdAt');
         expect(wrapper.findComponent({ name: 'SwEntityListing' }).props('sortDirection')).toBe('DESC');
     });

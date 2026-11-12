@@ -11,8 +11,7 @@ function buildOrder(overrides: Record<string, unknown> = {}): Record<string, unk
         paidAmount: 0,
         refundedAmount: 0,
         currency: 'CNY',
-        providerTechnicalName: 'alipay',
-        channelTechnicalName: 'alipay_h5',
+        activeAttempt: { providerTechnicalName: 'alipay', channelTechnicalName: 'alipay_h5' },
         paidAt: '2026-01-02T04:00:00.000Z',
         paymentApp: { name: '演示应用', technicalName: 'demo' },
         ...overrides,
@@ -96,6 +95,13 @@ describe('module/sw-payment/component/sw-payment-order-summary', () => {
         expect(fact(wrapper, 2)).toBe('sw-payment.order.detail.labelProvider alipay');
         expect(fact(wrapper, 3)).toBe('sw-payment.order.detail.labelChannel alipay_h5');
         expect(fact(wrapper, 4)).toBe('sw-payment.order.detail.labelPaymentApp 演示应用');
+    });
+
+    it('renders an unattempted order without route information', async () => {
+        const wrapper = await createWrapper(buildOrder({ activeAttempt: null }));
+
+        expect(fact(wrapper, 2)).toBe('sw-payment.order.detail.labelProvider –');
+        expect(fact(wrapper, 3)).toBe('sw-payment.order.detail.labelChannel –');
     });
 
     it('should name the app of the order and fall back to a dash', async () => {

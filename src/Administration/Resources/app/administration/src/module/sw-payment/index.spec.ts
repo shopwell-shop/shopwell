@@ -17,6 +17,10 @@ describe('sw-payment registration', () => {
         expect(route?.meta).toEqual(expect.objectContaining({ privilege: 'payment_order.viewer' }));
     });
 
+    it.each(['payment_order.viewer', 'payment_refund.viewer'])('allows %s to read payment route information', (role) => {
+        expect(Shopwell.Service('privileges').getPrivileges(role)()).toContain('payment_attempt:read');
+    });
+
     it.each([
         'sw-payment-order-list',
         'sw-payment-order-detail',

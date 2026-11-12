@@ -174,7 +174,7 @@
                         <dd>{{ formatAmount(order.refundedAmount, order.currency) }}</dd>
 
                         <dt>{{ $t('sw-payment.refund.detail.labelChannel') }}</dt>
-                        <dd>{{ order.channelTechnicalName }}</dd>
+                        <dd>{{ refund.paymentAttempt?.channelTechnicalName || '–' }}</dd>
 
                         <dt>{{ $t('sw-payment.refund.detail.labelPaymentApp') }}</dt>
                         <dd>{{ paymentAppLabel() }}</dd>

@@ -30,19 +30,6 @@
 
     {% block sw_permissions_menu_list_smart_bar_actions %}
     <template #smart-bar-actions>
-        {% block sw_permissions_menu_list_smart_bar_actions_cancel %}
-        <mt-button
-            v-if="draft"
-            class="sw-permissions-menu-list__button-cancel"
-            size="default"
-            variant="secondary"
-            :disabled="isBusy || undefined"
-            @click="onCancelEdit"
-        >
-            {{ $t('global.default.cancel') }}
-        </mt-button>
-        {% endblock %}
-
         {% block sw_permissions_menu_list_smart_bar_actions_save %}
         <mt-button
             v-if="draft && canSaveDraft"

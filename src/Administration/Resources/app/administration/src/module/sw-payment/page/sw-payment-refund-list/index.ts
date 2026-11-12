@@ -7,7 +7,6 @@
  * never certain -, so the association is part of every request and the column shows the number of the
  * payment instead of its id.
  */
-import { defineComponent } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-payment-refund-list.html.twig';
@@ -37,15 +36,8 @@ type FilterDefinition = {
     labelProperty?: string;
 };
 
-interface FilterFactory {
-    create: (entityName: string, filters: Record<string, FilterDefinition>) => FilterDefinition[];
-}
-
-/**
- * The service that merges the filters a merchant stored on the server into a criteria.
- */
 interface FilterService {
-    mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
+    mergeWithStoredFilters(storeKey: string, criteria: CriteriaType): Promise<CriteriaType>;
 }
 
 /**
@@ -60,15 +52,9 @@ const DEFAULT_FILTERS: string[] = [
 ];
 
 /**
- * The filter factory is injected but not part of the typed service container, so it is read through
- * the component instance instead of widening the global type for one page.
+ * @private
  */
-function refundFilterFactory(vm: unknown): FilterFactory {
-    return (vm as { filterFactory: FilterFactory }).filterFactory;
-}
-
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- page component, rendered through the module route
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: ['repositoryFactory', 'acl', 'filterFactory'],
@@ -145,7 +131,7 @@ export default defineComponent({
                     placeholder: this.$t('sw-payment.refund.filters.outRefundNoFilter.placeholder'),
                 },
                 'channel-filter': {
-                    property: 'paymentOrder.channelTechnicalName',
+                    property: 'paymentAttempt.channelTechnicalName',
                     type: 'string-filter',
                     label: this.$t('sw-payment.refund.filters.channelFilter.label'),
                     placeholder: this.$t('sw-payment.refund.filters.channelFilter.placeholder'),
@@ -163,7 +149,7 @@ export default defineComponent({
         },
 
         listFilters(): FilterDefinition[] {
-            return refundFilterFactory(this).create('payment_refund', this.listFilterOptions);
+            return this.filterFactory.create('payment_refund', this.listFilterOptions) as FilterDefinition[];
         },
 
         /**
@@ -246,9 +232,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            // the filter service is not part of the typed service container
             const filterService = Shopwell.Service('filterService') as FilterService;
-
             const criteria = await filterService.mergeWithStoredFilters(this.storeKey, this.criteria);
 
             this.activeFilterNumber = criteria.filters.length;

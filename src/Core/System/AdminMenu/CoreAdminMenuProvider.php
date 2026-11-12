@@ -153,14 +153,6 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 parent: 'sw-payment',
                 privilege: 'payment_refund.viewer',
             ),
-            new AdminMenuDefinitionStruct(
-                internalKey: 'sw-payments',
-                type: AdminMenuItemDefinition::TYPE_FOLDER,
-                title: 'global.sw-admin-menu.navigation.mainMenuItemShopwellPayments',
-                icon: 'regular-shopwell-payments',
-                position: 36,
-                privilege: 'sw-payments.viewer',
-            ),
 
             // Customers
             new AdminMenuDefinitionStruct(

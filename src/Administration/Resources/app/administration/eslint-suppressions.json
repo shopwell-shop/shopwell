@@ -8040,11 +8040,6 @@
       "count": 2
     }
   },
-  "src/module/sw-payments/index.ts": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    }
-  },
   "src/module/sw-privilege-error/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 2

@@ -40,14 +40,14 @@
         {% block sw_payment_order_summary_fact_provider %}
         <div class="sw-payment-order-summary__fact">
             <dt>{{ $t('sw-payment.order.detail.labelProvider') }}</dt>
-            <dd>{{ order.providerTechnicalName }}</dd>
+            <dd>{{ order.activeAttempt?.providerTechnicalName || '–' }}</dd>
         </div>
         {% endblock %}
 
         {% block sw_payment_order_summary_fact_channel %}
         <div class="sw-payment-order-summary__fact">
             <dt>{{ $t('sw-payment.order.detail.labelChannel') }}</dt>
-            <dd>{{ order.channelTechnicalName }}</dd>
+            <dd>{{ order.activeAttempt?.channelTechnicalName || '–' }}</dd>
         </div>
         {% endblock %}
 

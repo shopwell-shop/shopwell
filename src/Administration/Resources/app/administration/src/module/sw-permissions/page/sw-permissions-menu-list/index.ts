@@ -401,18 +401,6 @@ export default Shopwell.Component.wrapComponentConfig({
             this.startDraft(createDraft({ parentId: item.id }));
         },
 
-        onCancelEdit() {
-            if (this.isBusy) return;
-            if (this.selectedId) {
-                this.initDraft(findNode(this.tree, this.selectedId));
-
-                return;
-            }
-
-            this.draft = null;
-            this.draftBaseline = null;
-        },
-
         updateDraft(fields: Partial<MenuDraft>) {
             if (this.draft && this.canEditDraft) {
                 Object.assign(this.draft, fields);

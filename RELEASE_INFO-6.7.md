@@ -95,6 +95,18 @@ Extensions and headless frontends that convert `payload.value` into the cart cur
 
 ## Administration
 
+### Removed the empty Shopwell Payments navigation module
+
+The `sw-payments` placeholder module, `sw.payments.index` route and `sw-payments.*` privilege mapping were removed.
+Extensions must register their own functional payment pages instead of attaching navigation to this placeholder.
+The `sw-payment` payment orders and refunds module remains available.
+
+### Payment route filters
+
+Payment order filters and columns read `activeAttempt.channelTechnicalName` and `activeAttempt.providerTechnicalName`.
+Refund channel filters read `paymentAttempt.channelTechnicalName`, so they retain the route used by the refunded payment attempt.
+The `payment_order.viewer` and `payment_refund.viewer` mappings include `payment_attempt:read`.
+
 ### Administration navigation layouts
 
 Administrators can choose sidebar, top, or combined navigation under My profile > User interface and apply the choice by saving their profile.

@@ -28,6 +28,7 @@ Shopwell.Service('privileges')
             viewer: {
                 privileges: [
                     'payment_order:read',
+                    'payment_attempt:read',
                     'payment_transaction:read',
                     'payment_refund:read',
                     'payment_notification:read',
@@ -48,6 +49,7 @@ Shopwell.Service('privileges')
                 privileges: [
                     'payment_refund:read',
                     'payment_order:read',
+                    'payment_attempt:read',
                     'payment_app:read',
                     'state_machine_state:read',
                 ],

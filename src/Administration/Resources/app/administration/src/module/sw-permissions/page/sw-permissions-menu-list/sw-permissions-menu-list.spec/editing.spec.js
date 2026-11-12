@@ -32,20 +32,6 @@ describe('module/sw-permissions/page/sw-permissions-menu-list (editing)', () => 
         expect(wrapper.find('.sw-permissions-menu-list__button-save').exists()).toBe(true);
     });
 
-    it('cancelling restores the stored state of the selected entry', async () => {
-        wrapper = await createWrapper();
-
-        await selectFirstChild(wrapper);
-        await typeTitle(wrapper, 'Renamed');
-        await wrapper.find('.sw-permissions-menu-list__button-cancel').trigger('click');
-        await flushPromises();
-
-        expect(treeStub(wrapper).props('selectedId')).toBe('products');
-        expect(wrapper.find('.sw-permissions-menu-list__field-title').element.value).toBe(
-            'sw-product.general.mainMenuItemOverview',
-        );
-    });
-
     it('saves the labels for the displayed language instead of the client language', async () => {
         wrapper = await createWrapper();
 
@@ -115,9 +101,6 @@ describe('module/sw-permissions/page/sw-permissions-menu-list (editing)', () => 
         await wrapper.find('.tree-add-child').trigger('click');
         expect(wrapper.find('.sw-permissions-menu-list__field-parent').element.value).toBe('catalog');
 
-        await wrapper.find('.sw-permissions-menu-list__button-cancel').trigger('click');
-        await flushPromises();
-
         await wrapper.find('.tree-create-below').trigger('click');
 
         expect(treeStub(wrapper).props('selectedId')).toBeNull();
@@ -144,8 +127,6 @@ describe('module/sw-permissions/page/sw-permissions-menu-list (editing)', () => 
         expect(wrapper.find('.sw-permissions-menu-list__field-group').exists()).toBe(false);
         expect(wrapper.find('.sw-permissions-menu-list__field-group-title').exists()).toBe(false);
 
-        await wrapper.find('.sw-permissions-menu-list__button-cancel').trigger('click');
-        await flushPromises();
         await selectFirstChild(wrapper);
 
         expect(wrapper.find('.sw-permissions-menu-list__field-group').exists()).toBe(false);

@@ -7,7 +7,6 @@
  * number the merchant's own system gave it, and the state of the money. It is read-only - money is
  * moved by the app that called the gateway, not by an operator.
  */
-import { defineComponent } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-payment-order-list.html.twig';
@@ -37,15 +36,8 @@ type FilterDefinition = {
     labelProperty?: string;
 };
 
-interface FilterFactory {
-    create: (entityName: string, filters: Record<string, FilterDefinition>) => FilterDefinition[];
-}
-
-/**
- * The service that merges the filters a merchant stored on the server into a criteria.
- */
 interface FilterService {
-    mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
+    mergeWithStoredFilters(storeKey: string, criteria: CriteriaType): Promise<CriteriaType>;
 }
 
 /**
@@ -62,15 +54,9 @@ const DEFAULT_FILTERS: string[] = [
 ];
 
 /**
- * The filter factory is injected but not part of the typed service container, so it is read through
- * the component instance instead of widening the global type for one page.
+ * @private
  */
-function paymentFilterFactory(vm: unknown): FilterFactory {
-    return (vm as { filterFactory: FilterFactory }).filterFactory;
-}
-
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- page component, rendered through the module route
-export default defineComponent({
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: ['repositoryFactory', 'acl', 'filterFactory'],
@@ -121,6 +107,7 @@ export default defineComponent({
             criteria.setTerm(this.term ?? '');
             criteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection, this.naturalSorting));
             criteria.addAssociation('paymentApp');
+            criteria.addAssociation('activeAttempt');
 
             // the filters of the panel are part of the criteria instead of being written into a
             // cached instance: this one is rebuilt per search, and a value written elsewhere would
@@ -154,13 +141,13 @@ export default defineComponent({
                     labelProperty: 'name',
                 },
                 'channel-filter': {
-                    property: 'channelTechnicalName',
+                    property: 'activeAttempt.channelTechnicalName',
                     type: 'string-filter',
                     label: this.$t('sw-payment.order.filters.channelFilter.label'),
                     placeholder: this.$t('sw-payment.order.filters.channelFilter.placeholder'),
                 },
                 'provider-filter': {
-                    property: 'providerTechnicalName',
+                    property: 'activeAttempt.providerTechnicalName',
                     type: 'string-filter',
                     label: this.$t('sw-payment.order.filters.providerFilter.label'),
                     placeholder: this.$t('sw-payment.order.filters.providerFilter.placeholder'),
@@ -178,7 +165,7 @@ export default defineComponent({
         },
 
         listFilters(): FilterDefinition[] {
-            return paymentFilterFactory(this).create('payment_order', this.listFilterOptions);
+            return this.filterFactory.create('payment_order', this.listFilterOptions) as FilterDefinition[];
         },
 
         /**
@@ -228,12 +215,12 @@ export default defineComponent({
                     allowResize: true,
                 },
                 {
-                    property: 'providerTechnicalName',
+                    property: 'activeAttempt.providerTechnicalName',
                     label: 'sw-payment.order.list.columnProvider',
                     allowResize: true,
                 },
                 {
-                    property: 'channelTechnicalName',
+                    property: 'activeAttempt.channelTechnicalName',
                     label: 'sw-payment.order.list.columnChannel',
                     allowResize: true,
                 },
@@ -276,9 +263,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            // the filter service is not part of the typed service container
             const filterService = Shopwell.Service('filterService') as FilterService;
-
             const criteria = await filterService.mergeWithStoredFilters(this.storeKey, this.criteria);
 
             this.activeFilterNumber = criteria.filters.length;

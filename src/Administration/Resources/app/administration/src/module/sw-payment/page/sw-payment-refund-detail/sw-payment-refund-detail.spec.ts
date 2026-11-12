@@ -19,6 +19,7 @@ function buildRefund(overrides: Record<string, unknown> = {}): Record<string, un
         updatedAt: '2026-01-05T02:00:00.000Z',
         requestPayload: { out_request_no: 'OR-1' },
         responsePayload: { code: '10000' },
+        paymentAttempt: { channelTechnicalName: 'alipay_h5' },
         paymentOrder: {
             id: 'order-1',
             paymentNo: 'P-1',
@@ -27,7 +28,6 @@ function buildRefund(overrides: Record<string, unknown> = {}): Record<string, un
             paidAmount: 1234,
             refundedAmount: 500,
             currency: 'CNY',
-            channelTechnicalName: 'alipay_h5',
             paidAt: '2026-01-02T04:00:00.000Z',
             paymentApp: { name: '演示应用', technicalName: 'demo' },
         },

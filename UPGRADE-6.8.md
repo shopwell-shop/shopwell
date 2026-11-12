@@ -8,6 +8,12 @@ Update integration imports from `Shopwell\Core\System\Payment\Integration\Paypal
 Update calls to `PaymentTransferRecipientService::markStripeAccountReady()` to `markProviderAccountReady()`.
 The former Core sandbox account initialization and integration namespace aliases are not provided.
 
+## Shopwell Payments placeholder
+
+The empty `sw-payments` Administration module, `sw.payments.index` route and `sw-payments.*` privilege mapping were removed.
+Extensions that used this placeholder as a navigation parent must register their own functional menu entry and page access privileges.
+The `sw-payment` payment orders and refunds module remains available.
+
 ## User and permission modules
 
 The `sw-system` Administration module was replaced by `sw-user` and `sw-permissions`.

@@ -16,6 +16,14 @@ describe('menu editing safeguards', () => {
         jest.restoreAllMocks();
     });
 
+    it('offers save and create without a redundant toolbar cancel action', async () => {
+        wrapper = await createWrapper();
+        await selectFirstChild(wrapper);
+        expect(wrapper.find('.sw-permissions-menu-list__button-save').exists()).toBe(true);
+        expect(wrapper.find('.sw-permissions-menu-list__button-create').exists()).toBe(true);
+        expect(wrapper.find('.sw-permissions-menu-list__button-cancel').exists()).toBe(false);
+    });
+
     it('preserves an edited draft until switching is explicitly confirmed', async () => {
         wrapper = await createWrapper();
         await selectFirstChild(wrapper);

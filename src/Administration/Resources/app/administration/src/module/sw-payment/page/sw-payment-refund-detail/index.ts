@@ -117,6 +117,7 @@ export default defineComponent({
         loadRefund(): Promise<void> {
             const criteria: CriteriaType = new Criteria(1, 1);
             criteria.addAssociation('paymentOrder');
+            criteria.addAssociation('paymentAttempt');
             criteria.addAssociation('paymentOrder.paymentApp');
 
             this.isLoading = true;

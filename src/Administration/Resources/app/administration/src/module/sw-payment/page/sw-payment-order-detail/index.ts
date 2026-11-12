@@ -292,6 +292,7 @@ export default defineComponent({
         loadOrder(): Promise<void> {
             const criteria: CriteriaType = new Criteria(1, 1);
             criteria.addAssociation('paymentApp');
+            criteria.addAssociation('activeAttempt');
             criteria.addAssociation('transactions');
             criteria.addAssociation('refunds');
             criteria.addAssociation('notifications');

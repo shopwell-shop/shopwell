@@ -45,6 +45,18 @@ class CoreAdminMenuProviderTest extends TestCase
         );
     }
 
+    public function testPaymentNavigationContainsRealPagesWithoutTheEmptyPaymentsPlaceholder(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+
+        static::assertArrayNotHasKey('sw-payments', $definitions);
+        static::assertArrayHasKey('sw-payment', $definitions);
+        static::assertSame('sw-payment', $definitions['sw.payment.index']->parent);
+        static::assertSame('payment_order.viewer', $definitions['sw.payment.index']->privilege);
+        static::assertSame('sw-payment', $definitions['sw.payment.refund']->parent);
+        static::assertSame('payment_refund.viewer', $definitions['sw.payment.refund']->privilege);
+    }
+
     public function testMembershipSettingsCanBeAssignedToRoleMenus(): void
     {
         $definitions = array_column($this->definitions, null, 'internalKey');

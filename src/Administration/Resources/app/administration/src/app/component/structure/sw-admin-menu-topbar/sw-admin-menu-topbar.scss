@@ -114,7 +114,7 @@
     }
 
     &__more-panel .sw-admin-menu-item--topbar {
-        .sw-admin-menu__navigation-link {
+        > .sw-admin-menu__navigation-item-row > .sw-admin-menu__navigation-link {
             width: 100%;
             max-width: none;
         }
