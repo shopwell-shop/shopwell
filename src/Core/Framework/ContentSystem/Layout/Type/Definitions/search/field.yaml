@@ -1,0 +1,20 @@
+meta:
+  label: "Product search"
+  description: "Search the product catalog with the storefront suggestion service."
+  icon: "regular-search"
+  category: "commerce"
+  priority: 90
+properties:
+  placeholder:
+    type: string
+    translatable: true
+    title: "Placeholder"
+    description: "Hint shown in the search field."
+    adminUI:
+      component: "text"
+
+slots:
+  - name: related
+    description: "Optional editorial search links below the input. These are curated content, not analytics or live suggestions."
+    allowList:
+      - "Sw:Content:Text"

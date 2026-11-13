@@ -1,0 +1,84 @@
+meta:
+  label: "Teaser"
+  description: "An image, heading, description and optional link for categories, campaigns or articles."
+  icon: "regular-image-text"
+  category: "content"
+  priority: 95
+
+properties:
+  title:
+    type: string
+    translatable: true
+    title: "Heading"
+    description: "Visible heading for the teaser."
+    default: ""
+    adminUI:
+      component: "text"
+  description:
+    type: string
+    translatable: true
+    title: "Description"
+    description: "Plain text summary below the heading."
+    default: ""
+    adminUI:
+      component: "textarea"
+  media:
+    type: Shopwell\Core\Content\Media\MediaEntity
+    title: "Image"
+    description: "Optional teaser media."
+    resolvedBy: mediaId
+    adminUI:
+      component: "media-field"
+  url:
+    type: string
+    title: "Link URL"
+    description: "Destination for the teaser action."
+    default: ""
+    adminUI:
+      component: "text"
+  linkLabel:
+    type: string
+    translatable: true
+    title: "Link label"
+    description: "Accessible text describing the destination."
+    default: ""
+    adminUI:
+      component: "text"
+  layout:
+    type: string
+    title: "Layout"
+    description: "Image card, split feature, centered hero, compact promotion or icon category tile."
+    default: "card"
+    enum: ["card", "split", "hero", "compact", "icon"]
+    adminUI:
+      component: "select"
+  headingLevel:
+    type: integer
+    title: "Heading level"
+    description: "Heading rank within the surrounding page."
+    default: 2
+    enum: [1, 2, 3, 4]
+    adminUI:
+      component: "select"
+  tone:
+    type: string
+    title: "Surface tone"
+    description: "A subtle or emphasized surface with matching readable text."
+    default: "subtle"
+    enum: ["subtle", "emphasis"]
+    adminUI:
+      component: "select"
+  linkStyle:
+    type: string
+    title: "Link style"
+    description: "A text link, primary button or link covering the entire teaser."
+    default: "link"
+    enum: ["link", "button", "stretched"]
+    adminUI:
+      component: "select"
+  icon:
+    type: string
+    title: "Icon"
+    description: "Optional storefront icon shown instead of an image."
+    adminUI:
+      component: "text"

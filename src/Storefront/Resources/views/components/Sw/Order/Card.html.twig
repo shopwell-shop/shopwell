@@ -1,0 +1,79 @@
+{% props
+    order,
+    compact = false,
+    expanded = false,
+    slots = [],
+%}
+
+{% set payment = order.primaryOrderTransaction ?? order.transactions.last %}
+{% set delivery = order.primaryOrderDelivery ?? order.deliveries.first %}
+{% set productItems = order.lineItems.elements|filter(item => item.type == 'product') %}
+{% set currency = order.currency.isoCode %}
+{% set state = order.stateMachineState.technicalName %}
+{% set canPay = state != 'cancelled' and payment.stateMachineState.technicalName in ['open', 'failed', 'reminded', 'unconfirmed', 'in_progress', 'paid_partially'] %}
+{% set detailRoute = context.customer and not context.customer.guest ? path('frontend.account.order.page', { orderId: order.id }) : path('frontend.account.order.single.page', { deepLinkCode: order.deepLinkCode }) %}
+{% set cardCVA = cva({ base: 'sw-order-card card', variants: { compact: { true: 'is--compact' } } }) %}
+{% set attributeDefaults = { class: cardCVA.apply({ compact }) } %}
+
+<article {{ attributes.defaults(attributeDefaults) }}>
+    {% block header %}
+        <header class="sw-order-card__header card-header">
+            <div class="sw-order-card__identity">
+                <a class="sw-order-card__number" href="{{ detailRoute }}">{{ order.orderNumber }}</a>
+                <time datetime="{{ order.orderDateTime|date('c') }}">{{ order.orderDateTime|format_datetime('medium', 'short') }}</time>
+            </div>
+            <span class="sw-order-card__status badge text-bg-{{ state == 'completed' ? 'success' : (state == 'cancelled' ? 'secondary' : 'primary') }}">
+                {{ order.stateMachineState.translated.name }}
+            </span>
+        </header>
+    {% endblock %}
+
+    {% block products %}
+        <div class="sw-order-card__items card-body">
+            <twig:Slot name="products">
+                {% for item in productItems|slice(0, compact ? 1 : productItems|length) %}
+                    <div class="sw-order-card__item">
+                        <div class="sw-order-card__image">
+                            <twig:Sw:Media:Image :media="item.cover" :maxImageWidth="96" />
+                        </div>
+                        <div class="sw-order-card__product">
+                            <span class="sw-order-card__product-name">{{ item.label }}</span>
+                            <small>{{ 'account.orderItemColumnQuantity'|trans }} {{ item.quantity }}{% if compact and productItems|length > 1 %} · {{ 'storefrontTheme.orderProductCount'|trans({ '%count%': productItems|length }) }}{% endif %}</small>
+                        </div>
+                        <strong class="sw-order-card__price">{{ item.totalPrice|currency(currencyIsoCode=currency) }}</strong>
+                    </div>
+                {% endfor %}
+            </twig:Slot>
+        </div>
+    {% endblock %}
+
+    {% block summary %}
+        <div class="sw-order-card__summary">
+            <span>{{ payment.stateMachineState.translated.name }}</span>
+            {% if delivery %}<span>{{ delivery.stateMachineState.translated.name }} · {{ delivery.shippingMethod.translated.name }}</span>{% endif %}
+        </div>
+    {% endblock %}
+
+    {% block actions %}
+        <footer class="sw-order-card__footer card-footer">
+            <div class="sw-order-card__total">
+                <small>{{ 'account.orderItemTotal'|trans }}</small>
+                <strong>{{ order.amountTotal|currency(currencyIsoCode=currency) }}</strong>
+            </div>
+            <div class="sw-order-card__actions">
+                <twig:Slot name="actions">
+                    <a class="sw-order-card__details btn btn-light" href="{{ detailRoute }}">{{ 'account.orderActionView'|trans }}</a>
+                    {% if canPay %}
+                        <a class="sw-order-card__pay btn btn-primary" href="{{ path('frontend.account.edit-order.page', { orderId: order.id }) }}">{{ 'account.orderStatusActionCompletePayment'|trans }}</a>
+                    {% endif %}
+                </twig:Slot>
+            </div>
+        </footer>
+    {% endblock %}
+
+    {% block details %}
+        {% if expanded %}
+            {% sw_include '@Storefront/storefront/page/account/order-history/order-detail.html.twig' with { expanded: true } %}
+        {% endif %}
+    {% endblock %}
+</article>

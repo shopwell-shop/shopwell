@@ -1,0 +1,75 @@
+{% props
+    formAction = path('frontend.search.page'),
+    suggestRoute = path('frontend.search.suggest'),
+    inputId = 'search-field-' ~ random(),
+    inputName = 'search',
+    placeholder = 'header.searchPlaceholder'|trans|striptags,
+    searchTerm = '',
+    minChars = shopwell.minSearchLength,
+    slots = [],
+%}
+
+{% set attributeDefaults = {
+    action: formAction,
+    method: 'get',
+    class: 'sw-search-field header-search-form js-search-form',
+    'data-search-widget': 'true',
+    'data-search-widget-options': { searchWidgetMinChars: minChars }|json_encode,
+    'data-url': suggestRoute ~ '?search=',
+} %}
+
+<form {{ attributes.defaults(attributeDefaults) }}>
+    {% block input_group %}
+        <div {{ attributes.nested('group').defaults({ class: 'sw-search-field__group input-group' }) }}>
+            {% block icon %}
+                <span {{ attributes.nested('icon').defaults({ class: 'sw-search-field__icon input-group-text' }) }}>
+                    {% sw_icon 'search' %}
+                </span>
+            {% endblock %}
+
+            {% block input %}
+                <input {{ attributes.nested('input').defaults({
+                               class: 'sw-search-field__input form-control header-search-input',
+                               type: 'search',
+                               name: inputName,
+                               id: inputId,
+                               value: searchTerm,
+                               placeholder,
+                               'aria-label': placeholder,
+                               autocomplete: 'off',
+                               autocapitalize: 'off',
+                           }) }}>
+            {% endblock %}
+
+            {% block actions %}
+                <div {{ attributes.nested('actions').defaults({ class: 'sw-search-field__actions d-flex' }) }}>
+                    <button {{ attributes.nested('submit').defaults({
+                                   class: 'sw-search-field__btn btn btn-primary header-search-btn',
+                                   type: 'submit',
+                               }) }}>
+                        <span class="header-search-icon">{{ 'header.searchButton'|trans }}</span>
+                    </button>
+                    <button {{ attributes.nested('close').defaults({
+                                   class: 'sw-search-field__btn btn btn-primary header-close-btn js-search-close-btn',
+                                   type: 'button',
+                                   'aria-label': 'header.searchCloseButton'|trans|striptags,
+                               }) }}>
+                        {% sw_icon 'x' %}
+                    </button>
+                </div>
+            {% endblock %}
+        </div>
+    {% endblock %}
+
+    {% block related %}
+        {% if slots.related is not empty %}
+            <div {{ attributes.nested('related').defaults({ class: 'sw-search-field__related' }) }}>
+                <twig:Slot name="related"></twig:Slot>
+            </div>
+        {% endif %}
+    {% endblock %}
+
+    {% block content %}
+        <twig:Slot name="content"></twig:Slot>
+    {% endblock %}
+</form>

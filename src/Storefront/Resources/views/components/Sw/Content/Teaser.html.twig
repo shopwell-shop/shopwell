@@ -1,0 +1,101 @@
+{% props
+    title = '',
+    description = '',
+    media = null,
+    url = '',
+    linkLabel = '',
+    layout = 'card',
+    tone = 'subtle',
+    linkStyle = 'link',
+    headingLevel = 2,
+    icon = null,
+    slots = [],
+%}
+
+{% set safeUrl = url|trim %}
+{% set safeUrl = safeUrl starts with '/' and not (safeUrl starts with '//') or safeUrl starts with '#' or safeUrl matches '~^https?://~i' ? safeUrl : '' %}
+
+{% set headingLevel = headingLevel in [1, 2, 3, 4] ? headingLevel : 2 %}
+{% set teaserCVA = cva({
+        base: 'sw-teaser card',
+        variants: {
+            layout: {
+                card: 'is--card',
+                split: 'is--split',
+                hero: 'is--hero',
+                compact: 'is--compact',
+                icon: 'is--icon',
+            },
+            tone: {
+                subtle: 'is--tone-subtle',
+                emphasis: 'is--tone-emphasis',
+            },
+        },
+    }) %}
+{% set linkCVA = cva({
+        base: 'sw-teaser__link btn',
+        variants: {
+            linkStyle: {
+                link: 'btn-link',
+                button: 'btn-primary',
+                stretched: 'btn-link stretched-link',
+            },
+        },
+    }) %}
+{% set attributeDefaults = { class: teaserCVA.apply({ layout, tone }) } %}
+
+<article {{ attributes.defaults(attributeDefaults) }}>
+    {% block media %}
+        <div {{ attributes.nested('media').defaults({ class: 'sw-teaser__media' }) }}>
+            <twig:Slot name="media">
+                {% if icon %}
+                    {% sw_icon icon style { size: 'lg' } %}
+                {% elseif media %}
+                    <twig:Sw:Media:Image :media="media" alt="{{ media.translated.alt|default('') }}" />
+                {% endif %}
+            </twig:Slot>
+        </div>
+    {% endblock %}
+
+    <div {{ attributes.nested('body').defaults({ class: 'sw-teaser__body card-body' }) }}>
+        {% block title %}
+            <twig:Slot name="title">
+                {% if title %}
+                    {% if headingLevel == 1 %}
+                        <h1 {{ attributes.nested('title').defaults({ class: 'sw-teaser__title card-title' }) }}>{{ title }}</h1>
+                    {% elseif headingLevel == 3 %}
+                        <h3 {{ attributes.nested('title').defaults({ class: 'sw-teaser__title card-title' }) }}>{{ title }}</h3>
+                    {% elseif headingLevel == 4 %}
+                        <h4 {{ attributes.nested('title').defaults({ class: 'sw-teaser__title card-title' }) }}>{{ title }}</h4>
+                    {% else %}
+                        <h2 {{ attributes.nested('title').defaults({ class: 'sw-teaser__title card-title' }) }}>{{ title }}</h2>
+                    {% endif %}
+                {% endif %}
+            </twig:Slot>
+        {% endblock %}
+
+        {% block content %}
+            {% if description %}
+                <p {{ attributes.nested('description').defaults({ class: 'sw-teaser__description' }) }}>{{ description }}</p>
+            {% endif %}
+            <twig:Slot name="content"></twig:Slot>
+        {% endblock %}
+
+        {% block actions %}
+            <twig:Slot name="actions">
+                {% if safeUrl and linkLabel %}
+                    <a {{ attributes.nested('link').defaults({ class: linkCVA.apply({ linkStyle }), href: safeUrl }) }}>
+                        {% if linkStyle == 'stretched' %}
+                            <span class="visually-hidden">{{ linkLabel }}</span>
+                        {% else %}
+                            {{ linkLabel }}
+                            {% if linkStyle == 'link' %}
+                                {% sw_icon 'arrow-medium-right' style { pack: 'solid', size: 'xs' } %}
+                            {% endif %}
+                        {% endif %}
+                    </a>
+                {% endif %}
+            </twig:Slot>
+        {% endblock %}
+    </div>
+</article>

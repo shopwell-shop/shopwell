@@ -1,0 +1,61 @@
+{% props
+    action,
+    id = 'listing-toolbar',
+    query = '',
+    searchName = 'search',
+    searchLabel = 'listing.searchPlaceholder'|trans,
+    filterLabel = 'listing.filterTitleText'|trans,
+    applyLabel = 'storefrontTheme.applyFilters'|trans,
+    resetLabel = 'listing.filterResetAll'|trans,
+    resetUrl = action,
+    filterCount = 0,
+    slots = [],
+%}
+
+{% set attributeDefaults = {
+    class: 'sw-listing-toolbar', action, method: 'get', role: 'search',
+    'aria-label': searchLabel,
+    'data-component': 'Sw:Content:ListingToolbar',
+} %}
+
+<form {{ attributes.defaults(attributeDefaults) }}>
+    {% block search %}
+        <div class="sw-listing-toolbar__row">
+            <div class="sw-listing-toolbar__search">
+                <label class="visually-hidden" for="{{ id }}-search">{{ searchLabel }}</label>
+                <input class="sw-listing-toolbar__input form-control" type="search" id="{{ id }}-search"
+                       name="{{ searchName }}" value="{{ query }}" placeholder="{{ searchLabel }}" maxlength="100">
+                <button class="sw-listing-toolbar__submit btn" type="submit" aria-label="{{ searchLabel }}">
+                    {% sw_icon 'search' style { size: 'sm' } %}
+                </button>
+            </div>
+            <button class="sw-listing-toolbar__filter btn btn-outline-secondary" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#{{ id }}-filters" aria-controls="{{ id }}-filters" aria-label="{{ filterLabel }}">
+                {% sw_icon 'sliders-horizontal' style { size: 'sm' } %}
+                <span class="d-none d-sm-inline">{{ filterLabel }}</span>
+                {% if filterCount %}<span class="sw-listing-toolbar__badge badge bg-primary">{{ filterCount }}</span>{% endif %}
+            </button>
+        </div>
+    {% endblock %}
+
+    {% block conditions %}<twig:Slot name="conditions"></twig:Slot>{% endblock %}
+
+    {% block navigation %}<twig:Slot name="navigation"></twig:Slot>{% endblock %}
+
+    {% block filters %}
+        <div class="sw-listing-toolbar__sheet offcanvas offcanvas-end" tabindex="-1"
+             id="{{ id }}-filters" aria-labelledby="{{ id }}-title">
+            <div class="sw-listing-toolbar__sheet-header offcanvas-header">
+                <h2 class="offcanvas-title h4" id="{{ id }}-title">{{ filterLabel }}</h2>
+                <button class="btn-close" type="button" data-bs-dismiss="offcanvas" aria-label="{{ 'general.offcanvasCloseMenu'|trans|striptags }}"></button>
+            </div>
+            <div class="sw-listing-toolbar__sheet-body offcanvas-body">
+                <twig:Slot name="filters"></twig:Slot>
+            </div>
+            <div class="sw-listing-toolbar__sheet-footer">
+                <a class="sw-listing-toolbar__reset btn btn-light" href="{{ resetUrl }}">{{ resetLabel }}</a>
+                <button class="sw-listing-toolbar__apply btn btn-primary" type="submit">{{ applyLabel }}</button>
+            </div>
+        </div>
+    {% endblock %}
+</form>
