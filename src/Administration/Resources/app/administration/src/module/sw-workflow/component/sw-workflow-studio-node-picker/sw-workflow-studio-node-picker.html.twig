@@ -1,0 +1,56 @@
+{% block sw_workflow_studio_node_picker %}
+<aside class="sw-workflow-studio-node-picker">
+    {% block sw_workflow_studio_node_picker_header %}
+    <header class="sw-workflow-studio-node-picker__header">
+        <h3>{{ $t('sw-workflow.panels.library') }}</h3>
+    </header>
+    {% endblock %}
+    <div class="sw-workflow-studio-node-picker__content">
+        {% block sw_workflow_studio_node_picker_library %}
+        <mt-text-field
+            v-model="search"
+            size="small"
+            :placeholder="$t('sw-workflow.panels.search')"
+            :aria-label="$t('sw-workflow.panels.search')"
+        />
+        <p
+            v-if="insertionLabel"
+            class="sw-workflow-studio-node-picker__hint"
+        >
+            {{ $t('sw-workflow.panels.insertAfter', { name: insertionLabel }) }}
+        </p>
+        <button
+            v-for="type in activities"
+            :key="`${type.name}:${type.version}`"
+            class="sw-workflow-studio-node-picker__node-item"
+            type="button"
+            :disabled="!allowEdit"
+            @click="$emit('insert', type)"
+        >
+            <span class="sw-workflow-studio-node-picker__node-icon"><mt-icon
+                :name="icon(type.name, type.version)"
+                size="20px"
+            /></span>
+            <span>{{ labels[type.name] || type.name }}</span><mt-icon
+                name="regular-plus-xs"
+                size="12px"
+            />
+        </button>
+        <mt-empty-state
+            v-if="!activities.length"
+            class="sw-workflow-studio-node-picker__empty"
+            role="status"
+            icon="regular-search"
+            :headline="$t(search ? 'sw-workflow.panels.noSearchResults' : 'sw-workflow.panels.noAvailableNodes')"
+            :description="$t(search ? 'sw-workflow.panels.searchHint' : 'sw-workflow.panels.insertHint')"
+        />
+        <p
+            v-else
+            class="sw-workflow-studio-node-picker__hint"
+        >
+            {{ $t('sw-workflow.panels.insertHint') }}
+        </p>
+        {% endblock %}
+    </div>
+</aside>
+{% endblock %}

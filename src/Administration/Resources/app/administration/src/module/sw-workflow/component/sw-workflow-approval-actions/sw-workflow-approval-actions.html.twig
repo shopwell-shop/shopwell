@@ -1,0 +1,51 @@
+{% block sw_workflow_approval_actions %}
+<div class="sw-workflow-approval-actions">
+    {% block sw_workflow_approval_actions_progress %}
+    <p
+        v-if="progress"
+        class="sw-workflow-approval-actions__progress"
+    >
+        {{ progress }}
+    </p>
+    {% endblock %}
+
+    {% block sw_workflow_approval_actions_comment %}
+    <mt-textarea
+        v-model="comment"
+        class="sw-workflow-approval-actions__comment"
+        :label="$t('sw-workflow.runtime.actions.commentLabel')"
+        :placeholder="$t('sw-workflow.runtime.actions.commentPlaceholder')"
+        :max-length="500"
+        :disabled="isLoading"
+    />
+    {% endblock %}
+
+    {% block sw_workflow_approval_actions_buttons %}
+    <div class="sw-workflow-approval-actions__buttons">
+        <mt-button
+            variant="critical"
+            :disabled="!canReject"
+            :is-loading="isLoading"
+            @click="onReject"
+        >
+            {{ $t('sw-workflow.runtime.actions.reject') }}
+        </mt-button>
+
+        <mt-button
+            variant="primary"
+            :disabled="!canApprove"
+            :is-loading="isLoading"
+            @click="onApprove"
+        >
+            {{ $t('sw-workflow.runtime.actions.approve') }}
+        </mt-button>
+    </div>
+    {% endblock %}
+
+    {% block sw_workflow_approval_actions_hint %}
+    <p class="sw-workflow-approval-actions__hint">
+        {{ $t('sw-workflow.runtime.actions.rejectHint') }}
+    </p>
+    {% endblock %}
+</div>
+{% endblock %}

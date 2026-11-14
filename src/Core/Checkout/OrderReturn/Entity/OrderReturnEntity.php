@@ -215,7 +215,7 @@ class OrderReturnEntity extends EntityStruct
      * A state field is only a foreign key value to the dal, so without this association the schema
      * builder never sees the relation and would propose to drop the foreign key.
      */
-    #[ManyToOne(entity: 'state_machine_state', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => true], column: 'state_id')]
+    #[ManyToOne(entity: 'state_machine_state', api: ['admin-api' => true, 'store-api' => true], column: 'state_id')]
     public ?StateMachineStateEntity $stateMachineState = null;
 
     /**

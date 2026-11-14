@@ -1,0 +1,117 @@
+{% block sw_workflow_studio %}
+<sw-page
+    class="sw-workflow-studio"
+    :show-search-bar="false"
+    :show-smart-bar="false"
+>
+    <template #content>
+        <div class="sw-workflow-studio__content">
+            <mt-banner
+                v-if="hasError"
+                variant="critical"
+                role="alert"
+            >
+                <div class="sw-workflow-studio__feedback">
+                    <p>{{ $t('sw-workflow.general.loadError') }}</p>
+                    <mt-button
+                        variant="secondary"
+                        @click="load()"
+                    >
+                        {{ $t('sw-workflow.actions.retry') }}
+                    </mt-button>
+                </div>
+            </mt-banner>
+            <mt-banner
+                v-if="saveError"
+                variant="critical"
+                role="alert"
+            >
+                <div class="sw-workflow-studio__feedback">
+                    <p>{{ $t('sw-workflow.persistence.' + saveError) }}</p>
+                    <mt-button
+                        v-if="saveError === 'conflict'"
+                        class="sw-workflow-studio__reload"
+                        variant="secondary"
+                        @click="reload"
+                    >
+                        {{ $t('sw-workflow.persistence.reload') }}
+                    </mt-button>
+                </div>
+            </mt-banner>
+            <sw-loader v-if="isLoading" />
+            <sw-workflow-studio-editor
+                v-else-if="!hasError && nodeTypes.length"
+                :document="document"
+                :node-types="nodeTypes"
+                :violations="violations"
+                :is-diagnosing="isDiagnosing"
+                :has-diagnosed="hasDiagnosed"
+                :diagnostic-error="diagnosticError"
+                :allow-edit="allowEdit"
+                @update:document="onDocumentChange"
+                @diagnose="diagnose"
+            >
+                <template #document-info>
+                    <router-link
+                        class="sw-workflow-studio__back"
+                        :to="{ name: 'sw.workflow.index' }"
+                        :aria-label="$t('sw-workflow.persistence.back')"
+                    >
+                        <mt-icon
+                            name="regular-chevron-left-s"
+                            size="16px"
+                        />
+                    </router-link>
+                    <mt-text-field
+                        v-model="name"
+                        class="sw-workflow-studio__name"
+                        size="small"
+                        :aria-label="$t('sw-workflow.persistence.name')"
+                        :disabled="!allowEdit"
+                        :max-length="255"
+                    />
+                    <span class="sw-workflow-studio-toolbar__status">{{ $t(hasChanges ? 'sw-workflow.persistence.unsaved' : 'sw-workflow.persistence.saved') }}</span>
+                </template>
+                <template #document-actions>
+                    <sw-workflow-publish
+                        :draft-id="draftId"
+                        :revision="revision"
+                        :has-changes="hasChanges"
+                        :disabled="isSaving || isLoading || hasError"
+                    />
+                    <mt-button
+                        class="sw-workflow-studio__save"
+                        variant="primary"
+                        :disabled="!canSave"
+                        :is-loading="isSaving"
+                        @click="save"
+                    >
+                        {{ $t('sw-workflow.persistence.save') }}
+                    </mt-button>
+                </template>
+            </sw-workflow-studio-editor>
+            <sw-modal
+                v-if="pendingNavigation"
+                :title="$t('sw-workflow.persistence.leaveTitle')"
+                @modal-close="pendingNavigation = null"
+            >
+                <p>{{ $t('sw-workflow.persistence.leaveHint') }}</p>
+                <template #modal-footer>
+                    <mt-button
+                        variant="secondary"
+                        @click="pendingNavigation = null"
+                    >
+                        {{ $t('sw-workflow.persistence.stay') }}
+                    </mt-button>
+                    <mt-button
+                        variant="critical"
+                        @click="confirmLeave"
+                    >
+                        {{ $t('sw-workflow.persistence.discard') }}
+                    </mt-button>
+                </template>
+            </sw-modal>
+        </div>
+    </template>
+</sw-page>
+{% endblock %}

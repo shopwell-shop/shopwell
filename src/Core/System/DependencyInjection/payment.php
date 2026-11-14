@@ -4,6 +4,10 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
+use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseStore;
+use Shopwell\Core\Framework\Workflow\Publication\WorkflowRequestCatalogueEvent;
+use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeRegistry;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Account\Api\PaymentAccountController;
 use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
@@ -106,6 +110,11 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionEntity;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferWriteProtection;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
@@ -124,6 +133,7 @@ use Shopwell\Core\System\Payment\Webhook\ScheduledTask\DeliverPaymentWebhookTask
 use Shopwell\Core\System\Payment\Webhook\ScheduledTask\DeliverPaymentWebhookTaskHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
@@ -676,10 +686,27 @@ return static function (ContainerConfigurator $container): void {
     // the two sides of a transfer that talk to the channel: submitting it, and asking what became of
     // it. They share the service as the only writer of the record and the resolver as the only way to
     // the credentials of the app
+    $services->set(PaymentTransferApprovalEntity::class)->tag('shopwell.entity');
+    $services->set(PaymentTransferApprovalPolicy::class)->args([service(WorkflowDocumentCodec::class)]);
+    $services->set(PaymentTransferApprovalStore::class)->args([service(Connection::class), service('payment_transfer_approval.repository')]);
+    $services->set(PaymentTransferApprovalService::class)->args([
+        service(PaymentTransferApprovalStore::class),
+        service(PaymentTransferApprovalPolicy::class),
+        service(WorkflowReleaseStore::class),
+        service(WorkflowRuntimeRegistry::class),
+        service(SystemConfigService::class),
+        service(PaymentTransferBooking::class),
+        service(PaymentTransferService::class),
+        service(PaymentTransferPresenter::class),
+        service('event_dispatcher'),
+    ])->tag('kernel.event_listener', ['event' => WorkflowRequestCatalogueEvent::class, 'method' => 'restrictRequestCatalogue']);
+    $services->set(PaymentTransferWriteProtection::class)->tag('kernel.event_subscriber');
+
     $services->set(PaymentTransferResultBooker::class)
         ->args([
             service(PaymentTransferService::class),
             service(Connection::class),
+            service(PaymentTransferApprovalService::class),
         ]);
 
     $services->set(PaymentTransferSubmitter::class)
@@ -687,6 +714,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentConfigResolver::class),
             service(PaymentTransferService::class),
             service(PaymentTransferResultBooker::class),
+            service(PaymentTransferApprovalService::class),
         ]);
 
     $services->set(PaymentTransferReconciler::class)
@@ -729,7 +757,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentTransferService::class),
             service(PaymentTransferPresenter::class),
             service(PaymentProviderRegistry::class),
-            service(PaymentTransferResultBooker::class),
+            service(PaymentTransferApprovalService::class),
         ])
         ->tag('controller.service_arguments');
 

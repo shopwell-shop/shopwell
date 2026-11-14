@@ -48,11 +48,11 @@ describe('profile navigation layout preference', () => {
 
         const name = wrapper.find<HTMLInputElement>('input[name="sw-field--user-name"]');
         await name.setValue('Unsaved name');
-        for (const mode of ['top', 'mixed', 'sidebar']) {
+        for (const mode of ['sidebar', 'mixed', 'top']) {
             await preference.find(`input[value="${mode}"]`).setValue(true);
             await flushPromises();
             expect(wrapper.emitted('user-navigation-layout-change')?.at(-1)).toEqual([mode]);
-            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(useAdminLayout().layout.value).toBe('top');
             expect(name.element.value).toBe('Unsaved name');
             expect(wrapper.find('input[name="sw-field--user-name"]').element).toBe(name.element);
             expect(configService.upsert.mock.calls).toHaveLength(0);

@@ -136,7 +136,11 @@
                 :key="key(entry)"
                 :hidden="activePanelEntry !== entry"
             >
-                <slot name="entry-panel" :entry="entry" :close="closePanel"></slot>
+                <slot
+                    name="entry-panel"
+                    :entry="entry"
+                    :close="closePanel"
+                ></slot>
             </div>
             <ul
                 v-if="activePanelEntry?.children.length"

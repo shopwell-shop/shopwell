@@ -85,6 +85,20 @@ class VisibleMenuTreeBuilderTest extends TestCase
         );
     }
 
+    public function testFinanceContainsPaymentRefundTransferAndWalletPagesInOrder(): void
+    {
+        $this->createSynchronizer()->synchronize();
+        $flattened = $this->flatten($this->builder()->build($this->context));
+
+        static::assertArrayNotHasKey('sw-payment', $flattened);
+        static::assertSame([
+            'sw.payment.index',
+            'sw.payment.refund',
+            'sw-finance-transfer',
+            'sw-finance-wallet-transactions',
+        ], array_column($flattened['sw-finance']['children'], 'internalKey'));
+    }
+
     public function testAHiddenGroupTakesItsChildrenWithIt(): void
     {
         $this->createSynchronizer()->synchronize();

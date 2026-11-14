@@ -16,6 +16,22 @@ use Shopwell\Core\Framework\Store\Struct\CartStruct;
 #[CoversClass(CartStruct::class)]
 class CartStructTest extends TestCase
 {
+    public function testSerializesMarketplaceCurrency(): void
+    {
+        $cart = (new CartStruct())->assign(['currency' => 'CNY']);
+        static::assertSame('CNY', $cart->jsonSerialize()['currency']);
+    }
+
+    public function testPurchaseAndInstallationIdsSurviveTheOrderRoundTrip(): void
+    {
+        $id = '0196ccf3dd507d22837e981d6f4b1f86';
+        $cart = CartStruct::fromArray(['purchaseId' => $id, 'shop' => ['id' => $id], 'positions' => [['extension' => ['id' => $id]]]]);
+        static::assertSame($id, $cart->getPurchaseId());
+        static::assertSame($id, $cart->getShopId());
+        static::assertSame($id, $cart->getPositions()->first()?->getExtensionId());
+        static::assertSame($id, $cart->jsonSerialize()['purchaseId']);
+    }
+
     public function testFromArrayWrapsThePositionsInACollection(): void
     {
         $cart = CartStruct::fromArray([
@@ -53,15 +69,15 @@ class CartStructTest extends TestCase
         $cart->setTaxRate(19.0);
         $cart->setGrossPrice(11.9);
         $cart->setPositions($positions);
-        $cart->setShop(['id' => 7, 'domain' => 'example.com']);
+        $cart->setShop(['id' => '7', 'domain' => 'example.com']);
 
         static::assertSame(10.0, $cart->getNetPrice());
         static::assertSame(1.9, $cart->getTaxValue());
         static::assertSame(19.0, $cart->getTaxRate());
         static::assertSame(11.9, $cart->getGrossPrice());
         static::assertSame($positions, $cart->getPositions());
-        static::assertSame(['id' => 7, 'domain' => 'example.com'], $cart->getShop());
-        static::assertSame(7, $cart->getShopId());
+        static::assertSame(['id' => '7', 'domain' => 'example.com'], $cart->getShop());
+        static::assertSame('7', $cart->getShopId());
         static::assertSame('example.com', $cart->getShopDomain());
     }
 }

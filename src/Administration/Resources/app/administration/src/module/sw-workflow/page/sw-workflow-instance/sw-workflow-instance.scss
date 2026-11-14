@@ -1,0 +1,109 @@
+@import "~scss/variables";
+
+.sw-workflow-instance {
+    &__title,
+    &__heading {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--scale-size-8);
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    &__number {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+        font-weight: var(--font-weight-regular);
+    }
+
+    &__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+        gap: var(--scale-size-24);
+        align-items: start;
+        max-width: $content-width;
+        margin: 0 auto;
+    }
+
+    &__content &__layout .mt-card {
+        max-width: 100%;
+        margin: 0;
+    }
+
+    &__main,
+    &__side {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-24);
+        min-width: 0;
+    }
+
+    &__side {
+        position: sticky;
+        top: 0;
+    }
+
+    &__error {
+        max-width: $content-width;
+        margin: 0 auto;
+    }
+
+    &__error-body {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--scale-size-16);
+    }
+
+    &__meta {
+        margin-bottom: var(--scale-size-16);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+    }
+
+    &__form { gap: var(--scale-size-24); }
+
+    &__form &__field {
+        min-width: 0;
+
+        dt,
+        dd {
+            padding: 0;
+            margin: 0;
+            border: 0;
+            overflow-wrap: anywhere;
+        }
+
+        dt {
+            margin-bottom: var(--scale-size-8);
+            color: var(--color-text-secondary-default);
+            font-size: var(--font-size-2xs);
+            font-weight: var(--font-weight-regular);
+        }
+    }
+
+    &__graph {
+        height: 600px;
+        overflow: hidden;
+    }
+
+    &__node {
+        margin-bottom: var(--scale-size-16);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    @media screen and (max-width: 768px) {
+        &__layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__side {
+            position: static;
+            grid-row: 1;
+        }
+    }
+}

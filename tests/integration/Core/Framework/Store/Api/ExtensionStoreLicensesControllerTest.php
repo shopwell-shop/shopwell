@@ -28,7 +28,7 @@ class ExtensionStoreLicensesControllerTest extends TestCase
             $provider
         );
 
-        $response = $controller->cancelSubscription(1, Context::createDefaultContext());
+        $response = $controller->cancelSubscription('1', Context::createDefaultContext());
         static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
     }
 
@@ -48,7 +48,7 @@ class ExtensionStoreLicensesControllerTest extends TestCase
             'version' => '2.0.0',
         ]);
 
-        $response = $controller->rateLicensedExtension(1, $request, Context::createDefaultContext());
+        $response = $controller->rateLicensedExtension('1', $request, Context::createDefaultContext());
         static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
     }
 }

@@ -132,28 +132,6 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 privilege: 'order_return.viewer',
             ),
 
-            // Payments
-            new AdminMenuDefinitionStruct(
-                internalKey: 'sw-payment',
-                type: AdminMenuItemDefinition::TYPE_FOLDER,
-                title: 'sw-payment.general.mainMenuItemGeneral',
-                icon: 'regular-credit-card',
-                position: 35,
-                privilege: 'payment_order.viewer',
-            ),
-            new AdminMenuDefinitionStruct(
-                internalKey: 'sw.payment.index',
-                title: 'sw-payment.general.mainMenuItemPaymentOrders',
-                parent: 'sw-payment',
-                privilege: 'payment_order.viewer',
-            ),
-            new AdminMenuDefinitionStruct(
-                internalKey: 'sw.payment.refund',
-                title: 'sw-payment.general.mainMenuItemRefunds',
-                parent: 'sw-payment',
-                privilege: 'payment_refund.viewer',
-            ),
-
             // Customers
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-customer',
@@ -200,7 +178,8 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 type: AdminMenuItemDefinition::TYPE_FOLDER,
                 title: 'sw-blog.general.mainMenuItemGeneral',
                 icon: 'regular-file-text',
-                position: 55,
+                position: 30,
+                parent: 'sw-content',
             ),
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-blog-content',
@@ -266,15 +245,31 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 position: 75,
             ),
             new AdminMenuDefinitionStruct(
+                internalKey: 'sw.payment.index',
+                title: 'sw-payment.general.mainMenuItemPaymentOrders',
+                parent: 'sw-finance',
+                position: 10,
+                privilege: 'payment_order.viewer',
+            ),
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw.payment.refund',
+                title: 'sw-payment.general.mainMenuItemRefunds',
+                parent: 'sw-finance',
+                position: 20,
+                privilege: 'payment_refund.viewer',
+            ),
+            new AdminMenuDefinitionStruct(
                 internalKey: 'sw-finance-transfer',
                 title: 'sw-finance.navigation.transfer',
                 parent: 'sw-finance',
+                position: 30,
                 privilege: 'payment_transfer.viewer',
             ),
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-finance-wallet-transactions',
                 title: 'sw-finance.navigation.walletTransactions',
                 parent: 'sw-finance',
+                position: 40,
                 privilege: 'wallet.viewer',
             ),
 
@@ -300,6 +295,31 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 position: 10,
                 privilege: 'system.plugin_maintain',
             ),
+            // Workflow
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw-workflow',
+                type: AdminMenuItemDefinition::TYPE_FOLDER,
+                title: 'sw-workflow.navigation.root',
+                icon: 'regular-flow',
+                position: 72,
+            ),
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw-workflow-design',
+                title: 'sw-workflow.navigation.design',
+                parent: 'sw-workflow',
+                position: 10,
+                privilege: 'workflow.viewer',
+            ),
+
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw-workflow-tasks',
+                title: 'sw-workflow.runtime.navigation',
+                icon: 'regular-check-circle',
+                parent: 'sw-workflow',
+                position: 25,
+                privilege: 'workflow_participant.viewer',
+            ),
+
             // Settings - always the last entry of the navigation; every settings page is a
             // child of it, mirrored one to one from the modules' `settingsItem` declarations
             new AdminMenuDefinitionStruct(
@@ -589,7 +609,7 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 icon: 'regular-credit-card',
                 parent: 'sw-settings',
                 position: 810,
-                privilege: 'payment_provider_config.viewer',
+                privilege: 'payment_account.viewer',
             ),
 
             new AdminMenuDefinitionStruct(

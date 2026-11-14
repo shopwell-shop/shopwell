@@ -251,7 +251,7 @@ class StoreClientTest extends TestCase
         ];
         $this->getStoreRequestHandler()->append(new Response(400, [], \json_encode($errorInfo, \JSON_THROW_ON_ERROR)));
 
-        $this->storeClient->cancelSubscription(123, $this->storeContext);
+        $this->storeClient->cancelSubscription('123', $this->storeContext);
 
         $lastRequest = $this->getStoreRequestHandler()->getLastRequest();
         static::assertInstanceOf(RequestInterface::class, $lastRequest);
@@ -272,7 +272,7 @@ class StoreClientTest extends TestCase
             static::createStub(RequestInterface::class),
             static::createStub(ResponseInterface::class)
         )));
-        $this->storeClient->cancelSubscription(123, $this->storeContext);
+        $this->storeClient->cancelSubscription('123', $this->storeContext);
     }
 
     public function testCreateRatingThrowsExceptionOnClientError(): void
@@ -285,7 +285,7 @@ class StoreClientTest extends TestCase
         $this->getStoreRequestHandler()->append($clientException);
 
         $rating = new ReviewStruct();
-        $rating->setExtensionId(123);
+        $rating->setExtensionId('123');
 
         $this->expectExceptionObject(StoreException::storeError($clientException));
         $this->storeClient->createRating($rating, $this->storeContext);

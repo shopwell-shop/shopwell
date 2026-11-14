@@ -16,10 +16,17 @@ use Shopwell\Core\Framework\Store\Struct\StoreLicenseSubscriptionStruct;
 #[CoversClass(LicenseStruct::class)]
 class LicenseStructTest extends TestCase
 {
+    public function testUuidLicenseIdSurvivesApiDecoding(): void
+    {
+        $id = '0196ccf3dd507d22837e981d6f4b1f86';
+        $license = LicenseStruct::fromArray(['id' => $id]);
+        static::assertSame($id, $license->getId());
+    }
+
     public function testFromArrayConvertsTheDateStrings(): void
     {
         $license = LicenseStruct::fromArray([
-            'id' => 7,
+            'id' => '7',
             'variant' => 'rent',
             'netPrice' => 19.0,
             'creationDate' => '2026-01-01 00:00:00',
@@ -27,7 +34,7 @@ class LicenseStructTest extends TestCase
             'expirationDate' => '2026-03-01 00:00:00',
         ]);
 
-        static::assertSame(7, $license->getId());
+        static::assertSame('7', $license->getId());
         static::assertSame('rent', $license->getVariant());
         static::assertSame(19.0, $license->getNetPrice());
         static::assertSame('2026-01-01', $license->getCreationDate()->format('Y-m-d'));

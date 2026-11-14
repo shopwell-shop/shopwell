@@ -26,7 +26,7 @@ describe('inline layout settings', () => {
         wrapper = await createWrapper();
         await wrapper.find('input[value="mixed"]').setValue(true);
         expect(wrapper.emitted('update:value')).toEqual([['mixed']]);
-        expect(useAdminLayout().layout.value).toBe('sidebar');
+        expect(useAdminLayout().layout.value).toBe('top');
         expect(jest.mocked(Shopwell.Service('userConfigService')).upsert.mock.calls).toHaveLength(0);
         await wrapper.setProps({ value: 'mixed' });
         expect(wrapper.find<HTMLInputElement>('input[value="mixed"]').element.checked).toBe(true);

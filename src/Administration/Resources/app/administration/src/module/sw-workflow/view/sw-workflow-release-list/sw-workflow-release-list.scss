@@ -1,0 +1,16 @@
+.sw-workflow-release-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+
+    &__listing {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+    }
+
+    > .mt-banner {
+        margin: var(--scale-size-16);
+    }
+}

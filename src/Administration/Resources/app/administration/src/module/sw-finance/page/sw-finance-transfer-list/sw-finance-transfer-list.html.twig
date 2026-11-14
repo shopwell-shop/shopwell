@@ -33,13 +33,23 @@
     {% endblock %}
 
     <template #smart-bar-actions>
+        <mt-button
+            v-if="canConfigureWorkflow"
+            class="sw-finance-transfer-list__workflow-settings"
+            variant="secondary"
+            size="default"
+            @click="showWorkflowModal = true"
+        >
+            {{ $t('sw-finance.transfer.workflow.settingsTitle') }}
+        </mt-button>
         {% block sw_finance_transfer_list_smart_bar_actions_create %}
         {#
         Booking a request moves no money, which is why this button is bound to the creator role and
-        not to the approver role. It is the only action of the page that is not per row.
+        not to the approver role. Approval and execution are separate steps.
         #}
         <mt-button
             v-if="canCreate"
+            class="sw-finance-transfer-list__button-create"
             variant="primary"
             size="default"
             @click="onOpenCreateModal"
@@ -71,6 +81,7 @@
                 <template #button>
                     <mt-button
                         v-if="canCreate"
+                        class="sw-finance-transfer-list__button-create"
                         variant="primary"
                         @click="onOpenCreateModal"
                     >
@@ -128,6 +139,29 @@
                 </template>
                 {% endblock %}
 
+                {% block sw_finance_transfer_list_grid_column_approval %}
+                <template #column-approval="{ item }">
+                    <div class="sw-finance-transfer-list__approval">
+                        <button
+                            v-if="approvalSummaries[item.id]?.detailRoute"
+                            class="sw-finance-transfer-list__approval-link"
+                            type="button"
+                            @click="openApproval(item.id)"
+                        >
+                            {{ approvalLabel(item.id) }}
+                        </button>
+                        <span v-else>{{ approvalLabel(item.id) }}</span>
+                        <span
+                            v-if="reviewerLabel(item.id)"
+                            class="sw-finance-transfer-list__reviewers"
+                            :title="reviewerLabel(item.id)"
+                        >
+                            {{ $t('sw-finance.transfer.workflow.currentAssignees') }}{{ reviewerLabel(item.id) }}
+                        </span>
+                    </div>
+                </template>
+                {% endblock %}
+
                 {% block sw_finance_transfer_list_grid_column_state %}
                 <template #column-statusId="{ item }">
                     <mt-badge
@@ -154,9 +188,14 @@
                         v-if="failureLabel(item)"
                         :content="failureLabel(item)"
                     >
-                        <span class="sw-finance-transfer-list__failure">
-                            {{ failureLabel(item) }}
-                        </span>
+                        <template #default="tooltip">
+                            <span
+                                v-bind="tooltip"
+                                class="sw-finance-transfer-list__failure"
+                            >
+                                {{ failureLabel(item) }}
+                            </span>
+                        </template>
                     </mt-tooltip>
                 </template>
                 {% endblock %}
@@ -175,32 +214,19 @@
 
                 {% block sw_finance_transfer_list_grid_actions %}
                 {#
-                The two money actions of this page. Both are only rendered for a transfer that is
-                still `created` and only for a role that may release money - the endpoint refuses
-                them otherwise, this only keeps the operator from clicking into a 403.
+                Open the detail page to load authoritative approval status before executing a transfer.
+                Approval summaries are fetched in one batch for the visible page.
                 #}
                 <template #more-actions="{ item }">
                     {% block sw_finance_transfer_list_grid_action_submit %}
                     <sw-context-menu-item
-                        v-if="canDecide(item)"
-                        class="sw-finance-transfer-list__action-submit"
-                        variant="success"
-                        @click="onApprove(item)"
+                        class="sw-finance-transfer-list__action-detail"
+                        :router-link="{ name: 'sw.finance.transferDetail', params: { id: item.id } }"
                     >
-                        {{ $t('sw-finance.transfer.actions.submit') }}
+                        {{ $t('sw-finance.transfer.workflow.openTransfer') }}
                     </sw-context-menu-item>
                     {% endblock %}
-
-                    {% block sw_finance_transfer_list_grid_action_cancel %}
-                    <sw-context-menu-item
-                        v-if="canDecide(item)"
-                        class="sw-finance-transfer-list__action-cancel"
-                        variant="danger"
-                        @click="onReject(item)"
-                    >
-                        {{ $t('sw-finance.transfer.actions.cancel') }}
-                    </sw-context-menu-item>
-                    {% endblock %}
+                    {% block sw_finance_transfer_list_grid_action_cancel %}{% endblock %}
                 </template>
                 {% endblock %}
             </sw-entity-listing>
@@ -218,18 +244,9 @@
                 @modal-close="onCloseCreateModal"
             />
 
-            <sw-finance-transfer-approve-modal
-                v-if="transferToApprove"
-                :transfer="transferToApprove"
-                @transfer-decided="onTransferDecided"
-                @modal-close="onCloseApproveModal"
-            />
-
-            <sw-finance-transfer-reject-modal
-                v-if="transferToReject"
-                :transfer="transferToReject"
-                @transfer-decided="onTransferDecided"
-                @modal-close="onCloseRejectModal"
+            <sw-finance-transfer-workflow-settings
+                v-if="showWorkflowModal && canConfigureWorkflow"
+                @modal-close="showWorkflowModal = false"
             />
             {% endblock %}
         </div>

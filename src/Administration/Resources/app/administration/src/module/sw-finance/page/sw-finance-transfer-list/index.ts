@@ -6,7 +6,12 @@ import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-finance-transfer-list.html.twig';
 import './sw-finance-transfer-list.scss';
-import { DECIDABLE_STATE, providerLabelKey, transferStateLabelKey } from '../../service/payment-transfer.api.service';
+import {
+    type TransferApprovalSummary,
+    DECIDABLE_STATE,
+    providerLabelKey,
+    transferStateLabelKey,
+} from '../../service/payment-transfer.api.service';
 import {
     PAYMENT_TRANSFER_STATE_MACHINE,
     createPaymentStateCriteria,
@@ -67,11 +72,19 @@ function transferFilterFactory(vm: unknown): TransferFilterFactory {
 export default defineComponent({
     template,
 
-    inject: ['repositoryFactory', 'acl', 'filterFactory'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'filterFactory',
+        'paymentTransferApiService',
+    ],
 
     mixins: [Mixin.getByName('listing')],
 
     data(): {
+        approvalSummaries: Record<string, TransferApprovalSummary>;
+        isLoadingApprovals: boolean;
+        listRevision: number;
         transfers: EntityCollection<'payment_transfer'> | null;
         isLoading: boolean;
         sortBy: string;
@@ -81,11 +94,15 @@ export default defineComponent({
         storeKey: string;
         activeFilterNumber: number;
         showCreateModal: boolean;
+        showWorkflowModal: boolean;
         transferToApprove: PaymentTransfer | null;
         transferToReject: PaymentTransfer | null;
     } {
         return {
             transfers: null,
+            approvalSummaries: {},
+            isLoadingApprovals: false,
+            listRevision: 0,
             isLoading: false,
             sortBy: 'createdAt',
             sortDirection: 'DESC',
@@ -94,6 +111,7 @@ export default defineComponent({
             storeKey: 'grid.filter.payment_transfer',
             activeFilterNumber: 0,
             showCreateModal: false,
+            showWorkflowModal: false,
             transferToApprove: null,
             transferToReject: null,
         };
@@ -106,6 +124,10 @@ export default defineComponent({
     },
 
     computed: {
+        canConfigureWorkflow(): boolean {
+            return this.acl.can('system_config:read') && this.acl.can('system_config:update');
+        },
+
         transferRepository(): RepositoryType<'payment_transfer'> {
             return this.repositoryFactory.create('payment_transfer');
         },
@@ -257,8 +279,14 @@ export default defineComponent({
                     allowResize: true,
                 },
                 {
+                    property: 'approval',
+                    label: 'sw-finance.transfer.workflow.approvalStatus',
+                    allowResize: true,
+                    sortable: false,
+                },
+                {
                     property: 'statusId',
-                    label: 'sw-finance.transfer.list.columnState',
+                    label: 'sw-finance.transfer.workflow.paymentStatus',
                     allowResize: true,
                 },
                 {
@@ -275,6 +303,15 @@ export default defineComponent({
         },
     },
 
+    watch: {
+        '$route.query.create': {
+            immediate: true,
+            handler(value: unknown) {
+                if (value === '1' && this.canCreate) this.onOpenCreateModal();
+            },
+        },
+    },
+
     created() {
         void this.createdComponent();
     },
@@ -287,7 +324,9 @@ export default defineComponent({
         },
 
         async getList(): Promise<void> {
+            const revision = ++this.listRevision;
             this.isLoading = true;
+            this.approvalSummaries = {};
 
             const filterService = Shopwell.Service('filterService') as {
                 mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
@@ -301,13 +340,49 @@ export default defineComponent({
 
             return this.transferRepository
                 .search(criteria)
-                .then((searchResult) => {
+                .then(async (searchResult) => {
+                    if (revision !== this.listRevision) return;
                     this.total = searchResult.total ?? 0;
                     this.transfers = searchResult;
+                    this.isLoading = false;
+                    await this.loadApprovalSummaries(
+                        searchResult.map((transfer) => transfer.id),
+                        revision,
+                    );
                 })
                 .finally(() => {
-                    this.isLoading = false;
+                    if (revision === this.listRevision) this.isLoading = false;
                 });
+        },
+
+        async loadApprovalSummaries(ids: string[], revision: number): Promise<void> {
+            if (ids.length === 0) {
+                this.isLoadingApprovals = false;
+                return;
+            }
+            this.isLoadingApprovals = true;
+            try {
+                const summaries = await this.paymentTransferApiService.getApprovalSummaries(ids);
+                if (revision === this.listRevision) this.approvalSummaries = summaries;
+            } catch {
+                if (revision === this.listRevision) this.approvalSummaries = {};
+            } finally {
+                if (revision === this.listRevision) this.isLoadingApprovals = false;
+            }
+        },
+
+        approvalLabel(id: string): string {
+            if (this.isLoadingApprovals) return this.$t('sw-finance.transfer.workflow.loading');
+            return this.$t(`sw-finance.transfer.workflow.status.${this.approvalSummaries[id]?.status ?? 'unavailable'}`);
+        },
+
+        reviewerLabel(id: string): string {
+            return this.approvalSummaries[id]?.currentAssignees.map((user) => user.name).join('、') ?? '';
+        },
+
+        openApproval(id: string): void {
+            const route = this.approvalSummaries[id]?.detailRoute;
+            if (route) void this.$router.push(route);
         },
 
         updateCriteria(filters: unknown[]): void {
@@ -423,6 +498,11 @@ export default defineComponent({
 
         onCloseCreateModal(): void {
             this.showCreateModal = false;
+            if (this.$route?.query.create === '1') {
+                const query = { ...this.$route.query };
+                delete query.create;
+                void this.$router.replace({ query });
+            }
         },
 
         /**
@@ -430,7 +510,7 @@ export default defineComponent({
          * state and its amount in the smallest unit, so the list is asked again.
          */
         onTransferCreated(): void {
-            this.showCreateModal = false;
+            this.onCloseCreateModal();
             this.page = 1;
 
             void this.getList();
@@ -441,7 +521,7 @@ export default defineComponent({
                 return;
             }
 
-            this.transferToApprove = item;
+            void this.$router.push({ name: 'sw.finance.transferDetail', params: { id: item.id } });
         },
 
         onReject(item: PaymentTransfer): void {
@@ -449,7 +529,7 @@ export default defineComponent({
                 return;
             }
 
-            this.transferToReject = item;
+            void this.$router.push({ name: 'sw.finance.transferDetail', params: { id: item.id } });
         },
 
         onCloseApproveModal(): void {

@@ -30,6 +30,8 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalException;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
@@ -118,6 +120,7 @@ class PaymentTransferSubmitterTest extends TestCase
         $gateway->expects($this->never())->method('execute');
         $connection = static::createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(0);
+        $connection->method('transactional')->willReturnCallback(static fn (\Closure $operation): mixed => $operation());
         $transfer = $this->createdTransfer();
 
         $this->expectExceptionObject(PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown'));
@@ -199,7 +202,8 @@ class PaymentTransferSubmitterTest extends TestCase
         $submitter = new PaymentTransferSubmitter(
             $this->resolverFor($gateway, [PaymentCapability::CAPTURE, PaymentCapability::REFUND]),
             $transferService,
-            new PaymentTransferResultBooker($transferService, $this->connection()),
+            new PaymentTransferResultBooker($transferService, $this->connection(), $this->approval()),
+            $this->approval(),
         );
 
         $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::TRANSFER->value));
@@ -275,7 +279,7 @@ class PaymentTransferSubmitterTest extends TestCase
 
         $connection = static::createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(1);
-        $connection->method('transactional')->willThrowException(new \LogicException('Unknown answers do not book transitions.'));
+        $connection->method('transactional')->willReturnCallback(static fn (\Closure $operation): mixed => $operation());
 
         $result = $this->submitter(
             $this->answeringGateway([], new TransferResult(TransferResult::STATE_UNKNOWN)),
@@ -407,12 +411,24 @@ class PaymentTransferSubmitterTest extends TestCase
         $this->submitter($gateway, $transfers, $connection)
             ->submit($this->app('app-id'), $this->createdTransfer());
 
-        static::assertSame(1, $transactionCalls);
+        static::assertSame(2, $transactionCalls);
         static::assertSame([
             ['channel', 0],
             ['write', 1],
             ['write', 1],
         ], $observations);
+    }
+
+    public function testPendingApprovalNeverCreatesAGatewayOrClaimsAnAttempt(): void
+    {
+        $approval = static::createMock(PaymentTransferApprovalService::class);
+        $approval->expects($this->once())->method('assertApproved')->willThrowException(PaymentTransferApprovalException::blocked('pending'));
+        $resolver = static::createMock(PaymentConfigResolver::class);
+        $resolver->expects($this->never())->method('resolveForTransfer');
+        $service = $this->transferService();
+        $submitter = new PaymentTransferSubmitter($resolver, $service, new PaymentTransferResultBooker($service, $this->connection(), $approval), $approval);
+        $this->expectExceptionObject(PaymentTransferApprovalException::blocked('pending'));
+        $submitter->submit($this->app('app-id'), $this->createdTransfer());
     }
 
     /**
@@ -431,8 +447,17 @@ class PaymentTransferSubmitterTest extends TestCase
         return new PaymentTransferSubmitter(
             $resolver,
             $transferService,
-            new PaymentTransferResultBooker($transferService, $connection ?? $this->connection()),
+            new PaymentTransferResultBooker($transferService, $connection ?? $this->connection(), $this->approval()),
+            $this->approval(),
         );
+    }
+
+    private function approval(): PaymentTransferApprovalService
+    {
+        $approval = static::createStub(PaymentTransferApprovalService::class);
+        $approval->method('assertApproved')->willReturn($this->recipient());
+
+        return $approval;
     }
 
     private function connection(): Connection

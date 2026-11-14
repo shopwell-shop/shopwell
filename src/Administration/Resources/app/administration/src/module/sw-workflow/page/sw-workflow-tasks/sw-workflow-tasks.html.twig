@@ -1,0 +1,200 @@
+{% block sw_workflow_tasks %}
+<sw-page
+    class="sw-workflow-tasks"
+    :show-search-bar="false"
+>
+    {% block sw_workflow_tasks_smart_bar_actions %}
+    <template #smart-bar-actions>
+        <mt-button
+            v-if="acl.can('workflow_participant.creator') && acl.can('workflow:read')"
+            variant="primary"
+            size="default"
+            class="sw-workflow-tasks__start"
+            @click="showRequestPicker = true"
+        >
+            {{ $t('sw-workflow.request.start') }}
+        </mt-button>
+    </template>
+    {% endblock %}
+    {% block sw_workflow_tasks_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2 class="sw-workflow-tasks__title">
+            {{ $t('sw-workflow.runtime.todo.title') }}
+            <span
+                v-if="!isLoading && !hasError"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_workflow_tasks_content %}
+    <template #content>
+        <div class="sw-workflow-tasks__content">
+            {% block sw_workflow_tasks_tabs %}
+            <mt-tabs
+                class="sw-workflow-tasks__tabs"
+                position-identifier="sw-workflow-personal-queues"
+                :default-item="activeTab"
+                :items="tabs"
+                :small="true"
+            />
+            {% endblock %}
+
+            <div class="sw-workflow-tasks__list">
+                <mt-banner
+                    v-if="hasError"
+                    variant="critical"
+                    role="alert"
+                >
+                    {{ $t('sw-workflow.runtime.todo.loadError') }}
+                    <mt-button
+                        variant="secondary"
+                        size="small"
+                        @click="loadRows"
+                    >
+                        {{ $t('sw-workflow.actions.retry') }}
+                    </mt-button>
+                </mt-banner>
+                <div class="sw-workflow-tasks__listing">
+                    {% block sw_workflow_tasks_grid %}
+                    <sw-data-grid
+                        v-if="!hasError && (isLoading || rows.length > 0)"
+                        :full-page="true"
+                        :data-source="rows"
+                        :columns="columns"
+                        :is-loading="isLoading"
+                        :show-selection="false"
+                        :show-actions="false"
+                        :allow-inline-edit="false"
+                        identifier="id"
+                        class="sw-workflow-tasks__grid"
+                    >
+                        {% block sw_workflow_tasks_grid_title %}
+                        <template #column-title="{ item }">
+                            <div class="sw-workflow-tasks__request">
+                                <button
+                                    class="sw-workflow-tasks__link"
+                                    type="button"
+                                    @click="onOpen(item)"
+                                >
+                                    {{ item.title || item.number || item.instanceId }}
+                                </button>
+                                <div
+                                    v-if="item.number"
+                                    class="sw-workflow-tasks__number"
+                                >
+                                    {{ item.number }}
+                                </div>
+                            </div>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_countersign %}
+                        <template #column-countersignType="{ item }">
+                            {{ countersignLabel(item.countersignType) }}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_initiator %}
+                        <template #column-initiator="{ item }">
+                            {{ item.initiator?.name || '—' }}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_waiting %}
+                        <template #column-startedAt="{ item }">
+                            <span :title="waitingTitle(item)">{{ waitingLabel(item) }}</span>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_decision %}
+                        <template #column-status="{ item }">
+                            <mt-badge :variant="item.status === 'REJECT' ? 'critical' : item.status === 'AGREE' ? 'positive' : 'neutral'">
+                                {{ statusLabel(item.status) }}
+                            </mt-badge>
+                        </template>
+                        <template #column-decision="{ item }">
+                            <span
+                                class="sw-workflow-tasks__decision"
+                                :class="`is--${item.decision}`"
+                            >
+                                {{ decisionLabel(item.decision) }}
+                            </span>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_comment %}
+                        <template #column-comment="{ item }">
+                            <span class="sw-workflow-tasks__comment">{{ item.comment || '—' }}</span>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_completed %}
+                        <template #column-completedAt="{ item }">
+                            <span :title="completedTitle(item)">{{ completedLabel(item) }}</span>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_actions %}
+                        <template #column-actions="{ item }">
+                            <mt-button
+                                v-if="isTodo"
+                                size="x-small"
+                                variant="secondary"
+                                :disabled="!canApprove"
+                                @click="onOpen(item)"
+                            >
+                                {{ $t('sw-workflow.runtime.todo.open') }}
+                            </mt-button>
+
+                            <mt-button
+                                v-else
+                                size="x-small"
+                                variant="tertiary"
+                                @click="onOpen(item)"
+                            >
+                                {{ $t('global.default.view') }}
+                            </mt-button>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_workflow_tasks_grid_pagination %}
+                        <template #pagination>
+                            <sw-pagination
+                                :page="page"
+                                :limit="limit"
+                                :total="total"
+                                :total-visible="7"
+                                @page-change="onPageChange"
+                            />
+                        </template>
+                        {% endblock %}
+                    </sw-data-grid>
+                    {% endblock %}
+
+                    {% block sw_workflow_tasks_empty %}
+                    <div
+                        v-else-if="!hasError"
+                        class="sw-workflow-tasks__empty"
+                    >
+                        <mt-empty-state
+                            icon="regular-check-circle"
+                            :headline="activeTab === 'mine' ? $t('sw-workflow.runtime.todo.emptyMineHeadline') : isTodo ? $t('sw-workflow.runtime.todo.emptyTodoHeadline') : $t('sw-workflow.runtime.todo.emptyDoneHeadline')"
+                            :description="activeTab === 'mine' ? $t('sw-workflow.runtime.todo.emptyMineDescription') : isTodo ? $t('sw-workflow.runtime.todo.emptyTodoDescription') : $t('sw-workflow.runtime.todo.emptyDoneDescription')"
+                        />
+                    </div>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+        <sw-workflow-request-picker
+            v-if="showRequestPicker"
+            @modal-close="showRequestPicker = false"
+        />
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

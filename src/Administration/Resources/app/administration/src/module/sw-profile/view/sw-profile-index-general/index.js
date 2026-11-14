@@ -1,6 +1,7 @@
 /**
  * @sw-package fundamentals@framework
  */
+import { DEFAULT_NAVIGATION_LAYOUT } from 'src/app/composables/use-admin-layout';
 import template from './sw-profile-index-general.html.twig';
 import './sw-profile-index-general.scss';
 
@@ -82,7 +83,7 @@ export default {
         },
         userNavigationLayout: {
             type: String,
-            default: 'sidebar',
+            default: DEFAULT_NAVIGATION_LAYOUT,
         },
         userTheme: {
             type: String,

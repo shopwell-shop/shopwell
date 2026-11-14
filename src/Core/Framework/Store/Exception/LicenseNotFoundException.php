@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 class LicenseNotFoundException extends ShopwellHttpException
 {
     public function __construct(
-        int $licenseId,
+        string $licenseId,
         array $parameters = [],
         ?\Throwable $e = null
     ) {

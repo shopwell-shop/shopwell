@@ -6,7 +6,7 @@ import type { PropType } from 'vue';
 import template from './sw-finance-transfer-approve-modal.html.twig';
 import './sw-finance-transfer-approve-modal.scss';
 import { OUTCOME, providerLabelKey, transferStateLabelKey } from '../../service/payment-transfer.api.service';
-import type { PaymentTransferSubmitResult } from '../../service/payment-transfer.api.service';
+import type { TransferApproval, PaymentTransferSubmitResult } from '../../service/payment-transfer.api.service';
 import { formatPaymentAmount } from '../../../sw-payment/service/payment-gateway.api.service';
 
 const { Mixin } = Shopwell;
@@ -56,6 +56,10 @@ export default defineComponent({
     emits: ['modal-close', 'transfer-decided'],
 
     props: {
+        approvalLabels: {
+            type: Object as PropType<Pick<TransferApproval, 'recipientLabel' | 'paymentAccountLabel'> | null>,
+            default: null,
+        },
         transfer: {
             type: Object as PropType<TransferLike>,
             required: true,
@@ -98,6 +102,10 @@ export default defineComponent({
         },
 
         recipientLabel(): string {
+            if (this.approvalLabels) {
+                return this.approvalLabels.recipientLabel || '–';
+            }
+
             const recipient = this.transfer.recipient;
 
             if (!recipient) {

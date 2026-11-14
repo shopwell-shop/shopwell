@@ -19,7 +19,7 @@ class LicenseNotFoundExceptionTest extends TestCase
     {
         static::assertSame(
             'FRAMEWORK__LICENSE_NOT_FOUND',
-            (new LicenseNotFoundException(1234))->getErrorCode()
+            (new LicenseNotFoundException('1234'))->getErrorCode()
         );
     }
 
@@ -27,7 +27,7 @@ class LicenseNotFoundExceptionTest extends TestCase
     {
         static::assertSame(
             Response::HTTP_NOT_FOUND,
-            (new LicenseNotFoundException(1234))->getStatusCode()
+            (new LicenseNotFoundException('1234'))->getStatusCode()
         );
     }
 
@@ -35,7 +35,7 @@ class LicenseNotFoundExceptionTest extends TestCase
     {
         static::assertSame(
             'Could not find license with id 1234',
-            (new LicenseNotFoundException(1234))->getMessage()
+            (new LicenseNotFoundException('1234'))->getMessage()
         );
     }
 }

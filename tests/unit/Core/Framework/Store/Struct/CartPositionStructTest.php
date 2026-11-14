@@ -35,7 +35,7 @@ class CartPositionStructTest extends TestCase
         $position->setPseudoPrice(14.9);
         $position->setFirstMonthFree(true);
         $position->setDiscountAppliesForMonths(3);
-        $position->setExtensionInformation(['id' => 7, 'name' => 'SwagExtension']);
+        $position->setExtensionInformation(['id' => '7', 'name' => 'SwagExtension']);
         $position->setVariant(['id' => 11, 'name' => 'rent']);
 
         static::assertSame(10.0, $position->getNetPrice());
@@ -44,8 +44,8 @@ class CartPositionStructTest extends TestCase
         static::assertSame(14.9, $position->getPseudoPrice());
         static::assertTrue($position->isFirstMonthFree());
         static::assertSame(3, $position->getDiscountAppliesForMonths());
-        static::assertSame(['id' => 7, 'name' => 'SwagExtension'], $position->getExtensionInformation());
-        static::assertSame(7, $position->getExtensionId());
+        static::assertSame(['id' => '7', 'name' => 'SwagExtension'], $position->getExtensionInformation());
+        static::assertSame('7', $position->getExtensionId());
         static::assertSame('SwagExtension', $position->getExtensionName());
         static::assertSame(['id' => 11, 'name' => 'rent'], $position->getVariant());
         static::assertSame(11, $position->getVariantId());

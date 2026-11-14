@@ -45,16 +45,18 @@ class CoreAdminMenuProviderTest extends TestCase
         );
     }
 
-    public function testPaymentNavigationContainsRealPagesWithoutTheEmptyPaymentsPlaceholder(): void
+    public function testPaymentPagesBelongDirectlyToFinanceWithIndependentPermissions(): void
     {
         $definitions = array_column($this->definitions, null, 'internalKey');
 
         static::assertArrayNotHasKey('sw-payments', $definitions);
-        static::assertArrayHasKey('sw-payment', $definitions);
-        static::assertSame('sw-payment', $definitions['sw.payment.index']->parent);
+        static::assertArrayNotHasKey('sw-payment', $definitions);
+        static::assertNull($definitions['sw-finance']->privilege);
+        static::assertSame('sw-finance', $definitions['sw.payment.index']->parent);
         static::assertSame('payment_order.viewer', $definitions['sw.payment.index']->privilege);
-        static::assertSame('sw-payment', $definitions['sw.payment.refund']->parent);
+        static::assertSame('sw-finance', $definitions['sw.payment.refund']->parent);
         static::assertSame('payment_refund.viewer', $definitions['sw.payment.refund']->privilege);
+        static::assertSame('payment_account.viewer', $definitions['sw-settings-payment-provider']->privilege);
     }
 
     public function testMembershipSettingsCanBeAssignedToRoleMenus(): void
@@ -77,7 +79,7 @@ class CoreAdminMenuProviderTest extends TestCase
         ));
 
         static::assertCount(1, $blogs);
-        static::assertNull($blogs[0]->parent);
+        static::assertSame('sw-content', $blogs[0]->parent);
         static::assertSame(AdminMenuItemDefinition::TYPE_FOLDER, $blogs[0]->type);
         static::assertSame('sw-blog.general.mainMenuItemGeneral', $blogs[0]->title);
 
@@ -92,6 +94,45 @@ class CoreAdminMenuProviderTest extends TestCase
         foreach ($children as $child) {
             static::assertSame('blog.viewer', $child->privilege);
         }
+    }
+
+    public function testWorkflowDesignIsAssignableWithinItsOwnDomain(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+
+        static::assertArrayHasKey('sw-workflow', $definitions);
+        static::assertNull($definitions['sw-workflow']->parent);
+        static::assertSame(72, $definitions['sw-workflow']->position);
+        static::assertSame(AdminMenuItemDefinition::TYPE_FOLDER, $definitions['sw-workflow']->type);
+        static::assertArrayHasKey('sw-workflow-design', $definitions);
+        static::assertSame('sw-workflow', $definitions['sw-workflow-design']->parent);
+        static::assertSame('workflow.viewer', $definitions['sw-workflow-design']->privilege);
+        static::assertArrayNotHasKey('sw-workflow-releases', $definitions);
+        static::assertArrayHasKey('sw-workflow-tasks', $definitions);
+        static::assertSame('sw-workflow', $definitions['sw-workflow-tasks']->parent);
+        static::assertSame('workflow_participant.viewer', $definitions['sw-workflow-tasks']->privilege);
+        static::assertSame('sw-workflow.runtime.navigation', $definitions['sw-workflow-tasks']->title);
+        static::assertNull((new CoreAdminMenuProvider())->getPluginTechnicalName());
+    }
+
+    public function testSettingsRetainTheirOriginalGroups(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+        foreach ([
+            'sw-settings-rule' => 'automation',
+            'sw-settings-organization' => 'general',
+            'sw-settings-country' => 'localization',
+            'sw-settings-media' => 'content',
+            'sw-settings-cart' => 'general',
+            'sw-settings-logging' => 'system',
+            'sw-settings-payment-provider' => 'payment',
+        ] as $key => $group) {
+            static::assertSame('sw-settings', $definitions[$key]->parent, $key);
+            static::assertSame($group, $definitions[$key]->groupName, $key);
+        }
+        static::assertNull($definitions['sw-order-return']->parent);
+        static::assertSame('sw-system', $definitions['sw-user']->parent);
+        static::assertArrayNotHasKey('sw-settings-security', $definitions);
     }
 
     public function testEveryParentIsDeclaredAsWell(): void

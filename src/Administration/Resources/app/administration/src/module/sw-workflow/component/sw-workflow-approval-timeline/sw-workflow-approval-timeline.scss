@@ -1,0 +1,136 @@
+.sw-workflow-approval-timeline {
+    &__title {
+        margin: 0 0 16px;
+        font-size: var(--font-size-2xs);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-secondary-default);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    &__list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    &__item {
+        position: relative;
+        padding: 0 0 20px 24px;
+
+        // 竖线画在条目上而不是列表上：最后一条不画，否则时间线会拖出一截空白
+        &::before {
+            position: absolute;
+            top: 10px;
+            bottom: 0;
+            left: 3px;
+            width: 2px;
+            background: var(--color-border-secondary-default);
+            content: "";
+        }
+
+        &:last-child::before {
+            display: none;
+        }
+    }
+
+    &__dot {
+        position: absolute;
+        top: 6px;
+        left: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-icon-secondary-default);
+    }
+
+    &__body {
+        min-width: 0;
+    }
+
+    &__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--font-size-xs);
+    }
+
+    &__avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--color-background-secondary-default);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__name {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+    }
+
+    &__action {
+        color: var(--color-text-secondary-default);
+    }
+
+    &__node {
+        padding: 1px 6px;
+        border-radius: var(--border-radius-xs);
+        background: var(--color-background-secondary-default);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+    }
+
+    &__time {
+        margin-left: auto;
+        color: var(--color-text-tertiary-default);
+        font-size: var(--font-size-2xs);
+        white-space: nowrap;
+    }
+
+    &__comment {
+        padding: 8px 10px;
+        margin: 8px 0 0;
+        border-radius: var(--border-radius-s);
+        background: var(--color-background-secondary-default);
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-xs);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    &__empty {
+        padding: 8px 0;
+        color: var(--color-text-tertiary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    // 三种状态只改圆点与数字颜色，不整行染色：整行染色会盖掉意见文字的对比度
+    &__item.is--agreed &__dot {
+        background: var(--color-background-positive-default);
+    }
+
+    &__item.is--rejected &__dot {
+        background: var(--color-background-critical-default);
+    }
+
+    &__item.is--rejected &__action {
+        color: var(--color-text-critical-default);
+    }
+
+    // 当前节点：品牌色 + 外圈淡色，表示"正在这里等"
+    &__item.is--pending &__dot {
+        background: var(--color-background-brand-default);
+        box-shadow: 0 0 0 4px var(--color-background-secondary-default);
+    }
+
+    &__item.is--pending &__action {
+        color: var(--color-text-brand-default);
+    }
+}

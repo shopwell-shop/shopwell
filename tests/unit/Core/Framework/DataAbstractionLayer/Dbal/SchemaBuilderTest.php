@@ -54,6 +54,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\PriceField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\RemoteAddressField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StateMachineStateField;
+use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TaxFreeConfigField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TimeZoneField;
@@ -92,6 +93,8 @@ class SchemaBuilderTest extends TestCase
                 TestEntityWithForeignKeysDefinition::class,
                 ProductDefinition::class,
                 TestAssociationWithMissingReferenceVersionDefinition::class,
+                TestEntityWithStateDefinition::class,
+                StateMachineStateDefinition::class,
             ],
             static::createStub(ValidatorInterface::class),
             static::createStub(EntityWriteGatewayInterface::class)
@@ -325,6 +328,18 @@ class SchemaBuilderTest extends TestCase
         static::assertSame('RESTRICT', $associationFk3->getOnDeleteAction()->value);
     }
 
+    public function testRequiredStateKeepsItsForeignKeyWithoutRestrictingEntityDeletion(): void
+    {
+        $definition = $this->registry->get(TestEntityWithStateDefinition::class);
+        $table = (new SchemaBuilder())->buildSchemaOfDefinition($definition);
+
+        static::assertTrue($table->getColumn('state_id')->getNotnull());
+        static::assertSame('RESTRICT', $table->getForeignKey('fk__test_entity_with_state__state_id')->getOnDeleteAction()->value);
+        static::assertFalse($definition->getFields()->get('stateMachineState')->is(RestrictDelete::class));
+        static::assertFalse($table->getColumn('optional_state_id')->getNotnull());
+        static::assertSame('SET NULL', $table->getForeignKey('fk__test_entity_with_state__optional_state_id')->getOnDeleteAction()->value);
+    }
+
     public function testDefinitionMissingReferenceVersionField(): void
     {
         $definition = $this->registry->get(TestAssociationWithMissingReferenceVersionDefinition::class);
@@ -496,6 +511,28 @@ class TestAssociationWithMissingReferenceVersionDefinition extends EntityDefinit
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
             (new FkField('product_id', 'productId', ProductDefinition::class))->addFlags(new Required()),
             new OneToOneAssociationField('product', 'product_id', 'id', ProductDefinition::class),
+        ]);
+    }
+}
+
+/**
+ * @internal
+ */
+class TestEntityWithStateDefinition extends EntityDefinition
+{
+    public function getEntityName(): string
+    {
+        return 'test_entity_with_state';
+    }
+
+    protected function defineFields(): FieldCollection
+    {
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+            (new StateMachineStateField('state_id', 'stateId', OrderStates::STATE_MACHINE))->addFlags(new Required()),
+            new ManyToOneAssociationField('stateMachineState', 'state_id', StateMachineStateDefinition::class, 'id'),
+            new StateMachineStateField('optional_state_id', 'optionalStateId', OrderStates::STATE_MACHINE),
+            new ManyToOneAssociationField('optionalStateMachineState', 'optional_state_id', StateMachineStateDefinition::class, 'id'),
         ]);
     }
 }

@@ -1,0 +1,172 @@
+{% block sw_canvas_editor %}
+<div class="sw-canvas-editor">
+    <header
+        v-if="$slots.toolbar"
+        class="sw-canvas-editor__toolbar"
+    >
+        <slot name="toolbar"></slot>
+    </header>
+    <div class="sw-canvas-editor__workspace">
+        <aside
+            v-if="$slots['sidebar-start']"
+            class="sw-canvas-editor__sidebar-start"
+        >
+            <slot name="sidebar-start"></slot>
+        </aside>
+        <main class="sw-canvas-editor__surface">
+            {% block sw_canvas_editor_surface %}
+            <vue-flow
+                :id="canvasId"
+                :nodes="renderNodes"
+                :edges="renderConnections"
+                :nodes-draggable="allowEdit && allowNodeMove"
+                :nodes-connectable="allowEdit && allowConnections"
+                :elements-selectable="false"
+                :nodes-focusable="false"
+                :edges-focusable="false"
+                :apply-default="false"
+                :selection-key-code="null"
+                :multi-selection-key-code="null"
+                :delete-key-code="null"
+                :edges-updatable="false"
+                :min-zoom="0.25"
+                :max-zoom="1.5"
+                @init="onInit"
+                @nodes-change="onNodesChange"
+                @edges-change="syncSelection"
+                @nodes-initialized="fit"
+                @node-click="onNodeClick"
+                @edge-click="onConnectionClick"
+                @node-drag-stop="onNodeMove"
+                @connect="onConnect"
+                @node-context-menu="onNodeContextmenu"
+                @node-mouse-enter="showNodeTools($event.node.id)"
+                @node-mouse-leave="scheduleHideNodeTools($event.node.id)"
+                @edge-context-menu="onConnectionContextmenu"
+                @pane-click="$emit('canvas-click')"
+                @pane-context-menu="onCanvasContextmenu"
+            >
+                <template #node-canvas="{ id, data }">
+                    <handle
+                        v-for="port in data.projection.inputPorts || []"
+                        :id="port.id"
+                        :key="'input-' + port.id"
+                        type="target"
+                        :position="portPosition(port, true)"
+                        :style="portStyle(port, data.projection, true)"
+                    />
+                    <div
+                        class="sw-canvas-editor__node"
+                        :data-canvas-node-owner="id"
+                        @focusin="focusedNodeId = id"
+                        @focusout="onNodeToolsBlur($event, id)"
+                    >
+                        <button
+                            class="sw-canvas-editor__node-select nodrag nopan"
+                            type="button"
+                            :data-canvas-node="id"
+                            :aria-label="data.projection.label || id"
+                            @click.stop="$emit('select-node', id)"
+                        ></button>
+                        <slot
+                            name="node"
+                            :node="data.projection"
+                        >
+                            <component
+                                :is="data.projection.component"
+                                v-if="data.projection.component"
+                                :data="data.projection.data"
+                            />
+                            <span v-else>{{ id }}</span>
+                        </slot>
+                        <slot
+                            name="node-decoration"
+                            :node="data.projection"
+                        ></slot>
+                    </div>
+                    <node-toolbar
+                        v-if="$slots['node-tools']"
+                        class="sw-canvas-editor__node-tools nodrag nopan"
+                        :node-id="id"
+                        :data-canvas-node-owner="id"
+                        :is-visible="hoveredNodeId === id || focusedNodeId === id || !!data.projection.selected"
+                        position="right"
+                        align="start"
+                        @mouseenter="showNodeTools(id)"
+                        @mouseleave="scheduleHideNodeTools(id)"
+                        @focusin="focusedNodeId = id"
+                        @focusout="onNodeToolsBlur($event, id)"
+                        @click.stop
+                    >
+                        <slot
+                            name="node-tools"
+                            :node="data.projection"
+                        ></slot>
+                    </node-toolbar>
+                    <handle
+                        v-for="port in data.projection.outputPorts || []"
+                        :id="port.id"
+                        :key="'output-' + port.id"
+                        type="source"
+                        :position="portPosition(port, false)"
+                        :style="portStyle(port, data.projection, false)"
+                    />
+                </template>
+                <template #edge-canvas="edge">
+                    <g
+                        tabindex="0"
+                        role="button"
+                        :aria-label="edgeConnection(edge).label || edge.id"
+                        :data-canvas-connection="edge.id"
+                        @keydown="onConnectionKeydown($event, edge.id)"
+                    >
+                        <base-edge
+                            :id="edge.id"
+                            :path="edgeRoute(edge).path"
+                            :interaction-width="24"
+                        />
+                    </g>
+                    <edge-label-renderer>
+                        <span
+                            v-if="edgeConnection(edge).label"
+                            class="sw-canvas-editor__connection-label nodrag nopan"
+                            :style="labelStyle(edge)"
+                            :title="edgeConnection(edge).label"
+                        >{{ edgeConnection(edge).label }}</span>
+                        <slot
+                            name="connection-tools"
+                            :connection="edgeConnection(edge)"
+                            :route="edgeRoute(edge)"
+                        ></slot>
+                    </edge-label-renderer>
+                </template>
+            </vue-flow>
+            {% endblock %}
+            <div
+                v-if="$slots.overlay"
+                class="sw-canvas-editor__overlay"
+            >
+                <slot name="overlay"></slot>
+            </div>
+            <slot
+                name="viewport-controls"
+                :fit="fit"
+                :zoom-in="zoomIn"
+                :zoom-out="zoomOut"
+            ></slot>
+        </main>
+        <aside
+            v-if="$slots['sidebar-end']"
+            class="sw-canvas-editor__sidebar-end"
+        >
+            <slot name="sidebar-end"></slot>
+        </aside>
+    </div>
+    <footer
+        v-if="$slots.footer"
+        class="sw-canvas-editor__footer"
+    >
+        <slot name="footer"></slot>
+    </footer>
+</div>
+{% endblock %}

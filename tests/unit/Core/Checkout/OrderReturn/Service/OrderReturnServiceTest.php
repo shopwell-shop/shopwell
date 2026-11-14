@@ -12,6 +12,8 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderStates;
+use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnReason\OrderReturnReasonCollection;
+use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnReason\OrderReturnReasonEntity;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnException;
@@ -54,6 +56,21 @@ class OrderReturnServiceTest extends TestCase
     {
         $this->context = Context::createDefaultContext();
         $this->quantityGuard = static::createStub(OrderReturnQuantityGuard::class);
+    }
+
+    public function testActiveReasonsUseTheTranslatedLabel(): void
+    {
+        $reason = new OrderReturnReasonEntity();
+        $reason->id = 'reason-id';
+        $reason->setUniqueIdentifier($reason->id);
+        $reason->setTranslated(['label' => '商品有瑕疵']);
+        $reasons = new StaticEntityRepository([new OrderReturnReasonCollection([$reason])]);
+
+        $service = $this->service($this->order([]), reasonRepository: $reasons);
+
+        static::assertSame([
+            ['id' => 'reason-id', 'label' => '商品有瑕疵'],
+        ], $service->activeReasons($this->context));
     }
 
     public function testTheAmountIsCalculatedFromTheOrderedPriceAndSummed(): void
@@ -301,12 +318,14 @@ class OrderReturnServiceTest extends TestCase
 
     /**
      * @param StaticEntityRepository<OrderReturnCollection>|null $repository
+     * @param StaticEntityRepository<OrderReturnReasonCollection>|null $reasonRepository
      */
     private function service(
         OrderEntity $order,
         ?OrderReturnSettings $settings = null,
         ?StaticEntityRepository $repository = null,
         ?OrderReturnEntity $currentReturn = null,
+        ?StaticEntityRepository $reasonRepository = null,
     ): OrderReturnService {
         $numberGenerator = static::createStub(OrderReturnNumberGenerator::class);
         $numberGenerator->method('generate')->willReturn('RT-1');
@@ -320,7 +339,7 @@ class OrderReturnServiceTest extends TestCase
         return new OrderReturnService(
             $repository ?? $this->returnRepository($currentReturn),
             new StaticEntityRepository([]),
-            new StaticEntityRepository([]),
+            $reasonRepository ?? StaticEntityRepository::of(OrderReturnReasonCollection::class),
             new StaticEntityRepository([new OrderCollection([$order])]),
             $settings ?? $this->settings(),
             $numberGenerator,

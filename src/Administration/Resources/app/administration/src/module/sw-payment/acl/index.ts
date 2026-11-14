@@ -68,6 +68,7 @@ Shopwell.Service('privileges')
                     'payment_transfer_recipient:read',
                     'payment_app:read',
                     'state_machine_state:read',
+                    'state_machine:read',
                 ],
                 dependencies: [],
             },

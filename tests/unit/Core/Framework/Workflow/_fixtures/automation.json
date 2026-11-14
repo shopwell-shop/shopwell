@@ -1,0 +1,12 @@
+{
+  "schemaVersion":1,"policy":"core:structured",
+  "nodes": [
+    { "id": "start", "type": "core:start", "typeVersion": 1, "config": [] },
+    { "id": "record", "type": "example:record", "typeVersion": 2, "config": { "payload": { "value": null, "items": [1, "two", false] } } },
+    { "id": "end", "type": "core:end", "typeVersion": 1, "config": [] }
+  ],
+  "connections": [
+    { "id": "first", "source": "start", "sourcePort": "out", "target": "record", "targetPort": "in" },
+    { "id": "second", "source": "record", "sourcePort": "out", "target": "end", "targetPort": "in" }
+  ]
+}

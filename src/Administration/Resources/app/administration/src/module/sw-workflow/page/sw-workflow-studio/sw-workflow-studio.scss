@@ -1,0 +1,54 @@
+.sw-workflow-studio {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+    }
+
+    &__feedback {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        p {
+            flex: 1 1 240px;
+            margin: 0;
+        }
+    }
+
+    &__back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        color: var(--color-text-primary-default);
+
+        &:hover {
+            color: var(--color-text-brand-default);
+        }
+    }
+
+    &__name {
+        width: 220px;
+        margin-bottom: 0;
+
+        // Keep the input limit without adding a second row to the toolbar.
+        .mt-field__hint-wrapper {
+            display: none;
+        }
+    }
+
+    @media (max-width: 600px) {
+        &__name {
+            width: 140px;
+        }
+    }
+
+    .sw-workflow-studio-editor {
+        flex: 1;
+    }
+}

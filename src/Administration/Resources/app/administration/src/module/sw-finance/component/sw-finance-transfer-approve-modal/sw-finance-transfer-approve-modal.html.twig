@@ -13,6 +13,11 @@
         <dt>{{ $t('sw-finance.transfer.approve.summaryRecipient') }}</dt>
         <dd>{{ recipientLabel }}</dd>
 
+        <template v-if="approvalLabels">
+            <dt>{{ $t('sw-finance.transfer.workflow.reviewedPaymentAccount') }}</dt>
+            <dd>{{ approvalLabels.paymentAccountLabel || '–' }}</dd>
+        </template>
+
         <dt>{{ $t('sw-finance.transfer.approve.summaryApp') }}</dt>
         <dd>{{ appLabel }}</dd>
 

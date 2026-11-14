@@ -34,6 +34,7 @@ export default defineComponent({
     emits: ['modal-close', 'transfer-decided'],
 
     props: {
+        approval: { type: Boolean, default: false },
         transfer: {
             type: Object as PropType<TransferLike>,
             required: true,
@@ -51,6 +52,10 @@ export default defineComponent({
     },
 
     computed: {
+        snippetPrefix(): string {
+            return this.approval ? 'sw-finance.transfer.workflow.cancellation' : 'sw-finance.transfer.reject';
+        },
+
         reasonLength(): number {
             return this.reason.length;
         },
@@ -88,11 +93,14 @@ export default defineComponent({
 
             this.rejectInProgress = true;
 
-            this.paymentTransferApiService
-                .cancelTransfer(this.transfer.id, this.reason.trim())
+            const request = this.approval
+                ? this.paymentTransferApiService.cancelApproval(this.transfer.id, this.reason.trim())
+                : this.paymentTransferApiService.cancelTransfer(this.transfer.id, this.reason.trim());
+
+            request
                 .then(() => {
                     this.createNotificationSuccess({
-                        message: this.$t('sw-finance.transfer.reject.noticeRejected'),
+                        message: this.$t(`${this.snippetPrefix}.noticeRejected`),
                     });
 
                     this.$emit('transfer-decided');
@@ -101,7 +109,7 @@ export default defineComponent({
                     const detail = error.response?.data?.errors?.[0]?.detail;
 
                     this.createNotificationError({
-                        message: detail || this.$t('sw-finance.transfer.reject.messageFailed'),
+                        message: detail || this.$t(`${this.snippetPrefix}.messageFailed`),
                     });
                 })
                 .finally(() => {

@@ -6,6 +6,7 @@ Portable AI capabilities packaged in the [Anthropic Agent Skills](https://agents
 
 | Skill | Invocation examples | What it does |
 |---|---|---|
+| [`shopwell-engineering`](shopwell-engineering/SKILL.md) | "design this feature", "develop a plugin", "review architecture and readability" | Guides platform and plugin work using source-backed ownership, naming, readable control flow, UI, extension and verification patterns across the repository. |
 | [`sw-bugfixer`](sw-bugfixer/SKILL.md) | Explicit: `/sw-bugfixer …` (Claude) or `$sw-bugfixer …` (Codex) | Diagnoses a Shopwell issue or Bugfixer PR feedback, applies a focused fix when appropriate, validates narrowly, and reports the change or no-op decision. |
 | [`sw-triage`](sw-triage/SKILL.md) | Explicit: `/sw-triage …` (Claude) or `$sw-triage …` (Codex) | Triages a Shopwell 6 GitHub bug issue — identifies the affected code area, checks for related fixes or duplicates, and emits a Markdown summary (disposition, severity, suggested labels, confidence, evidence). |
 | [`sw-review`](sw-review/SKILL.md) | Explicit: `/sw-review …` (Claude) or `$sw-review …` (Codex) | Reviews a Shopwell 6 PR or local diff through calibrated persona lenses plus topic guides selected deterministically from the changed code (BC, platform scope, cache lifetime, queue, ...), dedupes findings, and emits Markdown or schema-valid JSON depending on invocation mode. |

@@ -1,0 +1,78 @@
+{% block sw_workflow_publish %}
+<div class="sw-workflow-publish">
+    <router-link
+        v-if="release"
+        :to="{ name: 'sw.workflow.releases', query: { draftId } }"
+    >
+        {{ $t('sw-workflow.publication.published', { revision: release.revision }) }}
+    </router-link>
+    <mt-button
+        v-if="acl.can('workflow:publish')"
+        class="sw-workflow-publish__open"
+        variant="secondary"
+        :disabled="!canPublish"
+        :title="$t('sw-workflow.publication.savedOnly')"
+        @click="open"
+    >
+        {{ $t('sw-workflow.publication.publish') }}
+    </mt-button>
+    <sw-modal
+        v-if="showModal"
+        :title="$t('sw-workflow.publication.confirmTitle')"
+        @modal-close="!isSubmitting && (showModal = false)"
+    >
+        <p>{{ $t('sw-workflow.publication.confirmHint', { revision }) }}</p>
+        <mt-banner
+            v-if="error"
+            variant="critical"
+            role="alert"
+        >
+            {{ $t('sw-workflow.publication.' + error) }}
+            <mt-button
+                v-if="error === 'providersFailed'"
+                class="sw-workflow-publish__retry"
+                variant="secondary"
+                :disabled="isLoading"
+                @click="open"
+            >
+                {{ $t('sw-workflow.actions.retry') }}
+            </mt-button>
+        </mt-banner>
+        <sw-loader v-if="isLoading" />
+        <mt-banner
+            v-else-if="!error && !publisherOptions.length"
+            variant="info"
+        >
+            {{ $t('sw-workflow.publication.noProvider') }}
+        </mt-banner>
+        <mt-select
+            v-else-if="publisherOptions.length > 1"
+            v-model="publisher"
+            :options="publisherOptions"
+            :label="$t('sw-workflow.publication.provider')"
+            :disabled="isSubmitting"
+        />
+        <p v-else-if="publisherOptions.length === 1">
+            {{ publisherOptions[0].label }}
+        </p>
+        <template #modal-footer>
+            <mt-button
+                variant="secondary"
+                :disabled="isSubmitting"
+                @click="showModal = false"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            <mt-button
+                class="sw-workflow-publish__confirm"
+                variant="primary"
+                :disabled="!canConfirm"
+                :is-loading="isSubmitting"
+                @click="publish"
+            >
+                {{ $t('sw-workflow.publication.publish') }}
+            </mt-button>
+        </template>
+    </sw-modal>
+</div>
+{% endblock %}

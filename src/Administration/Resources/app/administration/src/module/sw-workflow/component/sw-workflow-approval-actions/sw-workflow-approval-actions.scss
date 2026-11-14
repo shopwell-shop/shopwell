@@ -1,0 +1,28 @@
+.sw-workflow-approval-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &__progress {
+        margin: 0;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__buttons {
+        display: flex;
+        gap: 8px;
+
+        // 两个按钮等宽：拒绝不应该比同意更小或更难按，两者都是正常决策
+        > * {
+            flex: 1;
+        }
+    }
+
+    &__hint {
+        margin: 0;
+        font-size: var(--font-size-2xs);
+        line-height: 1.5;
+        color: var(--color-text-tertiary-default);
+    }
+}

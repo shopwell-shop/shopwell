@@ -1,0 +1,62 @@
+{% block sw_workflow_approval_participants %}
+<section class="sw-workflow-approval-participants">
+    <h3 class="sw-workflow-approval-participants__title">
+        {{ $t('sw-workflow.runtime.participants.title') }}
+    </h3>
+    <div
+        v-for="(group, index) in groups"
+        :key="group.id"
+        class="sw-workflow-approval-participants__group"
+        :data-stage-status="group.status"
+        :aria-current="group.status === 'active' ? 'step' : undefined"
+    >
+        <div class="sw-workflow-approval-participants__heading">
+            <span class="sw-workflow-approval-participants__step">{{ $t('sw-workflow.runtime.participants.step', { number: index + 1 }) }}</span>
+            <h4 class="sw-workflow-approval-participants__name">
+                {{ group.name }}
+            </h4>
+            <span
+                v-if="group.status"
+                class="sw-workflow-approval-participants__state"
+                :class="`is--${group.status}`"
+            >{{ stateLabel(group.status) }}</span>
+        </div>
+        <p
+            v-if="group.description"
+            class="sw-workflow-approval-participants__description"
+        >
+            {{ group.description }}
+        </p>
+        <p class="sw-workflow-approval-participants__rule">
+            {{ rule(group.mode) }}
+        </p>
+        <p
+            v-if="group.tasks.length"
+            class="sw-workflow-approval-participants__counts"
+        >
+            {{ $t('sw-workflow.runtime.participants.counts', group.counts) }}
+        </p>
+        <progress
+            v-if="group.tasks.length"
+            class="sw-workflow-approval-participants__progress"
+            :value="group.completed"
+            :max="group.tasks.length"
+            :aria-label="$t('sw-workflow.runtime.participants.progress', { completed: group.completed, total: group.tasks.length })"
+        ></progress>
+        <ul class="sw-workflow-approval-participants__list">
+            <li
+                v-for="participant in group.participants"
+                :key="participant.id"
+                class="sw-workflow-approval-participants__participant"
+                :data-state="participant.state"
+            >
+                <span class="sw-workflow-approval-participants__assignee">{{ participant.name }}</span>
+                <span
+                    class="sw-workflow-approval-participants__state"
+                    :class="`is--${participant.state}`"
+                >{{ stateLabel(participant.state) }}</span>
+            </li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

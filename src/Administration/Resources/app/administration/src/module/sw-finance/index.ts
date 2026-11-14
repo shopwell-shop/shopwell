@@ -10,10 +10,23 @@
  * orders (bookkeeping, read only) stay in `sw-payment`.
  */
 import './acl';
+import './service/payment-transfer-workflow.registration';
 
 import PaymentTransferApiService from './service/payment-transfer.api.service';
 
+/** @private */
+Shopwell.Component.register(
+    'sw-finance-transfer-approval-preview',
+    () => import('./component/sw-finance-transfer-approval-preview'),
+);
+
 const { Module } = Shopwell;
+
+/** @private */
+Shopwell.Component.register(
+    'sw-finance-transfer-workflow-start',
+    () => import('./component/sw-finance-transfer-workflow-start'),
+);
 
 /** @private */
 Shopwell.Component.register('sw-finance-transfer-list', () => import('./page/sw-finance-transfer-list'));
@@ -38,6 +51,12 @@ Shopwell.Component.register(
 Shopwell.Component.register(
     'sw-finance-transfer-reject-modal',
     () => import('./component/sw-finance-transfer-reject-modal'),
+);
+
+/** @private */
+Shopwell.Component.register(
+    'sw-finance-transfer-workflow-settings',
+    () => import('./component/sw-finance-transfer-workflow-settings'),
 );
 
 /** @private */
@@ -116,6 +135,7 @@ Module.register('sw-finance', {
         },
         {
             id: 'sw-finance-transfer',
+            position: 30,
             path: 'sw.finance.transfer',
             label: 'sw-finance.navigation.transfer',
             parent: 'sw-finance',
@@ -123,6 +143,7 @@ Module.register('sw-finance', {
         },
         {
             id: 'sw-finance-wallet-transactions',
+            position: 40,
             path: 'sw.finance.walletTransactions',
             label: 'sw-finance.navigation.walletTransactions',
             parent: 'sw-finance',

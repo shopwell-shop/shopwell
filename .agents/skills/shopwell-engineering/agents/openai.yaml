@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopwell Engineering"
+  short_description: "Source-backed architecture and readable platform/plugin code"
+  default_prompt: "Use $shopwell-engineering to implement or review this Shopwell change using the repository's actual patterns and extension contracts."

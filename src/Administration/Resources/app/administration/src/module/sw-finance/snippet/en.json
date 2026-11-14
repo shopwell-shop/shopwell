@@ -14,7 +14,7 @@
         "transfer": {
             "actions": {
                 "cancel": "Reject",
-                "submit": "Approve and transfer"
+                "submit": "Execute transfer"
             },
             "approve": {
                 "buttonConfirm": "Confirm transfer",
@@ -49,7 +49,7 @@
                 "fieldIdentityValue": "Identity",
                 "fieldNote": "Note",
                 "fieldOutNo": "Merchant transfer no.",
-                "fieldProvider": "Payment provider",
+                "fieldAccount": "Payment account",
                 "fieldRecipientExisting": "Account",
                 "fieldRecipientSource": "Recipient account",
                 "fieldRecipientSourceExisting": "Use an existing account",
@@ -67,7 +67,7 @@
                     "wechat_open_id": "Wechat open id"
                 },
                 "labelNoRecipients": "No payable account of this provider exists yet - register a new one.",
-                "messageCreated": "Transfer request created, waiting for approval.",
+                "messageCreated": "Transfer request created and automatically submitted for approval.",
                 "messageFailed": "The transfer request could not be created.",
                 "messageReplayed": "This merchant transfer no. is already booked - the existing request was opened.",
                 "modalTitle": "New transfer request",
@@ -78,7 +78,7 @@
                 "placeholderIdentityValue": "e.g. the payer id at the provider",
                 "placeholderNote": "Visible to the approver only, never sent to the channel",
                 "placeholderOutNo": "Leave empty to generate",
-                "placeholderProvider": "Select a payment provider...",
+                "placeholderAccount": "Select a payment account...",
                 "placeholderRecipient": "Select an account...",
                 "validationAmountInvalid": "Enter the amount with at most two decimals, e.g. 120.50.",
                 "validationAmountRequired": "Enter the amount.",
@@ -93,7 +93,8 @@
                 "validationNoteTooLong": "The note is longer than 255 characters.",
                 "validationOutNoInvalid": "Only letters and digits, at most 30 characters.",
                 "validationProviderRequired": "Select the payment provider.",
-                "validationRecipientRequired": "Select the account the money goes to."
+                "validationRecipientRequired": "Select the account the money goes to.",
+                "validationCurrencyUnsupported": "The selected channel does not support this settlement currency."
             },
             "detail": {
                 "buttonRefresh": "Refresh",
@@ -199,6 +200,107 @@
                 "returned": "Returned",
                 "submitted": "Submitted",
                 "succeeded": "Succeeded"
+            },
+            "workflow": {
+                "settingsTitle": "Approval workflow",
+                "approvalTitle": "Transfer approval",
+                "approvalStatus": "Approval status",
+                "paymentStatus": "Payment status",
+                "release": "Published workflow",
+                "revision": "Revision {revision}",
+                "executionHint": "Approval does not move money. After final approval, Finance must explicitly execute the transfer.",
+                "openApproval": "View approval",
+                "openTransfer": "View approval and transfer",
+                "cancel": "Cancel approval",
+                "configurationHint": "New transfers automatically start this published revision. Changes only affect new requests. An approval workflow is required.",
+                "noReleases": "No compatible published workflow is available. Open Workflows, choose the Transfer approval template, assign reviewers and publish it.",
+                "openDesigner": "Open Workflows",
+                "saved": "Approval workflow saved.",
+                "saveFailed": "The approval workflow could not be saved.",
+                "unavailable": "Configure an available approval workflow before creating a transfer.",
+                "status": {
+                    "pending": "Pending approval",
+                    "approved": "Approved",
+                    "rejected": "Rejected",
+                    "canceled": "Canceled",
+                    "unavailable": "Approval unavailable",
+                    "not_started": "Approval not started"
+                },
+                "cancellation": {
+                    "modalTitle": "Cancel transfer approval",
+                    "hint": "Canceling ends this approval and prevents the transfer from being executed. The reason is recorded in the approval history.",
+                    "buttonConfirm": "Cancel approval",
+                    "placeholderReason": "Why is this approval being canceled?",
+                    "noticeRejected": "Transfer approval canceled.",
+                    "messageFailed": "The approval could not be canceled."
+                },
+                "reviewedRecipient": "Reviewed recipient",
+                "reviewedPaymentAccount": "Reviewed payment account",
+                "checks": {
+                    "workflow_not_configured": "Select an available approval release to enable transfer requests.",
+                    "approval_assignee_unavailable": "A reviewer account is inactive or missing. Update the reviewers and publish a new release.",
+                    "approval_assignee_forbidden": "A reviewer cannot view or decide approval tasks. Assign the Workflow participant role or equivalent permissions.",
+                    "workflow_definition_unavailable": "This execution definition is unavailable. Check its status or publish a new release.",
+                    "runtime_unavailable": "The workflow runtime is unavailable. Contact an administrator.",
+                    "workflow_unavailable": "The workflow is unavailable. Check the release and reviewers, then retry.",
+                    "preview_unavailable": "This workflow does not provide a preview. Submitting still validates and starts approval.",
+                    "payment_account_unavailable": "The payment account is unavailable. Select another account.",
+                    "recipient_unavailable": "The recipient is unavailable or does not match the selected provider. Select another recipient.",
+                    "invalid_transfer_input": "Check the transfer amount and currency."
+                },
+                "loading": "Loading approval…",
+                "currentAssignees": "Current reviewer: ",
+                "checkLabels": {
+                    "workflow_not_configured": "Not configured",
+                    "approval_assignee_unavailable": "Reviewer unavailable",
+                    "approval_assignee_forbidden": "Reviewer permissions missing",
+                    "workflow_definition_unavailable": "Definition unavailable",
+                    "runtime_unavailable": "Runtime unavailable",
+                    "workflow_unavailable": "Workflow unavailable"
+                }
+            },
+            "workflowTemplate": {
+                "title": "Transfer approval",
+                "description": "Finance review, with an additional review for CNY transfers over 5,000 and all other currencies. Assign reviewers before publishing.",
+                "finance": "Finance review",
+                "manager": "Amount review",
+                "foreignReview": "Foreign currency review",
+                "foreignCurrency": "Non-CNY transfer",
+                "threshold": "CNY amount over 5,000",
+                "amount": "Transfer amount",
+                "currency": "Transfer currency",
+                "reason": "Transfer note",
+                "recipient": "Recipient",
+                "paymentAccount": "Payment account"
+            },
+            "approvalPreview": {
+                "title": "Expected approval path",
+                "incomplete": "Complete the account, recipient and amount to see this request’s approval path.",
+                "loading": "Calculating approval path…",
+                "loadFailed": "The preview could not be loaded. Retry; submitting still validates the workflow.",
+                "matchedBranch": "Matching branch: {name}",
+                "hint": "This path assumes every approval stage agrees. The submitted configuration and actual decisions determine the workflow.",
+                "rules": {
+                    "single": "Single reviewer",
+                    "countersign": "All must agree",
+                    "firstDecision": "First decision",
+                    "orSign": "Any reviewer agrees",
+                    "orderSign": "Sequential review"
+                },
+                "start": "Submit request",
+                "end": "Approval complete",
+                "pathLabel": "Expected approval path"
+            },
+            "reapply": {
+                "title": "Edit and reapply",
+                "button": "Edit and reapply",
+                "description": "A new transfer request will use the currently active approval workflow. The original request and its history are preserved.",
+                "selectionUnavailable": "The original app, account, channel, recipient or currency is unavailable. Select an available option before submitting.",
+                "previousTransfer": "Original request",
+                "history": "Approval history",
+                "historyUnavailable": "Approval history could not be loaded. Refresh to retry.",
+                "reason": "Decision reason",
+                "actor": "Handled by"
             }
         },
         "walletTransactions": {

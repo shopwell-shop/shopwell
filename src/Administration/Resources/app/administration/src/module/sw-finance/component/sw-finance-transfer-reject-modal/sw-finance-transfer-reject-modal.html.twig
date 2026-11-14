@@ -1,7 +1,7 @@
 {% block sw_finance_transfer_reject_modal %}
 <sw-modal
     class="sw-finance-transfer-reject-modal"
-    :title="$t('sw-finance.transfer.reject.modalTitle')"
+    :title="$t(`${snippetPrefix}.modalTitle`)"
     variant="default"
     @modal-close="onClose"
 >
@@ -10,7 +10,7 @@
         class="sw-finance-transfer-reject-modal__hint"
         variant="attention"
     >
-        {{ $t('sw-finance.transfer.reject.hint') }}
+        {{ $t(`${snippetPrefix}.hint`) }}
     </mt-banner>
     {% endblock %}
 
@@ -19,7 +19,7 @@
         v-model="reason"
         class="sw-finance-transfer-reject-modal__reason"
         :label="$t('sw-finance.transfer.reject.fieldReason')"
-        :placeholder="$t('sw-finance.transfer.reject.placeholderReason')"
+        :placeholder="$t(`${snippetPrefix}.placeholderReason`)"
         :max-length="reasonLimit"
         :error="isReasonTooLong ? $t('sw-finance.transfer.reject.validationReasonTooLong') : null"
         required
@@ -54,7 +54,7 @@
             :is-loading="rejectInProgress"
             @click="onConfirm"
         >
-            {{ $t('sw-finance.transfer.reject.buttonConfirm') }}
+            {{ $t(`${snippetPrefix}.buttonConfirm`) }}
         </mt-button>
         {% endblock %}
     </template>

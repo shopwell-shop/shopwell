@@ -1,0 +1,102 @@
+.sw-workflow-condition-settings {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+
+    &__hint,
+    &__fallback p {
+        color: var(--color-text-secondary-default);
+        font-size: 12px;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    &__branch {
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    &__heading {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 8px;
+        background: var(--color-background-secondary-default);
+    }
+
+    &__heading button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        min-height: 32px;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--color-text-primary-default);
+        cursor: pointer;
+    }
+
+    &__heading button:disabled {
+        opacity: 0.35;
+        cursor: default;
+    }
+
+    &__heading &__expand {
+        justify-content: flex-start;
+        flex: 1;
+        min-width: 0;
+        gap: 8px;
+        text-align: left;
+    }
+
+    &__expand strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    &__expand > span {
+        color: var(--color-text-secondary-default);
+        font-size: 12px;
+    }
+
+    &__fields {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        padding: 16px;
+
+        > .mt-field,
+        > .mt-select {
+            margin-bottom: 0;
+        }
+    }
+
+    &__branch-name,
+    &__fields > p,
+    &__fields > .mt-button {
+        grid-column: 1 / -1;
+    }
+
+    @media (max-width: 700px) {
+        &__fields {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    &__fields > .mt-button,
+    &__add {
+        justify-self: start;
+    }
+
+    &__fallback {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        border-top: 1px solid var(--color-border-primary-default);
+        padding-top: 16px;
+    }
+}

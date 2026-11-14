@@ -8,7 +8,7 @@ use Shopwell\Core\Framework\Struct\Struct;
 #[Package('checkout')]
 class LicenseStruct extends Struct
 {
-    protected int $id;
+    protected string $id;
 
     protected \DateTimeImmutable $creationDate;
 
@@ -55,12 +55,12 @@ class LicenseStruct extends Struct
         return $license;
     }
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }
 
-    public function setId(int $id): void
+    public function setId(string $id): void
     {
         $this->id = $id;
     }

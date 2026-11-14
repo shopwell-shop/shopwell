@@ -59,7 +59,7 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
         $this->appLifecycle->uninstall($technicalName, ['id' => $app->getId()], $context, $keepUserData);
     }
 
-    public function removeExtensionAndCancelSubscription(int $licenseId, string $technicalName, string $id, bool $keepUserData, Context $context): void
+    public function removeExtensionAndCancelSubscription(string $licenseId, string $technicalName, string $id, bool $keepUserData, Context $context): void
     {
         $this->validateExtensionCanBeRemoved($technicalName, $id, $context);
         $app = $this->appStorage->findById($id, $context);

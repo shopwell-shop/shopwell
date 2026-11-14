@@ -14,6 +14,7 @@ use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 
 /**
  * Hands a payout over to its channel and coordinates auditing and booking the answer.
@@ -30,6 +31,7 @@ final class PaymentTransferSubmitter
         private readonly PaymentConfigResolver $configResolver,
         private readonly PaymentTransferService $transferService,
         private readonly PaymentTransferResultBooker $resultBooker,
+        private readonly PaymentTransferApprovalService $approvals,
     ) {
     }
 
@@ -52,7 +54,8 @@ final class PaymentTransferSubmitter
     public function submit(PaymentAppEntity $app, PaymentTransferEntity $transfer): TransferResult
     {
         $this->assertSubmittable($app, $transfer);
-        [$gateway, $model, $request] = $this->prepareChannel($app, $transfer);
+        $recipient = $this->approvals->assertApproved($transfer);
+        [$gateway, $model, $request] = $this->prepareChannel($app, $transfer, $recipient);
         $this->resultBooker->claim($transfer);
 
         try {
@@ -122,10 +125,8 @@ final class PaymentTransferSubmitter
      *
      * @return array{GatewayInterface, PaymentGatewayModel, PaymentTransferRequest}
      */
-    private function prepareChannel(PaymentAppEntity $app, PaymentTransferEntity $transfer): array
+    private function prepareChannel(PaymentAppEntity $app, PaymentTransferEntity $transfer, PaymentTransferRecipientEntity $recipient): array
     {
-        $recipient = $this->transferService->recipientOf($app, $transfer);
-
         // A payout has no device, and null means "no restriction".
         $resolved = $this->configResolver->resolveForTransfer($app, $transfer);
 

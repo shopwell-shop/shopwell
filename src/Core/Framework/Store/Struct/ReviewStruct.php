@@ -13,7 +13,7 @@ class ReviewStruct extends StoreStruct
     final public const MAX_RATING = 5;
     final public const MIN_RATING = 1;
 
-    protected int $extensionId;
+    protected string $extensionId;
 
     protected string $headline;
 
@@ -55,7 +55,7 @@ class ReviewStruct extends StoreStruct
         return $review->assign($data);
     }
 
-    public static function fromRequest(int $extensionId, Request $request): ReviewStruct
+    public static function fromRequest(string $extensionId, Request $request): ReviewStruct
     {
         $acceptGuidelines = $request->request->getBoolean('tocAccepted');
         $authorName = $request->request->get('authorName');
@@ -168,12 +168,12 @@ class ReviewStruct extends StoreStruct
         $this->replies = $replies;
     }
 
-    public function getExtensionId(): int
+    public function getExtensionId(): string
     {
         return $this->extensionId;
     }
 
-    public function setExtensionId(int $extensionId): void
+    public function setExtensionId(string $extensionId): void
     {
         $this->extensionId = $extensionId;
     }

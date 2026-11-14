@@ -8,6 +8,20 @@ use Shopwell\Core\Framework\Struct\Struct;
 #[Package('checkout')]
 class CartStruct extends Struct
 {
+    protected ?string $purchaseId = null;
+
+    public function getPurchaseId(): ?string
+    {
+        return $this->purchaseId;
+    }
+
+    public function setPurchaseId(?string $purchaseId): void
+    {
+        $this->purchaseId = $purchaseId;
+    }
+
+    protected string $currency = 'EUR';
+
     protected float $netPrice;
 
     protected float $taxValue;
@@ -99,7 +113,7 @@ class CartStruct extends Struct
         $this->shop = $shop;
     }
 
-    public function getShopId(): int
+    public function getShopId(): string
     {
         return $this->getShop()['id'];
     }

@@ -1,0 +1,230 @@
+{% block sw_workflow_studio_editor %}
+<div class="sw-workflow-studio-editor">
+    {% block sw_workflow_studio_editor_toolbar %}
+    <sw-workflow-studio-toolbar
+        :can-undo="state.canUndo"
+        :can-redo="state.canRedo"
+        :allow-edit="allowEdit"
+        :download-url="downloadUrl"
+        @undo="undo"
+        @redo="redo"
+        @templates="templatesOpen = true"
+    >
+        <template
+            v-if="$slots['document-info']"
+            #document-info
+        >
+            <slot name="document-info"></slot>
+        </template>
+        <template #extension-actions>
+            <sw-canvas-contributions
+                v-if="session"
+                :session="session"
+                action-position="toolbar"
+            />
+        </template>
+        <template #document-actions>
+            <slot name="document-actions"></slot>
+        </template>
+    </sw-workflow-studio-toolbar>
+    {% endblock %}
+    <mt-banner
+        v-if="extensionError"
+        variant="critical"
+    >
+        {{ $t('sw-workflow.extensions.failed') }}
+    </mt-banner>
+    <div class="sw-workflow-studio-editor__workspace">
+        {% block sw_workflow_studio_editor_canvas %}
+        <main class="sw-workflow-studio-editor__canvas">
+            <sw-workflow-studio-canvas
+                :layout="layout"
+                :document="state.document"
+                :node-types="nodeTypes"
+                :labels="typeLabels"
+                :invalid-ids="invalidIds"
+                :selected-node-id="state.selection.nodeId"
+                :selected-connection-id="state.selection.connectionId"
+                :allow-edit="allowEdit"
+                @select-node="selectNode"
+                @select-connection="selectConnection"
+                @insert-node="openPicker"
+                @node-contextmenu="openMenu('node-menu', $event)"
+                @connection-contextmenu="openMenu('edge-menu', $event)"
+                @canvas-click="canvasClick"
+                @canvas-contextmenu="canvasContextmenu"
+            >
+                <template
+                    v-if="allowEdit"
+                    #node-tools="{ nodeId }"
+                >
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        :data-edit-node="nodeId"
+                        @click.stop="selectNode(nodeId)"
+                    >
+                        <mt-icon
+                            name="regular-pencil-s"
+                            size="16px"
+                        />
+                        {{ $t('global.default.edit') }}
+                    </mt-button>
+                    <sw-canvas-contributions
+                        v-if="session"
+                        :session="session"
+                        action-position="node-menu"
+                        :target="{ nodeId }"
+                    />
+                </template>
+                <template #node-decoration="{ nodeId }">
+                    <sw-canvas-contributions
+                        v-if="session"
+                        :session="session"
+                        component-position="node-decoration"
+                        :target="{ nodeId }"
+                    />
+                </template>
+            </sw-workflow-studio-canvas>
+            <sw-canvas-contributions
+                v-if="session"
+                class="sw-workflow-studio-editor__overlay"
+                :session="session"
+                component-position="canvas-overlay"
+            />
+            <div
+                v-if="menu && session"
+                class="sw-workflow-studio-editor__context-menu"
+            >
+                <sw-canvas-contributions
+                    :session="session"
+                    :action-position="menu.position"
+                    :target="menu.target"
+                />
+                <mt-button
+                    variant="secondary"
+                    @click="menu = null"
+                >
+                    {{ $t('global.default.close') }}
+                </mt-button>
+            </div>
+        </main>
+        {% endblock %}
+        <aside
+            v-if="session && hasExtensionPanel"
+            class="sw-workflow-studio-editor__extension-panel"
+        >
+            <sw-canvas-contributions
+                :session="session"
+                component-position="panel"
+                :target="panelTarget"
+            />
+        </aside>
+    </div>
+    {% block sw_workflow_studio_editor_node_picker %}
+    <sw-modal
+        v-if="pickerOpen"
+        class="sw-workflow-studio-editor__node-picker"
+        :title="$t('sw-workflow.panels.nodes')"
+        @modal-close="pickerOpen = false"
+    >
+        <sw-workflow-studio-node-picker
+            :document="state.document"
+            :node-types="nodeTypes"
+            :labels="typeLabels"
+            :selected-connection-id="state.selection.connectionId"
+            :allow-edit="allowEdit"
+            @insert="insert"
+        />
+        <sw-canvas-contributions
+            v-if="session"
+            :session="session"
+            action-position="node-picker"
+            :target="{ connectionId: state.selection.connectionId }"
+        />
+    </sw-modal>
+    {% endblock %}
+    {% block sw_workflow_studio_editor_settings %}
+    <sw-modal
+        v-if="nodeDraft && draftNode"
+        class="sw-workflow-studio-editor__node-dialog"
+        variant="large"
+        :title="typeLabel(draftNode.type, draftNode.typeVersion)"
+        @modal-close="closeEditor"
+    >
+        <sw-workflow-studio-node-settings
+            :node="draftNode"
+            :document="nodeDraft"
+            :type-label="typeLabel(draftNode.type, draftNode.typeVersion)"
+            :allow-edit="allowEdit"
+            :can-remove="canRemove"
+            @update-config="stageSettings"
+            @remove="remove"
+        />
+        <template #modal-footer>
+            <mt-button
+                class="sw-workflow-studio-editor__cancel"
+                variant="secondary"
+                @click="closeEditor"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            <mt-button
+                v-if="allowEdit"
+                class="sw-workflow-studio-editor__save"
+                variant="primary"
+                @click="saveSettings"
+            >
+                {{ $t('global.default.apply') }}
+            </mt-button>
+        </template>
+    </sw-modal>
+    {% endblock %}
+    {% block sw_workflow_studio_editor_templates %}
+    <sw-workflow-studio-template-picker
+        v-if="templatesOpen"
+        :node-types="nodeTypes"
+        :labels="typeLabels"
+        :allow-edit="allowEdit"
+        @close="templatesOpen = false"
+        @apply="loadTemplate"
+    />
+    {% endblock %}
+    <sw-canvas-contributions
+        v-if="session"
+        :session="session"
+        component-position="dialog"
+    />
+    {% block sw_workflow_studio_editor_diagnostics %}
+    <footer
+        class="sw-workflow-studio-editor__diagnostics"
+        aria-live="polite"
+    >
+        <mt-icon
+            :name="hasDiagnosed && allViolations.length === 0 ? 'regular-checkmark' : 'regular-info-circle'"
+            size="14px"
+        />
+        <span v-if="isDiagnosing">{{ $t('sw-workflow.diagnostics.checking') }}</span>
+        <template v-else-if="diagnosticError">
+            <span>{{ $t('sw-workflow.diagnostics.failed') }}</span>
+            <button
+                type="button"
+                @click="$emit('diagnose', state.document)"
+            >
+                {{ $t('sw-workflow.actions.retry') }}
+            </button>
+        </template>
+        <span v-else-if="!hasDiagnosed">{{ $t('sw-workflow.diagnostics.hint') }}</span>
+        <span v-else-if="allViolations.length === 0">{{ $t('sw-workflow.diagnostics.success') }}</span>
+        <button
+            v-for="(violation, index) in allViolations"
+            :key="index"
+            type="button"
+            @click="selectNode(violation.nodeId)"
+        >
+            {{ violationMessage(violation) }}
+        </button>
+    </footer>
+    {% endblock %}
+</div>
+{% endblock %}

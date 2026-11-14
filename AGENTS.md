@@ -66,9 +66,11 @@ Before you commit or hand work back:
 - **Lint every file you touched** per the File Linting table below.
 
 When a task matches a skill, open `.agents/skills/<name>/SKILL.md` and follow it **before** implementing.
+For platform or plugin design, implementation, refactoring, and review, use [`shopwell-engineering`](.agents/skills/shopwell-engineering/SKILL.md) for repository patterns and readability alongside the applicable domain skill.
 
 ### Guidance Skills
 
+- `shopwell-engineering` — source-backed ownership, naming, readable control flow, module/UI structure, and extension contracts across backend, Administration, Storefront, and plugins.
 - `shopwell-knowledge-capture` — saving durable knowledge; routing it to AGENTS, coding guidelines, README, ADR, skills, or local notes.
 - `shopwell-change-scope` — root-cause analysis, boyscouting, and cleanup scope.
 - `shopwell-release-docs` — release notes, upgrade notes, developer-facing changelog decisions.

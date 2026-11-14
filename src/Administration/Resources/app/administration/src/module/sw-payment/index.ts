@@ -105,25 +105,19 @@ Module.register('sw-payment', {
 
     navigation: [
         {
-            id: 'sw-payment',
-            label: 'sw-payment.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-cyan-default)',
-            icon: 'regular-credit-card',
-            position: 35,
-            privilege: 'payment_order.viewer',
-        },
-        {
             id: 'sw-payment-orders',
+            position: 10,
             path: 'sw.payment.index',
             label: 'sw-payment.general.mainMenuItemPaymentOrders',
-            parent: 'sw-payment',
+            parent: 'sw-finance',
             privilege: 'payment_order.viewer',
         },
         {
             id: 'sw-payment-refunds',
+            position: 20,
             path: 'sw.payment.refund',
             label: 'sw-payment.general.mainMenuItemRefunds',
-            parent: 'sw-payment',
+            parent: 'sw-finance',
             privilege: 'payment_refund.viewer',
         },
     ],

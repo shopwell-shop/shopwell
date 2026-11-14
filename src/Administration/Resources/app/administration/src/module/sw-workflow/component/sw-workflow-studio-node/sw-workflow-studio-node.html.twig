@@ -1,0 +1,36 @@
+{% block sw_workflow_studio_node %}
+<component
+    :is="presentation.nodeComponent"
+    v-if="presentation.nodeComponent"
+    :data="data"
+    :node="data.node"
+/>
+<div
+    v-else
+    class="sw-workflow-studio-node"
+    :class="['is-' + data.kind, 'is-' + presentation.tone, { 'has-error': data.invalid }]"
+>
+    {% block sw_workflow_studio_node_heading %}
+    <div class="sw-workflow-studio-node__heading">
+        <span class="sw-workflow-studio-node__icon"><mt-icon
+            :name="presentation.icon"
+            size="18px"
+        /></span>
+        <strong>{{ data.label }}</strong>
+        <mt-icon
+            v-if="data.invalid"
+            name="regular-exclamation-circle"
+            size="16px"
+        />
+    </div>
+    {% endblock %}
+    {% block sw_workflow_studio_node_summary %}
+    <p
+        v-if="data.kind === 'activity'"
+        class="sw-workflow-studio-node__summary"
+    >
+        {{ summary }}
+    </p>
+    {% endblock %}
+</div>
+{% endblock %}

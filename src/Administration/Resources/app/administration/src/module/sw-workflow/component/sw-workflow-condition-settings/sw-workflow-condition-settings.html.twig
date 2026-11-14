@@ -1,0 +1,171 @@
+{% block sw_workflow_condition_settings %}
+<section class="sw-workflow-condition-settings">
+    <h4>{{ $t('sw-workflow.condition.title') }}</h4>
+    <p class="sw-workflow-condition-settings__hint">
+        {{ $t('sw-workflow.condition.hint') }}
+    </p>
+    <div
+        v-for="(branch, index) in branches"
+        :key="branch.id"
+        class="sw-workflow-condition-settings__branch"
+    >
+        <div class="sw-workflow-condition-settings__heading">
+            <button
+                type="button"
+                class="sw-workflow-condition-settings__expand"
+                :aria-expanded="activeId === branch.id"
+                @click="activeId = activeId === branch.id ? '' : branch.id"
+            >
+                <span>{{ index + 1 }}</span><strong>{{ branch.label || $t('sw-workflow.condition.newBranch') }}</strong>
+            </button>
+            <button
+                type="button"
+                :aria-label="$t('sw-workflow.condition.moveUp')"
+                :disabled="!allowEdit || index === 0"
+                @click="move(index, -1)"
+            >
+                <mt-icon
+                    name="regular-chevron-up-xs"
+                    size="12px"
+                />
+            </button>
+            <button
+                type="button"
+                :aria-label="$t('sw-workflow.condition.moveDown')"
+                :disabled="!allowEdit || index === branches.length - 1"
+                @click="move(index, 1)"
+            >
+                <mt-icon
+                    name="regular-chevron-down-xs"
+                    size="12px"
+                />
+            </button>
+        </div>
+        <div
+            v-if="activeId === branch.id"
+            class="sw-workflow-condition-settings__fields"
+        >
+            <mt-text-field
+                v-model="branch.label"
+                class="sw-workflow-condition-settings__branch-name"
+                :label="$t('sw-workflow.condition.name')"
+                :disabled="!allowEdit"
+                @blur="commit"
+            />
+            <p
+                v-if="fields.length === 0"
+                class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__no-fields"
+                role="status"
+            >
+                {{ $t('sw-workflow.condition.noFields') }}
+            </p>
+            <mt-select
+                :hide-clearable-button="true"
+                class="sw-workflow-condition-settings__field"
+                :model-value="branch.field"
+                :label="$t('sw-workflow.condition.field')"
+                :placeholder="$t('sw-workflow.condition.fieldPlaceholder')"
+                :options="optionsForField(branch)"
+                :disabled="!allowEdit || fields.length === 0"
+                @update:model-value="selectField(branch, $event)"
+            />
+            <p
+                v-if="branch.field && !fieldDefinition(branch)"
+                class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__unavailable"
+                role="status"
+            >
+                {{ $t('sw-workflow.condition.unavailableFieldHint') }}
+            </p>
+            <template v-if="hasStaleFieldType(branch)">
+                <p
+                    class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__stale-type"
+                    role="status"
+                >
+                    {{ $t('sw-workflow.condition.staleFieldTypeHint') }}
+                </p>
+                <mt-button
+                    class="sw-workflow-condition-settings__rebind"
+                    variant="secondary"
+                    :disabled="!allowEdit"
+                    @click="bindField(branch)"
+                >
+                    {{ $t('sw-workflow.condition.rebindField') }}
+                </mt-button>
+            </template>
+            <mt-select
+                :hide-clearable-button="true"
+                class="sw-workflow-condition-settings__operator"
+                :model-value="branch.operator"
+                :label="$t('sw-workflow.condition.operator')"
+                :hint="$t('sw-workflow.condition.operatorHints.' + branch.operator)"
+                :options="operatorOptions(branch)"
+                :disabled="!allowEdit || !fieldDefinition(branch) || hasStaleFieldType(branch)"
+                @update:model-value="selectOperator(branch, $event)"
+            />
+            <p
+                v-if="hasUnavailableOperator(branch)"
+                class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__unavailable-operator"
+                role="status"
+            >
+                {{ $t('sw-workflow.condition.unavailableOperatorHint') }}
+            </p>
+            <template v-if="fieldDefinition(branch) && branch.operator !== 'isEmpty' && branch.operator !== 'isNotEmpty'">
+                <mt-select
+                    v-if="fieldDefinition(branch).type === 'select'"
+                    :hide-clearable-button="true"
+                    class="sw-workflow-condition-settings__value"
+                    :model-value="branch.value"
+                    :label="$t('sw-workflow.condition.value')"
+                    :placeholder="$t('sw-workflow.condition.valuePlaceholder')"
+                    :options="valueOptions(branch)"
+                    :disabled="!allowEdit || hasStaleFieldType(branch)"
+                    @update:model-value="selectValue(branch, $event)"
+                />
+                <mt-text-field
+                    v-else
+                    v-model="branch.value"
+                    :hint="valueHint(branch)"
+                    class="sw-workflow-condition-settings__value"
+                    :label="$t('sw-workflow.condition.value')"
+                    :disabled="!allowEdit || hasStaleFieldType(branch)"
+                    @blur="commit"
+                />
+                <p
+                    v-if="hasUnavailableValue(branch)"
+                    class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__unavailable-value"
+                    role="status"
+                >
+                    {{ $t('sw-workflow.condition.unavailableValueHint') }}
+                </p>
+            </template>
+            <mt-button
+                variant="secondary"
+                :disabled="!canRemove(branch.id)"
+                @click="remove(branch.id)"
+            >
+                {{ $t('sw-workflow.condition.remove') }}
+            </mt-button>
+            <p
+                v-if="!canRemove(branch.id)"
+                class="sw-workflow-condition-settings__hint"
+            >
+                {{ $t('sw-workflow.condition.removeHint') }}
+            </p>
+        </div>
+    </div>
+    <mt-button
+        class="sw-workflow-condition-settings__add"
+        variant="secondary"
+        :disabled="!allowEdit"
+        @click="add"
+    >
+        {{ $t('sw-workflow.condition.add') }}
+    </mt-button>
+    <div class="sw-workflow-condition-settings__fallback">
+        <mt-icon
+            name="regular-flow"
+            size="16px"
+        /><div><h4>{{ $t('sw-workflow.outcomes.fallback') }}</h4><p>{{ $t('sw-workflow.condition.fallbackHint') }}</p></div>
+    </div>
+</section>
+{% endblock %}

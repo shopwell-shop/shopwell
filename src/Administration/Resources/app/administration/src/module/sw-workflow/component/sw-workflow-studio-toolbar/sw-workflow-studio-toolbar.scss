@@ -1,0 +1,104 @@
+.sw-workflow-studio-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--color-border-primary-default);
+    background: var(--color-elevation-surface-default);
+
+    &__left,
+    &__document-info,
+    &__right,
+    &__history {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    &__left,
+    &__document-info {
+        min-width: 0;
+    }
+
+    h2 {
+        margin: 0;
+        font-size: var(--font-size-m);
+        font-weight: var(--font-weight-semi-bold);
+        white-space: nowrap;
+    }
+
+    &__status {
+        font-size: var(--font-size-xxs);
+        color: var(--color-text-secondary-default);
+        white-space: nowrap;
+    }
+
+    &__history {
+        flex-shrink: 0;
+        height: 32px;
+        margin-left: 12px;
+        padding-left: 20px;
+        border-left: 1px solid var(--color-border-primary-default);
+    }
+
+    button:not(.mt-button) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--color-icon-secondary-default);
+        cursor: pointer;
+    }
+
+    button:not(.mt-button):hover:not(:disabled) {
+        color: var(--color-text-brand-default);
+        background: var(--color-background-secondary-default);
+    }
+
+    button:disabled {
+        opacity: 0.35;
+        cursor: default;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-border-brand-default);
+        outline-offset: 3px;
+    }
+
+    @media (max-width: 1100px) {
+        flex-wrap: wrap;
+
+        &__right {
+            margin-left: auto;
+        }
+
+        &__status {
+            display: none;
+        }
+    }
+
+    @media (max-width: 600px) {
+        padding: 12px;
+        gap: 12px;
+
+        &__left,
+        &__right {
+            width: 100%;
+        }
+
+        &__history {
+            margin-left: auto;
+        }
+
+        &__right {
+            justify-content: flex-end;
+            gap: 8px;
+        }
+    }
+}

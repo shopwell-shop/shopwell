@@ -14,7 +14,7 @@
         "transfer": {
             "actions": {
                 "cancel": "驳回",
-                "submit": "通过并转账"
+                "submit": "执行转账"
             },
             "approve": {
                 "buttonConfirm": "确认转账",
@@ -49,7 +49,7 @@
                 "fieldIdentityValue": "身份标识",
                 "fieldNote": "备注",
                 "fieldOutNo": "业务单号",
-                "fieldProvider": "支付服务商",
+                "fieldAccount": "付款账户",
                 "fieldRecipientExisting": "收款账号",
                 "fieldRecipientSource": "收款账号来源",
                 "fieldRecipientSourceExisting": "已有账号",
@@ -67,7 +67,7 @@
                     "wechat_open_id": "微信 OpenID"
                 },
                 "labelNoRecipients": "该服务商下还没有可用的收款账号，请改用「新建账号」。",
-                "messageCreated": "转账申请已创建，等待审核。",
+                "messageCreated": "转账申请已创建，并自动提交审批。",
                 "messageFailed": "转账申请创建失败。",
                 "messageReplayed": "该业务单号已存在，已打开既有申请。",
                 "modalTitle": "新建转账申请",
@@ -78,7 +78,7 @@
                 "placeholderIdentityValue": "例如服务商侧的收款方 id",
                 "placeholderNote": "仅审核人可见，不会下发给渠道",
                 "placeholderOutNo": "留空由系统生成",
-                "placeholderProvider": "请选择支付服务商...",
+                "placeholderAccount": "请选择付款账户...",
                 "placeholderRecipient": "请选择收款账号...",
                 "validationAmountInvalid": "金额最多两位小数，例如 120.50。",
                 "validationAmountRequired": "请填写转账金额。",
@@ -93,7 +93,8 @@
                 "validationNoteTooLong": "备注最多 255 个字符。",
                 "validationOutNoInvalid": "仅字母与数字，最多 30 位。",
                 "validationProviderRequired": "请选择支付服务商。",
-                "validationRecipientRequired": "请选择收款账号。"
+                "validationRecipientRequired": "请选择收款账号。",
+                "validationCurrencyUnsupported": "所选渠道不支持该结算币种。"
             },
             "detail": {
                 "buttonRefresh": "刷新",
@@ -199,6 +200,107 @@
                 "returned": "已退回",
                 "submitted": "已提交",
                 "succeeded": "成功"
+            },
+            "workflow": {
+                "settingsTitle": "审批流程",
+                "approvalTitle": "转账审批",
+                "approvalStatus": "审批状态",
+                "paymentStatus": "付款状态",
+                "release": "已发布流程",
+                "revision": "版本 {revision}",
+                "executionHint": "审批通过不会自动付款，需由财务确认后执行转账。",
+                "openApproval": "查看审批",
+                "openTransfer": "查看审批与转账",
+                "cancel": "撤销审批",
+                "configurationHint": "新转账申请自动发起此版本的审批。变更仅对新申请生效，必须配置审批流程。",
+                "noReleases": "暂无可用的已发布流程。请前往工作流，选择「转账审批」模板，指定审批人后发布。",
+                "openDesigner": "前往工作流",
+                "saved": "审批流程已保存。",
+                "saveFailed": "审批流程保存失败，请重试。",
+                "unavailable": "请先配置可用的审批流程，再发起转账申请。",
+                "status": {
+                    "pending": "审批中",
+                    "approved": "已通过",
+                    "rejected": "已拒绝",
+                    "canceled": "已撤销",
+                    "unavailable": "审批暂不可用",
+                    "not_started": "未发起审批"
+                },
+                "cancellation": {
+                    "modalTitle": "撤销转账审批",
+                    "hint": "撤销后将结束审批，不能执行转账。撤销原因会记入审批记录。",
+                    "buttonConfirm": "确认撤销",
+                    "placeholderReason": "请输入撤销原因",
+                    "noticeRejected": "转账审批已撤销。",
+                    "messageFailed": "撤销失败，请重试。"
+                },
+                "reviewedRecipient": "审批时收款人",
+                "reviewedPaymentAccount": "审批时付款账户",
+                "checks": {
+                    "workflow_not_configured": "尚未绑定审批流程，请选择可用版本。",
+                    "approval_assignee_unavailable": "审批人账号已停用或不存在。请调整审批人并重新发布流程。",
+                    "approval_assignee_forbidden": "审批人缺少查看或处理审批的权限。请先为其分配「工作流参与者」角色或等效权限。",
+                    "workflow_definition_unavailable": "此版本的执行流程不可用，请检查流程状态或重新发布。",
+                    "runtime_unavailable": "该流程的执行服务不可用，请联系管理员。",
+                    "workflow_unavailable": "流程暂不可用，请检查流程与审批人配置后重试。",
+                    "preview_unavailable": "此流程暂不支持预览，提交时会校验并发起审批。",
+                    "payment_account_unavailable": "付款账户不可用，请重新选择。",
+                    "recipient_unavailable": "收款人不可用或与付款账户不匹配，请重新选择。",
+                    "invalid_transfer_input": "请检查转账金额和币种。"
+                },
+                "loading": "正在读取审批状态…",
+                "currentAssignees": "当前审批：",
+                "checkLabels": {
+                    "workflow_not_configured": "未绑定流程",
+                    "approval_assignee_unavailable": "审批人账号不可用",
+                    "approval_assignee_forbidden": "审批人缺少权限",
+                    "workflow_definition_unavailable": "执行流程不可用",
+                    "runtime_unavailable": "执行服务不可用",
+                    "workflow_unavailable": "流程不可用"
+                }
+            },
+            "workflowTemplate": {
+                "title": "转账审批",
+                "description": "财务初审，人民币超过 5000 元或外币转账增加复核。发布前请指定审批人。",
+                "finance": "财务初审",
+                "manager": "金额复核",
+                "foreignReview": "外币复核",
+                "foreignCurrency": "非人民币转账",
+                "threshold": "人民币超过 5000 元",
+                "amount": "转账金额",
+                "currency": "转账币种",
+                "reason": "转账说明",
+                "recipient": "收款人",
+                "paymentAccount": "付款账户"
+            },
+            "approvalPreview": {
+                "title": "预计审批流程",
+                "incomplete": "填写付款信息、收款人和金额后，可查看本次审批流程。",
+                "loading": "正在计算审批路径…",
+                "loadFailed": "暂时无法预览，请重试。提交时仍会校验审批流程。",
+                "matchedBranch": "命中分支：{name}",
+                "hint": "此路径按各审批节点均同意计算；实际流程以提交时的配置和审批结果为准。",
+                "rules": {
+                    "single": "单人审批",
+                    "countersign": "所有人同意",
+                    "firstDecision": "首个决定生效",
+                    "orSign": "任一人同意",
+                    "orderSign": "依次审批"
+                },
+                "start": "发起申请",
+                "end": "审批完成",
+                "pathLabel": "预计审批路径"
+            },
+            "reapply": {
+                "title": "修改后重新申请",
+                "button": "修改后重新申请",
+                "description": "将生成新申请，并按当前生效流程重新审批。原申请及审批记录会保留。",
+                "selectionUnavailable": "原应用、付款账户、渠道、收款人或币种已不可用，请重新选择后提交。",
+                "previousTransfer": "原申请",
+                "history": "审批记录",
+                "historyUnavailable": "审批记录加载失败，请刷新重试。",
+                "reason": "处理意见",
+                "actor": "处理人"
             }
         },
         "walletTransactions": {

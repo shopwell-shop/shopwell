@@ -447,7 +447,7 @@ class OrderReturnService
         foreach ($this->reasonRepository->search($criteria, $context)->getEntities() as $reason) {
             $reasons[] = [
                 'id' => (string) $reason->id,
-                'label' => (string) $reason->get('label'),
+                'label' => (string) $reason->getTranslation('label'),
             ];
         }
 

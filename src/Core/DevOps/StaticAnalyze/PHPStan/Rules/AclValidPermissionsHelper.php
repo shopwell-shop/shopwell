@@ -49,6 +49,14 @@ class AclValidPermissionsHelper
         'loyalty.editor',
         'wallet.viewer',
         'wallet.editor',
+        'workflow:read',
+        'workflow:create',
+        'workflow:update',
+        'workflow:delete',
+        'workflow:publish',
+        'workflow_instance:access',
+        'workflow_instance:start',
+        'workflow_task:decide',
     ];
 
     /**

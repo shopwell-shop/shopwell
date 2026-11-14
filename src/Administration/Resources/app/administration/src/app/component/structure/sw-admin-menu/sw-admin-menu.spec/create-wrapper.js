@@ -6,6 +6,13 @@ import { mount } from '@vue/test-utils';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import createMenuService from 'src/app/service/menu.service';
 
+// These fixtures exercise the sidebar; layout selection is covered by the layout preference tests.
+jest.mock('src/app/composables/use-admin-layout', () => ({
+    __esModule: true,
+    ...jest.requireActual('src/app/composables/use-admin-layout'),
+    default: jest.fn(() => ({ layout: { value: 'sidebar' } })),
+}));
+
 /** fixtures */
 import adminModules from '../../../../service/_mocks/adminModules.json';
 
@@ -25,7 +32,11 @@ export function registerAdminModules() {
 /**
  * @private
  */
-export default async function createWrapper(options = {}) {
+export default async function createWrapper(
+    options = {},
+    services = {},
+    activeRoute = { name: '', meta: { $module: { name: '' } } },
+) {
     const navigation = Shopwell.Store.get('adminMenuConfig');
     navigation.allowUnmanaged = true;
     jest.spyOn(navigation, 'api').mockReturnValue({
@@ -55,7 +66,7 @@ export default async function createWrapper(options = {}) {
     });
 
     router.resolve = jest.fn(() => {
-        return {};
+        return { meta: {} };
     });
 
     return mount(await wrapTestComponent('sw-admin-menu', { sync: true }), {
@@ -114,9 +125,10 @@ export default async function createWrapper(options = {}) {
                         ];
                     },
                 },
+                ...services,
             },
             mocks: {
-                $route: { meta: { $module: { name: '' } } },
+                $route: activeRoute,
                 $router: router,
             },
         },

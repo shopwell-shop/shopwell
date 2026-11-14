@@ -73,6 +73,8 @@
     "@types/fs-extra": "11.0.4",
     "@types/punycode": "2.1.4",
     "@vitejs/plugin-vue": "5.2.1",
+    "@vue-flow/core": "1.48.2",
+    "@vue-flow/node-toolbar": "1.1.1",
     "@vue/compiler-dom": "3.5.22",
     "@vue/compiler-sfc": "3.5.22",
     "@vue/devtools-api": "6.5.1",

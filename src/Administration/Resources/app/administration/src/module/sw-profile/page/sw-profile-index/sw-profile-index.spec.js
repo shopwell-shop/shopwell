@@ -514,15 +514,15 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
         it.each([[[]], [['user:editor']]])('applies the draft only after saving for privileges %j', async (privileges) => {
             wrapper = await createWrapper(privileges, { isSso: true }, undefined, undefined, { layoutForm: true });
             await flushPromises();
-            await wrapper.find('input[value="top"]').setValue(true);
+            await wrapper.find('input[value="sidebar"]').setValue(true);
             await flushPromises();
-            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(useAdminLayout().layout.value).toBe('top');
             expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
             await wrapper.find('.sw-profile__save-action').trigger('click');
             await flushPromises();
-            expect(useAdminLayout().layout.value).toBe('top');
+            expect(useAdminLayout().layout.value).toBe('sidebar');
             expect(Shopwell.Service('userConfigService').upsert).toHaveBeenCalledWith({
-                'core.adminNavigationLayout': { layout: 'top' },
+                'core.adminNavigationLayout': { layout: 'sidebar' },
             });
         });
 
@@ -533,7 +533,7 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
             await wrapper.find('.sw-profile__save-action').trigger('click');
             await flushPromises();
             await wrapper.find('.cancel-verification').trigger('click');
-            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(useAdminLayout().layout.value).toBe('top');
             expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
         });
 
@@ -547,7 +547,7 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
             await wrapper.find('input[value="mixed"]').setValue(true);
             await wrapper.find('.sw-profile__save-action').trigger('click');
             await flushPromises();
-            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(useAdminLayout().layout.value).toBe('top');
             expect(wrapper.find('input[value="mixed"]').element.checked).toBe(true);
             configService.upsert.mockResolvedValue();
             await wrapper.find('.sw-profile__save-action').trigger('click');
@@ -563,7 +563,7 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
             await wrapper.find('input[value="mixed"]').setValue(true);
             await wrapper.find('.sw-profile__save-action').trigger('click');
             await flushPromises();
-            expect(useAdminLayout().layout.value).toBe('sidebar');
+            expect(useAdminLayout().layout.value).toBe('top');
             expect(Shopwell.Service('userConfigService').upsert).not.toHaveBeenCalled();
         });
     });

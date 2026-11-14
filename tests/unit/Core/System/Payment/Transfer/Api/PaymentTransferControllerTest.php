@@ -34,6 +34,7 @@ use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -80,8 +81,16 @@ class PaymentTransferControllerTest extends TestCase
         'recipients' => ['api.action.payment.transfer.recipients', '/api/_action/payment/transfers/recipients', Request::METHOD_GET, 'payment_transfer:create'],
         'create' => ['api.action.payment.transfer.create', '/api/_action/payment/transfers', Request::METHOD_POST, 'payment_transfer:create'],
         'submit' => ['api.action.payment.transfer.submit', '/api/_action/payment/transfers/{id}/submit', Request::METHOD_POST, 'payment_transfer:update'],
-        'cancel' => ['api.action.payment.transfer.cancel', '/api/_action/payment/transfers/{id}/cancel', Request::METHOD_POST, 'payment_transfer:update'],
+        'cancel' => ['api.action.payment.transfer.cancel', '/api/_action/payment/transfers/{id}/cancel', Request::METHOD_POST, 'payment_transfer:create'],
     ];
+
+    public function testConfigurationAndCancellationUseTheExistingRolePrivileges(): void
+    {
+        foreach (['configureWorkflow' => 'system_config:update', 'cancelApproval' => 'payment_transfer:create', 'submit' => 'payment_transfer:update'] as $method => $privilege) {
+            $route = (new \ReflectionMethod(PaymentTransferController::class, $method))->getAttributes(Route::class)[0]->newInstance();
+            static::assertContains($privilege, $route->defaults[PlatformRequest::ATTRIBUTE_ACL]);
+        }
+    }
 
     /**
      * A channel that answered success: the row is booked and the money is on its way.
@@ -269,7 +278,7 @@ class PaymentTransferControllerTest extends TestCase
         $controller = $this->controller();
 
         try {
-            $controller->cancel('transfer-id', new Request());
+            $controller->cancel('transfer-id', new Request(), Context::createDefaultContext());
             static::fail('a cancel without a reason has to be refused');
         } catch (PaymentException $exception) {
             static::assertSame(PaymentException::MISSING_PARAMETER, $exception->getErrorCode());
@@ -389,11 +398,12 @@ class PaymentTransferControllerTest extends TestCase
                 $configResolver,
                 $transferService,
                 $this->resultBooker($transferService),
+                $this->approval(),
             ),
             $transferService,
             new PaymentTransferPresenter($cipher),
             $providerRegistry,
-            $this->resultBooker($transferService),
+            $this->approval(),
         );
     }
 
@@ -532,12 +542,21 @@ class PaymentTransferControllerTest extends TestCase
                 $configResolver,
                 $transferService,
                 $this->resultBooker($transferService),
+                $this->approval(),
             ),
             $transferService,
             new PaymentTransferPresenter($cipher),
             $providerRegistry,
-            $this->resultBooker($transferService),
+            $this->approval(),
         );
+    }
+
+    private function approval(): PaymentTransferApprovalService
+    {
+        $approval = static::createStub(PaymentTransferApprovalService::class);
+        $approval->method('assertApproved')->willReturn(new PaymentTransferRecipientEntity());
+
+        return $approval;
     }
 
     private function resultBooker(PaymentTransferService $transferService): PaymentTransferResultBooker
@@ -548,7 +567,7 @@ class PaymentTransferControllerTest extends TestCase
             static fn (\Closure $closure): mixed => $closure($connection)
         );
 
-        return new PaymentTransferResultBooker($transferService, $connection);
+        return new PaymentTransferResultBooker($transferService, $connection, $this->approval());
     }
 
     private function initialStateIdLoader(): InitialStateIdLoader

@@ -1,0 +1,1318 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Workflow execution",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/_action/workflow/definition": {
+            "get": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "listWorkflowExecutionDefinitions",
+                "summary": "List executable workflow definitions",
+                "description": "Requires workflow:read. Graph data is omitted from list items.",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkflowExecutionDefinition"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "required": [
+                                                "total"
+                                            ],
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Clamped to 1–100.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Negative values are treated as zero.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/_action/workflow/definition/{definitionId}": {
+            "get": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "getWorkflowExecutionDefinition",
+                "summary": "Read an executable workflow definition",
+                "description": "Requires workflow:read. Includes graphData. Definitions are published through the workflow publication API.",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkflowExecutionDefinition"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "definitionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/_action/workflow/instance": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "startWorkflowInstance",
+                "summary": "Start a workflow instance",
+                "description": "Requires workflow_instance:start. Starts a published definition as the authenticated user. An omitted or empty title uses the definition name.",
+                "responses": {
+                    "201": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "required": [
+                                                "id"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "definitionId"
+                                ],
+                                "properties": {
+                                    "definitionId": {
+                                        "type": "string"
+                                    },
+                                    "formData": {
+                                        "description": "Submitted form map, validated against the selected definition. Non-object/non-array values are treated as an empty form. Empty forms may be encoded as {} or []."
+                                    },
+                                    "title": {
+                                        "description": "Optional string title. Empty or non-string values use the definition name."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/instance/mine": {
+            "get": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "listMyWorkflowInstances",
+                "summary": "List workflows started by the current user",
+                "description": "Requires workflow_instance:access. ",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkflowExecutionInstance"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "required": [
+                                                "total"
+                                            ],
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Clamped to 1–100.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Negative values are treated as zero.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Recognized statuses are RUNNING, AGREE, REJECT and CANCEL; unrecognized values are ignored."
+                    }
+                ]
+            }
+        },
+        "/_action/workflow/instance/{instanceId}": {
+            "get": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "getWorkflowInstance",
+                "summary": "Read a workflow instance and its approval progress",
+                "description": "Requires workflow_instance:access. Only participants may read an instance. Includes the immutable graph and submitted form, approval stages, tasks and history.",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkflowExecutionInstanceDetail"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/_action/workflow/instance/{instanceId}/cancel": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "cancelWorkflowInstance",
+                "summary": "Cancel a running workflow instance",
+                "description": "Requires workflow_instance:start. Only the actual initiator may cancel; pending tasks are canceled with the instance.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [],
+                                "properties": {
+                                    "reason": {
+                                        "description": "Optional string reason. Non-string values are treated as an empty reason."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/task/todo": {
+            "get": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "listWorkflowTodoTasks",
+                "summary": "List pending tasks assigned to the current user",
+                "description": "Requires workflow_instance:access. ",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkflowExecutionTask"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "required": [
+                                                "total"
+                                            ],
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Clamped to 1–100.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Negative values are treated as zero.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    }
+                ]
+            }
+        },
+        "/_action/workflow/task/done": {
+            "get": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "listWorkflowCompletedTasks",
+                "summary": "List tasks completed by the current user",
+                "description": "Requires workflow_instance:access. ",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkflowExecutionCompletedTask"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "required": [
+                                                "total"
+                                            ],
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Clamped to 1–100.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Negative values are treated as zero.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    }
+                ]
+            }
+        },
+        "/_action/workflow/task/{taskId}/approve": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "approveWorkflowTask",
+                "summary": "Approve an assigned workflow task",
+                "description": "Requires workflow_task:decide. The task must belong to the authenticated user. Empty comments are treated as absent.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [],
+                                "properties": {
+                                    "comment": {
+                                        "description": "Optional string comment. Empty, whitespace-only and non-string values are treated as absent."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/task/{taskId}/reject": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "rejectWorkflowTask",
+                "summary": "Reject an assigned workflow task",
+                "description": "Requires workflow_task:decide. The task must belong to the authenticated user; a nonblank comment is required.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "comment"
+                                ],
+                                "properties": {
+                                    "comment": {
+                                        "type": "string",
+                                        "description": "WorkflowService rejects an absent or whitespace-only comment.",
+                                        "minLength": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "WorkflowExecutionPerson": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "WorkflowExecutionDefinition": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "description",
+                    "status",
+                    "version",
+                    "isLatest",
+                    "formSchema",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "isLatest": {
+                        "type": "boolean"
+                    },
+                    "formSchema": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "updatedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "graphData": {
+                        "oneOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "array",
+                                "maxItems": 0
+                            }
+                        ],
+                        "description": "Map value; an empty map may be encoded as []."
+                    }
+                }
+            },
+            "WorkflowExecutionTask": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "instanceId",
+                    "nodeId",
+                    "nodeName",
+                    "countersignType",
+                    "assigneeType",
+                    "assignee",
+                    "state",
+                    "actionable",
+                    "round",
+                    "sequence",
+                    "createdAt",
+                    "completedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "instanceId": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "nodeName": {
+                        "type": "string"
+                    },
+                    "countersignType": {
+                        "type": "string"
+                    },
+                    "assigneeType": {
+                        "type": "string"
+                    },
+                    "assignee": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "actionable": {
+                        "type": "boolean"
+                    },
+                    "round": {
+                        "type": "integer"
+                    },
+                    "sequence": {
+                        "type": "integer"
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "completedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Instance title, included in task lists when the related instance still exists."
+                    },
+                    "number": {
+                        "type": "string",
+                        "description": "Instance number, included in task lists when the related instance still exists."
+                    },
+                    "initiator": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPerson",
+                        "description": "Instance initiator, included in task lists when the related instance still exists."
+                    }
+                }
+            },
+            "WorkflowExecutionCompletedTask": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "taskId",
+                    "instanceId",
+                    "nodeId",
+                    "nodeName",
+                    "decision",
+                    "comment",
+                    "completedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "taskId": {
+                        "type": "string"
+                    },
+                    "instanceId": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "nodeName": {
+                        "type": "string"
+                    },
+                    "decision": {
+                        "type": "string"
+                    },
+                    "comment": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "completedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Instance title, included in task lists when the related instance still exists."
+                    },
+                    "number": {
+                        "type": "string",
+                        "description": "Instance number, included in task lists when the related instance still exists."
+                    },
+                    "initiator": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPerson",
+                        "description": "Instance initiator, included in task lists when the related instance still exists."
+                    }
+                }
+            },
+            "WorkflowExecutionHistory": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "taskId",
+                    "nodeId",
+                    "nodeName",
+                    "assignee",
+                    "countersignType",
+                    "decision",
+                    "comment",
+                    "completedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "taskId": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "nodeName": {
+                        "type": "string"
+                    },
+                    "assignee": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                    },
+                    "countersignType": {
+                        "type": "string"
+                    },
+                    "decision": {
+                        "type": "string"
+                    },
+                    "comment": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "completedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            },
+            "WorkflowExecutionLog": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "action",
+                    "logType",
+                    "operator",
+                    "comment",
+                    "payload",
+                    "createdAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "logType": {
+                        "type": "string"
+                    },
+                    "operator": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "comment": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "payload": {
+                        "oneOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "array",
+                                "maxItems": 0
+                            }
+                        ],
+                        "description": "Map value; an empty map may be encoded as []."
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            },
+            "WorkflowExecutionCopy": {
+                "type": "object",
+                "required": [
+                    "userId",
+                    "name",
+                    "readAt"
+                ],
+                "properties": {
+                    "userId": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "readAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            },
+            "WorkflowExecutionPath": {
+                "type": "object",
+                "required": [
+                    "nodeIds",
+                    "edgeIds"
+                ],
+                "properties": {
+                    "nodeIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "edgeIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "WorkflowExecutionStage": {
+                "type": "object",
+                "required": [
+                    "nodeId",
+                    "nodeName",
+                    "description",
+                    "countersignType",
+                    "status",
+                    "participants",
+                    "tasks"
+                ],
+                "properties": {
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "nodeName": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "countersignType": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "participants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                        }
+                    },
+                    "tasks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionTask"
+                        }
+                    }
+                }
+            },
+            "WorkflowExecutionInstance": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "number",
+                    "title",
+                    "status",
+                    "result",
+                    "definitionId",
+                    "definitionVersion",
+                    "initiator",
+                    "currentNodeId",
+                    "round",
+                    "startedAt",
+                    "endedAt",
+                    "formData",
+                    "canCancel"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "number": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "definitionId": {
+                        "type": "string"
+                    },
+                    "definitionVersion": {
+                        "type": "integer"
+                    },
+                    "initiator": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                    },
+                    "currentNodeId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "round": {
+                        "type": "integer"
+                    },
+                    "startedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "endedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "formData": {
+                        "oneOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "array",
+                                "maxItems": 0
+                            }
+                        ],
+                        "description": "Map value; an empty map may be encoded as []."
+                    },
+                    "canCancel": {
+                        "type": "boolean"
+                    },
+                    "result": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            },
+            "WorkflowExecutionInstanceDetail": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "number",
+                    "title",
+                    "status",
+                    "result",
+                    "definitionId",
+                    "definitionVersion",
+                    "initiator",
+                    "currentNodeId",
+                    "round",
+                    "startedAt",
+                    "endedAt",
+                    "formData",
+                    "canCancel",
+                    "formSchema",
+                    "graph",
+                    "selectedPath",
+                    "logs",
+                    "executions"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "number": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "definitionId": {
+                        "type": "string"
+                    },
+                    "definitionVersion": {
+                        "type": "integer"
+                    },
+                    "initiator": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                    },
+                    "currentNodeId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "round": {
+                        "type": "integer"
+                    },
+                    "startedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "endedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "formData": {
+                        "oneOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "array",
+                                "maxItems": 0
+                            }
+                        ],
+                        "description": "Map value; an empty map may be encoded as []."
+                    },
+                    "canCancel": {
+                        "type": "boolean"
+                    },
+                    "formSchema": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "graph": {
+                        "oneOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "array",
+                                "maxItems": 0
+                            }
+                        ],
+                        "description": "Map value; an empty map may be encoded as []."
+                    },
+                    "plannedPath": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPath",
+                        "description": "Approval projection, included when the instance graph contains approval nodes."
+                    },
+                    "selectedPath": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPath",
+                        "description": "Actual node activations and their incoming connections, in execution order."
+                    },
+                    "history": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionHistory"
+                        },
+                        "description": "Approval projection, included when the instance graph contains approval nodes."
+                    },
+                    "logs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionLog"
+                        }
+                    },
+                    "copies": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionCopy"
+                        },
+                        "description": "Approval projection, included when the instance graph contains approval nodes."
+                    },
+                    "tasks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionTask"
+                        },
+                        "description": "Approval projection, included when the instance graph contains approval nodes."
+                    },
+                    "approvalTasks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionTask"
+                        },
+                        "description": "Approval projection, included when the instance graph contains approval nodes."
+                    },
+                    "approvalStages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionStage"
+                        },
+                        "description": "Approval projection, included when the instance graph contains approval nodes."
+                    },
+                    "result": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "executions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkflowExecutionNodeExecution"
+                        }
+                    }
+                }
+            },
+            "WorkflowExecutionNodeExecution": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "nodeId",
+                    "sequence",
+                    "round",
+                    "status",
+                    "sourceConnectionId",
+                    "waitingFor",
+                    "output",
+                    "result",
+                    "startedAt",
+                    "endedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "sequence": {
+                        "type": "integer"
+                    },
+                    "round": {
+                        "type": "integer"
+                    },
+                    "sourceConnectionId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "waitingFor": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "result": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "startedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "endedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "output": {
+                        "oneOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "array",
+                                "maxItems": 0
+                            }
+                        ],
+                        "description": "Map value; an empty map may be encoded as []."
+                    }
+                }
+            }
+        }
+    }
+}

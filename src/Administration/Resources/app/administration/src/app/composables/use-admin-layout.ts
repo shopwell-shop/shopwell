@@ -12,7 +12,8 @@ export const NAVIGATION_LAYOUTS = ['sidebar', 'top', 'mixed'] as const;
 /** @private */
 export type NavigationLayout = (typeof NAVIGATION_LAYOUTS)[number];
 
-const DEFAULT_NAVIGATION_LAYOUT: NavigationLayout = 'sidebar';
+/** @private */
+export const DEFAULT_NAVIGATION_LAYOUT: NavigationLayout = 'top';
 
 type UseAdminLayoutReturn = {
     layout: Readonly<Ref<NavigationLayout>>;

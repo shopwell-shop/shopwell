@@ -1,0 +1,92 @@
+.sw-workflow-studio-node-picker {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--color-elevation-surface-default);
+
+    &__header {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        min-height: 56px;
+        box-sizing: border-box;
+        gap: 12px;
+        padding: 16px;
+        border-bottom: 1px solid var(--color-border-primary-default);
+    }
+
+    &__header h3 {
+        margin: 0;
+        font-size: var(--font-size-s);
+        line-height: 20px;
+        font-weight: var(--font-weight-semi-bold);
+    }
+
+    &__content {
+        flex: 1;
+        min-height: 0;
+        padding: 16px;
+        overflow: auto;
+    }
+
+    &__content > .mt-field {
+        margin-bottom: 16px;
+    }
+
+    &__empty {
+        padding: 24px 0;
+    }
+
+    &__hint {
+        margin: 12px 0;
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--color-text-secondary-default);
+    }
+
+    &__node-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 6px;
+        background: var(--color-elevation-surface-default);
+        color: var(--color-text-primary-default);
+        text-align: left;
+        cursor: pointer;
+    }
+
+    &__node-item > span:nth-child(2) {
+        flex: 1;
+        font-size: 13px;
+    }
+
+    &__node-item:hover:not(:disabled) {
+        border-color: var(--color-border-brand-default);
+    }
+
+    &__node-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        color: var(--color-icon-brand-default);
+        background: var(--color-shopwell-brand-50);
+    }
+
+    button:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    button:focus-visible {
+        outline: 2px solid var(--color-border-brand-default);
+        outline-offset: -2px;
+    }
+}

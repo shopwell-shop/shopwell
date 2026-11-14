@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
@@ -17,11 +18,12 @@ use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalException;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
-use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferSubmitter;
@@ -101,7 +103,7 @@ class PaymentTransferController
         private readonly PaymentTransferService $transferService,
         private readonly PaymentTransferPresenter $presenter,
         private readonly PaymentProviderRegistry $providerRegistry,
-        private readonly PaymentTransferResultBooker $resultBooker,
+        private readonly PaymentTransferApprovalService $approvals,
     ) {
     }
 
@@ -123,7 +125,7 @@ class PaymentTransferController
         ],
         methods: [Request::METHOD_GET]
     )]
-    public function options(): JsonResponse
+    public function options(Context $context): JsonResponse
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('active', true));
@@ -151,7 +153,7 @@ class PaymentTransferController
             return strcmp($left->technicalName, $right->technicalName);
         });
 
-        return new JsonResponse($this->presenter->options($apps, $this->providerRegistry));
+        return new JsonResponse([...$this->presenter->options($apps, $this->providerRegistry), 'workflowAvailable' => $this->approvals->available($context)]);
     }
 
     /**
@@ -225,14 +227,14 @@ class PaymentTransferController
         ],
         methods: [Request::METHOD_POST]
     )]
-    public function create(#[MapRequestPayload] PaymentTransferDraft $draft): JsonResponse
+    public function create(#[MapRequestPayload] PaymentTransferDraft $draft, Context $context): JsonResponse
     {
         // the app is resolved before the booking so the answer can tell a created row from a replayed one
         // without loading the app a second time for the presentation below
         $app = $this->booking->resolveApp($draft->paymentAppId);
         $replayed = $draft->outNo !== null && $this->transferService->getByOutNo($app, $draft->outNo) !== null;
 
-        $transfer = $this->booking->book($draft);
+        $transfer = $this->approvals->book($draft, $context);
 
         return new JsonResponse(
             [
@@ -241,6 +243,25 @@ class PaymentTransferController
             ],
             $replayed ? JsonResponse::HTTP_OK : JsonResponse::HTTP_CREATED
         );
+    }
+
+    #[Route(
+        path: '/api/_action/payment/transfers/{id}/reapply',
+        name: 'api.action.payment.transfer.reapply',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'],
+            PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create'],
+        ],
+        methods: [Request::METHOD_POST]
+    )]
+    public function reapply(string $id, #[MapRequestPayload] PaymentTransferDraft $draft, Context $context): JsonResponse
+    {
+        $app = $this->booking->resolveApp($draft->paymentAppId);
+        $replayed = $draft->outNo !== null && $this->transferService->getByOutNo($app, $draft->outNo) !== null;
+        $transfer = $this->approvals->reapply($id, $draft, $context);
+
+        return new JsonResponse(['transfer' => $this->presenter->transfer($transfer, $app), 'replayed' => $replayed], $replayed ? JsonResponse::HTTP_OK : JsonResponse::HTTP_CREATED);
     }
 
     /**
@@ -325,11 +346,11 @@ class PaymentTransferController
         defaults: [
             'auth_required' => true,
             PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'],
-            PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:update'],
+            PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create'],
         ],
         methods: [Request::METHOD_POST]
     )]
-    public function cancel(string $id, Request $request): JsonResponse
+    public function cancel(string $id, Request $request, Context $context): JsonResponse
     {
         $reason = $this->rejectReason($request);
 
@@ -340,7 +361,7 @@ class PaymentTransferController
             throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
         }
 
-        $this->resultBooker->cancel($transfer, $reason);
+        $this->approvals->cancel($id, $reason, $context);
 
         $after = $this->transferService->getById($id);
 
@@ -348,6 +369,62 @@ class PaymentTransferController
             'outcome' => self::OUTCOME_CANCELED,
             'transfer' => $this->presenter->transfer($after),
         ]);
+    }
+
+    #[Route(path: '/api/_action/payment/transfers/workflow', name: 'api.action.payment.transfer.workflow', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read', 'system_config:read']], methods: [Request::METHOD_GET])]
+    public function workflow(Context $context): JsonResponse
+    {
+        return new JsonResponse($this->approvals->configuration($context));
+    }
+
+    #[Route(path: '/api/_action/payment/transfers/workflow', name: 'api.action.payment.transfer.workflow.configure', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read', 'system_config:update']], methods: [Request::METHOD_PUT])]
+    public function configureWorkflow(Request $request, Context $context): JsonResponse
+    {
+        $releaseId = $request->toArray()['releaseId'] ?? null;
+        if (!\is_string($releaseId)) {
+            throw PaymentException::missingParameter('releaseId');
+        }
+        $this->approvals->configure($releaseId, $context);
+
+        return new JsonResponse($this->approvals->configuration($context));
+    }
+
+    #[Route(path: '/api/_action/payment/transfers/approval/preview', name: 'api.action.payment.transfer.approval.preview', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create']], methods: [Request::METHOD_POST])]
+    public function previewApproval(#[MapRequestPayload] PaymentTransferDraft $draft, Context $context): JsonResponse
+    {
+        return new JsonResponse($this->approvals->preview($draft, $context));
+    }
+
+    #[Route(path: '/api/_action/payment/transfers/approvals', name: 'api.action.payment.transfer.approvals', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read']], methods: [Request::METHOD_POST])]
+    public function approvals(Request $request, Context $context): JsonResponse
+    {
+        $ids = $request->toArray()['ids'] ?? null;
+        if (!\is_array($ids) || !array_is_list($ids) || \count($ids) > 100) {
+            throw PaymentTransferApprovalException::invalidIds();
+        }
+        $normalized = [];
+        foreach ($ids as $id) {
+            if (!\is_string($id) || !Uuid::isValid(strtolower($id))) {
+                throw PaymentTransferApprovalException::invalidIds();
+            }
+            $normalized[] = strtolower($id);
+        }
+
+        return new JsonResponse(['approvals' => (object) $this->approvals->summaries(array_values(array_unique($normalized)), $context)]);
+    }
+
+    #[Route(path: '/api/_action/payment/transfers/{id}/approval', name: 'api.action.payment.transfer.approval', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read']], methods: [Request::METHOD_GET])]
+    public function approval(string $id, Context $context): JsonResponse
+    {
+        return new JsonResponse($this->approvals->status($id, $context));
+    }
+
+    #[Route(path: '/api/_action/payment/transfers/{id}/approval/cancel', name: 'api.action.payment.transfer.approval.cancel', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create']], methods: [Request::METHOD_POST])]
+    public function cancelApproval(string $id, Request $request, Context $context): JsonResponse
+    {
+        $this->approvals->cancel($id, $this->rejectReason($request), $context);
+
+        return new JsonResponse($this->approvals->status($id, $context));
     }
 
     /**

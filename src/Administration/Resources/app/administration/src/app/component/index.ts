@@ -4,6 +4,11 @@
  */
 export default () => {
     /* eslint-disable sw-deprecation-rules/private-feature-declarations */
+    Shopwell.Component.register('sw-canvas-editor', () => import('src/app/component/structure/sw-canvas-editor'));
+    Shopwell.Component.register(
+        'sw-canvas-contributions',
+        () => import('src/app/component/structure/sw-canvas-contributions'),
+    );
     Shopwell.Component.register('sw-tree-select', () => import('src/app/component/form/sw-tree-select'));
     Shopwell.Component.register('sw-icon-picker', () => import('src/app/component/form/sw-icon-picker'));
     Shopwell.Component.register('sw-wizard-page', () => import('src/app/component/wizard/sw-wizard-page/index'));

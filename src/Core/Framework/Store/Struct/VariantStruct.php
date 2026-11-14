@@ -17,6 +17,8 @@ class VariantStruct extends StoreStruct
 
     protected string $type;
 
+    protected string $currency = 'EUR';
+
     protected float $netPrice;
 
     protected float $netPricePerMonth;

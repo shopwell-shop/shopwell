@@ -1,0 +1,245 @@
+.sw-workflow-runtime-viewer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 360px;
+
+    &__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 16px;
+    }
+
+    &__legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+
+        span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            &::before {
+                content: "";
+                width: 20px;
+                border-top: 2px solid var(--color-border-brand-default);
+            }
+        }
+
+        .is--planned::before { border-top-style: dashed; }
+        .is--skipped::before { border-top-color: var(--color-border-primary-default); }
+    }
+
+    &__expand { margin-left: auto; }
+
+    &__canvas {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-md);
+        background-color: var(--color-background-secondary-default);
+        background-image: radial-gradient(var(--color-border-primary-default) 0.7px, transparent 0.7px);
+        background-size: 20px 20px;
+    }
+
+    &__node {
+        --workflow-state-color: var(--color-text-secondary-default);
+
+        width: 252px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 8px;
+        background: var(--color-elevation-surface-default);
+        color: var(--color-text-primary-default);
+        box-shadow: 0 2px 4px var(--color-elevation-shadow-default);
+
+        &.is--todo {
+            --workflow-state-color: var(--color-text-brand-default);
+
+            border-color: var(--color-border-brand-default);
+            box-shadow: 0 0 0 3px var(--color-shopwell-brand-50);
+        }
+
+        &.is--agreed {
+            --workflow-state-color: var(--color-text-positive-default);
+
+            border-color: var(--color-border-positive-default);
+        }
+
+        &.is--rejected {
+            --workflow-state-color: var(--color-text-critical-default);
+
+            border-color: var(--color-border-critical-default);
+        }
+
+        &.is--skipped { opacity: 0.55; }
+
+        &.is--terminal {
+            width: 160px;
+            border-radius: 24px;
+            box-shadow: none;
+        }
+    }
+
+    &__heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+
+        strong {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: var(--color-background-secondary-default);
+        color: var(--workflow-state-color);
+    }
+
+    &__node.is--condition &__icon {
+        color: var(--color-icon-brand-default);
+        background: var(--color-shopwell-brand-50);
+    }
+
+    &__node.is--terminal &__heading { padding: 7px 12px; }
+
+    &__node.is--terminal &__icon {
+        width: 24px;
+        height: 24px;
+        background: transparent;
+    }
+
+    &__state {
+        font-size: 11px;
+        color: var(--workflow-state-color);
+        white-space: nowrap;
+    }
+
+    &__mode,
+    &__description {
+        margin: 0 12px 10px;
+        color: var(--color-text-secondary-default);
+        font-size: 11px;
+        line-height: 16px;
+        overflow-wrap: anywhere;
+    }
+
+    &__participants {
+        max-height: 160px;
+        overflow-y: auto;
+        padding: 4px 12px;
+        margin: 0;
+        border-top: 1px solid var(--color-border-secondary-default);
+        list-style: none;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 0;
+            font-size: 12px;
+        }
+
+        [data-participant-state="agreed"] .sw-workflow-runtime-viewer__participant-state {
+            color: var(--color-text-positive-default);
+        }
+
+        [data-participant-state="rejected"] .sw-workflow-runtime-viewer__participant-state {
+            color: var(--color-text-critical-default);
+        }
+    }
+
+    &__avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--color-background-secondary-default);
+        color: var(--color-text-secondary-default);
+        font-size: 10px;
+    }
+
+    &__person {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__participant-state {
+        color: var(--color-text-secondary-default);
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    &__edge-label {
+        position: absolute;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 3px 8px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 4px;
+        background: var(--color-elevation-surface-default);
+        color: var(--color-text-secondary-default);
+        font-size: 11px;
+    }
+
+    &__controls {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        display: flex;
+        gap: 4px;
+    }
+
+    &__modal .sw-modal__body > .sw-workflow-runtime-viewer {
+        height: calc(100vh - 180px);
+    }
+
+    .vue-flow__handle {
+        width: 4px;
+        height: 4px;
+        border: 0;
+        background: var(--color-border-primary-default);
+    }
+
+    .vue-flow__edge {
+        color: var(--color-icon-secondary-default);
+
+        .vue-flow__edge-path { stroke: currentcolor; }
+
+        &.is--visited,
+        &.is--planned { color: var(--color-border-brand-default); }
+
+        &.is--visited .vue-flow__edge-path { stroke-width: 2; }
+        &.is--planned .vue-flow__edge-path { stroke-dasharray: 6 4; }
+        &.is--skipped { opacity: 0.3; }
+    }
+}

@@ -27,9 +27,9 @@ class ReviewStructTest extends TestCase
             'version' => '1.1.0',
         ]);
 
-        $rating = ReviewStruct::fromRequest(1, $request);
+        $rating = ReviewStruct::fromRequest('01a1d3dbc0197161b8c132c72836aebf', $request);
 
-        static::assertSame(1, $rating->getExtensionId());
+        static::assertSame('01a1d3dbc0197161b8c132c72836aebf', $rating->getExtensionId());
         static::assertSame('Author', $rating->getAuthorName());
         static::assertSame('Headline', $rating->getHeadline());
         static::assertSame('Text', $rating->getText());
@@ -45,7 +45,7 @@ class ReviewStructTest extends TestCase
         ]);
 
         $this->expectExceptionObject(RoutingException::invalidRequestParameter('authorName'));
-        ReviewStruct::fromRequest(1, $request);
+        ReviewStruct::fromRequest('01a1d3dbc0197161b8c132c72836aebf', $request);
     }
 
     public function testFromRequestThrowsIfHeadlineIsInvalid(): void
@@ -56,7 +56,7 @@ class ReviewStructTest extends TestCase
         ]);
 
         $this->expectExceptionObject(RoutingException::invalidRequestParameter('headline'));
-        ReviewStruct::fromRequest(1, $request);
+        ReviewStruct::fromRequest('01a1d3dbc0197161b8c132c72836aebf', $request);
     }
 
     public function testFromRequestThrowsIfRatingIsInvalid(): void
@@ -69,6 +69,6 @@ class ReviewStructTest extends TestCase
         ]);
 
         $this->expectExceptionObject(RoutingException::invalidRequestParameter('rating'));
-        ReviewStruct::fromRequest(1, $request);
+        ReviewStruct::fromRequest('01a1d3dbc0197161b8c132c72836aebf', $request);
     }
 }

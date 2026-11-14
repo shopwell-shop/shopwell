@@ -52,6 +52,6 @@ class InstanceServiceTest extends TestCase
             null
         );
 
-        static::assertSame('___VERSION___', $instanceService->getShopwellVersion());
+        static::assertSame(Kernel::SHOPWELL_FALLBACK_VERSION, $instanceService->getShopwellVersion());
     }
 }

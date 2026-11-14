@@ -32,3 +32,13 @@ The `salesChannels` data property, the `salesChannelRepository` computed propert
 The `salesChannelFilters` data property of `sw-newsletter-recipient-list` was removed without replacement.
 Both components no longer load sales channels when they are created, because their sales channel selects load their options themselves.
 Extensions that read these properties must load the sales channels themselves, for example with `repositoryFactory.create('sales_channel')`.
+
+## Default Storefront theme
+
+The former default base and skin partial imports were replaced by the new foundation at the same entry points.
+Child themes that relied on unimported default selectors must supply their page styles or adopt the current UX blocks and CSS properties documented in `src/Storefront/Resources/THEME.md`.
+The `base_navigation` and `base_navigation_inner` blocks moved from `storefront/layout/header.html.twig` into `storefront/layout/header/header.html.twig`, inside the new `layout_header_navbar` block.
+Move navigation block overrides to the inner header template.
+The separate `layout_header_navigation_toggle_tablet*` blocks were replaced by the shared `layout_header_navigation_toggle*` blocks for all widths below `lg`.
+The header search became collapsible at every breakpoint.
+Keep the `header-search-toggle` button ID and its `searchCollapse` target when overriding the search trigger, so the search skip link and focus handling remain connected.

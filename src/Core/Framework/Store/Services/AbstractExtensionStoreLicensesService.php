@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Store\Struct\ReviewStruct;
 #[Package('checkout')]
 abstract class AbstractExtensionStoreLicensesService
 {
-    abstract public function cancelSubscription(int $licenseId, Context $context): void;
+    abstract public function cancelSubscription(string $licenseId, Context $context): void;
 
     abstract public function rateLicensedExtension(ReviewStruct $rating, Context $context): void;
 

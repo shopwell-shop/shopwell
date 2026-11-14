@@ -1,0 +1,101 @@
+.sw-workflow-studio-node {
+    --node-accent: var(--color-icon-secondary-default);
+    --node-tint: var(--color-background-secondary-default);
+
+    width: 252px;
+    border: 1px solid var(--color-border-primary-default);
+    border-radius: 8px;
+    background: var(--color-elevation-surface-default);
+    color: var(--color-text-primary-default);
+    box-shadow: 0 2px 4px var(--color-elevation-shadow-default);
+
+    &.is-blue {
+        --node-accent: var(--color-shopwell-brand-500);
+        --node-tint: var(--color-shopwell-brand-50);
+    }
+
+    &.is-purple {
+        --node-accent: var(--color-purple-500, #8466d5);
+        --node-tint: var(--color-purple-50, #f3effc);
+    }
+
+    &.is-green {
+        --node-accent: var(--color-text-positive-default);
+        --node-tint: var(--color-background-positive-default, #edf7f1);
+    }
+
+    &__heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px 10px;
+    }
+
+    &__heading strong {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+        font-weight: var(--font-weight-semi-bold);
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        color: var(--node-accent);
+        background: var(--node-tint);
+    }
+
+    &__summary {
+        margin: 0;
+        padding: 0 16px 14px 56px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--color-text-secondary-default);
+        max-height: 50px;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+    }
+
+    &.is-start,
+    &.is-end {
+        width: 160px;
+        border-radius: 24px;
+        box-shadow: none;
+    }
+
+    &.is-start &__heading,
+    &.is-end &__heading {
+        padding: 9px 16px;
+        gap: 8px;
+    }
+
+    &.is-start &__icon,
+    &.is-end &__icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: transparent;
+    }
+
+    &.has-error {
+        border-color: var(--color-border-critical-default);
+    }
+
+    .vue-flow__node.selected & {
+        border-color: var(--color-border-brand-default);
+        box-shadow: 0 0 0 3px var(--color-shopwell-brand-50);
+    }
+
+    .vue-flow__node:focus-visible & {
+        outline: 2px solid var(--color-border-brand-default);
+        outline-offset: 3px;
+    }
+}

@@ -1,0 +1,466 @@
+{
+    "sw-workflow": {
+        "navigation": {
+            "root": "Workflow",
+            "design": "Workflow management",
+            "designs": "Designs"
+        },
+        "general": {
+            "title": "Workflow Studio",
+            "description": "Design human tasks and automated workflows",
+            "draft": "Draft",
+            "loadError": "Workflow information could not be loaded. Please try again."
+        },
+        "actions": {
+            "undo": "Undo",
+            "redo": "Redo",
+            "export": "Export draft",
+            "remove": "Delete node",
+            "retry": "Retry"
+        },
+        "canvas": {
+            "fit": "Fit to canvas",
+            "zoomIn": "Zoom in",
+            "zoomOut": "Zoom out",
+            "hint": "Click + on a connection to add a step. Click a node to edit it."
+        },
+        "panels": {
+            "noSearchResults": "No matching nodes",
+            "searchHint": "Try another keyword or clear the search.",
+            "noAvailableNodes": "No nodes available here",
+            "nodes": "Add nodes",
+            "insertHint": "Select a connection, then add a node at that position.",
+            "templates": "Templates",
+            "library": "Node library",
+            "settings": "Node settings",
+            "selectHint": "Select a node on the canvas to view and edit its settings.",
+            "removeHint": "Boundary nodes and branches containing downstream configuration cannot be deleted directly.",
+            "search": "Search nodes",
+            "insertAfter": "Insert after {name}",
+            "basicSettings": "Basic settings",
+            "selectTitle": "Select a node",
+            "configurationHint": "This workflow is a draft. Saving does not activate or execute it."
+        },
+        "fields": {
+            "label": "Node name",
+            "description": "Description",
+            "descriptionPlaceholder": "Describe what this step should accomplish"
+        },
+        "templates": {
+            "approval": "Single-step approval",
+            "approvalDescription": "Includes approved and rejected paths",
+            "expense": "Expense approval",
+            "expenseDescription": "Department approval, then finance for amounts over 5,000",
+            "selectTitle": "Select a template",
+            "selectHint": "Preview a template before applying it to this workflow.",
+            "replaceHint": "Applying this template replaces the current workflow. You can undo this change.",
+            "apply": "Apply template",
+            "basic": "Blank workflow",
+            "basicDescription": "Start with an input and an end node."
+        },
+        "types": {
+            "core": {
+                "start": "Start",
+                "end": "End",
+                "action": "Automated action",
+                "human-task": "Human task",
+                "approval": "Approval",
+                "condition": "Condition"
+            }
+        },
+        "outcomes": {
+            "approved": "Approved",
+            "rejected": "Rejected",
+            "fallback": "Otherwise"
+        },
+        "diagnostics": {
+            "hint": "The workflow is checked automatically after editing.",
+            "success": "The workflow configuration structure is valid. Publishing requires separate validation.",
+            "unknown": "Check the node configuration.",
+            "start_count": "The workflow needs exactly one start node.",
+            "end_missing": "Add an end node.",
+            "unknown_node_type": "The node type or version is unavailable.",
+            "duplicate_node_id": "Node identifiers must be unique.",
+            "duplicate_connection_id": "Connection identifiers must be unique.",
+            "unknown_source": "A connection source does not exist.",
+            "unknown_target": "A connection target does not exist.",
+            "unknown_output_port": "The source node does not have this output.",
+            "unknown_input_port": "The target node does not have this input.",
+            "multiple_output_connections": "An output cannot lead to multiple paths.",
+            "multiple_input_connections": "An input cannot implicitly join multiple paths.",
+            "cycle": "The workflow contains a cycle.",
+            "unreachable_node": "A node cannot be reached from the start.",
+            "no_path_to_end": "A node has no path to an end.",
+            "unconnected_output": "Connect all node outputs.",
+            "checking": "Checking automatically…",
+            "failed": "Automatic validation is unavailable. You can still edit and export this draft.",
+            "condition_invalid_rule": "Complete the branch name, field and matching condition.",
+            "condition_invalid_branches": "Add at least one condition branch with a unique identifier.",
+            "approval_assignee_required": "Select an approver.",
+            "approval_invalid_configuration": "Complete the approver and approval mode configuration.",
+            "approval_incompatible_mode": "This approval mode does not support the current approver source. Select another mode."
+        },
+        "summaries": {
+            "action": "Run an automated operation",
+            "humanTask": "Assign a task to a person",
+            "approval": "Continue along the approved or rejected path",
+            "condition": "Match in priority order, otherwise use the fallback"
+        },
+        "condition": {
+            "title": "Branch conditions",
+            "hint": "Set the condition for entering this branch. When multiple branches match, the first one from the top takes priority.",
+            "newBranch": "Condition branch",
+            "name": "Branch name",
+            "field": "Field to check",
+            "fieldPlaceholder": "Select a field",
+            "operator": "Condition",
+            "value": "Condition value",
+            "add": "Add condition branch",
+            "remove": "Delete branch",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "removeHint": "Keep at least one condition. Remove downstream nodes and configuration before deleting a branch.",
+            "fallbackHint": "Use this path when no condition matches. It always stays last.",
+            "operators": {
+                "equals": "Equals",
+                "notEquals": "Does not equal",
+                "isEmpty": "Not filled in",
+                "isNotEmpty": "Filled in",
+                "greaterThan": "Greater than",
+                "greaterThanOrEqual": "Greater than or equal to",
+                "lessThan": "Less than",
+                "lessThanOrEqual": "Less than or equal to"
+            },
+            "operatorHints": {
+                "equals": "Use this branch when the field matches the condition value.",
+                "notEquals": "Use this branch when the field differs from the condition value.",
+                "isEmpty": "Use this branch when the field is not filled in. No condition value is needed.",
+                "isNotEmpty": "Use this branch when the field is filled in. No condition value is needed.",
+                "greaterThan": "Compare the amount, number or date with the condition value.",
+                "greaterThanOrEqual": "Compare the amount, number or date with the condition value.",
+                "lessThan": "Compare the amount, number or date with the condition value.",
+                "lessThanOrEqual": "Compare the amount, number or date with the condition value."
+            },
+            "valuePlaceholder": "Select a value",
+            "noFields": "This workflow has no available fields. Use a template with business inputs or provide fields through a business module.",
+            "unavailableField": "Original field unavailable",
+            "unavailableFieldHint": "The original field source is unavailable. The condition has been preserved. Restore the business extension or select another field.",
+            "unavailableValue": "Original option unavailable",
+            "unavailableValueHint": "The original option is no longer available. Its value has been preserved. Select another option.",
+            "unavailableOperator": "Original condition unavailable",
+            "unavailableOperatorHint": "This condition is not supported by the current field type. The original rule is preserved. Select a compatible condition.",
+            "staleFieldTypeHint": "The field type has changed or this rule is not bound yet. Rebind the field and enter the condition again before publishing.",
+            "rebindField": "Rebind field and reset condition"
+        },
+        "persistence": {
+            "defaultName": "Untitled workflow",
+            "name": "Workflow name",
+            "revision": "Revision",
+            "updatedAt": "Last updated",
+            "listTitle": "Workflow management",
+            "create": "Create workflow",
+            "save": "Save draft",
+            "saved": "Draft saved",
+            "unsaved": "Unsaved changes",
+            "failed": "Saving failed. Your changes are preserved. Try again.",
+            "conflict": "This draft changed or was deleted. Your edits are preserved; export them before reloading the latest version.",
+            "reload": "Reload",
+            "back": "Back to workflows",
+            "leaveTitle": "Discard unsaved changes?",
+            "leaveHint": "Your unsaved edits will be lost. Continue editing or discard them.",
+            "stay": "Keep editing",
+            "discard": "Discard changes",
+            "loadFailed": "Drafts could not be loaded. Try again.",
+            "deleteFailed": "Deletion failed. Try again.",
+            "deleteConflict": "The draft changed and was not deleted. Refresh the list and review the latest version.",
+            "delete": "Delete draft",
+            "deleteHint": "Delete “{name}”? This cannot be undone.",
+            "emptyTitle": "No workflow drafts yet",
+            "emptyHint": "Create a workflow using the default approval template.",
+            "searchPlaceholder": "Search workflow names…"
+        },
+        "inputs": {
+            "reason": "Reason for request",
+            "priority": "Priority",
+            "normal": "Normal",
+            "urgent": "Urgent"
+        },
+        "approval": {
+            "assignee": "Approver",
+            "source": "Approver source",
+            "selectSource": "Select an approver source",
+            "mode": "Approval mode",
+            "selectMode": "Select an approval mode",
+            "namedUser": "One named person",
+            "single": "Single-person approval",
+            "singleHint": "One selected person decides whether to approve or reject.",
+            "clear": "Clear selection",
+            "summary": "Approval by {name}",
+            "unavailable": "Approval configuration unavailable",
+            "sourceUnavailable": "The original approver source is unavailable. Its configuration has been preserved. Restore the extension or select another source.",
+            "modeUnavailable": "The original approval mode is unavailable. Its configuration has been preserved. Restore the extension or select another mode.",
+            "status": {
+                "empty": "Select an approver",
+                "loading": "Loading approver…",
+                "inactive": "The original approver is disabled. Select another person.",
+                "missing": "The original approver no longer exists. Select another person.",
+                "error": "The approver could not be loaded. The original configuration has been preserved.",
+                "forbidden": "You do not have permission to view users. The original configuration has been preserved."
+            },
+            "namedUsers": "Multiple named people",
+            "all": "All must approve",
+            "any": "First decision",
+            "allHint": "Everyone must approve. Any rejection rejects the request. Remaining tasks end when this node completes.",
+            "anyHint": "The first submitted approval or rejection decides the result. Other approvers no longer need to act.",
+            "sourceHint": "Changing the source clears selected people. Undo restores the selection.",
+            "incompatibleMode": "This approval mode does not support the current approver source. Select another mode.",
+            "multiple": {
+                "separator": ", ",
+                "missingMember": "Deleted person {position}",
+                "unverifiedMember": "Unverified person {position}",
+                "inactiveMember": "{name} (disabled)",
+                "more": "{names} and others ({count} total)",
+                "unavailableMembers": "{count} approver is disabled or missing. Remove or replace them. | {count} approvers are disabled or missing. Remove or replace them.",
+                "status": {
+                    "empty": "Select one or more approvers",
+                    "loading": "Loading approvers…",
+                    "error": "Approvers could not be loaded. The selection has been preserved.",
+                    "forbidden": "You do not have permission to view users. The selection has been preserved."
+                }
+            }
+        },
+        "publication": {
+            "catalogue": "Publication history",
+            "publish": "Publish",
+            "published": "Published revision {revision}",
+            "savedOnly": "Save your changes before publishing.",
+            "confirmTitle": "Publish saved workflow?",
+            "confirmHint": "Publish revision {revision} as an immutable release. Later draft changes will not change this release.",
+            "provider": "Publisher",
+            "createdAt": "Published at",
+            "action": "Action",
+            "immutable": "Published workflows are immutable. Saving a draft never changes a release.",
+            "noProvider": "No publisher is available with your permissions.",
+            "providersFailed": "Publishers could not be loaded. Try again.",
+            "failed": "Publication failed. Your draft is preserved. Try again.",
+            "conflict": "The saved draft changed or was deleted. Reload and review it before publishing.",
+            "invalid_graph": "Resolve the workflow validation errors before publishing.",
+            "unsupported_approval_workflow": "Use approval stages, conditions based on request fields, and complete end paths. Select approvers before publishing.",
+            "approval_assignee_unavailable": "The approver is disabled or missing. Select an active person and save before publishing.",
+            "loadFailed": "Published workflows could not be loaded. Try again.",
+            "unavailable": "Publisher unavailable",
+            "emptyTitle": "No publications yet",
+            "emptyHint": "Publish a workflow to view its version history.",
+            "approval_assignee_forbidden": "A reviewer cannot view or decide approval tasks. Assign the Workflow participant role or equivalent permissions.",
+            "allRecords": "View all publication records"
+        },
+        "form": {
+            "title": "Request form",
+            "hint": "Add the fields applicants fill in. Removing a field or changing its type may require updating conditions.",
+            "label": "Field name",
+            "type": "Field type",
+            "required": "Required",
+            "newField": "New field",
+            "add": "Add field",
+            "remove": "Delete field",
+            "option": "Option",
+            "newOption": "New option",
+            "addOption": "Add option",
+            "removeOption": "Delete option",
+            "types": {
+                "text": "Text",
+                "amount": "Amount",
+                "number": "Number",
+                "date": "Date",
+                "select": "Choice"
+            },
+            "valueHints": {
+                "amount": "Enter an amount with up to 2 decimal places.",
+                "number": "Enter a number with up to 6 decimal places.",
+                "date": "Enter a date as YYYY-MM-DD."
+            },
+            "dataSource": "Input source",
+            "freeText": "Free text",
+            "currencySource": "System currencies",
+            "selectPlaceholder": "Select an option"
+        },
+        "expense": {
+            "reason": "Reason for expense",
+            "amount": "Amount",
+            "expenseDate": "Expense date",
+            "category": "Category",
+            "quantity": "Quantity",
+            "travel": "Travel",
+            "supplies": "Supplies",
+            "department": "Department approval",
+            "finance": "Finance approval",
+            "threshold": "Over 5,000"
+        },
+        "runtime": {
+            "general": {
+                "mainMenuItemGeneral": "My approvals",
+                "descriptionTextModule": "Pending, handled and approval details"
+            },
+            "status": {
+                "running": "In approval",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "canceled": "Canceled",
+                "completed": "Completed"
+            },
+            "countersign": {
+                "single": "Single approver",
+                "orSign": "Any one",
+                "countersign": "All of them",
+                "orderSign": "One by one",
+                "firstDecision": "First decision"
+            },
+            "todo": {
+                "title": "Approvals",
+                "mockMode": "Demo data",
+                "tabTodo": "Waiting for me",
+                "tabDone": "Handled by me",
+                "columnTitle": "Request",
+                "columnNode": "Current step",
+                "columnCountersign": "Mode",
+                "columnInitiator": "Requested by",
+                "columnWaiting": "Waiting",
+                "columnDecision": "My decision",
+                "columnComment": "Comment",
+                "columnCompleted": "Handled at",
+                "open": "Open",
+                "emptyTodoHeadline": "Nothing to approve",
+                "emptyTodoDescription": "Every request has been handled",
+                "emptyDoneHeadline": "Nothing handled yet",
+                "emptyDoneDescription": "Requests you handled will show up here",
+                "loadError": "Could not load the approval list",
+                "tabMine": "Requested by me",
+                "columnStatus": "Status",
+                "columnStarted": "Started at",
+                "emptyMineHeadline": "No requests yet",
+                "emptyMineDescription": "Your submitted requests will appear here"
+            },
+            "instance": {
+                "back": "Back",
+                "mockMode": "Demo data",
+                "retry": "Retry",
+                "loadError": "Could not load the approval",
+                "formTitle": "Request",
+                "formEmpty": "No form data",
+                "graphTitle": "Approval flow",
+                "waiting": "Started {time}",
+                "actionsTitle": "My decision",
+                "countersignProgress": "Vote {sequence} of the countersign",
+                "actionDone": "Your decision has been submitted",
+                "routeLegend": "Solid blue: visited · Dashed blue: selected next steps · Faded: will not run",
+                "endedRouteLegend": "Solid blue: visited · Faded: did not run",
+                "cancel": "Cancel request",
+                "cancelReason": "Cancellation reason",
+                "cancelDone": "Request canceled",
+                "cancelHint": "Canceling ends this approval. Enter a reason for the audit history."
+            },
+            "timeline": {
+                "title": "History",
+                "agreed": "approved",
+                "rejected": "rejected",
+                "pending": "in progress",
+                "empty": "No decisions yet"
+            },
+            "actions": {
+                "approve": "Approve",
+                "reject": "Reject",
+                "commentLabel": "Comment",
+                "commentPlaceholder": "A reason is required to reject",
+                "rejectHint": "Enter a reason to reject this request."
+            },
+            "participants": {
+                "title": "Approval stages",
+                "counts": "{agreed} approved · {rejected} rejected · {todo} pending · {canceled} no action needed",
+                "progress": "{completed} of {total} tasks resolved",
+                "states": {
+                    "todo": "Pending",
+                    "agreed": "Approved",
+                    "rejected": "Rejected",
+                    "canceled": "No action needed",
+                    "pending": "Not started",
+                    "active": "Awaiting approval",
+                    "approved": "Approved",
+                    "skipped": "Will not run"
+                },
+                "rules": {
+                    "single": "The selected approver decides whether to approve or reject.",
+                    "countersign": "Everyone must approve. Any rejection ends this approval; remaining tasks no longer need action.",
+                    "firstDecision": "The first approval or rejection decides the outcome. Remaining tasks no longer need action.",
+                    "orSign": "Any approval passes this step. It is rejected only when everyone rejects.",
+                    "orderSign": "Approvers decide in order. Everyone must approve; any rejection ends this step."
+                },
+                "step": "Step {number}"
+            },
+            "navigation": "My approvals",
+            "viewer": {
+                "legend": "Path legend",
+                "visited": "Visited",
+                "planned": "Next steps",
+                "skipped": "Other paths",
+                "expand": "Expand diagram",
+                "types": {
+                    "start": "Request submitted",
+                    "end": "End",
+                    "condition": "Condition",
+                    "approval": "Approval",
+                    "copy": "Copy"
+                },
+                "states": {
+                    "active": "Awaiting approval",
+                    "approved": "Approved",
+                    "rejected": "Rejected",
+                    "skipped": "Will not run",
+                    "pending": "Not started",
+                    "visited": "Visited",
+                    "completed": "Completed",
+                    "canceled": "Canceled"
+                }
+            }
+        },
+        "request": {
+            "publisher": "Approval",
+            "start": "Start approval",
+            "title": "Request title",
+            "reason": "Reason (optional)",
+            "failed": "The request could not be started. Your input is preserved. Try again.",
+            "loadFailed": "Could not load the published request form.",
+            "validation": {
+                "required": "This field is required.",
+                "text": "Enter no more than 4,000 characters.",
+                "amount": "Enter a nonnegative amount with up to 12 whole digits and 2 decimal places.",
+                "number": "Enter a number with up to 12 whole digits and 6 decimal places.",
+                "date": "Enter a valid date (YYYY-MM-DD).",
+                "select": "Choose one of the available options."
+            },
+            "condition": "Condition",
+            "emptyTitle": "No requests available",
+            "emptyHint": "Requests become available when an administrator publishes a workflow."
+        },
+        "extensions": {
+            "failed": "A workflow extension could not be loaded or executed."
+        },
+        "publisher": {
+            "workflow": "General workflow"
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "workflow": {
+                "label": "Workflow management"
+            },
+            "workflow_participant": {
+                "label": "Workflow participants"
+            }
+        }
+    },
+    "global": {
+        "entities": {
+            "workflow_draft": "Workflow | Workflows"
+        }
+    }
+}

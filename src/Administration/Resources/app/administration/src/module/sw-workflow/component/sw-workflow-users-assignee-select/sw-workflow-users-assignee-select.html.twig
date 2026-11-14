@@ -1,0 +1,43 @@
+{% block sw_workflow_users_assignee_select %}
+<div class="sw-workflow-users-assignee-select">
+    <sw-entity-multi-select
+        v-if="canRead"
+        entity-name="user"
+        :entity-collection="collection"
+        :criteria="criteria"
+        label-property="name"
+        :label="$t('sw-workflow.approval.assignee')"
+        :placeholder="$t('sw-workflow.approval.multiple.status.empty')"
+        :disabled="!allowEdit"
+        :show-clearable-button="false"
+        @update:entity-collection="change"
+    >
+        <template #selection-label-property="{ item }">
+            {{ label(item) }}
+        </template>
+        <template #result-label-property="{ item }">
+            {{ item.name || item.username }}<span v-if="item.name && item.name !== item.username"> ({{ item.username }})</span>
+        </template>
+    </sw-entity-multi-select>
+    <p
+        v-if="status !== 'ready' && status !== 'empty'"
+        role="status"
+    >
+        {{ $t('sw-workflow.approval.multiple.status.' + status) }}
+    </p>
+    <p
+        v-if="unavailableCount"
+        class="sw-workflow-users-assignee-select__warning"
+        role="status"
+    >
+        {{ $t('sw-workflow.approval.multiple.unavailableMembers', { count: unavailableCount }) }}
+    </p>
+    <mt-button
+        v-if="status === 'error'"
+        variant="secondary"
+        @click="retry"
+    >
+        {{ $t('sw-workflow.actions.retry') }}
+    </mt-button>
+</div>
+{% endblock %}

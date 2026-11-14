@@ -1,0 +1,33 @@
+{% block sw_workflow_approval_node %}
+<div
+    class="sw-workflow-studio-node sw-workflow-approval-node is-activity is-green"
+    :class="{ 'has-error': data.invalid || !source || !mode }"
+>
+    <div class="sw-workflow-studio-node__heading">
+        <span class="sw-workflow-studio-node__icon"><mt-icon
+            name="regular-user-shield"
+            size="18px"
+        /></span>
+        <strong>{{ data.label }}</strong>
+        <span
+            v-if="source && mode"
+            class="sw-workflow-approval-node__mode"
+            :title="$t(mode.descriptionKey)"
+        >{{ $t(mode.labelKey) }}</span>
+        <mt-icon
+            v-if="data.invalid || !source || !mode"
+            name="regular-exclamation-circle"
+            size="16px"
+        />
+    </div>
+    <p class="sw-workflow-studio-node__summary">
+        <component
+            :is="source.summaryComponent"
+            v-if="source && mode"
+            :config="settings.assignee.config"
+            :node="data.node"
+        />
+        <span v-else>{{ $t('sw-workflow.approval.unavailable') }}</span>
+    </p>
+</div>
+{% endblock %}

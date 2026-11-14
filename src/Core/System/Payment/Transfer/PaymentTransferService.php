@@ -442,26 +442,7 @@ final class PaymentTransferService
         return array_keys($ids);
     }
 
-    private function replay(PaymentTransferEntity $transfer, PaymentTransferRequest $request): PaymentTransferEntity
-    {
-        if ($request->accountId !== null && $request->accountId !== $transfer->accountId) {
-            throw PaymentTransferException::transferConflict($request->outNo);
-        }
-
-        if ($transfer->recipientId !== $request->recipientId
-            || $transfer->amount !== $request->amount
-            || strtoupper($transfer->currency) !== strtoupper($request->currency)
-            || $transfer->provider !== $request->provider
-            || $transfer->channel !== $request->channel
-            || ($transfer->channelParams ?? []) !== $request->channelParams
-        ) {
-            throw PaymentTransferException::transferOutNoTaken($request->outNo);
-        }
-
-        return $transfer;
-    }
-
-    private function getRecipient(PaymentAppEntity $app, string $recipientId): PaymentTransferRecipientEntity
+    public function getRecipient(PaymentAppEntity $app, string $recipientId): PaymentTransferRecipientEntity
     {
         $criteria = new Criteria();
         // the app is part of the lookup, not a check afterwards: a recipient of another app does not
@@ -479,6 +460,25 @@ final class PaymentTransferService
         }
 
         return $recipient;
+    }
+
+    private function replay(PaymentTransferEntity $transfer, PaymentTransferRequest $request): PaymentTransferEntity
+    {
+        if ($request->accountId !== null && $request->accountId !== $transfer->accountId) {
+            throw PaymentTransferException::transferConflict($request->outNo);
+        }
+
+        if ($transfer->recipientId !== $request->recipientId
+            || $transfer->amount !== $request->amount
+            || strtoupper($transfer->currency) !== strtoupper($request->currency)
+            || $transfer->provider !== $request->provider
+            || $transfer->channel !== $request->channel
+            || ($transfer->channelParams ?? []) !== $request->channelParams
+        ) {
+            throw PaymentTransferException::transferOutNoTaken($request->outNo);
+        }
+
+        return $transfer;
     }
 
     /**

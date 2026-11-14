@@ -221,8 +221,8 @@ Module.register('sw-blog', {
             label: 'sw-blog.general.mainMenuItemGeneral',
             color: '#9AA8B5',
             icon: 'regular-file-text',
-            position: 55,
-            privilege: privileges.blog.viewer,
+            position: 30,
+            parent: 'sw-content',
         },
         {
             id: 'sw-blog-content',

@@ -343,9 +343,14 @@ class SchemaBuilder
 
             $update = 'CASCADE';
 
+            $foreignKeyField = $definition->getFields()->getByStorageName($field->getStorageName());
+
             if ($field->is(CascadeDelete::class)) {
                 $delete = 'CASCADE';
             } elseif ($field->is(RestrictDelete::class)) {
+                $delete = 'RESTRICT';
+            } elseif ($foreignKeyField instanceof StateMachineStateField && $foreignKeyField->is(Required::class)) {
+                // A required state cannot be set to null when its state-machine entry is deleted.
                 $delete = 'RESTRICT';
             } elseif ($definition instanceof EntityTranslationDefinition) {
                 // When a foreign key is used in a translation definition, cascade deletion should be applied so that related records are deleted when the main entity is removed, including translations.

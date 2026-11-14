@@ -41,7 +41,7 @@ class ExtensionStoreLicensesServiceTest extends TestCase
 
         $this->setCancellationResponses();
 
-        $this->extensionLicensesService->cancelSubscription(1, $context);
+        $this->extensionLicensesService->cancelSubscription('1', $context);
 
         $lastRequest = $this->getStoreRequestHandler()->getLastRequest();
         static::assertNotNull($lastRequest);
@@ -64,7 +64,7 @@ class ExtensionStoreLicensesServiceTest extends TestCase
     {
         $this->getStoreRequestHandler()->append(new Response(200, [], null));
         $review = new ReviewStruct();
-        $review->setExtensionId(5);
+        $review->setExtensionId('5');
         $this->extensionLicensesService->rateLicensedExtension($review, $this->getContextWithStoreToken());
 
         $lastRequest = $this->getStoreRequestHandler()->getLastRequest();

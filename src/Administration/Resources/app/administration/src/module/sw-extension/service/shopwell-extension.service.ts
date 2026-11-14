@@ -79,7 +79,7 @@ export default class ShopwellExtensionService {
         await this.updateExtensionData();
     }
 
-    public async cancelLicense(licenseId: number): Promise<void> {
+    public async cancelLicense(licenseId: string): Promise<void> {
         await this.extensionStoreActionService.cancelLicense(licenseId);
     }
 

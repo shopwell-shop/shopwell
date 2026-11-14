@@ -1,0 +1,10 @@
+{% block sw_finance_transfer_workflow_start %}
+<mt-button
+    variant="secondary"
+    size="small"
+    :disabled="!acl.can('payment_transfer.creator')"
+    @click="$router.push({ name: 'sw.finance.transfer', query: { create: '1' } })"
+>
+    {{ $t('sw-finance.transfer.list.buttonCreate') }}
+</mt-button>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% block sw_workflow_list %}
+<sw-page
+    class="sw-workflow-list"
+    :show-search-bar="!isHistory"
+>
+    {% block sw_workflow_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="workflow_draft"
+            :placeholder="$t('sw-workflow.persistence.searchPlaceholder')"
+            :initial-search="term"
+            @search="search"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_workflow_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {{ $t('sw-workflow.persistence.listTitle') }}
+            <span
+                v-if="!isHistory && !isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_workflow_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        <mt-button
+            v-tooltip="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: allowCreate,
+                showOnDisabledElements: true
+            }"
+            class="sw-workflow-list__create"
+            variant="primary"
+            size="default"
+            :disabled="!allowCreate"
+            @click="onCreateWorkflow"
+        >
+            {{ $t('sw-workflow.persistence.create') }}
+        </mt-button>
+    </template>
+    {% endblock %}
+
+    {% block sw_workflow_list_content %}
+    <template #content>
+        <div class="sw-workflow-list__content">
+            <mt-tabs
+                class="sw-workflow-list__tabs"
+                position-identifier="sw-workflow-management"
+                :default-item="isHistory ? 'sw.workflow.releases' : 'sw.workflow.index'"
+                :items="tabs"
+                :small="true"
+            />
+            <sw-workflow-release-list v-if="isHistory" />
+            <div
+                v-else
+                class="sw-workflow-list__designs"
+            >
+                <mt-banner
+                    v-if="error"
+                    variant="critical"
+                    role="alert"
+                >
+                    {{ $t('sw-workflow.persistence.' + error) }} <mt-button
+                        variant="secondary"
+                        @click="load"
+                    >
+                        {{ $t('sw-workflow.actions.retry') }}
+                    </mt-button>
+                </mt-banner>
+                <div class="sw-workflow-list__listing">
+                    <sw-data-grid
+                        v-if="isLoading || (drafts && drafts.length)"
+                        :full-page="true"
+                        :data-source="drafts ?? []"
+                        :columns="columns"
+                        :is-loading="isLoading"
+                        :show-selection="false"
+                        :allow-inline-edit="false"
+                    >
+                        <template #column-name="{ item }">
+                            <router-link :to="{ name: 'sw.workflow.detail', params: { id: item.id } }">
+                                {{ item.name }}
+                            </router-link>
+                        </template>
+                        <template #column-revision="{ item }">
+                            <router-link :to="{ name: 'sw.workflow.releases', query: { draftId: item.id } }">
+                                {{ item.revision }}
+                            </router-link>
+                        </template>
+                        <template #column-updatedAt="{ item }">
+                            {{ formatDate(item.updatedAt || item.createdAt) }}
+                        </template>
+                        <template #actions="{ item }">
+                            <sw-context-menu-item
+                                :disabled="!acl.can('workflow.deleter') || isDeleting"
+                                variant="danger"
+                                @click="deletion = item"
+                            >
+                                {{ $t('sw-workflow.persistence.delete') }}
+                            </sw-context-menu-item>
+                        </template>
+                        <template #pagination>
+                            <sw-pagination
+                                :page="page"
+                                :limit="limit"
+                                :total="total"
+                                @page-change="changePage"
+                            />
+                        </template>
+                    </sw-data-grid>
+                    <mt-empty-state
+                        v-else-if="!error"
+                        icon="regular-flow"
+                        :headline="$t('sw-workflow.persistence.emptyTitle')"
+                        :description="$t('sw-workflow.persistence.emptyHint')"
+                    />
+                </div>
+                <sw-modal
+                    v-if="deletion"
+                    :title="$t('sw-workflow.persistence.delete')"
+                    @modal-close="!isDeleting && (deletion = null)"
+                >
+                    <p>{{ $t('sw-workflow.persistence.deleteHint', { name: deletion.name }) }}</p>
+                    <template #modal-footer>
+                        <mt-button
+                            variant="secondary"
+                            :disabled="isDeleting"
+                            @click="deletion = null"
+                        >
+                            {{ $t('global.default.cancel') }}
+                        </mt-button>
+                        <mt-button
+                            variant="critical"
+                            :disabled="isDeleting"
+                            :is-loading="isDeleting"
+                            @click="remove"
+                        >
+                            {{ $t('sw-workflow.persistence.delete') }}
+                        </mt-button>
+                    </template>
+                </sw-modal>
+            </div>
+        </div>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

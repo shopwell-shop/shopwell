@@ -30,7 +30,7 @@ class ExtensionStoreLicensesController extends AbstractController
         name: 'api.license.cancel',
         methods: [Request::METHOD_DELETE]
     )]
-    public function cancelSubscription(int $licenseId, Context $context): JsonResponse
+    public function cancelSubscription(string $licenseId, Context $context): JsonResponse
     {
         $this->extensionStoreLicensesService->cancelSubscription($licenseId, $context);
 
@@ -42,7 +42,7 @@ class ExtensionStoreLicensesController extends AbstractController
         name: 'api.license.rate',
         methods: [Request::METHOD_POST]
     )]
-    public function rateLicensedExtension(int $extensionId, Request $request, Context $context): JsonResponse
+    public function rateLicensedExtension(string $extensionId, Request $request, Context $context): JsonResponse
     {
         $this->extensionStoreLicensesService->rateLicensedExtension(
             ReviewStruct::fromRequest($extensionId, $request),

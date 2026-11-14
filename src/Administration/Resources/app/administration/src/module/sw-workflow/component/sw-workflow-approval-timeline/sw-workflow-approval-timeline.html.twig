@@ -1,0 +1,79 @@
+{% block sw_workflow_approval_timeline %}
+<div class="sw-workflow-approval-timeline">
+    {% block sw_workflow_approval_timeline_title %}
+    <h4 class="sw-workflow-approval-timeline__title">
+        {{ $t('sw-workflow.runtime.timeline.title') }}
+    </h4>
+    {% endblock %}
+
+    {% block sw_workflow_approval_timeline_list %}
+    <ol class="sw-workflow-approval-timeline__list">
+        <li
+            v-for="row in rows"
+            :key="row.id"
+            class="sw-workflow-approval-timeline__item"
+            :class="`is--${row.kind}`"
+        >
+            {% block sw_workflow_approval_timeline_item %}
+            <span class="sw-workflow-approval-timeline__dot"></span>
+
+            <div class="sw-workflow-approval-timeline__body">
+                <div class="sw-workflow-approval-timeline__head">
+                    <span class="sw-workflow-approval-timeline__avatar">{{ row.initial }}</span>
+
+                    <span class="sw-workflow-approval-timeline__name">{{ row.assignee?.name }}</span>
+
+                    <span class="sw-workflow-approval-timeline__action">{{ decisionLabel(row.decision) }}</span>
+
+                    <span class="sw-workflow-approval-timeline__node">{{ row.nodeName }}</span>
+
+                    <span
+                        class="sw-workflow-approval-timeline__time"
+                        :title="row.absolute"
+                    >{{ row.relative }}</span>
+                </div>
+
+                <p
+                    v-if="row.comment"
+                    class="sw-workflow-approval-timeline__comment"
+                >
+                    {{ row.comment }}
+                </p>
+            </div>
+            {% endblock %}
+        </li>
+
+        {% block sw_workflow_approval_timeline_pending %}
+        <li
+            v-if="pending"
+            class="sw-workflow-approval-timeline__item is--pending"
+        >
+            <span class="sw-workflow-approval-timeline__dot"></span>
+
+            <div class="sw-workflow-approval-timeline__body">
+                <div class="sw-workflow-approval-timeline__head">
+                    <span class="sw-workflow-approval-timeline__name">{{ pending.name }}</span>
+                    <span class="sw-workflow-approval-timeline__action">
+                        {{ $t('sw-workflow.runtime.timeline.pending') }}
+                    </span>
+                    <span
+                        class="sw-workflow-approval-timeline__time"
+                        :title="absolute(pending.enteredAt)"
+                    >{{ relative(pending.enteredAt) }}</span>
+                </div>
+            </div>
+        </li>
+        {% endblock %}
+
+        {% block sw_workflow_approval_timeline_empty %}
+        <li
+            v-if="rows.length === 0 && !pending"
+            class="sw-workflow-approval-timeline__empty"
+        >
+            {{ $t('sw-workflow.runtime.timeline.empty') }}
+        </li>
+        {% endblock %}
+    </ol>
+    {% endblock %}
+</div>
+{% endblock %}

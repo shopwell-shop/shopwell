@@ -1,0 +1,23 @@
+.sw-workflow-approval-settings {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+
+    > .mt-field {
+        margin-bottom: 0;
+    }
+
+    &__mode {
+        padding: 16px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 8px;
+        background: var(--color-background-secondary-default);
+    }
+
+    p {
+        margin: 0;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+        line-height: 1.6;
+    }
+}

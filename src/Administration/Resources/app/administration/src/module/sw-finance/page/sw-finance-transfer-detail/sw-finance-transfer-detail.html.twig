@@ -35,19 +35,28 @@
     {% endblock %}
 
     <template #smart-bar-actions>
+        <mt-button
+            v-if="canReapply"
+            class="sw-finance-transfer-detail__button-reapply"
+            variant="primary"
+            size="default"
+            @click="onReapply"
+        >
+            {{ $t('sw-finance.transfer.reapply.button') }}
+        </mt-button>
         {% block sw_finance_transfer_detail_smart_bar_actions_cancel %}
         {#
-        The same two actions as in the list, with the same privilege and the same confirmation: a
-        detail page must not become a shortcut that skips the checkbox.
+        The workflow decides whether the current user may cancel approval.
+        Execution remains a separate financial action after final approval.
         #}
         <mt-button
-            v-if="canDecide"
+            v-if="canCancelApproval"
             class="sw-finance-transfer-detail__button-reject"
             variant="secondary"
             size="default"
             @click="onReject"
         >
-            {{ $t('sw-finance.transfer.actions.cancel') }}
+            {{ $t('sw-finance.transfer.workflow.cancel') }}
         </mt-button>
         {% endblock %}
 
@@ -109,6 +118,51 @@
             {% endblock %}
 
             <template v-else>
+                <mt-card
+                    class="sw-finance-transfer-detail__approval"
+                    position-identifier="sw-finance-transfer-detail-approval"
+                    :title="$t('sw-finance.transfer.workflow.approvalTitle')"
+                    :is-loading="isLoadingApproval"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-finance.transfer.workflow.approvalStatus') }}</dt>
+                        <dd class="sw-finance-transfer-detail__approval-status">
+                            {{ $t(`sw-finance.transfer.workflow.status.${approval?.status || 'unavailable'}`) }}
+                        </dd>
+                        <template v-if="approval?.previousTransfer">
+                            <dt>{{ $t('sw-finance.transfer.reapply.previousTransfer') }}</dt>
+                            <dd><mt-link :to="{ name: 'sw.finance.transferDetail', params: { id: approval.previousTransfer.id } }">
+                                {{ approval.previousTransfer.transferNo }}
+                            </mt-link></dd>
+                        </template>
+                        <dt>{{ $t('sw-finance.transfer.workflow.paymentStatus') }}</dt>
+                        <dd>{{ transferStateLabel(transfer.statusId) }}</dd>
+                        <template v-if="hasApprovalBinding">
+                            <dt>{{ $t('sw-finance.transfer.workflow.reviewedRecipient') }}</dt>
+                            <dd class="sw-finance-transfer-detail__reviewed-recipient">
+                                {{ approval.recipientLabel || '–' }}
+                            </dd>
+                            <dt>{{ $t('sw-finance.transfer.workflow.reviewedPaymentAccount') }}</dt>
+                            <dd class="sw-finance-transfer-detail__reviewed-account">
+                                {{ approval.paymentAccountLabel || '–' }}
+                            </dd>
+                        </template>
+                        <template v-if="approval?.releaseName">
+                            <dt>{{ $t('sw-finance.transfer.workflow.release') }}</dt>
+                            <dd>{{ approval.releaseName }} · {{ $t('sw-finance.transfer.workflow.revision', { revision: approval.revision }) }}</dd>
+                        </template>
+                    </sw-description-list>
+                    <mt-banner variant="info">
+                        {{ $t('sw-finance.transfer.workflow.executionHint') }}
+                    </mt-banner>
+                    <mt-link
+                        v-if="approval?.detailRoute"
+                        class="sw-finance-transfer-detail__approval-link"
+                        :to="approval.detailRoute"
+                    >
+                        {{ $t('sw-finance.transfer.workflow.openApproval') }}
+                    </mt-link>
+                </mt-card>
                 {% block sw_finance_transfer_detail_general_card %}
                 <mt-card
                     position-identifier="sw-finance-transfer-detail-general"
@@ -146,7 +200,7 @@
 
                 {% block sw_finance_transfer_detail_recipient_card %}
                 <mt-card
-                    v-if="transfer.recipient"
+                    v-if="!isLoadingApproval && !hasApprovalBinding && transfer.recipient"
                     position-identifier="sw-finance-transfer-detail-recipient"
                     :title="$t('sw-finance.transfer.detail.cardRecipientTitle')"
                 >
@@ -270,6 +324,34 @@
                 </mt-card>
                 {% endblock %}
 
+                <mt-card
+                    v-if="approvalInstance || approvalHistoryUnavailable"
+                    position-identifier="sw-finance-transfer-detail-history"
+                    :title="$t('sw-finance.transfer.reapply.history')"
+                >
+                    <sw-description-list
+                        v-if="terminalDecision"
+                        grid="1fr 2fr"
+                    >
+                        <dt>{{ $t('sw-finance.transfer.reapply.reason') }}</dt>
+                        <dd>{{ terminalDecision.reason }}</dd>
+                        <dt>{{ $t('sw-finance.transfer.reapply.actor') }}</dt>
+                        <dd>{{ terminalDecision.actor }}</dd>
+                    </sw-description-list>
+                    <sw-workflow-approval-timeline
+                        v-if="approvalInstance"
+                        :history="approvalInstance.history || []"
+                        :current-node="approvalInstance.currentNode || null"
+                        :status="approvalInstance.status"
+                    />
+                    <mt-banner
+                        v-else
+                        variant="attention"
+                    >
+                        {{ $t('sw-finance.transfer.reapply.historyUnavailable') }}
+                    </mt-banner>
+                </mt-card>
+
                 {% block sw_finance_transfer_detail_confirmation_card %}
                 <mt-card
                     v-if="isAwaitingUserConfirm"
@@ -306,8 +388,17 @@
         </sw-card-view>
 
         {% block sw_finance_transfer_detail_modals %}
+        <sw-finance-transfer-create-modal
+            v-if="showReapplyModal && canReapply && reapplicationDraft"
+            :key="transferId"
+            :source-transfer-id="transferId"
+            :initial-draft="reapplicationDraft"
+            @transfer-created="onReapplied"
+            @modal-close="showReapplyModal = false"
+        />
         <sw-finance-transfer-approve-modal
             v-if="showApproveModal && transfer"
+            :approval-labels="hasApprovalBinding ? approval : null"
             :transfer="transfer"
             @transfer-decided="onTransferDecided"
             @modal-close="onCloseApproveModal"
@@ -315,6 +406,7 @@
 
         <sw-finance-transfer-reject-modal
             v-if="showRejectModal && transfer"
+            :approval="true"
             :transfer="transfer"
             @transfer-decided="onTransferDecided"
             @modal-close="onCloseRejectModal"

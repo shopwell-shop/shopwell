@@ -194,7 +194,7 @@ describe('src/module/sw-blog/index', () => {
             expect.objectContaining({
                 id: 'sw-blog',
                 label: 'sw-blog.general.mainMenuItemGeneral',
-                privilege: 'blog.viewer',
+                parent: 'sw-content',
             }),
             expect.objectContaining({
                 id: 'sw-blog-content',

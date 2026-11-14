@@ -27,6 +27,7 @@ interface DiscountCampaign {
 }
 
 interface ExtensionVariant {
+    currency?: string;
     id: number;
     type: ExtensionVariantType;
     netPrice: number;
@@ -53,7 +54,7 @@ interface LicenseSubscription {
 }
 
 interface License {
-    id: number;
+    id: string;
     creationDate: string;
     expirationDate: string | null;
     variant: LicenseVariantType;
@@ -207,7 +208,7 @@ export default class ExtensionStoreActionService extends ApiService {
         );
     }
 
-    public cancelLicense(licenseId: number): Promise<void> {
+    public cancelLicense(licenseId: string): Promise<void> {
         return this.httpClient.delete(`/license/cancel/${licenseId}`, {
             headers: this.storeHeaders(),
             version: 3,

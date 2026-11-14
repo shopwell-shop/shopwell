@@ -20,6 +20,7 @@ type HeaderConfig = {
 
 const payload: PaymentTransferPayload = {
     paymentAppId: 'app-1',
+    accountId: 'alipay-account',
     provider: 'alipay',
     channel: 'alipay_transfer',
     recipientId: 'recipient-1',
@@ -167,6 +168,22 @@ describe('module/sw-finance/service/payment-transfer.api.service', () => {
         expect(service.name).toBe('paymentTransferApiService');
     });
 
+    it('requests an advisory approval path with authenticated business input', async () => {
+        const { service, post } = createService();
+        const result = {
+            available: true,
+            reason: null,
+            releaseId: 'release',
+            releaseName: 'Finance',
+            revision: 1,
+            steps: [],
+        };
+        post.mockResolvedValue({ data: result });
+        await expect(service.previewApproval(payload)).resolves.toEqual(result);
+        expect(post).toHaveBeenCalledWith('/_action/payment/transfers/approval/preview', payload, expect.anything());
+        expect(post.mock.calls[0][2]?.headers?.Authorization).toBe('Bearer token-1');
+    });
+
     it('should send the bearer token with every call', async () => {
         const { service, get, post, loginService } = createService();
 
@@ -257,5 +274,46 @@ describe('module/sw-finance/service/payment-transfer.api.service', () => {
 
     it('should build the snippet key of an interface name', () => {
         expect(providerLabelKey('alipay')).toBe('sw-settings-payment-provider.provider.alipay');
+    });
+});
+
+describe('transfer workflow API', () => {
+    it('loads one authenticated summary batch for the visible transfers', async () => {
+        const summaries = { 'transfer-1': { status: 'pending', currentAssignees: [], detailRoute: null } };
+        const post = jest.fn().mockResolvedValue({ data: { approvals: summaries } });
+        const service = new PaymentTransferApiService(
+            { post } as unknown as HttpClient,
+            { getToken: () => 'token-1' } as unknown as LoginService,
+        );
+        await expect(service.getApprovalSummaries(['transfer-1'])).resolves.toEqual(summaries);
+        expect(post).toHaveBeenCalledWith(
+            '/_action/payment/transfers/approvals',
+            { ids: ['transfer-1'] },
+            { headers: service.getAuthHeaders() },
+        );
+    });
+
+    it('authenticates configuration, approval and cancellation requests', async () => {
+        const response = { data: { status: 'pending' } };
+        const get = jest.fn().mockResolvedValue(response);
+        const put = jest.fn().mockResolvedValue(response);
+        const post = jest.fn().mockResolvedValue(response);
+        const service = new PaymentTransferApiService(
+            { get, put, post } as unknown as HttpClient,
+            { getToken: () => 'token-1' } as unknown as LoginService,
+        );
+        await expect(service.getWorkflowConfiguration()).resolves.toEqual(response.data);
+        await expect(service.getApproval('transfer-1')).resolves.toEqual(response.data);
+        await expect(service.saveWorkflowConfiguration('release-1')).resolves.toEqual(response.data);
+        await expect(service.cancelApproval('transfer-1', 'Duplicate')).resolves.toEqual(response.data);
+        const config = { headers: service.getAuthHeaders() };
+        expect(get).toHaveBeenCalledWith('/_action/payment/transfers/workflow', config);
+        expect(get).toHaveBeenCalledWith('/_action/payment/transfers/transfer-1/approval', config);
+        expect(put).toHaveBeenCalledWith('/_action/payment/transfers/workflow', { releaseId: 'release-1' }, config);
+        expect(post).toHaveBeenCalledWith(
+            '/_action/payment/transfers/transfer-1/approval/cancel',
+            { reason: 'Duplicate' },
+            config,
+        );
     });
 });

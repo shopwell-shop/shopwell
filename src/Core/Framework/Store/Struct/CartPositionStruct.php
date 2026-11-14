@@ -54,7 +54,7 @@ class CartPositionStruct extends Struct
         $this->extension = $extensionInformation;
     }
 
-    public function getExtensionId(): int
+    public function getExtensionId(): string
     {
         return $this->getExtensionInformation()['id'];
     }

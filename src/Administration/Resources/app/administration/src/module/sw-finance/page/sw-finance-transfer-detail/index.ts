@@ -6,6 +6,12 @@ import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-finance-transfer-detail.html.twig';
 import './sw-finance-transfer-detail.scss';
+import type { RuntimeInstance } from 'src/core/workflow/workflow-runtime.types';
+import type {
+    PaymentTransferView,
+    TransferReapplicationDraft,
+    TransferApproval,
+} from '../../service/payment-transfer.api.service';
 import { DECIDABLE_STATE, providerLabelKey, transferStateLabelKey } from '../../service/payment-transfer.api.service';
 import {
     PAYMENT_TRANSFER_STATE_MACHINE,
@@ -24,7 +30,12 @@ type PaymentTransfer = EntitySchema.Entity<'payment_transfer'>;
 export default defineComponent({
     template,
 
-    inject: ['repositoryFactory', 'acl'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'paymentTransferApiService',
+        'workflowRuntimeApiService',
+    ],
 
     props: {
         transferId: {
@@ -34,14 +45,26 @@ export default defineComponent({
     },
 
     data(): {
+        showReapplyModal: boolean;
+        approvalInstance: RuntimeInstance | null;
+        approvalHistoryUnavailable: boolean;
+        requestGeneration: number;
         transfer: PaymentTransfer | null;
+        approval: TransferApproval | null;
+        isLoadingApproval: boolean;
         isLoading: boolean;
         transferStates: EntityCollection<'state_machine_state'> | null;
         showApproveModal: boolean;
         showRejectModal: boolean;
     } {
         return {
+            showReapplyModal: false,
+            approvalInstance: null,
+            approvalHistoryUnavailable: false,
+            requestGeneration: 0,
             transfer: null,
+            approval: null,
+            isLoadingApproval: true,
             isLoading: false,
             transferStates: null,
             showApproveModal: false,
@@ -146,8 +169,49 @@ export default defineComponent({
             return this.acl.can('payment_transfer.approver');
         },
 
+        hasApprovalBinding(): boolean {
+            return Boolean(this.approval?.releaseId);
+        },
+
+        canReapply(): boolean {
+            return !this.isLoadingApproval && this.approval?.canReapply === true && this.acl.can('payment_transfer.creator');
+        },
+
+        terminalDecision(): { reason: string; actor: string } | null {
+            const rejected = this.approvalInstance?.history?.find((entry) => entry.decision === 'reject');
+            if (rejected) return { reason: rejected.comment || '–', actor: rejected.assignee.name || rejected.assignee.id };
+            const canceled = this.approvalInstance?.logs?.find((entry) => entry.action === 'cancel');
+            return canceled ? { reason: canceled.comment || '–', actor: canceled.operator?.name || '–' } : null;
+        },
+
+        reapplicationDraft(): TransferReapplicationDraft | null {
+            if (!this.transfer) return null;
+            return {
+                paymentAppId: this.transfer.paymentAppId,
+                accountId: this.transfer.accountId ?? '',
+                channel: this.transfer.channel,
+                recipientId: this.transfer.recipientId,
+                amount: this.transfer.amount,
+                currency: this.transfer.currency,
+                note: this.note || null,
+            };
+        },
+
+        canCancelApproval(): boolean {
+            return !this.isLoadingApproval && this.approval?.canCancel === true;
+        },
+
         canDecide(): boolean {
-            return this.isDecidable && this.canApprove;
+            return this.isDecidable && this.canApprove && !this.isLoadingApproval && this.approval?.status === 'approved';
+        },
+    },
+
+    watch: {
+        transferId: {
+            flush: 'sync',
+            handler() {
+                void this.onRefresh();
+            },
         },
     },
 
@@ -159,13 +223,19 @@ export default defineComponent({
         async createdComponent(): Promise<void> {
             const [states] = await Promise.all([
                 this.stateRepository.search(createPaymentStateCriteria(PAYMENT_TRANSFER_STATE_MACHINE)),
-                this.loadTransfer(),
+                this.onRefresh(),
             ]);
 
             this.transferStates = states;
         },
 
-        loadTransfer(): Promise<void> {
+        isCurrentRequest(generation: number, transferId: string): boolean {
+            return generation === this.requestGeneration && transferId === this.transferId;
+        },
+
+        loadTransfer(generation?: number): Promise<void> {
+            const requestGeneration = generation ?? this.requestGeneration;
+            const transferId = this.transferId;
             const criteria: CriteriaType = new Criteria(1, 1);
             criteria.addAssociation('recipient');
             criteria.addAssociation('paymentApp');
@@ -174,20 +244,66 @@ export default defineComponent({
             this.isLoading = true;
 
             return this.transferRepository
-                .get(this.transferId as EntitySchema.EntityKey<'payment_transfer'>, Shopwell.Context.api, criteria)
+                .get(transferId as EntitySchema.EntityKey<'payment_transfer'>, Shopwell.Context.api, criteria)
                 .then((transfer) => {
-                    this.transfer = transfer;
+                    if (this.isCurrentRequest(requestGeneration, transferId)) {
+                        this.transfer = transfer;
+                    }
                 })
                 .catch(() => {
-                    this.transfer = null;
+                    if (this.isCurrentRequest(requestGeneration, transferId)) {
+                        this.transfer = null;
+                    }
                 })
                 .finally(() => {
-                    this.isLoading = false;
+                    if (this.isCurrentRequest(requestGeneration, transferId)) {
+                        this.isLoading = false;
+                    }
                 });
         },
 
-        onRefresh(): Promise<void> {
-            return this.loadTransfer();
+        async loadApproval(generation?: number): Promise<void> {
+            const requestGeneration = generation ?? this.requestGeneration;
+            const transferId = this.transferId;
+            this.isLoadingApproval = true;
+            this.approval = null;
+            try {
+                const approval = await this.paymentTransferApiService.getApproval(transferId);
+                if (this.isCurrentRequest(requestGeneration, transferId)) {
+                    this.approval = approval;
+                    await this.loadApprovalHistory(approval, requestGeneration, transferId);
+                }
+            } catch {
+                if (this.isCurrentRequest(requestGeneration, transferId)) {
+                    this.approval = null;
+                }
+            } finally {
+                if (this.isCurrentRequest(requestGeneration, transferId)) {
+                    this.isLoadingApproval = false;
+                }
+            }
+        },
+
+        async loadApprovalHistory(approval: TransferApproval, generation: number, transferId: string): Promise<void> {
+            if (approval.detailRoute?.name !== 'sw.workflow.instance' || !approval.instanceId) return;
+            try {
+                const instance = await this.workflowRuntimeApiService.getInstance(approval.instanceId);
+                if (this.isCurrentRequest(generation, transferId)) this.approvalInstance = instance;
+            } catch {
+                if (this.isCurrentRequest(generation, transferId)) this.approvalHistoryUnavailable = true;
+            }
+        },
+
+        async onRefresh(): Promise<void> {
+            const generation = ++this.requestGeneration;
+            this.transfer = null;
+            this.approval = null;
+            this.showApproveModal = false;
+            this.showRejectModal = false;
+            this.showReapplyModal = false;
+            this.approvalInstance = null;
+            this.approvalHistoryUnavailable = false;
+            await Promise.all([this.loadTransfer(generation), this.loadApproval(generation)]);
         },
 
         /**
@@ -231,6 +347,15 @@ export default defineComponent({
             return value ? this.dateFilter(value) : '–';
         },
 
+        onReapply(): void {
+            if (this.canReapply) this.showReapplyModal = true;
+        },
+
+        onReapplied(transfer: PaymentTransferView | null): void {
+            this.showReapplyModal = false;
+            if (transfer) void this.$router.push({ name: 'sw.finance.transferDetail', params: { id: transfer.id } });
+        },
+
         onApprove(): void {
             if (!this.canDecide) {
                 return;
@@ -240,7 +365,7 @@ export default defineComponent({
         },
 
         onReject(): void {
-            if (!this.canDecide) {
+            if (!this.canCancelApproval) {
                 return;
             }
 
@@ -263,7 +388,7 @@ export default defineComponent({
             this.showApproveModal = false;
             this.showRejectModal = false;
 
-            void this.loadTransfer();
+            void this.onRefresh();
         },
     },
 });

@@ -17,7 +17,7 @@ class ExtensionStoreLicensesService extends AbstractExtensionStoreLicensesServic
     {
     }
 
-    public function cancelSubscription(int $licenseId, Context $context): void
+    public function cancelSubscription(string $licenseId, Context $context): void
     {
         $this->client->cancelSubscription($licenseId, $context);
     }

@@ -1,0 +1,181 @@
+{% block sw_workflow_runtime_viewer %}
+<div class="sw-workflow-runtime-viewer">
+    {% block sw_workflow_runtime_viewer_toolbar %}
+    <div class="sw-workflow-runtime-viewer__toolbar">
+        <div
+            v-if="selectedPath || plannedPath"
+            class="sw-workflow-runtime-viewer__legend"
+            :aria-label="$t('sw-workflow.runtime.viewer.legend')"
+        >
+            <span class="is--visited">{{ $t('sw-workflow.runtime.viewer.visited') }}</span>
+            <span
+                v-if="hasFuturePath"
+                class="is--planned"
+            >{{ $t('sw-workflow.runtime.viewer.planned') }}</span>
+            <span class="is--skipped">{{ $t('sw-workflow.runtime.viewer.skipped') }}</span>
+        </div>
+        <mt-button
+            v-if="canExpand"
+            class="sw-workflow-runtime-viewer__expand"
+            size="small"
+            variant="secondary"
+            @click="expanded = true"
+        >
+            {{ $t('sw-workflow.runtime.viewer.expand') }}
+        </mt-button>
+    </div>
+    {% endblock %}
+    <div class="sw-workflow-runtime-viewer__canvas">
+        <vue-flow
+            :id="instanceId"
+            :nodes="flowNodes"
+            :edges="flowEdges"
+            :nodes-connectable="false"
+            :nodes-draggable="false"
+            :nodes-focusable="false"
+            :elements-selectable="false"
+            :edges-updatable="false"
+            :delete-key-code="null"
+            :zoom-on-double-click="false"
+            :min-zoom="0.2"
+            :max-zoom="1.5"
+            @init="onInit"
+            @nodes-initialized="fit"
+        >
+            <template #node-runtime="{ data }">
+                <div
+                    class="sw-workflow-runtime-viewer__node"
+                    :class="[{ 'is--terminal': data.terminal, 'is--condition': data.type === 'snaker:condition' }, `is--${data.state.toLowerCase()}`]"
+                    :data-state="data.state"
+                    :aria-current="data.state === 'TODO' ? 'step' : undefined"
+                >
+                    <handle
+                        v-for="(port, index) in data.inputPorts"
+                        :id="port"
+                        :key="port"
+                        type="target"
+                        :position="position.Top"
+                        :style="{ left: ((index + 1) / (data.inputPorts.length + 1) * 100) + '%' }"
+                    />
+                    {% block sw_workflow_runtime_viewer_node %}
+                    <div class="sw-workflow-runtime-viewer__heading">
+                        <span class="sw-workflow-runtime-viewer__icon"><mt-icon
+                            :name="data.icon"
+                            size="16px"
+                        /></span>
+                        <strong :title="data.label">{{ data.label }}</strong>
+                        <span
+                            v-if="!data.terminal && data.state"
+                            class="sw-workflow-runtime-viewer__state"
+                        >{{ stateLabel(data.state) }}</span>
+                    </div>
+                    <template v-if="!data.terminal">
+                        <p
+                            v-if="data.mode"
+                            class="sw-workflow-runtime-viewer__mode"
+                        >{{ modeLabel(data.mode) }}</p>
+                        <p
+                            v-if="data.description"
+                            class="sw-workflow-runtime-viewer__description"
+                        >{{ data.description }}</p>
+                        <ul
+                            v-if="data.participants.length"
+                            class="sw-workflow-runtime-viewer__participants nodrag nopan nowheel"
+                            tabindex="0"
+                            :aria-label="data.label"
+                        >
+                            <li
+                                v-for="participant in data.participants"
+                                :key="participant.id"
+                                :data-participant-state="participant.state"
+                            >
+                                <span class="sw-workflow-runtime-viewer__avatar">{{ (participant.name || '').slice(0, 1) }}</span>
+                                <span
+                                    class="sw-workflow-runtime-viewer__person"
+                                    :title="participant.name"
+                                >{{ participant.name }}</span>
+                                <span class="sw-workflow-runtime-viewer__participant-state">{{ participantState(participant.state) }}</span>
+                            </li>
+                        </ul>
+                    </template>
+                    {% endblock %}
+                    <handle
+                        v-for="(port, index) in data.outputPorts"
+                        :id="port"
+                        :key="port"
+                        type="source"
+                        :position="position.Bottom"
+                        :style="{ left: ((index + 1) / (data.outputPorts.length + 1) * 100) + '%' }"
+                    />
+                </div>
+            </template>
+            <template #edge-runtime="edge">
+                <base-edge
+                    :id="edge.id"
+                    :path="edgeRoute(edge).path"
+                    :marker-end="edge.markerEnd"
+                />
+                <edge-label-renderer>
+                    <span
+                        v-if="edge.label"
+                        class="sw-workflow-runtime-viewer__edge-label"
+                        :title="edge.label"
+                        :style="{ transform: 'translate(-50%, -50%) translate(' + edgeRoute(edge).label.x + 'px,' + edgeRoute(edge).label.y + 'px)' }"
+                    >{{ edge.label }}</span>
+                </edge-label-renderer>
+            </template>
+        </vue-flow>
+        <div class="sw-workflow-runtime-viewer__controls">
+            <mt-button
+                size="small"
+                square
+                variant="secondary"
+                :aria-label="$t('sw-workflow.canvas.zoomOut')"
+                @click="zoomOut"
+            >
+                <mt-icon
+                    name="regular-minus-xs"
+                    size="12px"
+                />
+            </mt-button>
+            <mt-button
+                class="sw-workflow-runtime-viewer__fit"
+                size="small"
+                variant="secondary"
+                @click="fit"
+            >
+                {{ $t('sw-workflow.canvas.fit') }}
+            </mt-button>
+            <mt-button
+                size="small"
+                square
+                variant="secondary"
+                :aria-label="$t('sw-workflow.canvas.zoomIn')"
+                @click="zoomIn"
+            >
+                <mt-icon
+                    name="regular-plus-xs"
+                    size="12px"
+                />
+            </mt-button>
+        </div>
+    </div>
+    <sw-modal
+        v-if="expanded"
+        class="sw-workflow-runtime-viewer__modal"
+        variant="full"
+        :title="$t('sw-workflow.runtime.instance.graphTitle')"
+        @modal-close="expanded = false"
+    >
+        <sw-workflow-runtime-viewer
+            :graph="graph"
+            :node-states="nodeStates"
+            :stages="stages"
+            :tasks="tasks"
+            :selected-path="selectedPath"
+            :planned-path="plannedPath"
+            :can-expand="false"
+        />
+    </sw-modal>
+</div>
+{% endblock %}

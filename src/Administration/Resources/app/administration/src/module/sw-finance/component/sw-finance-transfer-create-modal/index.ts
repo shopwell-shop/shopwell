@@ -2,10 +2,19 @@
  * @sw-package framework
  */
 import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
 import template from './sw-finance-transfer-create-modal.html.twig';
 import './sw-finance-transfer-create-modal.scss';
-import { providerLabelKey, toMinorUnits } from '../../service/payment-transfer.api.service';
-import type { PaymentTransferPayload } from '../../service/payment-transfer.api.service';
+import { fromMinorUnits, providerLabelKey, toMinorUnits } from '../../service/payment-transfer.api.service';
+import type {
+    PaymentTransferPayload,
+    TransferReapplicationDraft,
+    PaymentTransferBookingResult,
+    TransferAccountOption,
+    TransferAppOption,
+    TransferRecipientOption,
+    TransferChannelOption,
+} from '../../service/payment-transfer.api.service';
 
 const { Mixin } = Shopwell;
 
@@ -47,43 +56,6 @@ const OUT_NO_PATTERN = /^[0-9a-zA-Z]{1,30}$/;
 const NOTE_MAX_LENGTH = 255;
 const HOLDER_NAME_MAX_LENGTH = 255;
 
-type ChannelOption = {
-    technicalName: string;
-    label: string;
-    currencies: string[];
-};
-
-type ProviderOption = {
-    technicalName: string;
-    label: string;
-    identityTypes: string[];
-    requiredRecipientFields: Record<string, string[]>;
-    bankAccountTypes: string[];
-    holderNameThreshold: number | null;
-    requiresOnboarding: boolean;
-    currencies: string[];
-    channels: ChannelOption[];
-};
-
-type AppOption = {
-    id: string;
-    technicalName: string;
-    name: string;
-    type: string;
-    isPlatform: boolean;
-    providers: ProviderOption[];
-};
-
-type RecipientOption = {
-    id: string;
-    identityType: string;
-    holderName: string | null;
-    providerAccountId: string | null;
-    maskedIdentity: string | null;
-    payoutEnabled: boolean;
-    onboardingStatus: string | null;
-};
-
 type BankInfo = {
     account_type: string;
     inst_name?: string;
@@ -111,14 +83,31 @@ export default defineComponent({
 
     emits: ['modal-close', 'transfer-created'],
 
+    props: {
+        initialDraft: { type: Object as PropType<TransferReapplicationDraft | null>, default: null },
+        sourceTransferId: { type: String, default: null },
+        fixedAmount: { type: String, default: null },
+        fixedCurrency: { type: String, default: null },
+        purpose: { type: String, default: '' },
+        bookTransfer: {
+            type: Function as PropType<(payload: PaymentTransferPayload) => Promise<PaymentTransferBookingResult>>,
+            default: null,
+        },
+    },
+
     data(): {
+        isApplyingInitialDraft: boolean;
+        selectionUnavailable: boolean;
+        recipientGeneration: number;
         isLoadingOptions: boolean;
+        workflowAvailable: boolean;
+        previewBlocked: boolean;
         isSaving: boolean;
         isLoadingRecipients: boolean;
-        apps: AppOption[];
-        recipients: RecipientOption[];
+        apps: TransferAppOption[];
+        recipients: TransferRecipientOption[];
         paymentAppId: string | null;
-        provider: string | null;
+        accountId: string | null;
         channel: string | null;
         recipientSource: 'existing' | 'new';
         recipientId: string | null;
@@ -135,13 +124,18 @@ export default defineComponent({
         errors: Record<string, boolean>;
     } {
         return {
+            isApplyingInitialDraft: false,
+            selectionUnavailable: false,
+            recipientGeneration: 0,
             isLoadingOptions: true,
+            workflowAvailable: false,
+            previewBlocked: false,
             isSaving: false,
             isLoadingRecipients: false,
             apps: [],
             recipients: [],
             paymentAppId: null,
-            provider: null,
+            accountId: null,
             channel: null,
             // an existing account is the common case: a payout usually goes to somebody who was paid before
             recipientSource: 'existing',
@@ -152,29 +146,33 @@ export default defineComponent({
             bankAccountType: null,
             bankName: '',
             bankBranchName: '',
-            amount: '',
-            currency: '',
-            outNo: '',
+            amount: this.fixedAmount ?? '',
+            currency: this.fixedCurrency ?? '',
+            outNo: this.sourceTransferId ? Shopwell.Utils.createId().slice(0, 30) : '',
             note: '',
             errors: {},
         };
     },
 
     computed: {
-        selectedApp(): AppOption | null {
+        selectedApp(): TransferAppOption | null {
             return this.apps.find((app) => app.id === this.paymentAppId) ?? null;
         },
 
-        providerOptions(): ProviderOption[] {
-            return this.selectedApp?.providers ?? [];
+        accountOptions(): TransferAccountOption[] {
+            return this.selectedApp?.accounts ?? [];
         },
 
-        selectedProvider(): ProviderOption | null {
-            return this.providerOptions.find((option) => option.technicalName === this.provider) ?? null;
+        selectedAccount(): TransferAccountOption | null {
+            return this.accountOptions.find((option) => option.accountId === this.accountId) ?? null;
         },
 
-        channelOptions(): ChannelOption[] {
-            return this.selectedProvider?.channels ?? [];
+        provider(): string | null {
+            return this.selectedAccount?.technicalName ?? null;
+        },
+
+        channelOptions(): TransferChannelOption[] {
+            return this.selectedAccount?.channels ?? [];
         },
 
         /**
@@ -182,15 +180,15 @@ export default defineComponent({
          * single entry is a step that only invites mistakes.
          */
         isChannelLocked(): boolean {
-            return this.channelOptions.length === 1;
+            return this.channelOptions.length === 1 && this.channelOptions[0].technicalName === this.channel;
         },
 
         identityTypeOptions(): string[] {
-            return this.selectedProvider?.identityTypes ?? [];
+            return this.selectedAccount?.identityTypes ?? [];
         },
 
         bankAccountTypes(): string[] {
-            return this.selectedProvider?.bankAccountTypes ?? [];
+            return this.selectedAccount?.bankAccountTypes ?? [];
         },
 
         /**
@@ -202,7 +200,7 @@ export default defineComponent({
                 return [];
             }
 
-            return this.selectedProvider?.requiredRecipientFields[this.identityType] ?? [];
+            return this.selectedAccount?.requiredRecipientFields[this.identityType] ?? [];
         },
 
         /**
@@ -214,7 +212,7 @@ export default defineComponent({
                 return true;
             }
 
-            const threshold = this.selectedProvider?.holderNameThreshold;
+            const threshold = this.selectedAccount?.holderNameThreshold;
             const amount = this.amountInMinorUnits;
 
             return threshold !== null && threshold !== undefined && amount !== null && amount >= threshold;
@@ -230,7 +228,7 @@ export default defineComponent({
          * list means "not restricted".
          */
         currencyOptions(): string[] {
-            const declared = this.selectedProvider?.currencies ?? [];
+            const declared = this.selectedAccount?.currencies ?? [];
 
             if (declared.length > 0) {
                 return declared;
@@ -247,10 +245,13 @@ export default defineComponent({
         },
 
         isCurrencyLocked(): boolean {
-            return this.currencyOptions.length === 1;
+            return (
+                this.fixedCurrency !== null ||
+                (this.currencyOptions.length === 1 && this.currencyOptions.includes(this.currency))
+            );
         },
 
-        payableRecipients(): RecipientOption[] {
+        payableRecipients(): TransferRecipientOption[] {
             return this.recipients.filter((recipient) => recipient.payoutEnabled);
         },
 
@@ -304,10 +305,20 @@ export default defineComponent({
          * a mistake before a round trip - the server stays the authority.
          */
         isSaveDisabled(): boolean {
-            if (this.isSaving || this.isLoadingOptions) {
-                return true;
-            }
+            return (
+                this.isSaving ||
+                this.isLoadingOptions ||
+                this.isLoadingRecipients ||
+                (!this.bookTransfer && (!this.workflowAvailable || this.previewBlocked)) ||
+                this.isFormIncomplete
+            );
+        },
 
+        approvalPreviewPayload(): PaymentTransferPayload | null {
+            return this.isLoadingOptions || this.isFormIncomplete ? null : this.buildPayload();
+        },
+
+        isFormIncomplete(): boolean {
             if (this.paymentAppId === null || this.provider === null || this.channel === null) {
                 return true;
             }
@@ -316,7 +327,13 @@ export default defineComponent({
                 return true;
             }
 
-            return this.amountInMinorUnits === null || this.currency === '' || this.isOutNoInvalid || this.isNoteTooLong;
+            return (
+                this.amountInMinorUnits === null ||
+                this.currency === '' ||
+                !this.currencyOptions.includes(this.currency) ||
+                this.isOutNoInvalid ||
+                this.isNoteTooLong
+            );
         },
     },
 
@@ -327,15 +344,18 @@ export default defineComponent({
          * which is the one mistake of this form that moves money across tenants.
          */
         paymentAppId(): void {
-            this.provider = null;
+            if (this.isApplyingInitialDraft) return;
+            this.accountId = null;
             this.applyDefaultsOfApp();
         },
 
-        provider(): void {
-            this.resetDownstreamOfProvider();
+        accountId(): void {
+            if (this.isApplyingInitialDraft) return;
+            this.resetDownstreamOfAccount();
         },
 
         channel(): void {
+            if (this.isApplyingInitialDraft) return;
             this.recipientId = null;
             this.identityType = null;
             this.identityValue = '';
@@ -348,6 +368,7 @@ export default defineComponent({
         },
 
         recipientSource(): void {
+            if (this.isApplyingInitialDraft) return;
             this.recipientId = null;
             this.identityType = null;
             this.identityValue = '';
@@ -377,9 +398,14 @@ export default defineComponent({
             try {
                 const options = await this.paymentTransferApiService.getOptions();
 
+                this.workflowAvailable = options.workflowAvailable;
                 this.apps = options.apps;
-                this.paymentAppId = options.defaultAppId ?? options.apps[0]?.id ?? null;
-                this.applyDefaultsOfApp();
+                if (this.initialDraft) {
+                    await this.applyInitialDraft(this.initialDraft);
+                } else {
+                    this.paymentAppId = options.defaultAppId ?? options.apps[0]?.id ?? null;
+                    this.applyDefaultsOfApp();
+                }
             } catch {
                 this.createNotificationError({
                     message: this.$t('sw-finance.errors.loadFailed'),
@@ -389,14 +415,40 @@ export default defineComponent({
             }
         },
 
+        async applyInitialDraft(draft: TransferReapplicationDraft): Promise<void> {
+            this.isApplyingInitialDraft = true;
+            try {
+                this.amount = fromMinorUnits(draft.amount, draft.currency);
+                this.note = draft.note ?? '';
+                this.currency = draft.currency;
+                this.paymentAppId = this.apps.some((app) => app.id === draft.paymentAppId) ? draft.paymentAppId : null;
+                this.accountId = this.accountOptions.some((account) => account.accountId === draft.accountId)
+                    ? draft.accountId
+                    : null;
+                this.channel = this.channelOptions.some((channel) => channel.technicalName === draft.channel)
+                    ? draft.channel
+                    : null;
+                await this.loadRecipients();
+                this.recipientId = this.payableRecipients.some((recipient) => recipient.id === draft.recipientId)
+                    ? draft.recipientId
+                    : null;
+                if (!this.currencyOptions.includes(this.currency)) this.currency = '';
+                this.selectionUnavailable =
+                    !this.paymentAppId || !this.accountId || !this.channel || !this.recipientId || !this.currency;
+                await this.$nextTick();
+            } finally {
+                this.isApplyingInitialDraft = false;
+            }
+        },
+
         /**
          * Preselects the first interface and - when there is only one - its channel. Everything the
          * operator does not have to decide is decided here, everything else stays empty.
          */
         applyDefaultsOfApp(): void {
-            const provider = this.providerOptions[0] ?? null;
+            const provider = this.accountOptions[0] ?? null;
 
-            this.provider = provider?.technicalName ?? null;
+            this.accountId = provider?.accountId ?? null;
 
             if (provider === null) {
                 this.channel = null;
@@ -408,7 +460,7 @@ export default defineComponent({
             this.channel = provider.channels.length === 1 ? provider.channels[0].technicalName : null;
         },
 
-        resetDownstreamOfProvider(): void {
+        resetDownstreamOfAccount(): void {
             const channels = this.channelOptions;
 
             this.channel = channels.length === 1 ? channels[0].technicalName : null;
@@ -422,7 +474,7 @@ export default defineComponent({
 
             const currencies = this.currencyOptions;
 
-            if (currencies.length > 0 && !currencies.includes(this.currency)) {
+            if (this.fixedCurrency === null && currencies.length > 0 && !currencies.includes(this.currency)) {
                 this.currency = currencies[0];
             }
 
@@ -430,7 +482,9 @@ export default defineComponent({
         },
 
         async loadRecipients(): Promise<void> {
+            const generation = ++this.recipientGeneration;
             if (this.paymentAppId === null || this.provider === null) {
+                this.isLoadingRecipients = false;
                 this.recipients = [];
 
                 return;
@@ -439,13 +493,14 @@ export default defineComponent({
             this.isLoadingRecipients = true;
 
             try {
-                this.recipients = await this.paymentTransferApiService.getRecipients(this.paymentAppId, this.provider);
+                const recipients = await this.paymentTransferApiService.getRecipients(this.paymentAppId, this.provider);
+                if (generation === this.recipientGeneration) this.recipients = recipients;
             } catch {
                 // a failed lookup only empties the select - the operator can still register a new account,
                 // so this is not worth an error notice
-                this.recipients = [];
+                if (generation === this.recipientGeneration) this.recipients = [];
             } finally {
-                this.isLoadingRecipients = false;
+                if (generation === this.recipientGeneration) this.isLoadingRecipients = false;
             }
         },
 
@@ -460,14 +515,14 @@ export default defineComponent({
             return this.$te(label) ? this.$t(label) : technicalName;
         },
 
-        providerOptionLabel(option: ProviderOption): string {
+        accountOptionLabel(option: TransferAccountOption): string {
             const key = providerLabelKey(option.technicalName);
 
             if (this.$te(key)) {
-                return this.$t(key);
+                return `${option.name} (${this.$t(key)})`;
             }
 
-            return this.optionLabel(option.label, option.technicalName);
+            return `${option.name} (${this.optionLabel(option.label, option.technicalName)})`;
         },
 
         identityTypeLabel(identityType: string): string {
@@ -480,7 +535,7 @@ export default defineComponent({
          * A recipient is recognised by what a human knows about it: the name, the identity type and the
          * masked handle. The plain identity never leaves the server, so it can not be shown here.
          */
-        recipientOptionLabel(recipient: RecipientOption): string {
+        recipientOptionLabel(recipient: TransferRecipientOption): string {
             const parts = [
                 recipient.holderName || null,
                 this.identityTypeLabel(recipient.identityType),
@@ -524,6 +579,7 @@ export default defineComponent({
 
             return {
                 paymentAppId,
+                accountId: this.accountId ?? '',
                 provider,
                 channel,
                 recipientId: usesExistingRecipient ? this.recipientId : null,
@@ -546,8 +602,13 @@ export default defineComponent({
 
             this.isSaving = true;
 
-            this.paymentTransferApiService
-                .createTransfer(this.buildPayload())
+            const booking = this.bookTransfer
+                ? this.bookTransfer(this.buildPayload())
+                : this.sourceTransferId
+                  ? this.paymentTransferApiService.reapplyTransfer(this.sourceTransferId, this.buildPayload())
+                  : this.paymentTransferApiService.createTransfer(this.buildPayload());
+
+            booking
                 .then((result) => {
                     this.createNotificationSuccess({
                         message: this.$t(

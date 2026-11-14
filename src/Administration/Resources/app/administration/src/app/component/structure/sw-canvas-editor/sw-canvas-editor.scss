@@ -1,0 +1,105 @@
+.sw-canvas-editor {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+
+    &__workspace {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    &__surface {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        background-color: var(--color-background-secondary-default);
+        background-image: radial-gradient(var(--color-border-primary-default) 0.7px, transparent 0.7px);
+        background-size: 20px 20px;
+    }
+
+    &__sidebar-start,
+    &__sidebar-end {
+        flex: 0 0 auto;
+        max-width: 40%;
+        overflow: auto;
+        background: var(--color-elevation-surface-default);
+    }
+
+    &__overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    &__overlay > * {
+        pointer-events: auto;
+    }
+
+    &__node-tools {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-4);
+        padding: var(--scale-size-4);
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: var(--border-radius-s);
+        background: var(--color-elevation-surface-default);
+        box-shadow: 0 2px 8px var(--color-elevation-shadow-default);
+    }
+
+    &__node-select {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        border: 0;
+        padding: 0;
+    }
+
+    &__node:focus-within,
+    [data-canvas-connection]:focus-visible {
+        outline: 2px solid var(--color-border-brand-default);
+        outline-offset: 4px;
+    }
+
+    &__connection-label {
+        position: absolute;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 3px 8px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 4px;
+        background: var(--color-elevation-surface-default);
+        color: var(--color-text-secondary-default);
+        font-size: 11px;
+        pointer-events: all;
+    }
+
+    .vue-flow__handle {
+        width: 6px;
+        height: 6px;
+        background: var(--color-border-primary-default);
+        border: 1px solid var(--color-elevation-surface-default);
+    }
+
+    .vue-flow__node.selected .vue-flow__handle {
+        background: var(--color-shopwell-brand-500);
+    }
+
+    .vue-flow__edge-path {
+        stroke: var(--color-icon-secondary-default);
+        stroke-width: 1.3px;
+    }
+
+    .vue-flow__edge.selected .vue-flow__edge-path {
+        stroke: var(--color-shopwell-brand-500);
+        stroke-width: 2px;
+    }
+}

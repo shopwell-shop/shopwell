@@ -1,0 +1,90 @@
+{% block sw_workflow_start %}
+<div class="sw-workflow-start">
+    <mt-button
+        class="sw-workflow-start__open"
+        size="small"
+        variant="secondary"
+        :disabled="!canStart"
+        @click="open"
+    >
+        {{ $t('sw-workflow.request.start') }}
+    </mt-button>
+    <sw-modal
+        v-if="showModal"
+        :title="$t('sw-workflow.request.start')"
+        @modal-close="!isSubmitting && (showModal = false)"
+    >
+        <mt-banner
+            v-if="hasError"
+            variant="critical"
+            role="alert"
+        >
+            {{ $t('sw-workflow.request.failed') }} {{ errorDetail }}
+        </mt-banner>
+        <mt-text-field
+            v-model="title"
+            :label="$t('sw-workflow.request.title')"
+            :max-length="255"
+            :disabled="isSubmitting"
+            required
+        />
+        <mt-loader v-if="isLoading" />
+        <template
+            v-for="field in fields"
+            :key="field.key"
+        >
+            <mt-select
+                v-if="field.type === 'select' || field.dataSource"
+                v-model="values[field.key]"
+                :label="field.label"
+                :options="field.options"
+                :placeholder="$t('sw-workflow.form.selectPlaceholder')"
+                :required="field.required"
+                :disabled="isSubmitting"
+            />
+            <mt-textarea
+                v-else-if="field.type === 'text'"
+                v-model="values[field.key]"
+                :label="field.label"
+                :required="field.required"
+                :disabled="isSubmitting"
+            />
+            <mt-text-field
+                v-else
+                v-model="values[field.key]"
+                :label="field.label"
+                :type="field.type === 'date' ? 'date' : 'text'"
+                :inputmode="field.type === 'date' ? undefined : 'decimal'"
+                :placeholder="field.type === 'date' ? 'YYYY-MM-DD' : undefined"
+                :required="field.required"
+                :disabled="isSubmitting"
+            />
+            <mt-banner
+                v-if="showValidation && fieldErrors[field.key]"
+                variant="critical"
+                role="alert"
+            >
+                {{ field.label }}: {{ fieldErrors[field.key] }}
+            </mt-banner>
+        </template>
+        <template #modal-footer>
+            <mt-button
+                variant="secondary"
+                :disabled="isSubmitting"
+                @click="showModal = false"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            <mt-button
+                class="sw-workflow-start__confirm"
+                variant="primary"
+                :disabled="!canStart || !isReady || !title.trim() || title.length > 255"
+                :is-loading="isSubmitting"
+                @click="start"
+            >
+                {{ $t('sw-workflow.request.start') }}
+            </mt-button>
+        </template>
+    </sw-modal>
+</div>
+{% endblock %}

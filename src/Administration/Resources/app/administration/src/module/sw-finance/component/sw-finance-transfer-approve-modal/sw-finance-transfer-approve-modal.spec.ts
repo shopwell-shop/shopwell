@@ -277,4 +277,16 @@ describe('module/sw-finance/component/sw-finance-transfer-approve-modal', () => 
             false,
         );
     });
+    it('confirms the frozen reviewed recipient and payment account', async () => {
+        const { wrapper } = await createWrapper(jest.fn());
+        await wrapper.setProps({
+            approvalLabels: {
+                recipientLabel: 'Reviewed payee · ****1234',
+                paymentAccountLabel: 'Reviewed merchant account',
+            },
+        });
+        expect(wrapper.get('dl').text()).toContain('Reviewed payee · ****1234');
+        expect(wrapper.get('dl').text()).toContain('Reviewed merchant account');
+        expect(wrapper.get('dl').text()).not.toContain('张三');
+    });
 });

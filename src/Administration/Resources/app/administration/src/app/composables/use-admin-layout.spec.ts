@@ -18,6 +18,10 @@ describe('administration layout preference', () => {
         await useAdminLayout().loadUserLayout();
     });
 
+    it('defaults to top navigation for an account without a preference', () => {
+        expect(useAdminLayout().layout.value).toBe('top');
+    });
+
     it('shares the same preference state across consumers', () => {
         expect(useAdminLayout()).toBe(useAdminLayout());
     });
@@ -25,25 +29,25 @@ describe('administration layout preference', () => {
     it('applies a choice after it is saved for the current account', async () => {
         const layout = useAdminLayout();
         const saving = layout.saveUserLayout('mixed');
-        expect(layout.layout.value).toBe('sidebar');
+        expect(layout.layout.value).toBe('top');
         await saving;
         expect(layout.layout.value).toBe('mixed');
         expect(configService.upsert.mock.calls).toEqual([[{ [configKey]: { layout: 'mixed' } }]]);
     });
 
     it('loads the server preference and normalizes invalid values', async () => {
-        configService.search.mockResolvedValueOnce({ data: { [configKey]: { layout: 'top' } } });
-        await useAdminLayout().loadUserLayout();
-        expect(useAdminLayout().layout.value).toBe('top');
-        configService.search.mockResolvedValueOnce({ data: { [configKey]: { layout: 'invalid' } } });
+        configService.search.mockResolvedValueOnce({ data: { [configKey]: { layout: 'sidebar' } } });
         await useAdminLayout().loadUserLayout();
         expect(useAdminLayout().layout.value).toBe('sidebar');
+        configService.search.mockResolvedValueOnce({ data: { [configKey]: { layout: 'invalid' } } });
+        await useAdminLayout().loadUserLayout();
+        expect(useAdminLayout().layout.value).toBe('top');
     });
 
     it('keeps the saved layout on failure so the draft can be retried', async () => {
         configService.upsert.mockRejectedValueOnce(new Error('offline'));
         await expect(useAdminLayout().saveUserLayout('top')).rejects.toThrow('offline');
-        expect(useAdminLayout().layout.value).toBe('sidebar');
+        expect(useAdminLayout().layout.value).toBe('top');
         await useAdminLayout().saveUserLayout('top');
         expect(configService.upsert.mock.calls).toHaveLength(2);
     });
@@ -60,7 +64,7 @@ describe('administration layout preference', () => {
         signIn('other-user');
         configService.search.mockResolvedValueOnce(undefined);
         await useAdminLayout().loadUserLayout();
-        expect(useAdminLayout().layout.value).toBe('sidebar');
+        expect(useAdminLayout().layout.value).toBe('top');
     });
 
     it('ignores a previous account response arriving after an account switch', async () => {
@@ -76,7 +80,7 @@ describe('administration layout preference', () => {
         await useAdminLayout().loadUserLayout();
         resolvePrevious({ data: { [configKey]: { layout: 'top' } } });
         await loading;
-        expect(useAdminLayout().layout.value).toBe('sidebar');
+        expect(useAdminLayout().layout.value).toBe('top');
     });
 
     it('does not let an older load overwrite a newly selected layout', async () => {
@@ -107,6 +111,6 @@ describe('administration layout preference', () => {
         await useAdminLayout().loadUserLayout();
         completeSave();
         await saving;
-        expect(useAdminLayout().layout.value).toBe('sidebar');
+        expect(useAdminLayout().layout.value).toBe('top');
     });
 });

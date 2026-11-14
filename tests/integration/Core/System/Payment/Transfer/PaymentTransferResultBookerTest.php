@@ -2,20 +2,19 @@
 
 namespace Shopwell\Tests\Integration\Core\System\Payment\Transfer;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
-use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
-use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
+use Shopwell\Tests\Integration\Core\System\Payment\Transfer\_fixtures\PaymentTransferApprovalFixture;
 
 /**
  * @internal
@@ -29,7 +28,7 @@ class PaymentTransferResultBookerTest extends TestCase
     public function testTwoStaleCallersCanClaimOnlyOneAttempt(): void
     {
         $transfer = $this->createTransfer();
-        $booker = static::getContainer()->get(PaymentTransferResultBooker::class);
+        $booker = $this->booker();
         $booker->claim($transfer);
 
         static::assertSame(1, static::getContainer()->get(PaymentTransferService::class)->getById($transfer->id)->submitAttempts);
@@ -42,7 +41,7 @@ class PaymentTransferResultBookerTest extends TestCase
     public function testAStaleUnclaimedEntityCannotCancelAClaimedAttempt(): void
     {
         $transfer = $this->createTransfer();
-        $booker = static::getContainer()->get(PaymentTransferResultBooker::class);
+        $booker = $this->booker();
         $booker->claim($transfer);
 
         try {
@@ -61,7 +60,7 @@ class PaymentTransferResultBookerTest extends TestCase
     public function testACanceledPayoutCannotBeClaimedThroughAStaleEntity(): void
     {
         $transfer = $this->createTransfer();
-        $booker = static::getContainer()->get(PaymentTransferResultBooker::class);
+        $booker = $this->booker();
         $booker->cancel($transfer, 'operator rejected');
 
         $fresh = static::getContainer()->get(PaymentTransferService::class)->getById($transfer->id);
@@ -74,53 +73,14 @@ class PaymentTransferResultBookerTest extends TestCase
 
     private function createTransfer(): PaymentTransferEntity
     {
-        $container = static::getContainer();
-        $context = Context::createDefaultContext();
-        $appId = Uuid::randomHex();
-        $recipientId = Uuid::randomHex();
-        $transferId = Uuid::randomHex();
-        $accountId = Uuid::randomHex();
-        $container->get('payment_account.repository')->create([[
-            'id' => $accountId,
-            'providerTechnicalName' => 'alipay',
-            'name' => 'Transfer claim account',
-            'enabledProducts' => ['alipay_h5'],
-            'active' => true,
-        ]], $context);
-        $cipher = $container->get(PaymentCredentialCipher::class);
-        $container->get('payment_app.repository')->create([[
-            'id' => $appId,
-            'technicalName' => 'transfer_claim_' . $appId,
-            'name' => 'Transfer claim test',
-            'type' => PaymentAppEntity::TYPE_EXTERNAL,
-            'appSecret' => $cipher->encryptValue('secret'),
-            'active' => true,
-        ]], $context);
-        $container->get('payment_transfer_recipient.repository')->create([[
-            'id' => $recipientId,
-            'paymentAppId' => $appId,
-            'provider' => 'alipay',
-            'identityType' => 'alipay_user_id',
-            'identityValue' => $cipher->encryptValue('recipient'),
-            'identityHash' => hash('sha256', $recipientId),
-            'onboardingStatus' => PaymentTransferStates::ONBOARDING_REGISTERED,
-            'payoutEnabled' => true,
-        ]], $context);
-        $container->get('payment_transfer.repository')->create([[
-            'id' => $transferId,
-            'paymentAppId' => $appId,
-            'transferNo' => $transferId,
-            'accountId' => $accountId,
-            'outNo' => substr($transferId, 0, 30),
-            'recipientId' => $recipientId,
-            'provider' => 'alipay',
-            'channel' => 'alipay_h5',
-            'amount' => 100,
-            'currency' => 'CNY',
-            'statusId' => $container->get(InitialStateIdLoader::class)->get(PaymentTransferStates::STATE_MACHINE),
-            'submitAttempts' => 0,
-        ]], $context);
+        return PaymentTransferApprovalFixture::create(static::getContainer());
+    }
 
-        return $container->get(PaymentTransferService::class)->getById($transferId);
+    private function booker(): PaymentTransferResultBooker
+    {
+        $approval = static::createStub(PaymentTransferApprovalService::class);
+        $approval->method('assertApproved')->willReturn(new PaymentTransferRecipientEntity());
+
+        return new PaymentTransferResultBooker(static::getContainer()->get(PaymentTransferService::class), static::getContainer()->get(Connection::class), $approval);
     }
 }

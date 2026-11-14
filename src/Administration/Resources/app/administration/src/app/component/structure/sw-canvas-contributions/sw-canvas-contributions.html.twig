@@ -1,0 +1,39 @@
+{% block sw_canvas_contributions %}
+<div
+    v-if="actions.length || components.length || dialog"
+    class="sw-canvas-contributions"
+    :class="'is-' + (actionPosition || componentPosition)"
+>
+    <mt-button
+        v-for="action in actions"
+        :key="action.name"
+        :data-canvas-action="action.name"
+        variant="secondary"
+        :disabled="!session.canRunAction(action.name, target)"
+        @click.stop="session.runAction(action.name, target)"
+    >
+        <mt-icon
+            v-if="action.icon"
+            :name="action.icon"
+            size="16px"
+        />
+        {{ $t(action.labelKey) }}
+    </mt-button>
+    <component
+        :is="item.component"
+        v-for="item in components"
+        :key="item.name"
+        v-bind="contributionProps(item.name)"
+    />
+    <sw-modal
+        v-if="dialog"
+        :title="dialog.component.titleKey ? $t(dialog.component.titleKey) : ''"
+        @modal-close="session.context.ui.closeDialog()"
+    >
+        <component
+            :is="dialog.component.component"
+            v-bind="{ ...dialog.props, ...contributionProps(dialog.component.name) }"
+        />
+    </sw-modal>
+</div>
+{% endblock %}

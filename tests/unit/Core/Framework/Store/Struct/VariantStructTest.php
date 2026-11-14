@@ -15,6 +15,12 @@ use Shopwell\Core\Framework\Store\Struct\VariantStruct;
 #[CoversClass(VariantStruct::class)]
 class VariantStructTest extends TestCase
 {
+    public function testSerializesMarketplaceCurrency(): void
+    {
+        $variant = VariantStruct::fromArray(['currency' => 'CNY']);
+        static::assertSame('CNY', $variant->jsonSerialize()['currency']);
+    }
+
     public function testFromArrayBuildsTheNestedDiscountCampaign(): void
     {
         $variant = VariantStruct::fromArray([

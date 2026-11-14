@@ -12,6 +12,7 @@ use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 
 /**
  * Books the answer of a transfer submission as one atomic sequence of state transitions.
@@ -33,6 +34,7 @@ final class PaymentTransferResultBooker
     public function __construct(
         private readonly PaymentTransferService $transferService,
         private readonly Connection $connection,
+        private readonly PaymentTransferApprovalService $approvals,
     ) {
     }
 
@@ -42,16 +44,19 @@ final class PaymentTransferResultBooker
      */
     public function claim(PaymentTransferEntity $transfer): void
     {
-        $claimed = $this->connection->executeStatement(
-            'UPDATE payment_transfer SET submit_attempts = 1, updated_at = UTC_TIMESTAMP(3)
-             WHERE id = :id AND status_id = :statusId AND submit_attempts = 0',
-            ['id' => Uuid::fromHexToBytes($transfer->id), 'statusId' => Uuid::fromHexToBytes($transfer->statusId)],
-            ['id' => ParameterType::BINARY, 'statusId' => ParameterType::BINARY]
-        );
+        $this->connection->transactional(function () use ($transfer): void {
+            $claimed = $this->connection->executeStatement(
+                'UPDATE payment_transfer SET submit_attempts = 1, updated_at = UTC_TIMESTAMP(3)
+                 WHERE id = :id AND status_id = :statusId AND submit_attempts = 0',
+                ['id' => Uuid::fromHexToBytes($transfer->id), 'statusId' => Uuid::fromHexToBytes($transfer->statusId)],
+                ['id' => ParameterType::BINARY, 'statusId' => ParameterType::BINARY]
+            );
 
-        if ($claimed !== 1) {
-            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown');
-        }
+            if ($claimed !== 1) {
+                throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown');
+            }
+            $this->approvals->assertApproved($transfer);
+        });
     }
 
     /**

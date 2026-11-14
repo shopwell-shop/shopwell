@@ -2,6 +2,83 @@
 
 ## Core
 
+### Experimental Workflow Studio
+
+Workflow Studio provides editable workflow drafts, an approval template, automatic diagnostics and JSON export.
+Its shared canvas editor is available independently through `CanvasEditorSession<TDocument>`, `sw-canvas-editor` and `sw-canvas-contributions`.
+The shared layer provides graph history, commands, semantic gestures, engine-independent render projections and optional shell regions; Workflow supplies its node types, layouts, forms and publication behavior.
+Canvas extensions cannot commit malformed graph structures, and individual contribution disposers remove their owned dialog state without affecting later registrations.
+Workflow Studio extensions register through `workflowExtensionService.register()` and receive an isolated context for commands, semantic events, UI contributions and resource cleanup in each editor session.
+Document edits share access checks, undo/redo and the existing diagnostics pipeline; retained extension contexts become inactive on teardown.
+The designer now opens node selection from connection controls, stages node configuration in confirmation dialogs and previews templates before explicit replacement.
+See `technical-docs/03-extensibility/09-workflow-studio.md` in the Administration for the extension contract and registration example.
+Registered layout callbacks receive an optional third argument containing measured node sizes and resolved output port order.
+The built-in layouts reserve routing space for branch labels and insertion controls, including nodes supplied by extensions.
+The read-only instance diagram reuses this geometry and shows participant states inside approval nodes, with zoom controls and an expanded view.
+Transfer initiators can use `POST /api/_action/payment/transfers/{id}/reapply` after rejection or withdrawal, supplying a fresh `outNo` for retry safety.
+The new request uses the active workflow release and exposes its original request through `previousTransfer` in the approval status response.
+Business modules can register context-specific text and choice fields through `workflowFieldService.register(name, provider)` for condition configuration.
+Providers return field metadata for the current document and node; the default approval template declares request inputs consumed by the core approval runtime.
+Condition nodes support ordered text conditions, dynamic output ports and a fallback path through the node extension services.
+The Admin API exposes `GET /api/_info/workflow-node-types.json` and `POST /api/_action/workflow/diagnose`, both requiring `workflow:read`.
+The experimental definition and presentation registries support custom node types independently of the canvas.
+Drafts can be created, reopened, renamed and deleted under Workflow > Process design.
+The revision-checked draft API at `/api/_action/workflow/draft` requires the corresponding `workflow:create`, `workflow:read`, `workflow:update` or `workflow:delete` privilege; listing uses `workflow_draft:read`.
+Updates and deletes require `expectedRevision` and return HTTP 409 on conflicting edits.
+Approval nodes support a single named user or multiple users with all-must-approve and first-decision rules, and display current approver names.
+`workflowApprovalService.registerSource()` and `registerMode()` provide independent settings components for business extensions; sources also provide their node summary component and optional `supportedModes` to constrain compatible rules.
+When a source declares `supportedModes`, extensions opt in their custom rules by registering that source again with an expanded list.
+Workflow viewers require `user:read` to resolve approvers; no user write privileges are granted.
+Saved draft revisions can be published through `POST /api/_action/workflow/draft/{id}/publish` with `expectedRevision` and `publisher`.
+Publication requires `workflow:publish` plus the target privileges, preserves the original document in an immutable snapshot, and deduplicates repeat publication of the same revision and target.
+Deleting a draft preserves its published versions and reserves its identifier against reuse.
+`GET /api/_action/workflow/publishers`, `/api/_action/workflow/releases`, and `/api/_action/workflow/release/{id}` expose targets and snapshots to `workflow:read` users.
+Business targets implement `WorkflowPublisher` and register the `shopwell.workflow.publisher` tag; target persistence runs in the snapshot transaction, while instance execution starts separately.
+The built-in `core:approval` target executes approval stages and ordered conditional branches based on request fields: each approval stage supports single-person, all-must-approve, or first-decision rules.
+The first-decision rule ends on either agreement or rejection; remaining tasks close automatically once the outcome is decided.
+Unavailable configured reviewers block publication or stage entry instead of silently reducing the required reviewer set.
+Unsupported nodes and modes are rejected at publication.
+Request forms are configured on the start node with `formFields` and support text, amount, number, date and single-select fields, required checks and published schema snapshots.
+Text fields can declare a `dataSource`; `core:currency` provides configured currency names and ISO codes through a standard selection control and validates submitted membership on the server.
+Extensions supply read-only options through `WorkflowFormOptionsEvent` and can register request action components using the start node's `requestAction` identifier.
+`GET /api/_action/workflow/request-catalogue` requires workflow read and request start permissions; `GET /api/_action/workflow/form-options/{source}` exposes only source options to workflow readers.
+
+Conditions reference `request.<field key>` with a bound `fieldType`, evaluate in configured order and use the default branch when no condition matches; amount comparisons use decimal arithmetic.
+Changing a referenced field type requires explicitly rebinding the condition before publication.
+Invalid values, unavailable fields and unsupported operator/type combinations are rejected before execution; unselected branches create no approval tasks.
+The Administration exposes `workflowRequestFormService.getFields(config)` for release consumers to read request field definitions without importing designer internals.
+Core workflow instance details expose ordered `approvalStages` with immutable stage names, descriptions, rules and participants from the published snapshot, stage outcomes and actual tasks.
+Future stages remain visible without creating tasks or todos before entry; rejection and unselected branches mark remaining stages as skipped.
+Instance details expose `plannedPath` for the route selected by frozen request values and `selectedPath` for the visited prefix, with node and edge identifiers matching the instance graph.
+`approvalTasks` includes all actual tasks, including those closed without a decision; `tasks` remains the current-node action list.
+The Administration `workflowReleaseActionService` registers target-specific actions without coupling the designer to a runtime.
+System installation creates missing workflow manager and participant roles with their corresponding menu selections; `workflow:roles:install` provides the same create-only operation for development installations without assigning users or overwriting existing roles.
+Business extensions can add default privileges and menu keys through `WorkflowDefaultRolesEvent`.
+
+### Workflow approval for finance transfers
+
+Finance transfer requests require a published workflow selected through the finance list's approval settings.
+The transfer template provides finance review, additional review for CNY amounts above 5,000, and separate review for other currencies; assign approvers before publishing.
+The request supplies the workflow's `amount`, `currency`, `recipient`, `paymentAccount` and optional `reason` fields from server-side financial data.
+The published revision and encrypted recipient snapshot remain fixed for that transfer.
+Approval and payment statuses are separate: final approval enables an authorized finance operator to execute the transfer, while channel processing, failure and return remain payment outcomes.
+Unbound, pending, rejected or unavailable approvals cannot be submitted through the transfer endpoint.
+Generic entity writes and state transitions cannot replace the approval process or alter the reviewed financial data.
+The Admin API provides `GET` and `PUT /api/_action/payment/transfers/workflow`, `GET /api/_action/payment/transfers/{id}/approval`, and `POST /api/_action/payment/transfers/{id}/approval/cancel`.
+Runtime integrations implement `WorkflowRuntime` and register `shopwell.workflow.runtime` using their publication target name.
+Business bindings and instance creation commit together before runtime events are dispatched.
+The built-in `core:approval` publisher and runtime are part of the main system and work with OA disabled.
+Workflow > My tasks provides pending tasks, completed tasks and initiated requests, with participant-scoped details and decision actions.
+Core runtime resources use `workflow_instance:access`, `workflow_instance:start` and `workflow_task:decide`; designer publication continues to require `workflow:publish`.
+Core database migrations create Workflow drafts, releases, transfer bindings, execution tables and state machines for both installation and updates.
+
+Transfer approval configuration now reports unavailable reviewers and rechecks their live account and decision privileges before binding a release or accepting new requests.
+Transfer lists load approval state and current reviewers in one batch through `POST /api/_action/payment/transfers/approvals`, requiring `payment_transfer:read`; approval detail links remain participant-scoped.
+Transfer creation previews the expected approval path through `POST /api/_action/payment/transfers/approval/preview`, requiring `payment_transfer:create`.
+The read-only preview uses the configured release and shared routing rules, assumes all reviewers agree, and creates no recipient, transfer, instance or task.
+Runtimes can supply previews through `WorkflowRuntimePreviewEvent` without changing the execution adapter contract; submitting still revalidates live prerequisites.
+Runtime extensions can contribute read summaries through `WorkflowRuntimeStatusesEvent` and recheck release prerequisites through `WorkflowReleaseCheckEvent` without changing the execution interface.
+
 ### After-sales refund destination
 
 Administration refund confirmations default to the original payment sources and can instead credit a registered customer's wallet.
@@ -114,6 +191,13 @@ The preference is stored per user under `core.adminNavigationLayout`; smaller sc
 All layouts use the configured menu order, role restrictions and registered module navigation.
 Top and combined layouts place the existing page search and toolbar actions in one compact header.
 Sales channels use their own navigation area instead of appearing in every module sidebar.
+Top navigation is the default for accounts without a saved layout preference.
+Workflow is a separate top-level menu with My approvals and Workflow management.
+Publication history is a management tab; participants choose an available workflow through Start request.
+Generic requests use the newest release per workflow; business modules can restrict their request actions to the enabled release through `WorkflowRequestCatalogueEvent`.
+Transfer requests expose only the finance-enabled release to users with transfer creation permission.
+Articles, categories, authors and comments are grouped under Content > Articles.
+Payment orders and refund orders are direct entries under Finance, alongside transfer requests and wallet transactions.
 
 ### Return settings per sales channel
 

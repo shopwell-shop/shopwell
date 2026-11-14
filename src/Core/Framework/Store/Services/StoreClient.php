@@ -73,6 +73,7 @@ class StoreClient
             $this->endpoints['login'],
             [
                 'query' => $this->getQueries($context),
+                'headers' => $this->getHeaders($context),
                 'json' => [
                     'shopwellId' => $shopwellId,
                     'password' => $password,
@@ -360,7 +361,7 @@ class StoreClient
         return $myExtensions;
     }
 
-    public function cancelSubscription(int $licenseId, Context $context): void
+    public function cancelSubscription(string $licenseId, Context $context): void
     {
         try {
             $this->client->request(

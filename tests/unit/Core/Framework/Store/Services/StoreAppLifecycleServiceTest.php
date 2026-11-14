@@ -134,7 +134,7 @@ class StoreAppLifecycleServiceTest extends TestCase
             appDeltaService: static::createStub(AppConfirmationDeltaProvider::class),
         );
 
-        $storeAppLifecycleService->removeExtensionAndCancelSubscription(123, 'TestApp', 'app-id', false, $context);
+        $storeAppLifecycleService->removeExtensionAndCancelSubscription('123', 'TestApp', 'app-id', false, $context);
     }
 
     public function testCannotCancelSubscriptionForMissingApp(): void
@@ -162,7 +162,7 @@ class StoreAppLifecycleServiceTest extends TestCase
             appDeltaService: static::createStub(AppConfirmationDeltaProvider::class),
         );
 
-        $storeAppLifecycleService->removeExtensionAndCancelSubscription(123, 'TestApp', 'missing-app-id', false, $context);
+        $storeAppLifecycleService->removeExtensionAndCancelSubscription('123', 'TestApp', 'missing-app-id', false, $context);
     }
 
     public function testUninstallAsksEveryRemovalValidatorBeforeUninstalling(): void
@@ -255,7 +255,7 @@ class StoreAppLifecycleServiceTest extends TestCase
 
         $this->expectExceptionObject(StoreException::extensionThemeStillInUse('app-id'));
 
-        $storeAppLifecycleService->removeExtensionAndCancelSubscription(123, 'TestApp', 'app-id', false, $context);
+        $storeAppLifecycleService->removeExtensionAndCancelSubscription('123', 'TestApp', 'app-id', false, $context);
     }
 
     public function testRemovingAppWithoutLocalFilesUninstallsIt(): void
@@ -343,6 +343,6 @@ class StoreAppLifecycleServiceTest extends TestCase
 
         $this->expectExceptionObject(StoreException::cannotDeleteManaged('TestApp'));
 
-        $storeAppLifecycleService->removeExtensionAndCancelSubscription(123, 'TestApp', 'app-id', false, Context::createDefaultContext());
+        $storeAppLifecycleService->removeExtensionAndCancelSubscription('123', 'TestApp', 'app-id', false, Context::createDefaultContext());
     }
 }

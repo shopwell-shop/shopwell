@@ -1,0 +1,195 @@
+{% block sw_workflow_instance %}
+<sw-page
+    class="sw-workflow-instance"
+    :show-search-bar="false"
+>
+    {% block sw_workflow_instance_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2 class="sw-workflow-instance__title">
+            <mt-link :to="{ name: 'sw.workflow.tasks' }">
+                {{ $t('sw-workflow.runtime.todo.title') }}
+            </mt-link>
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span
+                v-if="instance"
+                class="sw-workflow-instance__heading"
+            >
+                {{ instance.title }}
+                <span class="sw-workflow-instance__number">{{ instance.number }}</span>
+            </span>
+
+            <mt-badge
+                v-if="instance"
+                class="sw-workflow-instance__status"
+                :variant="statusVariant"
+            >
+                {{ statusLabel }}
+            </mt-badge>
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_workflow_instance_content %}
+    <template #smart-bar-actions>
+        <mt-button
+            v-if="canCancel"
+            variant="secondary"
+            size="default"
+            @click="showCancel = true"
+        >
+            {{ $t('sw-workflow.runtime.instance.cancel') }}
+        </mt-button>
+    </template>
+    <template #content>
+        <sw-modal
+            v-if="showCancel"
+            :title="$t('sw-workflow.runtime.instance.cancel')"
+            @modal-close="showCancel = !isActing ? false : showCancel"
+        >
+            <p>{{ $t('sw-workflow.runtime.instance.cancelHint') }}</p>
+            <mt-textarea
+                v-model="cancelReason"
+                :label="$t('sw-workflow.runtime.instance.cancelReason')"
+                required
+            />
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    :disabled="isActing"
+                    @click="showCancel = false"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                <mt-button
+                    class="sw-workflow-instance__cancel-confirm"
+                    variant="critical"
+                    :disabled="isActing || !cancelReason.trim()"
+                    @click="cancelInstance"
+                >
+                    {{ $t('sw-workflow.runtime.instance.cancel') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        <sw-card-view class="sw-workflow-instance__content">
+            {% block sw_workflow_instance_error %}
+            <mt-banner
+                v-if="loadError"
+                variant="critical"
+                class="sw-workflow-instance__error"
+            >
+                <div class="sw-workflow-instance__error-body">
+                    <span>{{ loadError }}</span>
+
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        @click="loadInstance"
+                    >
+                        {{ $t('sw-workflow.runtime.instance.retry') }}
+                    </mt-button>
+                </div>
+            </mt-banner>
+            {% endblock %}
+
+            {% block sw_workflow_instance_layout %}
+            <div
+                v-else-if="instance"
+                class="sw-workflow-instance__layout"
+            >
+                {% block sw_workflow_instance_main %}
+                <div class="sw-workflow-instance__main">
+                    {% block sw_workflow_instance_form %}
+                    <mt-card
+                        position-identifier="sw-workflow-instance-form"
+                        :title="$t('sw-workflow.runtime.instance.formTitle')"
+                    >
+                        <p class="sw-workflow-instance__meta">
+                            {{ instance.initiator?.name }}
+                            <template v-if="instance.initiator?.unitName">
+                                · {{ instance.initiator.unitName }}
+                            </template>
+                            · {{ startedAt }}
+                        </p>
+                        <sw-description-list
+                            class="sw-workflow-instance__form"
+                            grid="repeat(auto-fit, minmax(min(200px, 100%), 1fr))"
+                        >
+                            <div
+                                v-for="field in formFields"
+                                :key="field.key"
+                                class="sw-workflow-instance__field"
+                            >
+                                <dt>{{ field.label }}</dt>
+                                <dd>{{ formatValue(field.value, field) }}</dd>
+                            </div>
+                            <template v-if="formFields.length === 0">
+                                <dt>{{ $t('sw-workflow.runtime.instance.formEmpty') }}</dt>
+                                <dd>—</dd>
+                            </template>
+                        </sw-description-list>
+                    </mt-card>
+                    {% endblock %}
+
+                    {% block sw_workflow_instance_graph %}
+                    <mt-card
+                        position-identifier="sw-workflow-instance-graph"
+                        :title="$t('sw-workflow.runtime.instance.graphTitle')"
+                    >
+                        <div class="sw-workflow-instance__graph">
+                            <sw-workflow-runtime-viewer
+                                :graph="graph"
+                                :node-states="nodeStates"
+                                :stages="approvalStages"
+                                :tasks="approvalTasks"
+                                :selected-path="instance?.selectedPath"
+                                :planned-path="graphPath"
+                            />
+                        </div>
+                    </mt-card>
+                    {% endblock %}
+                </div>
+                {% endblock %}
+
+                {% block sw_workflow_instance_side %}
+                <aside class="sw-workflow-instance__side">
+                    {% block sw_workflow_instance_actions %}
+                    <mt-card
+                        v-if="canAct"
+                        position-identifier="sw-workflow-instance-actions"
+                        :title="$t('sw-workflow.runtime.instance.actionsTitle')"
+                    >
+                        <p class="sw-workflow-instance__node">
+                            {{ activeTask.nodeName }}
+                        </p>
+
+                        <sw-workflow-approval-actions
+                            :is-loading="isActing"
+                            @approve="onApprove"
+                            @reject="onReject"
+                        />
+                    </mt-card>
+                    {% endblock %}
+
+                    {% block sw_workflow_instance_timeline %}
+                    <mt-card position-identifier="sw-workflow-instance-timeline">
+                        <sw-workflow-approval-timeline
+                            :history="history"
+                            :current-node="currentNode"
+                            :status="status"
+                        />
+                    </mt-card>
+                    {% endblock %}
+                </aside>
+                {% endblock %}
+            </div>
+            {% endblock %}
+            <mt-loader v-if="isLoading" />
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

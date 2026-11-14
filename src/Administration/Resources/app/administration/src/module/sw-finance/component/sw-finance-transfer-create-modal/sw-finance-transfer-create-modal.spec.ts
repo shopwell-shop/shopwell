@@ -1,169 +1,60 @@
-/**
- * @sw-package framework
- */
-import { shallowMount } from '@vue/test-utils';
-import type { VueWrapper } from '@vue/test-utils';
-
-const apps = [
-    {
-        id: 'app-1',
-        technicalName: 'platform',
-        name: '平台自有',
-        type: 'platform',
-        isPlatform: true,
-        providers: [
-            {
-                technicalName: 'alipay',
-                label: 'sw-settings-payment-provider.provider.alipay',
-                identityTypes: ['alipay_logon_id', 'bankcard'],
-                requiredRecipientFields: {
-                    alipay_logon_id: ['holderName'],
-                    bankcard: ['holderName', 'bankInfo'],
-                },
-                bankAccountTypes: ['1', '2'],
-                holderNameThreshold: null,
-                requiresOnboarding: false,
-                currencies: ['CNY'],
-                channels: [
-                    { technicalName: 'alipay_transfer', label: 'alipay transfer', currencies: ['CNY'] },
-                ],
-            },
-            {
-                technicalName: 'paypal',
-                label: 'sw-settings-payment-provider.provider.paypal',
-                identityTypes: ['paypal_email'],
-                requiredRecipientFields: { paypal_email: [] },
-                bankAccountTypes: [],
-                holderNameThreshold: null,
-                requiresOnboarding: false,
-                currencies: ['EUR', 'USD'],
-                channels: [
-                    { technicalName: 'paypal_payout', label: 'paypal payout', currencies: ['EUR', 'USD'] },
-                    { technicalName: 'paypal_batch', label: 'paypal batch', currencies: ['EUR'] },
-                ],
-            },
-        ],
-    },
-    {
-        id: 'app-2',
-        technicalName: 'merchant',
-        name: '商户应用',
-        type: 'external',
-        isPlatform: false,
-        providers: [],
-    },
-];
-
-const recipients = [
-    {
-        id: 'recipient-1',
-        identityType: 'alipay_logon_id',
-        holderName: '张三',
-        providerAccountId: null,
-        maskedIdentity: 'zh****23',
-        payoutEnabled: true,
-        onboardingStatus: 'registered',
-    },
-    {
-        id: 'recipient-2',
-        identityType: 'alipay_logon_id',
-        holderName: null,
-        providerAccountId: null,
-        maskedIdentity: 'li****99',
-        payoutEnabled: false,
-        onboardingStatus: 'pending',
-    },
-];
-
-let activeWrapper: VueWrapper | null = null;
-
-const selectStub = {
-    props: ['modelValue', 'options', 'disabled'],
-    template: `<select :value="modelValue ?? ''" :disabled="disabled"
-        @change="$emit('update:modelValue', $event.target.value || null)">
-        <option value=""></option>
-        <option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option>
-    </select>`,
-};
-
-const inputStub = {
-    props: ['modelValue', 'error'],
-    template: `<label><input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)">
-        <span v-if="error" role="alert">{{ error }}</span></label>`,
-};
-
-async function createWrapper(
-    overrides: { getOptions?: jest.Mock; getRecipients?: jest.Mock; createTransfer?: jest.Mock } = {},
-) {
-    const getOptions = overrides.getOptions ?? jest.fn(() => Promise.resolve({ apps, defaultAppId: 'app-1' }));
-    const getRecipients = overrides.getRecipients ?? jest.fn(() => Promise.resolve(recipients));
-    const createTransfer =
-        overrides.createTransfer ?? jest.fn(() => Promise.resolve({ transfer: { id: 'transfer-1' }, replayed: false }));
-    const notify = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification').mockReturnValue('notification-1');
-    const wrapper = shallowMount(await wrapTestComponent('sw-finance-transfer-create-modal', { sync: true }), {
-        global: {
-            stubs: {
-                'sw-modal': {
-                    template:
-                        '<div><slot></slot><slot name="modal-footer"></slot><button class="modal-close" @click="$emit(\'modal-close\')">Close</button></div>',
-                },
-                'sw-loader': true,
-                'mt-banner': { template: '<div><slot></slot></div>' },
-                'mt-select': selectStub,
-                'mt-text-field': inputStub,
-                'mt-textarea': inputStub,
-                'mt-button': {
-                    props: ['disabled', 'isLoading'],
-                    template: '<button :disabled="disabled" :data-loading="isLoading"><slot></slot></button>',
-                },
-            },
-            provide: { paymentTransferApiService: { getOptions, getRecipients, createTransfer } },
-        },
-    });
-    activeWrapper = wrapper;
-    await flushPromises();
-    return { wrapper, notify, createTransfer, getRecipients };
-}
-
-function field(wrapper: VueWrapper, name: string) {
-    return wrapper.get(`.sw-finance-transfer-create-modal__field-${name}`);
-}
-
-async function select(wrapper: VueWrapper, name: string, value: string) {
-    await field(wrapper, name).setValue(value);
-    await flushPromises();
-}
-
-async function input(wrapper: VueWrapper, name: string, value: string) {
-    await field(wrapper, name).get('input').setValue(value);
-    await flushPromises();
-}
-
-function saveButton(wrapper: VueWrapper) {
-    return wrapper.get('.sw-finance-transfer-create-modal__button-save');
-}
-
-async function fillExistingRecipient(wrapper: VueWrapper, amount = '1') {
-    await select(wrapper, 'recipient', 'recipient-1');
-    await input(wrapper, 'amount', amount);
-}
+/** @sw-package framework */
+import {
+    apps,
+    createWrapper,
+    field,
+    select,
+    input,
+    saveButton,
+    fillExistingRecipient,
+    cleanupWrapper,
+} from './sw-finance-transfer-create-modal.spec/create-wrapper';
 
 describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
     afterEach(() => {
-        activeWrapper?.unmount();
-        activeWrapper = null;
+        cleanupWrapper();
         jest.restoreAllMocks();
+    });
+
+    it('passes complete minor-unit input to preview and blocks a known unavailable approval', async () => {
+        const { wrapper } = await createWrapper();
+        expect(wrapper.get('.preview-probe span').text()).toBe('');
+        await fillExistingRecipient(wrapper, '5000.01');
+        expect(wrapper.get('.preview-probe span').text()).toBe('500001 CNY alipay-account recipient-1');
+        await wrapper.get('.preview-block').trigger('click');
+        expect(saveButton(wrapper).attributes('disabled')).toBeDefined();
+        await wrapper.get('.preview-ready').trigger('click');
+        expect(saveButton(wrapper).attributes('disabled')).toBeUndefined();
     });
 
     it('should preselect and lock the default app interface, channel and currency', async () => {
         const { wrapper } = await createWrapper();
         expect(wrapper.find('.sw-finance-transfer-create-modal__loading').exists()).toBe(false);
         expect((field(wrapper, 'app').element as HTMLInputElement).value).toBe('app-1');
-        expect((field(wrapper, 'provider').element as HTMLInputElement).value).toBe('alipay');
+        expect((field(wrapper, 'account').element as HTMLInputElement).value).toBe('alipay-account');
         expect((field(wrapper, 'channel').element as HTMLInputElement).value).toBe('alipay_transfer');
         expect(field(wrapper, 'channel').attributes('disabled')).toBeDefined();
         expect((field(wrapper, 'currency').element as HTMLInputElement).value).toBe('CNY');
         expect(field(wrapper, 'currency').attributes('disabled')).toBeDefined();
+    });
+
+    it('should distinguish two payment accounts of the same provider', async () => {
+        const accounts = [
+            apps[0].accounts[0],
+            { ...apps[0].accounts[0], accountId: 'second-alipay', name: 'Second account' },
+        ];
+        const { wrapper, createTransfer } = await createWrapper({
+            getOptions: jest
+                .fn()
+                .mockResolvedValue({ apps: [{ ...apps[0], accounts }], defaultAppId: 'app-1', workflowAvailable: true }),
+        });
+        expect(field(wrapper, 'account').text()).toContain('Second account');
+        await select(wrapper, 'account', 'second-alipay');
+        await fillExistingRecipient(wrapper);
+        await saveButton(wrapper).trigger('click');
+        expect(createTransfer).toHaveBeenCalledWith(
+            expect.objectContaining({ accountId: 'second-alipay', provider: 'alipay' }),
+        );
     });
 
     it('should clear recipient identities when switching the merchant app', async () => {
@@ -173,8 +64,8 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         await input(wrapper, 'identity-value', 'zhangsan@example.com');
         await input(wrapper, 'holder-name', '张三');
         await select(wrapper, 'app', 'app-2');
-        expect((field(wrapper, 'provider').element as HTMLInputElement).value).toBe('');
-        expect(field(wrapper, 'provider').findAll('option')).toHaveLength(1);
+        expect((field(wrapper, 'account').element as HTMLInputElement).value).toBe('');
+        expect(field(wrapper, 'account').findAll('option')).toHaveLength(1);
         expect((field(wrapper, 'channel').element as HTMLInputElement).value).toBe('');
         expect((field(wrapper, 'identity-type').element as HTMLInputElement).value).toBe('');
         expect((field(wrapper, 'identity-value').get('input').element as HTMLInputElement).value).toBe('');
@@ -186,7 +77,7 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
     it('should clear the recipient when changing interface and offer its channels and currencies', async () => {
         const { wrapper } = await createWrapper();
         await select(wrapper, 'recipient', 'recipient-1');
-        await select(wrapper, 'provider', 'paypal');
+        await select(wrapper, 'account', 'paypal-account');
         expect((field(wrapper, 'recipient').element as HTMLInputElement).value).toBe('');
         expect((field(wrapper, 'channel').element as HTMLInputElement).value).toBe('');
         expect(field(wrapper, 'channel').findAll('option')).toHaveLength(3);
@@ -229,9 +120,11 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
     });
 
     it('should respect the selected zero-decimal currency when booking an amount', async () => {
-        const japaneseApps = [{ ...apps[0], providers: [{ ...apps[0].providers[0], currencies: ['JPY'] }] }];
+        const japaneseApps = [{ ...apps[0], accounts: [{ ...apps[0].accounts[0], currencies: ['JPY'] }] }];
         const { wrapper, createTransfer } = await createWrapper({
-            getOptions: jest.fn(() => Promise.resolve({ apps: japaneseApps, defaultAppId: 'app-1' })),
+            getOptions: jest.fn(() =>
+                Promise.resolve({ apps: japaneseApps, defaultAppId: 'app-1', workflowAvailable: true }),
+            ),
         });
         await fillExistingRecipient(wrapper, '1234');
         await saveButton(wrapper).trigger('click');
@@ -284,6 +177,7 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         await flushPromises();
         expect(createTransfer).toHaveBeenCalledWith({
             paymentAppId: 'app-1',
+            accountId: 'alipay-account',
             provider: 'alipay',
             channel: 'alipay_transfer',
             recipientId: 'recipient-1',
@@ -355,6 +249,31 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         expect(saveButton(wrapper).attributes('data-loading')).toBe('false');
     });
 
+    it('should preserve a settlement amount and use its booking handler', async () => {
+        const bookTransfer = jest.fn(() => Promise.resolve({ transfer: { id: 'settlement-transfer' }, replayed: false }));
+        const { wrapper, createTransfer } = await createWrapper(
+            { getOptions: jest.fn().mockResolvedValue({ apps, defaultAppId: 'app-1', workflowAvailable: false }) },
+            { fixedAmount: '90.00', fixedCurrency: 'CNY', bookTransfer },
+        );
+        await select(wrapper, 'recipient', 'recipient-1');
+        expect(field(wrapper, 'amount').get('input').element.value).toBe('90.00');
+        expect(field(wrapper, 'amount').attributes('disabled')).toBeDefined();
+        await saveButton(wrapper).trigger('click');
+        await flushPromises();
+        expect(bookTransfer).toHaveBeenCalledWith(expect.objectContaining({ amount: 9000, currency: 'CNY' }));
+        expect(createTransfer).not.toHaveBeenCalled();
+        expect(wrapper.emitted('transfer-created')).toEqual([[{ id: 'settlement-transfer' }]]);
+    });
+
+    it('should refuse a channel that cannot pay the fixed settlement currency', async () => {
+        const { wrapper } = await createWrapper({}, { fixedAmount: '90.00', fixedCurrency: 'EUR' });
+        await select(wrapper, 'recipient', 'recipient-1');
+        expect(saveButton(wrapper).attributes('disabled')).toBeDefined();
+        expect(field(wrapper, 'currency').attributes('error')).toBe(
+            'sw-finance.transfer.create.validationCurrencyUnsupported',
+        );
+    });
+
     it('should prevent closing the modal while saving, then allow closing', async () => {
         let resolveCreate: (value: unknown) => void = () => {};
         const { wrapper } = await createWrapper({
@@ -375,5 +294,14 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         await flushPromises();
         await wrapper.get('.modal-close').trigger('click');
         expect(wrapper.emitted('modal-close')).toHaveLength(1);
+    });
+    it('prevents booking when no approval workflow is available', async () => {
+        const { wrapper, createTransfer } = await createWrapper({
+            getOptions: jest.fn().mockResolvedValue({ apps, defaultAppId: 'app-1', workflowAvailable: false }),
+        });
+        await fillExistingRecipient(wrapper);
+        expect(saveButton(wrapper).attributes('disabled')).toBeDefined();
+        await saveButton(wrapper).trigger('click');
+        expect(createTransfer).not.toHaveBeenCalled();
     });
 });

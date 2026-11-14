@@ -1,0 +1,88 @@
+{% block sw_workflow_studio_canvas %}
+<sw-canvas-editor
+    class="sw-workflow-studio-canvas"
+    :graph="graph"
+    :allow-edit="allowEdit"
+    :allow-node-move="false"
+    :allow-connections="false"
+    :route-connection="routeConnection"
+    @select-node="$emit('select-node', $event)"
+    @select-connection="$emit('select-connection', $event)"
+    @node-contextmenu="$emit('node-contextmenu', $event)"
+    @connection-contextmenu="$emit('connection-contextmenu', $event)"
+    @canvas-click="$emit('canvas-click')"
+    @canvas-contextmenu="$emit('canvas-contextmenu', $event)"
+    @node-sizes-change="onNodeSizesChange"
+>
+    <template #overlay>
+        <div class="sw-workflow-studio-canvas__hint">
+            <mt-icon
+                name="regular-sitemap"
+                size="14px"
+            />
+            {{ $t('sw-workflow.canvas.hint') }}
+        </div>
+    </template>
+    <template #node-decoration="{ node }">
+        <slot
+            name="node-decoration"
+            :node-id="node.id"
+        ></slot>
+    </template>
+    <template
+        v-if="$slots['node-tools']"
+        #node-tools="{ node }"
+    >
+        <slot
+            name="node-tools"
+            :node-id="node.id"
+        ></slot>
+    </template>
+    <template #connection-tools="{ connection, route }">
+        <button
+            v-if="allowEdit"
+            class="sw-workflow-studio-canvas__edge-insert nodrag nopan"
+            type="button"
+            :aria-label="$t('sw-workflow.panels.nodes')"
+            :style="insertStyle(route)"
+            @click.stop="$emit('insert-node', connection.id)"
+        >
+            <mt-icon
+                name="regular-plus-xs"
+                size="10px"
+            />
+        </button>
+    </template>
+    <template #viewport-controls="{ fit, zoomIn, zoomOut }">
+        <div class="sw-workflow-studio-canvas__controls">
+            <button
+                type="button"
+                :aria-label="$t('sw-workflow.canvas.zoomOut')"
+                @click="zoomOut"
+            >
+                <mt-icon
+                    name="regular-minus-xs"
+                    size="12px"
+                />
+            </button>
+            <button
+                type="button"
+                class="sw-workflow-studio-canvas__fit"
+                @click="fit"
+            >
+                {{ $t('sw-workflow.canvas.fit') }}
+            </button>
+            <button
+                type="button"
+                :aria-label="$t('sw-workflow.canvas.zoomIn')"
+                @click="zoomIn"
+            >
+                <mt-icon
+                    name="regular-plus-xs"
+                    size="12px"
+                />
+            </button>
+        </div>
+    </template>
+</sw-canvas-editor>
+{% endblock %}

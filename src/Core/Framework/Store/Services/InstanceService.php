@@ -18,10 +18,6 @@ class InstanceService
 
     public function getShopwellVersion(): string
     {
-        if (str_ends_with($this->shopwellVersion, '-dev')) {
-            return '___VERSION___';
-        }
-
         return $this->shopwellVersion;
     }
 

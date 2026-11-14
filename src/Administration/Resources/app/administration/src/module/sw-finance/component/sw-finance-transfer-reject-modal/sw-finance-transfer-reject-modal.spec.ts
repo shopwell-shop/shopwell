@@ -12,11 +12,16 @@ const transfer = {
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(cancelTransfer: jest.Mock): Promise<{ wrapper: VueWrapper; notify: jest.SpyInstance }> {
+async function createWrapper(
+    cancelTransfer: jest.Mock,
+    approval = false,
+    cancelApproval = jest.fn(),
+): Promise<{ wrapper: VueWrapper; notify: jest.SpyInstance }> {
     const notify = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification').mockReturnValue('notification-1');
     const wrapper = shallowMount(await wrapTestComponent('sw-finance-transfer-reject-modal', { sync: true }), {
         props: {
             transfer,
+            approval,
         },
         global: {
             stubs: {
@@ -36,7 +41,7 @@ async function createWrapper(cancelTransfer: jest.Mock): Promise<{ wrapper: VueW
                 },
             },
             provide: {
-                paymentTransferApiService: { cancelTransfer },
+                paymentTransferApiService: { cancelTransfer, cancelApproval },
             },
         },
     });
@@ -172,5 +177,28 @@ describe('module/sw-finance/component/sw-finance-transfer-reject-modal', () => {
         expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
         expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'PAYMENT__TRANSFER_ALREADY_FINALIZED' }));
         expect(wrapper.emitted('transfer-decided')).toBeUndefined();
+    });
+    it('should cancel approval with its reason without calling the legacy payment cancellation', async () => {
+        const cancelTransfer = jest.fn();
+        const cancelApproval = jest.fn().mockResolvedValue({ status: 'canceled' });
+        const { wrapper } = await createWrapper(cancelTransfer, true, cancelApproval);
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
+        expect(cancelApproval).not.toHaveBeenCalled();
+        await wrapper.get('textarea').setValue('  Duplicate request  ');
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
+        await flushPromises();
+        expect(cancelApproval).toHaveBeenCalledWith('transfer-1', 'Duplicate request');
+        expect(cancelTransfer).not.toHaveBeenCalled();
+        expect(wrapper.emitted('transfer-decided')).toHaveLength(1);
+    });
+
+    it('should keep the cancellation open when the workflow is unavailable', async () => {
+        const cancelApproval = jest.fn().mockRejectedValue(new Error('Offline'));
+        const { wrapper, notify } = await createWrapper(jest.fn(), true, cancelApproval);
+        await wrapper.get('textarea').setValue('Duplicate request');
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
+        await flushPromises();
+        expect(wrapper.emitted('transfer-decided')).toBeUndefined();
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
     });
 });
