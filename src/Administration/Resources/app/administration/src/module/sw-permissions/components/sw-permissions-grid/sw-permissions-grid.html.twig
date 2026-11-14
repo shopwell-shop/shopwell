@@ -1,6 +1,7 @@
 {% block sw_permissions_grid %}
 <mt-card
     class="sw-permissions-grid mt-card--future-ignore-max-width"
+    :class="{ 'sw-permissions-grid--assignment': assignmentMode }"
     position-identifier="sw-permissions-grid"
     :is-loading="isLoading"
     :title="title || $t('sw-permissions.roles.grid.title')"
@@ -14,6 +15,9 @@
             {% block sw_permissions_grid_header_title %}
             <div class="sw-permissions-grid__title">
                 {% block sw_permissions_grid_header_title_content %}
+                <template v-if="assignmentMode">
+                    {{ $t('sw-permissions.roles.menus.permissionItem') }}
+                </template>
                 {% endblock %}
             </div>
             {% endblock %}
@@ -31,7 +35,10 @@
             {% endblock %}
 
             {% block sw_permissions_grid_header_all_roles %}
-            <div class="sw-permissions-grid__all">
+            <div
+                v-if="!assignmentMode"
+                class="sw-permissions-grid__all"
+            >
                 {% block sw_permissions_grid_header_all_roles_name %}
                 {{ $t('sw-privileges.roles.all') }}
                 {% endblock %}
@@ -132,12 +139,23 @@
                         :disabled="isPermissionDisabled(permission.key, role) || disabled"
                         @update:checked="changePermission(permission.key, role)"
                     />
+                    <mt-icon
+                        v-if="assignmentMode && isPermissionDisabled(permission.key, role)"
+                        v-tooltip="{ message: disabledPrivilegeTooltip(permission.key, role) }"
+                        class="sw-permissions-grid__dependency"
+                        name="regular-link-horizontal"
+                        size="12px"
+                        :aria-label="disabledPrivilegeTooltip(permission.key, role)"
+                    />
                     {% endblock %}
                 </div>
                 {% endblock %}
 
                 {% block sw_permissions_grid_permissions_all_roles %}
-                <div class="sw-permissions-grid__all sw-permissions-grid__role_all">
+                <div
+                    v-if="!assignmentMode"
+                    class="sw-permissions-grid__all sw-permissions-grid__role_all"
+                >
                     {% block sw_permissions_grid_permissions_all_roles_field %}
                     <mt-checkbox
                         v-if="Object.keys(permission.roles).length > 0"

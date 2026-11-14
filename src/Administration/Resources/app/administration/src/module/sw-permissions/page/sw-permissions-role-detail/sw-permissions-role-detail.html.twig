@@ -1,5 +1,14 @@
 {% block sw_permissions_role_detail %}
 <sw-page class="sw-permissions-role-detail">
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="admin_menu_item"
+            :initial-search="permissionSearchTerm"
+            :placeholder="$t('sw-permissions.menu.searchPlaceholder')"
+            :type-search-always-in-container="false"
+            @search="permissionSearchTerm = $event"
+        />
+    </template>
     {% block sw_permissions_role_detail_smart_bar_header %}
     <template #smart-bar-header>
         {% block sw_permissions_role_detail_smart_bar_header_title %}
@@ -53,12 +62,6 @@
         {% block sw_permissions_role_detail_content_card_view %}
         <sw-card-view>
             {% block sw_permissions_role_detail_content_card_view_tabs %}
-            <mt-tabs
-                position-identifier="sw-permissions-role-detail-content"
-                :default-item="$route.name"
-                :items="roleDetailTabs"
-                :small="true"
-            />
             {% endblock %}
 
             <router-view
@@ -69,6 +72,7 @@
                     :role="role"
                     :is-loading="isLoading"
                     :detailed-privileges="detailedPrivileges"
+                    :search-term="permissionSearchTerm"
                     @update-role="updateRole"
                 />
             </router-view>

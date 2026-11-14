@@ -1,4 +1,9 @@
 {
+    "global": {
+        "entities": {
+            "acl_role": "角色"
+        }
+    },
     "sw-permissions": {
         "general": {
             "label": "角色与权限"
@@ -111,10 +116,61 @@
                 "grantRequired": "补齐页面所需权限",
                 "loadFailed": "菜单加载失败，请重试。",
                 "assignmentHint": "菜单勾选控制导航入口，右侧权限控制页面访问和操作；取消菜单不会收回共享权限。",
-                "noOperations": "该菜单没有声明操作权限。"
+                "noOperations": "该菜单没有声明操作权限。",
+                "permissionsHint": "选择业务权限，系统会关联所需依赖。",
+                "showNavigation": "在导航中显示",
+                "visibilityHint": "仅控制入口展示，隐藏不会撤销访问权限。",
+                "partlyVisible": "部分子菜单已显示",
+                "quickAssign": "快捷配置当前业务",
+                "readOnly": "常规权限设为只读",
+                "allowEditing": "允许常规编辑",
+                "presetHint": "常规编辑仅新增查看和编辑及其所需依赖，不主动授予创建、删除。",
+                "permissionItem": "权限项目",
+                "dependencies": "查看关联原因（{count}）",
+                "requiredBy": "由「{permissions}」依赖",
+                "previewPreset": "确认权限变更",
+                "presetScope": "本次配置范围：{name}。",
+                "sharedScopeHint": "同一权限可能被多个页面共享，变更会同时影响这些页面。应用后仍需保存角色。",
+                "added": "新增权限",
+                "removed": "撤销权限",
+                "noChanges": "当前配置无需变更。",
+                "retainedWrites": "以下权限仍被其他已选功能依赖，无法设为只读：",
+                "applyPreset": "应用到草稿",
+                "states": {
+                    "notGranted": "未授权",
+                    "readOnly": "只读",
+                    "custom": "自定义",
+                    "noOperations": "无操作权限"
+                },
+                "changeSummary": "新增 {added} 项权限，撤销 {removed} 项",
+                "menuChangeSummary": "显示 {added} 个菜单，隐藏 {removed} 个",
+                "pendingChanges": "修改将在保存角色后生效。",
+                "viewChanges": "查看变更明细",
+                "retainedOperations": "以下特殊操作仍保留，如需撤销请在操作权限区调整：",
+                "presetLimitHint": "快捷配置仅调整常规权限，特殊操作和高级权限中的独立授权保持不变。"
+            },
+            "info": {
+                "editTitle": "编辑信息",
+                "createAndConfigure": "创建并配置权限",
+                "createHint": "创建成功后，继续配置该角色的菜单与权限。",
+                "editHint": "应用后，点击页面头部“保存”使修改生效。",
+                "createError": "角色创建失败，已保留填写内容，请重试。",
+                "copyError": "原角色加载失败，请关闭弹框后重新复制。",
+                "copyName": "{name}（副本）"
+            },
+            "assignment": {
+                "title": "权限配置",
+                "other": "其他权限",
+                "viewer": "查询",
+                "creator": "新增",
+                "selectMenu": "选择菜单「{name}」"
             }
         },
         "menu": {
+            "columnStatus": "状态",
+            "columnActions": "操作",
+            "statusVisible": "显示",
+            "editModalTitle": "编辑菜单项",
             "headline": "菜单",
             "createAction": "新建菜单项",
             "treeLabel": "已存储的导航",
@@ -216,7 +272,9 @@
             "viewer": "查看",
             "editor": "编辑",
             "creator": "创建",
-            "deleter": "删除"
+            "deleter": "删除",
+            "publisher": "发布",
+            "approver": "审批"
         },
         "permissionType": {
             "read": "读取",
@@ -275,7 +333,7 @@
         },
         "additional_permissions": {
             "system": {
-                "label": "设置"
+                "label": "系统操作"
             },
             "user": {
                 "label": "用户"
@@ -304,8 +362,8 @@
                 "api_feature_flag_toggle": "展开/收起功能开关"
             },
             "app": {
-                "label": "应用",
-                "all": "全部",
+                "label": "扩展应用",
+                "all": "全部应用",
                 "disabledCheckboxMessage": "要停用此选项，你必须先停用 '全部' 选项。"
             },
             "payment_gateway": {

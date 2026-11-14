@@ -116,6 +116,7 @@ Shopwell.Service('privileges')
         category: 'permissions',
         parent: 'orders',
         key: 'order_refund',
+        resource: 'order',
         roles: {
             viewer: {
                 privileges: ['order_transaction_capture_refund:read'],

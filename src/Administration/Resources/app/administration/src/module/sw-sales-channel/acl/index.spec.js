@@ -31,7 +31,7 @@ describe('src/module/sw-sales-channel/acl/index.js', () => {
     it('should register privilege mapping entry', () => {
         expect(addPrivilegeMappingEntryMock).toHaveBeenNthCalledWith(1, {
             category: 'permissions',
-            parent: null,
+            parent: 'settings',
             key: 'sales_channel',
             roles: expect.any(Object),
         });

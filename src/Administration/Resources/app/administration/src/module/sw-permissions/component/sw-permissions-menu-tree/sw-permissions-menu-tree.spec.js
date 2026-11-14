@@ -188,13 +188,30 @@ describe('module/sw-permissions/component/sw-permissions-menu-tree', () => {
         expect(rowByLabel(wrapper, 'Categories').classes()).toContain('is--hidden');
     });
 
-    it('keeps the type wording and the source out of the row', async () => {
+    it('shows the type in its own column', async () => {
         wrapper = await createWrapper({ expandedIds: ['catalog'] });
 
         const row = rowByLabel(wrapper, 'Products');
 
-        expect(row.text()).not.toContain('sw-permissions.menu.types');
+        expect(row.findAll('td')[1].text()).toBe('sw-permissions.menu.types.menu');
+        expect(wrapper.find('[role="treegrid"]').exists()).toBe(true);
+        expect(wrapper.findAll('th')).toHaveLength(5);
         expect(row.find('.sw-permissions-menu-tree__badge--group').exists()).toBe(false);
+    });
+
+    it('shows the declared page title and keeps external links readable in the target column', async () => {
+        const items = createItems();
+        items[0].children[0].routeKey = 'sw.product.index';
+        items[1].type = 'link';
+        items[1].linkTarget = 'https://example.com/orders';
+        wrapper = await createWrapper({
+            items,
+            expandedIds: ['catalog'],
+            routeLabels: { 'sw.product.index': 'Product overview' },
+        });
+        expect(rowByLabel(wrapper, 'Products').findAll('td')[2].text()).toBe('Product overview');
+        expect(rowByLabel(wrapper, 'Orders').findAll('td')[2].text()).toBe('https://example.com/orders');
+        expect(rowByLabel(wrapper, 'Catalog').findAll('td')[2].text()).toBe('—');
     });
 
     it('opens the registered Meteor row menu and emits its action', async () => {

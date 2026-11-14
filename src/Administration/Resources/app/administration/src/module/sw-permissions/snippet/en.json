@@ -1,4 +1,9 @@
 {
+    "global": {
+        "entities": {
+            "acl_role": "Role | Roles"
+        }
+    },
     "sw-permissions": {
         "general": {
             "label": "Roles and permissions"
@@ -111,10 +116,61 @@
                 "grantRequired": "Add required page permissions",
                 "loadFailed": "Could not load menus. Please retry.",
                 "assignmentHint": "Menu selection controls navigation. Permissions on the right control access and operations. Removing a menu keeps shared permissions.",
-                "noOperations": "This menu declares no operation permissions."
+                "noOperations": "This menu declares no operation permissions.",
+                "permissionsHint": "Choose business permissions. Required dependencies are linked automatically.",
+                "showNavigation": "Show in navigation",
+                "visibilityHint": "Hiding an entry does not revoke access.",
+                "partlyVisible": "Some child entries are visible",
+                "quickAssign": "Configure this scope",
+                "readOnly": "Make standard permissions read-only",
+                "allowEditing": "Allow editing",
+                "presetHint": "Adds viewing, editing and their dependencies. Does not explicitly grant creation or deletion.",
+                "permissionItem": "Permission",
+                "dependencies": "View dependencies ({count})",
+                "requiredBy": "Required by {permissions}",
+                "previewPreset": "Review permission changes",
+                "presetScope": "Scope: {name}.",
+                "sharedScopeHint": "Permissions may be shared by several pages. Changes affect every page using them. Save the role after applying.",
+                "added": "Added permissions",
+                "removed": "Revoked permissions",
+                "noChanges": "No changes are needed.",
+                "retainedWrites": "These permissions are still required by other selected features and cannot be made read-only:",
+                "applyPreset": "Apply to draft",
+                "states": {
+                    "notGranted": "No access",
+                    "readOnly": "Read-only",
+                    "custom": "Custom",
+                    "noOperations": "No operations"
+                },
+                "changeSummary": "{added} permissions added, {removed} revoked",
+                "menuChangeSummary": "{added} entries shown, {removed} hidden",
+                "pendingChanges": "Save the role to apply these changes.",
+                "viewChanges": "View changes",
+                "retainedOperations": "These special operations remain selected. Adjust them in Operation permissions if needed:",
+                "presetLimitHint": "This shortcut only changes standard permissions. Special operations and separate grants in Advanced permissions are preserved."
+            },
+            "info": {
+                "editTitle": "Edit information",
+                "createAndConfigure": "Create and configure permissions",
+                "createHint": "After creating the role, configure its menus and permissions.",
+                "editHint": "Changes take effect after saving the role.",
+                "createError": "Could not create the role. Your information is preserved. Please try again.",
+                "copyError": "Could not load the source role. Close this dialog and try duplicating it again.",
+                "copyName": "{name} (copy)"
+            },
+            "assignment": {
+                "title": "Permission assignment",
+                "other": "Other permissions",
+                "viewer": "View",
+                "creator": "Create",
+                "selectMenu": "Select menu “{name}”"
             }
         },
         "menu": {
+            "columnStatus": "Status",
+            "columnActions": "Actions",
+            "statusVisible": "Visible",
+            "editModalTitle": "Edit menu item",
             "headline": "Menu",
             "createAction": "Add item",
             "treeLabel": "Stored navigation",
@@ -216,7 +272,9 @@
             "viewer": "View",
             "editor": "Edit",
             "creator": "Create",
-            "deleter": "Delete"
+            "deleter": "Delete",
+            "publisher": "Publish",
+            "approver": "Approve"
         },
         "permissionType": {
             "read": "Read",
@@ -275,7 +333,7 @@
         },
         "additional_permissions": {
             "system": {
-                "label": "Settings"
+                "label": "System actions"
             },
             "user": {
                 "label": "User"
@@ -304,8 +362,8 @@
                 "api_feature_flag_toggle": "Toggle feature flags"
             },
             "app": {
-                "label": "Apps",
-                "all": "All",
+                "label": "Extension apps",
+                "all": "All apps",
                 "disabledCheckboxMessage": "To deactivate this option, you must first deactivate the All option."
             },
             "payment_gateway": {

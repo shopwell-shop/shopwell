@@ -5,6 +5,7 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     category: 'permissions',
     parent: 'settings',
     key: 'measurement',
+    menuKeys: ['sw-settings-measurement'],
     roles: {
         viewer: {
             privileges: ['system_config:read', 'measurement_system:read', 'measurement_display_unit:read'],

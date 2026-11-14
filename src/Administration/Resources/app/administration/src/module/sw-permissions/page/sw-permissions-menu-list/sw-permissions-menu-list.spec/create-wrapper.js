@@ -201,7 +201,8 @@ async function createWrapper({
                 },
                 'sw-card-view': { template: '<div><slot></slot></div>' },
                 'mt-card': {
-                    template: '<div class="mt-card-stub"><span class="mt-card-title">{{ title }}</span><slot></slot></div>',
+                    template:
+                        '<div class="mt-card-stub"><span class="mt-card-title">{{ title }}</span><slot name="headerRight"></slot><slot name="grid"></slot><slot></slot></div>',
                     props: ['title', 'positionIdentifier'],
                 },
                 'mt-banner': { template: '<div class="mt-banner-stub"><slot></slot></div>', props: ['variant'] },

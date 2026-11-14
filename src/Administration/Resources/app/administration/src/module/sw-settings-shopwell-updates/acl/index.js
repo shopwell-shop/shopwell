@@ -29,6 +29,7 @@ Shopwell.Service('privileges')
                 dependencies: [],
             },
             plugin_upload: {
+                resource: 'system.plugin_maintain',
                 privileges: ['user_config:read', 'user_config:update', 'user_config:create'],
                 dependencies: ['system.plugin_maintain'],
             },

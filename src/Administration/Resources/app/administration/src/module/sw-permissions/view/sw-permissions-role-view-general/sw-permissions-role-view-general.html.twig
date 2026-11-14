@@ -1,7 +1,11 @@
-<div class="sw-permissions-role-view-general">
+<div
+    v-if="!mcpOnly || shouldShowMcpHint"
+    class="sw-permissions-role-view-general"
+>
     {% block sw_permissions_role_role_view_general_card_view_basic_information %}
-    <mt-card
-        :title="$t('sw-permissions.roles.detail.basicInformation')"
+    <component
+        :is="compact ? 'div' : 'mt-card'"
+        :title="compact ? undefined : $t(mcpOnly ? 'sw-permissions.roles.mcpModal.title' : 'sw-permissions.roles.detail.basicInformation')"
         position-identifier="sw-permissions-role-view-general"
         :is-loading="isLoading"
     >
@@ -24,28 +28,30 @@
             </mt-banner>
         {% endblock %}
 
+            <template v-if="!mcpOnly">
         {% block sw_permissions_role_role_view_general_card_view_basic_information_name %}
-            <mt-text-field
-                v-model="role.name"
-                name="sw-field--role-name"
-                :error="roleNameError"
-                :disabled="isReadOnly"
-                :label="$t('sw-permissions.roles.detail.labelName')"
-                required
-            />
+                <mt-text-field
+                    v-model="role.name"
+                    name="sw-field--role-name"
+                    :error="roleNameError"
+                    :disabled="isReadOnly"
+                    :label="$t('sw-permissions.roles.detail.labelName')"
+                    required
+                />
         {% endblock %}
 
         {% block sw_permissions_role_role_view_general_card_view_basic_information_description %}
-            <mt-textarea
-                v-model="role.description"
-                name="sw-field--role-description"
-                :error="roleDescriptionError"
-                :disabled="isReadOnly"
-                :label="$t('sw-permissions.roles.detail.labelDescription')"
-            />
+                <mt-textarea
+                    v-model="role.description"
+                    name="sw-field--role-description"
+                    :error="roleDescriptionError"
+                    :disabled="isReadOnly"
+                    :label="$t('sw-permissions.roles.detail.labelDescription')"
+                />
         {% endblock %}
+            </template>
         </template>
-    </mt-card>
+    </component>
     {% endblock %}
 
     {% block sw_permissions_role_role_view_general_mcp_modal %}

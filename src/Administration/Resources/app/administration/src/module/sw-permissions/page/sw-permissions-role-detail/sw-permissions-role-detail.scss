@@ -5,8 +5,7 @@
 }
 
 .sw-permissions-role-detail {
-    .sw-card-view__content > .mt-tabs {
-        max-width: 1440px;
-        margin-inline: auto;
+    .sw-card-view__content {
+        padding-top: var(--scale-size-24);
     }
 }

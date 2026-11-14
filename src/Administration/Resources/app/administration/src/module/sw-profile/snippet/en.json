@@ -182,7 +182,7 @@
   "sw-privileges": {
     "additional_permissions": {
       "user": {
-        "update_profile": "Update own profile"
+        "update_profile": "Edit personal profile"
       }
     }
   }

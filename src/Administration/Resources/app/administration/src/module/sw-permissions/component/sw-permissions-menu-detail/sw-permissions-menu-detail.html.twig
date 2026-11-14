@@ -10,11 +10,8 @@
     </mt-banner>
     {% endblock %}
     {% block sw_permissions_menu_list_detail_form_basics %}
-    <mt-card
-        class="sw-permissions-menu-list__card"
-        position-identifier="sw-permissions-menu-list-basics"
-        :title="$t('sw-permissions.menu.sectionBasics')"
-    >
+    <div class="sw-permissions-menu-list__card">
+        <sw-extension-component-section position-identifier="sw-permissions-menu-list-basics" />
         <div class="sw-permissions-menu-list__form-grid">
             {% block sw_permissions_menu_list_detail_form_title %}
             <mt-text-field
@@ -104,7 +101,7 @@
                 disabled
             />
         </div>
-    </mt-card>
+    </div>
     {% endblock %}
 </div>
 {% endblock %}

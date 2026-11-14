@@ -1,6 +1,18 @@
 {% block sw_permissions_role_list %}
 <sw-page class="sw-permissions-role-list">
 
+    {% block sw_permissions_role_list_toolbar %}
+    <template #search-bar>
+        {% block sw_permissions_role_list_toolbar_search %}
+        <sw-search-bar
+            initial-search-type="acl_role"
+            :initial-search="term"
+            @search="onSearch"
+        />
+        {% endblock %}
+    </template>
+    {% endblock %}
+
     {% block sw_permissions_role_list_smart_bar_header %}
     <template #smart-bar-header>
         <h2>
@@ -50,21 +62,6 @@
                 position-identifier="sw-permissions-role-list"
                 :title="$t('sw-permissions.roles.general.cardLabel')"
             >
-                {% block sw_permissions_role_list_toolbar %}
-                <div class="sw-permissions-role-list__toolbar">
-                    {% block sw_permissions_role_list_toolbar_search %}
-                    <sw-simple-search-field
-                        v-model:value="term"
-                        class="sw-permissions-role-list__search"
-                        size="small"
-                        variant="form"
-                        :placeholder="$t('sw-permissions.roles.general.placeholderSearchBar')"
-                        @search-term-change="onSearch"
-                    />
-                    {% endblock %}
-                </div>
-                {% endblock %}
-
                 {% block sw_permissions_role_list_grid %}
                 <sw-data-grid
                     v-if="roles.length > 0 || isLoading"
@@ -211,6 +208,13 @@
             </mt-card>
             {% endblock %}
         </sw-card-view>
+
+        <sw-permissions-role-info-modal
+            v-if="showRoleInfoModal"
+            :copy-from-id="roleCopyFrom"
+            @created="onRoleCreated"
+            @close="showRoleInfoModal = false"
+        />
 
         {% block sw_permissions_role_list_verify_user_modal %}
         <sw-verify-user-modal

@@ -24,6 +24,7 @@ async function createWrapper(privileges = [], options = {}) {
         {
             props: {
                 role: options.role ?? mockRole,
+                ...options.props,
             },
             global: {
                 renderStubDefaultSlot: true,
@@ -54,6 +55,33 @@ async function createWrapper(privileges = [], options = {}) {
 }
 
 describe('module/sw-permissions/view/sw-permissions-role-view-general', () => {
+    it('shows integration references without metadata fields in the advanced permissions view', async () => {
+        const wrapper = await createWrapper(['permissions.editor'], {
+            role: { ...mockRole, isNew: () => false },
+            props: { mcpOnly: true },
+            repositoryFactory: {
+                create: () => ({ search: () => Promise.resolve([{ id: 'integration', mcpAllowlist: { tools: [] } }]) }),
+            },
+        });
+        await flushPromises();
+        expect(wrapper.find('input').exists()).toBe(false);
+        expect(wrapper.find('mt-banner-stub').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    it('keeps metadata dialogs focused on fields without loading integration references', async () => {
+        const search = jest.fn().mockResolvedValue([]);
+        const wrapper = await createWrapper(['permissions.editor'], {
+            role: { ...mockRole, isNew: () => false },
+            props: { compact: true, showMcpReferences: false },
+            repositoryFactory: { create: () => ({ search }) },
+        });
+        await flushPromises();
+        expect(wrapper.find('input').exists()).toBe(true);
+        expect(search).not.toHaveBeenCalled();
+        wrapper.unmount();
+    });
+
     it('should disable the button and fields when no aclPrivileges exists', async () => {
         const wrapper = await createWrapper();
 

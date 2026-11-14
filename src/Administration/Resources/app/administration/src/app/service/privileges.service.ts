@@ -10,6 +10,8 @@ const { object } = Shopwell.Utils;
 type GetPrivilegesWithDependenciesSignature = () => string[];
 
 type PrivilegeRole = {
+    /** Self-service operations can be assigned without enabling the containing management page. */
+    menuIndependent?: boolean;
     /** Business resource owning this operation; presentation only, never grants access. */
     resource?: string;
     dependencies: Array<string>;
@@ -20,6 +22,10 @@ type PrivilegeMapping = {
     category: 'permissions' | 'additional_permissions';
     key: null | string;
     parent: string;
+    /** Business resource owning this subfeature; presentation only, never a dependency. */
+    resource?: string;
+    /** Explicit page association when its entry ACL does not identify this resource. */
+    menuKeys?: string[];
     roles: {
         [key: string]: PrivilegeRole;
     };

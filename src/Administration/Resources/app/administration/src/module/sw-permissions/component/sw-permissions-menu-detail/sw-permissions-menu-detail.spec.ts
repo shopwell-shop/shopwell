@@ -65,9 +65,9 @@ describe('menu detail editor', () => {
 });
 
 describe('menu refinements', () => {
-    it('uses one card and true tree selectors while groups have no target or icon', async () => {
+    it('uses tree selectors without a nested card while groups have no target or icon', async () => {
         const wrapper = await createWrapper(false, createDraft({ title: 'Operations', type: 'group' }));
-        expect(wrapper.findAll('section')).toHaveLength(1);
+        expect(wrapper.findAll('section')).toHaveLength(0);
         expect(wrapper.find('sw-tree-select-stub').exists()).toBe(true);
         expect(wrapper.find('sw-icon-picker-stub').exists()).toBe(false);
         expect(wrapper.find('.sw-permissions-menu-list__field-target').exists()).toBe(false);

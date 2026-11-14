@@ -74,14 +74,16 @@ export function operationIdsForMenus(
     mappings: OperationMapping[],
     inherited: string[] = [],
 ): string[] {
-    const required = new Set([...requiredMenuPrivileges(nodes, routes), ...inherited]);
-    const resources = new Set([...required].map((id) => id.slice(0, id.lastIndexOf('.'))));
+    const pageRequired = new Set(requiredMenuPrivileges(nodes, routes));
+    const required = new Set([...pageRequired, ...inherited]);
+    const resources = new Set([...pageRequired].map((id) => id.slice(0, id.lastIndexOf('.'))));
     return mappings.flatMap((mapping) =>
         mapping.category === 'additional_permissions'
             ? Object.entries(mapping.roles)
                   .filter(
                       ([name, role]) =>
-                          required.has(`${mapping.key}.${name}`) || (role.resource && resources.has(role.resource)),
+                          required.has(`${mapping.key}.${name}`) ||
+                          (role.resource && (pageRequired.has(role.resource) || resources.has(role.resource))),
                   )
                   .map(([name]) => `${mapping.key}.${name}`)
             : [],

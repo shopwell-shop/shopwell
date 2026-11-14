@@ -108,10 +108,10 @@
     "sw-privileges": {
         "permissions": {
             "payment_provider_config": {
-                "label": "Payment accounts"
+                "label": "Provider configuration"
             },
             "payment_channel_config": {
-                "label": "Payment products"
+                "label": "Payment product configuration"
             },
             "payment_account": {
                 "label": "Payment accounts"

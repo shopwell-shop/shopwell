@@ -182,7 +182,7 @@
   "sw-privileges": {
     "additional_permissions": {
       "user": {
-        "update_profile": "修改自己的配置"
+        "update_profile": "编辑个人资料"
       }
     }
   }

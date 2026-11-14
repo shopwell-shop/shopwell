@@ -33,4 +33,13 @@ describe('src/app/service/search-type.service.js', () => {
         expect(service.getTypeByName('product').itemRoute).toBe(itemRoute);
         expect(service.getTypeByName('product').entityName).toBe('product');
     });
+
+    it('registers role searches for the shared page search bar', () => {
+        expect(createSearchTypeService().getTypeByName('acl_role')).toMatchObject({
+            entityName: 'acl_role',
+            placeholderSnippet: 'sw-permissions.roles.general.placeholderSearchBar',
+            listingRoute: 'sw.permissions.role',
+            hideOnGlobalSearchBar: true,
+        });
+    });
 });

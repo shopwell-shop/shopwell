@@ -1,0 +1,55 @@
+<mt-modal-root
+    v-if="!confirmPasswordModal"
+    is-open
+    @change="close"
+>
+    <mt-modal
+        class="sw-permissions-role-info-modal"
+        :title="$t(role ? 'sw-permissions.roles.info.editTitle' : 'sw-permissions.roles.general.labelCreateNewRole')"
+        width="s"
+    >
+        <mt-banner
+            v-if="hasError"
+            class="sw-permissions-role-info-modal__error"
+            variant="critical"
+        >
+            {{ $t(isSourceLoaded ? 'sw-permissions.roles.info.createError' : 'sw-permissions.roles.info.copyError') }}
+        </mt-banner>
+        <sw-permissions-role-view-general
+            v-if="formRole"
+            :role="formRole"
+            :is-loading="isLoading"
+            :editable="canEdit && !isLoading"
+            :show-mcp-references="false"
+            compact
+        />
+        <p>{{ $t(role ? 'sw-permissions.roles.info.editHint' : 'sw-permissions.roles.info.createHint') }}</p>
+        <template #footer>
+            <div class="sw-permissions-role-info-modal__footer">
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    :disabled="isLoading"
+                    @click="close"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                <mt-button
+                    class="sw-permissions-role-info-modal__submit"
+                    variant="primary"
+                    size="small"
+                    :is-loading="isLoading"
+                    :disabled="!canSubmit"
+                    @click="submit"
+                >
+                    {{ $t(role ? 'global.default.apply' : 'sw-permissions.roles.info.createAndConfigure') }}
+                </mt-button>
+            </div>
+        </template>
+    </mt-modal>
+</mt-modal-root>
+<sw-verify-user-modal
+    v-if="confirmPasswordModal"
+    @verified="saveRole"
+    @close="confirmPasswordModal = false"
+/>

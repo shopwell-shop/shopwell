@@ -77,6 +77,12 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.store.routeAllowlist;
         },
 
+        routeLabels(): Record<string, string> {
+            return Object.fromEntries(
+                this.routeAllowlist.map((route) => [route.internalKey, this.tWithFallback(route.title)]),
+            );
+        },
+
         isLoading() {
             return this.store.isLoading && !this.store.isLoaded;
         },
@@ -328,6 +334,7 @@ export default Shopwell.Component.wrapComponentConfig({
 
         selectItem(item: RenderNode) {
             this.selectedId = item.id;
+            this.showEditModal = true;
 
             const ancestors = collectAncestorIds(this.tree, item.id);
 
@@ -337,9 +344,19 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         onItemSelect(item: RenderNode) {
-            if (item.id !== this.selectedId) {
+            if (item.id !== this.selectedId || !this.showEditModal) {
                 this.requestChange(() => this.selectItem(item));
             }
+        },
+
+        onCloseEditModal() {
+            this.requestChange(() => {
+                this.showEditModal = false;
+                this.selectedId = null;
+                this.draft = null;
+                this.draftBaseline = null;
+                this.fieldErrors = {};
+            });
         },
 
         initDraft(item: RenderNode | null) {
@@ -365,6 +382,7 @@ export default Shopwell.Component.wrapComponentConfig({
             this.requestChange(() => {
                 this.selectedId = null;
                 this.setDraft(draft);
+                this.showEditModal = true;
                 this.fieldErrors = {};
             });
         },
@@ -473,6 +491,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 }
 
                 this.createNotificationSuccess({ message: this.$t('sw-permissions.menu.notification.saveSuccess') });
+                this.showEditModal = false;
                 return true;
             } catch (error) {
                 this.createNotificationError({
@@ -557,6 +576,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     this.selectedId = null;
                     this.draft = null;
                     this.draftBaseline = null;
+                    this.showEditModal = false;
                 }
 
                 this.showDeleteModal = false;

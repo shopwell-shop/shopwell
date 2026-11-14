@@ -51,4 +51,9 @@ describe('app/service/app-acl.service.js', () => {
 
         expect(data).toEqual(appPermissionData);
     });
+
+    it('does not register an empty all-apps permission when no active app exists', async () => {
+        const service = new AppAclService({ appRepository: { search: () => Promise.resolve([]) } });
+        expect(await service.getAppPermissions()).toEqual([]);
+    });
 });

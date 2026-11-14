@@ -6,6 +6,13 @@
         {{ $t('sw-permissions.roles.view.detailed.alertText') }}
     </mt-banner>
 
+    <sw-permissions-role-view-general
+        v-if="role"
+        :role="role"
+        :is-loading="isLoading"
+        mcp-only
+    />
+
     <sw-permissions-detailed-grid
         v-if="role || isLoading"
         :role="role"

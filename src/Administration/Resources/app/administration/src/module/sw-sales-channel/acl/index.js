@@ -4,7 +4,7 @@
 
 Shopwell.Service('privileges').addPrivilegeMappingEntry({
     category: 'permissions',
-    parent: null,
+    parent: 'settings',
     key: 'sales_channel',
     roles: {
         viewer: {

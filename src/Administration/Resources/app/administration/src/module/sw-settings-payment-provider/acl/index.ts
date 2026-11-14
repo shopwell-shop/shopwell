@@ -13,6 +13,7 @@ Shopwell.Service('privileges')
         category: 'permissions',
         parent: 'settings',
         key: 'payment_provider_config',
+        resource: 'payment_account',
         roles: {
             viewer: {
                 privileges: ['payment_provider_config:read'],
@@ -36,6 +37,7 @@ Shopwell.Service('privileges')
         category: 'permissions',
         parent: 'settings',
         key: 'payment_channel_config',
+        resource: 'payment_account',
         roles: {
             viewer: {
                 privileges: ['payment_channel_config:read'],

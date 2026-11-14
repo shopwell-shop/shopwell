@@ -41,6 +41,7 @@ export default class AppAclService {
                 });
             })
             .then((appPermission) => {
+                if (!appPermission.length) return appPermission;
                 appPermission.push({
                     category: 'additional_permissions',
                     parent: null,

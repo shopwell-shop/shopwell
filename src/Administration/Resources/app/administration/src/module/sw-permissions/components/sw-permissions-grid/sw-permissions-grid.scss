@@ -1,4 +1,33 @@
 .sw-permissions-grid {
+    &--assignment {
+        border-color: var(--color-border-secondary-default);
+
+        .mt-card__header {
+            display: none;
+        }
+
+        .mt-card__content {
+            max-height: max(240px, calc(100vh - 420px));
+            overflow: auto;
+        }
+
+        .sw-permissions-grid__entry-header {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: var(--color-background-secondary-default);
+        }
+
+        .sw-permissions-grid__checkbox-wrapper {
+            flex: 0 0 96px;
+            gap: var(--scale-size-8);
+        }
+
+        .sw-permissions-grid__dependency {
+            color: var(--color-icon-brand-default);
+        }
+    }
+
     .mt-card__content {
         padding: 0;
     }

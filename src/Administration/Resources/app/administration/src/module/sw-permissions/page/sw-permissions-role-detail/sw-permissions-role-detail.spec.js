@@ -37,7 +37,7 @@ async function createWrapper(
         isNew: isNewRole = false,
         featureActive = false,
         routerPush = jest.fn(),
-        routeName = 'sw.permissions.role.detail.general',
+        routeName = 'sw.permissions.role.detail.menus',
     } = options;
     const $route = {
         name: routeName,
@@ -84,6 +84,7 @@ async function createWrapper(
                         template: '<div class="mt-tabs"></div>',
                     },
                     'router-view': true,
+                    'sw-permissions-role-info-modal': true,
                     'sw-skeleton': true,
                     'sw-loader': true,
                 },
@@ -143,54 +144,10 @@ describe('module/sw-permissions/page/sw-permissions-role-detail', () => {
         privilegesService = new PrivilegesService();
     });
 
-    it('renders Meteor authorization tabs without requiring a feature flag', async () => {
-        wrapper = await createWrapper();
-        expect(wrapper.getComponent({ name: 'mt-tabs' }).props('items')).toHaveLength(3);
+    it.each([false, true])('shows a single permission workspace without tabs (feature flag %s)', async (featureActive) => {
+        wrapper = await createWrapper({}, { featureActive });
+        expect(wrapper.findComponent({ name: 'mt-tabs' }).exists()).toBe(false);
         expect(wrapper.findComponent({ name: 'sw-tabs' }).exists()).toBe(false);
-    });
-
-    it('should render meteor route tabs when the major feature flag is active', async () => {
-        wrapper = await createWrapper({}, { featureActive: true });
-
-        const tabs = wrapper.getComponent({ name: 'mt-tabs' });
-
-        expect(tabs.props('positionIdentifier')).toBe('sw-permissions-role-detail-content');
-        expect(tabs.props('defaultItem')).toBe('sw.permissions.role.detail.general');
-        expect(tabs.props('items')).toEqual([
-            {
-                label: 'sw-permissions.roles.tabs.menus',
-                name: 'sw.permissions.role.detail.menus',
-                onClick: expect.any(Function),
-            },
-            {
-                label: 'sw-permissions.roles.tabs.general',
-                name: 'sw.permissions.role.detail.general',
-                onClick: expect.any(Function),
-            },
-            {
-                label: 'sw-permissions.roles.tabs.detailed',
-                name: 'sw.permissions.role.detail.detailed-privileges',
-                onClick: expect.any(Function),
-            },
-        ]);
-        expect(wrapper.findComponent({ name: 'sw-tabs' }).exists()).toBe(false);
-    });
-
-    it('should navigate when a meteor route tab is selected', async () => {
-        const routerPush = jest.fn();
-        wrapper = await createWrapper({}, { featureActive: true, routerPush });
-
-        const detailedPrivilegesTab = wrapper
-            .getComponent({ name: 'mt-tabs' })
-            .props('items')
-            .find((tab) => tab.name === 'sw.permissions.role.detail.detailed-privileges');
-
-        detailedPrivilegesTab.onClick();
-
-        expect(routerPush).toHaveBeenCalledWith({
-            name: 'sw.permissions.role.detail.detailed-privileges',
-            params: { id: '12345789' },
-        });
     });
 
     it('should not contain any privileges', async () => {

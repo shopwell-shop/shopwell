@@ -82,6 +82,11 @@ describe('page operation ownership', () => {
             'system.system_config': ['Basic settings', 'Cart settings'],
         });
     });
+    it('does not assign an ancestor feature action to an unrelated child page', () => {
+        expect(operationIdsForMenus([basic], settingsRoutes, mappings, ['order.viewer'])).toEqual([
+            'system.system_config',
+        ]);
+    });
     it('includes an inherited page restriction and deduplicates repeated menu labels', () => {
         expect(
             operationMenuLabels(

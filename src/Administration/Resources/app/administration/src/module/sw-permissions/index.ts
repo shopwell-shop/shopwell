@@ -5,6 +5,8 @@ import './acl';
 /** @private */
 Shopwell.Component.register('sw-permissions-menu-list', () => import('./page/sw-permissions-menu-list'));
 /** @private */
+Shopwell.Component.register('sw-permissions-role-info-modal', () => import('./component/sw-permissions-role-info-modal'));
+/** @private */
 Shopwell.Component.register('sw-permissions-role-detail', () => import('./page/sw-permissions-role-detail'));
 /** @private */
 Shopwell.Component.register('sw-permissions-role-list', () => import('./page/sw-permissions-role-list'));
@@ -54,12 +56,18 @@ Shopwell.Module.register('sw-permissions', {
             path: 'role/detail/:id?',
             meta: { parentPath: 'sw.permissions.role', privilege: 'permissions.viewer' },
             redirect: (route: RouteLocation) => ({
-                name: route.params.id ? 'sw.permissions.role.detail.menus' : 'sw.permissions.role.detail.general',
+                name: route.params.id ? 'sw.permissions.role.detail.menus' : 'sw.permissions.role',
+                params: route.params,
+                query: route.params.id ? route.query : { ...route.query, create: 'true' },
             }),
             children: {
                 general: {
-                    component: 'sw-permissions-role-view-general',
                     path: 'general',
+                    redirect: (route: RouteLocation) => ({
+                        name: route.params.id ? 'sw.permissions.role.detail.menus' : 'sw.permissions.role',
+                        params: route.params,
+                        query: route.params.id ? route.query : { ...route.query, create: 'true' },
+                    }),
                     meta: { parentPath: 'sw.permissions.role', privilege: 'permissions.viewer' },
                 },
                 menus: {

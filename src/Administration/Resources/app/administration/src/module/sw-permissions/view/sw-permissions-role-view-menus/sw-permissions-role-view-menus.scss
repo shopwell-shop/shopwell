@@ -1,54 +1,117 @@
 .sw-permissions-role-view-menus {
-    display: grid;
-    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
-    align-items: start;
-    gap: var(--scale-size-24);
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
 
-    &__navigation.mt-card {
-        width: 100%;
-        margin: 0;
+    &__table {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-card);
+        background: var(--color-elevation-surface-default);
     }
 
-    &__navigation .mt-search {
-        margin-bottom: var(--scale-size-8);
+    &__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--scale-size-8);
+        padding: var(--scale-size-16) var(--scale-size-24);
+
+        h3 {
+            flex: 1;
+            margin: 0;
+            font-size: var(--font-size-m);
+        }
     }
 
-    &__hint {
-        margin-bottom: var(--scale-size-16);
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs);
-    }
-
-    &__permissions {
-        min-width: 0;
-    }
-
-    &__permissions .mt-card {
-        max-width: none;
-    }
-
-    &__permissions .sw-permissions-grid .mt-card__content {
+    &__scroll {
         overflow-x: auto;
     }
 
-    &__permissions .mt-banner {
-        margin-bottom: var(--scale-size-16);
-    }
-
-    &__all.mt-button,
-    &__other.mt-button {
+    table {
         width: 100%;
-        justify-content: flex-start;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: var(--font-size-xs);
     }
 
-    &__other.mt-button {
-        margin-top: var(--scale-size-16);
+    th,
+    td {
+        padding: var(--scale-size-12) var(--scale-size-24);
+        text-align: start;
+        border-top: 1px solid var(--color-border-secondary-default);
+
+        &:first-child {
+            width: 30%;
+            min-width: 280px;
+            border-right: 1px solid var(--color-border-secondary-default);
+        }
     }
 
-    @media screen and (max-width: 1200px) {
-        grid-template-columns: minmax(0, 1fr);
+    th {
+        color: var(--color-text-secondary-default);
+        font-weight: var(--font-weight-medium);
+        background: var(--color-background-secondary-default);
+    }
+
+    &__group {
+        background: var(--color-background-secondary-default);
+    }
+
+    &__menu {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-8);
+        min-height: var(--scale-size-24);
+        overflow-wrap: anywhere;
+    }
+
+    @for $depth from 0 through 8 {
+        &__menu--depth-#{$depth} {
+            padding-inline-start: $depth * 20px;
+        }
+    }
+
+    &__toggle,
+    &__toggle-spacer {
+        flex: 0 0 var(--scale-size-24);
+        width: var(--scale-size-24);
+    }
+
+    &__menu-checkbox,
+    &__operations .mt-field {
+        margin: 0;
+    }
+
+    &__operations {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--scale-size-12) var(--scale-size-24);
+        min-height: var(--scale-size-24);
+
+        .mt-field {
+            min-width: 88px;
+        }
+    }
+
+    &__empty {
+        color: var(--color-text-secondary-default);
+        text-align: center;
+    }
+
+    > .sw-permissions-role-view-general {
+        margin-top: var(--scale-size-24);
+    }
+
+    @media screen and (max-width: 767px) {
+        &__toolbar h3 {
+            flex-basis: 100%;
+        }
+
+        table {
+            min-width: 760px;
+        }
     }
 }

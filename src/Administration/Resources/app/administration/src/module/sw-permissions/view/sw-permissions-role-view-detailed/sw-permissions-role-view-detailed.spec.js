@@ -17,6 +17,7 @@ async function createWrapper(privileges = []) {
                 renderStubDefaultSlot: true,
                 stubs: {
                     'sw-permissions-detailed-grid': true,
+                    'sw-permissions-role-view-general': true,
                     'sw-permissions-detailed-additional': true,
                 },
                 provide: {
@@ -36,6 +37,12 @@ async function createWrapper(privileges = []) {
 }
 
 describe('module/sw-permissions/view/sw-permissions-role-view-detailed', () => {
+    it('keeps integration references available in advanced permissions', async () => {
+        const wrapper = await createWrapper();
+        expect(wrapper.get('sw-permissions-role-view-general-stub').attributes('mcp-only')).toBeDefined();
+        wrapper.unmount();
+    });
+
     it('should disable the detailed permission grid when no aclPrivileges exists', async () => {
         const wrapper = await createWrapper();
 

@@ -7,6 +7,8 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     key: 'user',
     roles: {
         update_profile: {
+            resource: 'user',
+            menuIndependent: true,
             privileges: [
                 'user_change_me',
                 'user:read',

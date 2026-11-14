@@ -22,6 +22,8 @@ export default {
     data() {
         return {
             roles: [],
+            showRoleInfoModal: false,
+            roleCopyFrom: null,
             isLoading: false,
             itemToDelete: null,
             affectedUserCount: 0,
@@ -87,6 +89,21 @@ export default {
             }
 
             return this.$t('sw-permissions.roles.role-grid.messageEmptyTitle');
+        },
+    },
+
+    watch: {
+        '$route.query': {
+            immediate: true,
+            handler(query) {
+                if (query.create !== 'true') return;
+                this.roleCopyFrom = typeof query.copyFrom === 'string' ? query.copyFrom : null;
+                this.showRoleInfoModal = this.acl.can('permissions.creator');
+                const remainingQuery = { ...query };
+                delete remainingQuery.create;
+                delete remainingQuery.copyFrom;
+                void this.$router.replace({ name: 'sw.permissions.role', query: remainingQuery });
+            },
         },
     },
 
@@ -195,14 +212,20 @@ export default {
         },
 
         onCreateRole() {
-            this.$router.push({ name: 'sw.permissions.role.detail' });
+            if (!this.acl.can('permissions.creator')) return;
+            this.roleCopyFrom = null;
+            this.showRoleInfoModal = true;
         },
 
         onDuplicateRole(role) {
-            this.$router.push({
-                name: 'sw.permissions.role.detail',
-                query: { copyFrom: role.id },
-            });
+            if (!this.acl.can('permissions.creator')) return;
+            this.roleCopyFrom = role.id;
+            this.showRoleInfoModal = true;
+        },
+
+        onRoleCreated(id) {
+            this.showRoleInfoModal = false;
+            void this.$router.push({ name: 'sw.permissions.role.detail.menus', params: { id } });
         },
 
         onCloseConfirmPasswordModal() {

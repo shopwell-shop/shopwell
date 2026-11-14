@@ -12,9 +12,38 @@ describe('sw-permissions module boundary', () => {
         expect((module.routes?.get('sw.permissions.menu')?.meta as Meta)?.privilege).toBe('admin_menu.viewer');
         expect(module.routes?.has('sw.user.index')).toBe(false);
     });
-    it('keeps navigation within the shared system group', () => {
-        expect(
-            module.manifest.navigation?.filter((entry) => entry.path).every((entry) => entry.parent === 'sw-system'),
-        ).toBe(true);
+    it('routes creation to the list dialog and existing roles to permissions', () => {
+        const redirect = module.routes?.get('sw.permissions.role.detail')?.redirect as (route: {
+            params: Record<string, string>;
+            query: Record<string, string>;
+        }) => unknown;
+        expect(redirect({ params: {}, query: { copyFrom: 'source' } })).toEqual({
+            name: 'sw.permissions.role',
+            params: {},
+            query: { create: 'true', copyFrom: 'source' },
+        });
+        expect(redirect({ params: { id: 'role' }, query: {} })).toEqual({
+            name: 'sw.permissions.role.detail.menus',
+            params: { id: 'role' },
+            query: {},
+        });
+    });
+
+    it('keeps old basic information links usable through a redirect', () => {
+        const redirect = module.routes?.get('sw.permissions.role.detail.general')?.redirect as (route: {
+            params: Record<string, string>;
+            query: Record<string, string>;
+        }) => unknown;
+        expect(redirect({ params: { id: 'role' }, query: {} })).toEqual({
+            name: 'sw.permissions.role.detail.menus',
+            params: { id: 'role' },
+            query: {},
+        });
+    });
+
+    it('keeps roles and menus under the original System root', () => {
+        const navigation = module.manifest.navigation;
+        expect(navigation?.find((entry) => entry.id === 'sw-permissions-role')?.parent).toBe('sw-system');
+        expect(navigation?.find((entry) => entry.id === 'sw-permissions-menu')?.parent).toBe('sw-system');
     });
 });

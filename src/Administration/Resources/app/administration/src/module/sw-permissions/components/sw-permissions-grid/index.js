@@ -15,6 +15,7 @@ export default {
     mixins: [Mixin.getByName('notification')],
 
     props: {
+        assignmentMode: { type: Boolean, default: false },
         title: { type: String, default: '' },
         permissionKeys: {
             type: Array,
@@ -48,6 +49,9 @@ export default {
 
     computed: {
         permissionsWithParents() {
+            if (this.assignmentMode) {
+                return this.permissions.map((permission, groupIndex) => ({ ...permission, groupIndex }));
+            }
             const permissionsWithParents = [];
 
             this.parents.forEach((parent) => {

@@ -1,16 +1,22 @@
 {% block sw_permissions_role_view_menus %}
 <div class="sw-permissions-role-view-menus">
-    <mt-card
-        class="sw-permissions-role-view-menus__navigation mt-card--future-ignore-max-width"
-        position-identifier="sw-permissions-role-view-menus-navigation"
-        :title="$t('sw-permissions.roles.menus.navigation')"
-        :is-loading="isLoading || store.isLoading"
+    <section
+        class="sw-permissions-role-view-menus__table"
+        :aria-label="$t('sw-permissions.roles.assignment.title')"
+        :aria-busy="isLoading || store.isLoading"
     >
-        <mt-search
-            v-model="term"
-            :placeholder="$t('sw-permissions.menu.searchPlaceholder')"
-            size="small"
-        />
+        <header class="sw-permissions-role-view-menus__toolbar">
+            <h3>{{ $t('sw-permissions.roles.assignment.title') }}</h3>
+            <mt-button
+                class="sw-permissions-role-view-menus__toggle-all"
+                variant="tertiary"
+                size="small"
+                :disabled="!permissionRows.length || !!searchTerm.trim()"
+                @click="toggleAll"
+            >
+                {{ $t(isAllExpanded ? 'sw-permissions.menu.collapseAll' : 'sw-permissions.menu.expandAll') }}
+            </mt-button>
+        </header>
         <mt-banner
             v-if="store.isLoadFailed"
             variant="critical"
@@ -24,86 +30,97 @@
                 {{ $t('sw-permissions.menu.retry') }}
             </mt-button>
         </mt-banner>
-        <mt-button
-            class="sw-permissions-role-view-menus__all"
-            variant="tertiary"
-            size="small"
-            @click="selectedId = null"
-        >
-            {{ $t('sw-permissions.roles.menus.allPermissions') }}
-        </mt-button>
-        <sw-permissions-menu-tree
-            :items="filteredTree"
-            :expanded-ids="visibleExpandedIds"
-            :selected-id="selectedId"
-            @toggle="toggle"
-            @select="selectedId = $event.id"
-        >
-            <template #selection="{ item }">
-                <mt-checkbox
-                    :model-value="selectionState(item).checked"
-                    :partial="selectionState(item).partial"
-                    :disabled="disabled || selectionState(item).disabled"
-                    :aria-label="$t('sw-permissions.roles.menus.selectMenu', { name: item.label })"
-                    @click.stop
-                    @update:model-value="toggleSelection(item, $event)"
-                />
-            </template>
-        </sw-permissions-menu-tree>
-        <mt-button
-            class="sw-permissions-role-view-menus__other"
-            variant="tertiary"
-            size="small"
-            @click="selectedId = 'other'"
-        >
-            {{ $t('sw-permissions.roles.menus.otherPermissions') }}
-        </mt-button>
-    </mt-card>
-    <section
-        class="sw-permissions-role-view-menus__permissions"
-        :aria-label="permissionTitle"
-    >
-        <mt-banner
-            v-if="missingPrivileges.length"
-            variant="info"
-        >
-            {{ $t('sw-permissions.roles.menus.missingPermissions') }}
-            <mt-button
-                v-if="canGrantRequired"
-                variant="secondary"
-                size="small"
-                :disabled="disabled"
-                @click="grantRequired"
-            >
-                {{ $t('sw-permissions.roles.menus.grantRequired') }}
-            </mt-button>
-        </mt-banner>
-        <p class="sw-permissions-role-view-menus__hint">
-            {{ $t('sw-permissions.roles.menus.assignmentHint') }}
-        </p>
-        <sw-permissions-grid
-            v-show="permissionKeys.length > 0"
-            ref="permissions"
-            :role="role"
-            :is-loading="isLoading"
-            :disabled="disabled"
-            :permission-keys="permissionKeys"
-            :title="permissionTitle"
-        />
-        <sw-permissions-additional
-            v-if="selectedAdditionalPrivilegeIds.length"
-            :privilege-ids="selectedAdditionalPrivilegeIds"
-            :related-pages="operationPages"
-            :role="role"
-            :is-loading="isLoading"
-            :disabled="disabled"
-        />
-        <mt-banner
-            v-if="!permissionKeys.length && !selectedAdditionalPrivilegeIds.length"
-            variant="info"
-        >
-            {{ $t('sw-permissions.roles.menus.noOperations') }}
-        </mt-banner>
+        <div class="sw-permissions-role-view-menus__scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            {{ $t('sw-permissions.menu.headline') }}
+                        </th>
+                        <th scope="col">
+                            {{ $t('sw-permissions.roles.additional-permissions.title') }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        v-for="row in visibleRows"
+                        :key="row.item.id"
+                        :data-id="row.item.id"
+                        :class="{ 'sw-permissions-role-view-menus__group': row.item.children.length > 0 }"
+                    >
+                        <td>
+                            <div
+                                class="sw-permissions-role-view-menus__menu"
+                                :class="`sw-permissions-role-view-menus__menu--depth-${Math.min(row.depth, 8)}`"
+                            >
+                                <mt-button
+                                    v-if="row.item.children.length"
+                                    class="sw-permissions-role-view-menus__toggle"
+                                    variant="tertiary"
+                                    size="x-small"
+                                    square
+                                    :aria-expanded="searchTerm.trim() ? true : expandedIds.includes(row.item.id)"
+                                    :aria-label="`${searchTerm.trim() || expandedIds.includes(row.item.id) ? $t('sw-permissions.menu.collapse') : $t('sw-permissions.menu.expand')} ${row.item.label}`"
+                                    @click="toggleExpanded(row.item.id)"
+                                >
+                                    <mt-icon
+                                        :name="searchTerm.trim() || expandedIds.includes(row.item.id) ? 'regular-chevron-down-xs' : 'regular-chevron-right-xs'"
+                                        size="12px"
+                                    />
+                                </mt-button>
+                                <span
+                                    v-else
+                                    class="sw-permissions-role-view-menus__toggle-spacer"
+                                ></span>
+                                <mt-checkbox
+                                    v-if="hasMenuSelection(row.item)"
+                                    class="sw-permissions-role-view-menus__menu-checkbox"
+                                    :model-value="selectionState(row.item).checked"
+                                    :indeterminate="selectionState(row.item).partial"
+                                    :disabled="disabled || (!selectionState(row.item).checked && !selectionState(row.item).partial && !canSelectMenu(row.item))"
+                                    :aria-label="menuLabel(row.item)"
+                                    @update:model-value="toggleSelection(row.item, $event)"
+                                />
+                                <span>{{ row.item.label }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div
+                                class="sw-permissions-role-view-menus__operations"
+                                :aria-label="operationLabel(row.item, $t('sw-permissions.roles.additional-permissions.title'))"
+                            >
+                                <mt-checkbox
+                                    v-for="operation in row.item.operations"
+                                    :key="operation.id"
+                                    :data-permission="operation.id"
+                                    :label="operation.label"
+                                    :aria-label="operationLabel(row.item, operation.label)"
+                                    :model-value="effectivePrivileges.includes(operation.id)"
+                                    :disabled="isOperationDisabled(row.item, operation.id)"
+                                    @update:model-value="toggleOperation(row.item, operation.id, $event)"
+                                />
+                            </div>
+                        </td>
+                    </tr>
+                    <tr v-if="!visibleRows.length && !isLoading && !store.isLoading && !store.isLoadFailed">
+                        <td
+                            class="sw-permissions-role-view-menus__empty"
+                            colspan="2"
+                        >
+                            {{ $t('sw-permissions.menu.searchEmptyHeadline') }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <sw-loader v-if="isLoading || store.isLoading" />
     </section>
+    <sw-permissions-role-view-general
+        v-if="role"
+        :role="role"
+        :is-loading="isLoading"
+        mcp-only
+    />
 </div>
 {% endblock %}

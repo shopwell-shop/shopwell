@@ -57,6 +57,7 @@ Shopwell.Service('privileges')
         category: 'permissions',
         parent: 'catalogues',
         key: 'landing_page',
+        resource: 'category',
         roles: {
             viewer: {
                 privileges: [

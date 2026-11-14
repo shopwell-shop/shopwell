@@ -1,22 +1,23 @@
 /** @sw-package fundamentals@framework */
 import type { PropType } from 'vue';
-import type { MenuTreeNode } from 'src/app/store/admin-menu-config.store';
 import type { MenuDraft } from '../../page/sw-permissions-menu-list/menu-draft';
 import { createMenuPresentation } from '../../page/sw-permissions-menu-list/menu-presentation';
-import { collectBranchIds, filterTreeByTerm, findNode } from '../../page/sw-permissions-menu-list/tree-filter';
+import { collectBranchIds, filterTreeByTerm } from '../../page/sw-permissions-menu-list/tree-filter';
+import { toggleMenuSelection } from './role-menu-permissions';
 import {
-    ancestorMenuPrivileges,
-    menuLeafIds,
-    operationIdsForMenus,
-    operationMenuLabels,
-    permissionKeysForMenus,
-    requiredMenuPrivileges,
-    toggleMenuSelection,
-} from './role-menu-permissions';
+    createPermissionRows,
+    dependencyClosure,
+    independentPrivileges,
+    revokeMenuOperations,
+    rowMenuIds,
+    selectedMenuRequirements,
+    type PermissionRow,
+} from './permission-tree';
 import template from './sw-permissions-role-view-menus.html.twig';
 import './sw-permissions-role-view-menus.scss';
 
 type Role = Entity<'acl_role'> & { menuIds: string[] };
+const signature = (ids: string[]) => JSON.stringify([...new Set(ids)].sort());
 
 /** @private */
 export default Shopwell.Component.wrapComponentConfig({
@@ -26,16 +27,22 @@ export default Shopwell.Component.wrapComponentConfig({
     props: {
         role: { type: Object as PropType<Role | null>, default: null },
         isLoading: { type: Boolean, default: false },
+        searchTerm: { type: String, default: '' },
     },
     data() {
-        return { term: '', selectedId: null as string | null, expandedIds: [] as string[] };
+        return {
+            expandedIds: [] as string[],
+            expansionInitialized: false,
+            explicitPrivileges: [] as string[],
+            expectedSelection: '',
+        };
     },
     computed: {
         store() {
             return Shopwell.Store.get('adminMenuConfig');
         },
-        disabled() {
-            return this.isLoading || !this.acl.can('permissions.editor');
+        disabled(): boolean {
+            return this.isLoading || !this.role || !this.acl.can('permissions.editor');
         },
         tree() {
             return createMenuPresentation({
@@ -47,117 +54,137 @@ export default Shopwell.Component.wrapComponentConfig({
                 translate: (key: string) => this.$t(key),
             }).tree;
         },
-        filteredTree() {
-            return filterTreeByTerm(this.tree, this.term);
+        permissionRows(): PermissionRow[] {
+            return createPermissionRows(this.tree, this.store.routeAllowlist, this.privileges, (key) => this.$t(key));
         },
-        visibleExpandedIds() {
-            return this.term ? collectBranchIds(this.filteredTree) : this.expandedIds;
+        isAllExpanded(): boolean {
+            const ids = collectBranchIds(this.permissionRows);
+            return ids.length > 0 && ids.every((id) => this.expandedIds.includes(id));
         },
-        selectedItem() {
-            return findNode(this.tree, this.selectedId);
+        visibleRows(): { item: PermissionRow; depth: number }[] {
+            const filtered = filterTreeByTerm(this.permissionRows, this.searchTerm);
+            const expanded = this.searchTerm.trim() ? collectBranchIds(filtered) : this.expandedIds;
+            const walk = (items: PermissionRow[], depth: number): { item: PermissionRow; depth: number }[] =>
+                items.flatMap((item) => [
+                    { item, depth },
+                    ...(expanded.includes(item.id) ? walk(item.children, depth + 1) : []),
+                ]);
+            return walk(filtered, 0);
         },
-        selectedMenus() {
-            return this.selectedItem ? [this.selectedItem] : [];
+        selectedPrivileges(): string[] {
+            return (this.role?.privileges ?? []).filter((id): id is string => typeof id === 'string');
         },
-        allPermissionKeys(): string[] {
-            return this.privileges
-                .getPrivilegesMappings()
-                .flatMap((entry) => (entry.category === 'permissions' && typeof entry.key === 'string' ? [entry.key] : []));
+        effectivePrivileges(): string[] {
+            return dependencyClosure(this.selectedPrivileges, this.privileges);
         },
-        linkedPermissionKeys() {
-            return permissionKeysForMenus(this.tree, this.store.routeAllowlist, this.allPermissionKeys);
+        menuRequirements(): string[] {
+            return selectedMenuRequirements(this.tree, this.role?.menuIds ?? [], this.store.routeAllowlist);
         },
-        permissionKeys() {
-            if (this.selectedId === 'other')
-                return this.allPermissionKeys.filter((key) => !this.linkedPermissionKeys.includes(key));
-            return this.selectedItem
-                ? permissionKeysForMenus(this.selectedMenus, this.store.routeAllowlist, this.allPermissionKeys)
-                : this.allPermissionKeys;
-        },
-        operationPages(): Record<string, string[]> {
-            return operationMenuLabels(this.tree, this.store.routeAllowlist, this.privileges.getPrivilegesMappings());
-        },
-        selectedAdditionalPrivilegeIds(): string[] {
-            const mappings = this.privileges.getPrivilegesMappings();
-            if (!this.selectedItem) {
-                return mappings.flatMap((entry) =>
-                    entry.category === 'additional_permissions'
-                        ? Object.keys(entry.roles)
-                              .map((name) => `${entry.key}.${name}`)
-                              .filter((id) => this.selectedId !== 'other' || !this.operationPages[id]?.length)
-                        : [],
-                );
-            }
-            return operationIdsForMenus(
-                this.selectedMenus,
-                this.store.routeAllowlist,
-                mappings,
-                ancestorMenuPrivileges(this.tree, this.selectedId ?? ''),
+        lockedPrivileges(): string[] {
+            const dependencies = this.selectedPrivileges.flatMap((id) =>
+                dependencyClosure(this.privileges.getPrivilegeRole(id)?.dependencies ?? [], this.privileges),
             );
+            return [...new Set([...dependencies, ...this.menuRequirements])];
         },
-        effectivePrivileges() {
-            return this.privileges.getPrivilegesForAdminPrivilegeKeys(
-                (this.role?.privileges ?? []).filter((key): key is string => typeof key === 'string'),
-            );
+    },
+    watch: {
+        role() {
+            this.expectedSelection = '';
+            this.explicitPrivileges = [];
+            this.syncPrivileges();
         },
-        missingPrivileges() {
-            return [
-                ...new Set([
-                    ...requiredMenuPrivileges(this.selectedMenus, this.store.routeAllowlist),
-                    ...ancestorMenuPrivileges(this.tree, this.selectedId ?? ''),
-                ]),
-            ].filter((key) => !this.effectivePrivileges.includes(key));
+        'role.privileges': {
+            immediate: true,
+            deep: true,
+            handler() {
+                this.syncPrivileges();
+            },
         },
-        canGrantRequired() {
-            return this.missingPrivileges.every((key) => this.privileges.existsPrivilege(key));
-        },
-        permissionTitle() {
-            return (
-                this.selectedItem?.label ??
-                this.$t(
-                    this.selectedId === 'other'
-                        ? 'sw-permissions.roles.menus.otherPermissions'
-                        : 'sw-permissions.roles.menus.allPermissions',
-                )
-            );
+        permissionRows: {
+            immediate: true,
+            handler(rows: PermissionRow[]) {
+                if (this.expansionInitialized || !this.tree.length) return;
+                this.expandedIds = rows.filter((row) => row.menu && row.children.length).map((row) => row.id);
+                this.expansionInitialized = true;
+            },
         },
     },
     created() {
         if (!this.store.isLoaded) void this.loadMenus();
     },
     methods: {
+        syncPrivileges() {
+            if (!this.role || signature(this.selectedPrivileges) === this.expectedSelection) return;
+            this.explicitPrivileges = independentPrivileges(this.selectedPrivileges, this.privileges);
+            const normalized = dependencyClosure(this.selectedPrivileges, this.privileges);
+            this.expectedSelection = signature(normalized);
+            if (this.acl.can('permissions.editor') && signature(this.selectedPrivileges) !== this.expectedSelection) {
+                this.$emit('update-role', { privileges: normalized });
+            }
+        },
         async loadMenus() {
             try {
                 await this.store.load();
             } catch {
-                /* The retry banner preserves the role draft. */
+                // Keep the unsaved role available while the menu load is retried.
             }
         },
-        toggle(item: MenuTreeNode) {
-            this.expandedIds = this.expandedIds.includes(item.id)
-                ? this.expandedIds.filter((id) => id !== item.id)
-                : [...this.expandedIds, item.id];
+        toggleExpanded(id: string) {
+            this.expandedIds = this.expandedIds.includes(id)
+                ? this.expandedIds.filter((value) => value !== id)
+                : [...this.expandedIds, id];
         },
-        selectionState(item: MenuTreeNode) {
-            const fullItem = findNode(this.tree, item.id) ?? item;
-            const ids = menuLeafIds([fullItem]);
+        toggleAll() {
+            this.expandedIds = this.isAllExpanded ? [] : collectBranchIds(this.permissionRows);
+        },
+        selectionState(row: PermissionRow) {
+            const ids = rowMenuIds(row);
             const selected = ids.filter((id) => this.role?.menuIds?.includes(id)).length;
-            return {
-                checked: ids.length > 0 && selected === ids.length,
-                partial: selected > 0 && selected < ids.length,
-                disabled: ids.length === 0,
-            };
+            return { checked: ids.length > 0 && selected === ids.length, partial: selected > 0 && selected < ids.length };
         },
-        toggleSelection(item: MenuTreeNode, checked: boolean) {
-            if (this.disabled) return;
-            this.$emit('update-role', {
-                menuIds: toggleMenuSelection(this.role?.menuIds ?? [], [findNode(this.tree, item.id) ?? item], checked),
-            });
+        canSelectMenu(row: PermissionRow): boolean {
+            if (!row.menu || !rowMenuIds(row).length) return false;
+            const menuIds = toggleMenuSelection(this.role?.menuIds ?? [], [row.menu], true);
+            const requirements = selectedMenuRequirements(this.tree, menuIds, this.store.routeAllowlist);
+            return requirements.every((id) => this.privileges.existsPrivilege(id) || this.effectivePrivileges.includes(id));
         },
-        grantRequired() {
-            if (this.disabled || !this.canGrantRequired) return;
-            const grid = this.$refs.permissions as { addPermission: (key: string) => void } | undefined;
-            this.missingPrivileges.forEach((key) => grid?.addPermission(key));
+        isOperationDisabled(row: PermissionRow, id: string): boolean {
+            if (this.disabled || this.lockedPrivileges.includes(id)) return true;
+            if (this.privileges.getPrivilegeRole(id)?.menuIndependent) return false;
+            const menuId = row.menu?.id ?? row.ownerMenuId;
+            return !!menuId && !this.role?.menuIds?.includes(menuId) && !this.effectivePrivileges.includes(id);
+        },
+        emitSelection(roots: string[], menuIds: string[]) {
+            const required = selectedMenuRequirements(this.tree, menuIds, this.store.routeAllowlist);
+            const privileges = dependencyClosure([...roots, ...required], this.privileges);
+            this.explicitPrivileges = roots;
+            this.expectedSelection = signature(privileges);
+            this.$emit('update-role', { privileges, menuIds });
+        },
+        toggleSelection(row: PermissionRow, checked: boolean) {
+            if (this.disabled || !row.menu || (checked && !this.canSelectMenu(row))) return;
+            const ids = rowMenuIds(row);
+            const menuIds = toggleMenuSelection(this.role?.menuIds ?? [], [row.menu], checked);
+            const roots = checked
+                ? this.explicitPrivileges
+                : revokeMenuOperations(this.explicitPrivileges, this.permissionRows, ids, menuIds);
+            this.emitSelection(roots, menuIds);
+        },
+        toggleOperation(row: PermissionRow, id: string, checked: boolean) {
+            if (this.isOperationDisabled(row, id)) return;
+            const roots = checked
+                ? [...new Set([...this.explicitPrivileges, id])]
+                : this.explicitPrivileges.filter((value) => value !== id);
+            this.emitSelection(roots, this.role?.menuIds ?? []);
+        },
+        hasMenuSelection(row: PermissionRow): boolean {
+            return rowMenuIds(row).length > 0;
+        },
+        menuLabel(row: PermissionRow): string {
+            return this.$t('sw-permissions.roles.assignment.selectMenu', { name: row.label });
+        },
+        operationLabel(row: PermissionRow, label: string): string {
+            return `${row.label} · ${label}`;
         },
     },
 });

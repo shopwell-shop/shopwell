@@ -207,6 +207,12 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.user.index',
             hideOnGlobalSearchBar: true,
         },
+        acl_role: {
+            entityName: 'acl_role',
+            placeholderSnippet: 'sw-permissions.roles.general.placeholderSearchBar',
+            listingRoute: 'sw.permissions.role',
+            hideOnGlobalSearchBar: true,
+        },
         admin_menu_item: {
             entityName: 'admin_menu_item',
             placeholderSnippet: 'sw-permissions.menu.placeholderSearchBar',

@@ -23,6 +23,10 @@ export default {
             required: false,
             default: false,
         },
+        compact: { type: Boolean, default: false },
+        mcpOnly: { type: Boolean, default: false },
+        showMcpReferences: { type: Boolean, default: true },
+        editable: { type: Boolean, default: null },
     },
 
     data() {
@@ -48,7 +52,7 @@ export default {
         },
 
         isReadOnly() {
-            return !this.acl.can('permissions.editor') || undefined;
+            return !(this.editable ?? this.acl.can('permissions.editor')) || undefined;
         },
 
         shouldShowMcpHint() {
@@ -56,7 +60,7 @@ export default {
                 return false;
             }
 
-            return !this.role.isNew() && this.mcpIntegrations.length > 0;
+            return this.showMcpReferences && !this.role.isNew() && this.mcpIntegrations.length > 0;
         },
     },
 
@@ -71,7 +75,7 @@ export default {
 
     methods: {
         async loadMcpIntegrations() {
-            if (!this.roleId) {
+            if (!this.showMcpReferences || !this.roleId) {
                 this.mcpIntegrations = [];
                 return;
             }

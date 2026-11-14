@@ -2,6 +2,7 @@
  * @sw-package fundamentals@framework
  */
 import { mount } from '@vue/test-utils';
+import { reactive } from 'vue';
 import EntityCollection from 'src/core/data/entity-collection.data';
 import Criteria from 'src/core/data/criteria.data';
 import 'src/app/mixin/translate-with-fallback.mixin';
@@ -21,6 +22,7 @@ async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], is
     };
 
     const router = { push: jest.fn(), replace: jest.fn() };
+    const route = reactive({ query: {}, meta: { $module: { icon: 'regular-lock' } } });
 
     const wrapper = mount(
         await wrapTestComponent('sw-permissions-role-list', {
@@ -31,7 +33,7 @@ async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], is
                 renderStubDefaultSlot: true,
                 mocks: {
                     $t: (key, values) => (values ? `${key} ${JSON.stringify(values)}` : key),
-                    $route: { query: {}, meta: { $module: { icon: 'regular-lock' } } },
+                    $route: route,
                     $router: router,
                 },
                 provide: {
@@ -62,6 +64,7 @@ async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], is
                     'sw-page': {
                         template: `
                             <div>
+                                <header class="page-search"><slot name="search-bar"></slot></header>
                                 <slot name="smart-bar-header"></slot>
                                 <slot name="smart-bar-actions"></slot>
                                 <slot name="content"></slot>
@@ -96,6 +99,12 @@ async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], is
                         inheritAttrs: false,
                         props: ['value', 'placeholder'],
                     },
+                    'sw-search-bar': {
+                        name: 'SwSearchBar',
+                        template: '<input class="global-search-field" />',
+                        props: ['initialSearchType', 'initialSearch'],
+                        emits: ['search'],
+                    },
                     'mt-button': {
                         template: '<button class="mt-button-stub" :disabled="disabled"><slot /></button>',
                         props: ['disabled'],
@@ -108,6 +117,7 @@ async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], is
                         props: ['headline', 'description', 'icon'],
                     },
                     'sw-pagination': true,
+                    'sw-permissions-role-info-modal': true,
                     'sw-modal': {
                         template: '<div><slot /><slot name="modal-footer" /></div>',
                     },
@@ -123,7 +133,7 @@ async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], is
 
     await flushPromises();
 
-    return { wrapper, roleRepository, userRepository, router };
+    return { wrapper, roleRepository, userRepository, router, route };
 }
 
 describe('module/sw-permissions/page/sw-permissions-role-list', () => {
@@ -164,7 +174,34 @@ describe('module/sw-permissions/page/sw-permissions-role-list', () => {
         expect(roleList.get('.sw-permissions-role-list__privilege-count').text()).toBe('2');
     });
 
-    it('should start the role detail in duplicate mode', async () => {
+    it('searches roles from the shared page header and resets pagination when searching or clearing', async () => {
+        const { wrapper: roleList, roleRepository } = await createWrapper();
+        wrapper = roleList;
+
+        const search = roleList.getComponent({ name: 'SwSearchBar' });
+        expect(roleList.get('.page-search').find('.global-search-field').exists()).toBe(true);
+        expect(search.props('initialSearchType')).toBe('acl_role');
+        expect(roleList.findComponent('sw-simple-search-field-stub').exists()).toBe(false);
+        expect(roleList.find('.search-field').exists()).toBe(false);
+
+        await roleList.setData({ page: 3 });
+        search.vm.$emit('search', 'manager');
+        await flushPromises();
+
+        expect(roleRepository.search.mock.lastCall[0].term).toBe('manager');
+        expect(roleRepository.search.mock.lastCall[0].getPage()).toBe(1);
+        expect(search.props('initialSearch')).toBe('manager');
+
+        await roleList.setData({ page: 2 });
+        search.vm.$emit('search', '');
+        await flushPromises();
+
+        expect(roleRepository.search.mock.lastCall[0].term).toBeNull();
+        expect(roleRepository.search.mock.lastCall[0].getPage()).toBe(1);
+        expect(roleRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should open the creation dialog with the role to duplicate', async () => {
         const { wrapper: roleList, router } = await createWrapper({
             rows: [{ id: 'role-1', name: 'Order management' }],
             privileges: ['permissions.creator'],
@@ -173,10 +210,8 @@ describe('module/sw-permissions/page/sw-permissions-role-list', () => {
 
         await roleList.get('.sw-permissions-role-list__context-menu-duplicate').trigger('click');
 
-        expect(router.push).toHaveBeenCalledWith({
-            name: 'sw.permissions.role.detail',
-            query: { copyFrom: 'role-1' },
-        });
+        expect(roleList.getComponent('sw-permissions-role-info-modal-stub').attributes('copy-from-id')).toBe('role-1');
+        expect(router.push).not.toHaveBeenCalled();
     });
 
     it('should count the affected users before deleting a role', async () => {
@@ -198,13 +233,29 @@ describe('module/sw-permissions/page/sw-permissions-role-list', () => {
         expect(roleList.get('.sw-permissions-role-list__affected-users').text()).toContain('"count":3');
     });
 
-    it('should NOT open role detail of a new role with an id', async () => {
+    it('opens a dialog before navigating and only enters permissions after creation', async () => {
         const { wrapper: roleList, router } = await createWrapper({ privileges: ['permissions.creator'] });
         wrapper = roleList;
 
         await roleList.get('.sw-permissions-role-list__button-create').trigger('click');
 
-        expect(router.push).toHaveBeenCalledWith({ name: 'sw.permissions.role.detail' });
+        expect(router.push).not.toHaveBeenCalled();
+        const dialog = roleList.getComponent('sw-permissions-role-info-modal-stub');
+        dialog.vm.$emit('created', 'created-role');
+        await flushPromises();
+        expect(router.push).toHaveBeenCalledWith({
+            name: 'sw.permissions.role.detail.menus',
+            params: { id: 'created-role' },
+        });
+    });
+
+    it('opens the dialog when a legacy create link returns to the mounted list', async () => {
+        const { wrapper: roleList, route, router } = await createWrapper({ privileges: ['permissions.creator'] });
+        wrapper = roleList;
+        route.query = { create: 'true', copyFrom: 'source-role', page: '2' };
+        await flushPromises();
+        expect(roleList.getComponent('sw-permissions-role-info-modal-stub').attributes('copy-from-id')).toBe('source-role');
+        expect(router.replace).toHaveBeenCalledWith({ name: 'sw.permissions.role', query: { page: '2' } });
     });
 
     it.each([false, true])('should delete the selected role after confirmation with SSO=%s', async (isSso) => {

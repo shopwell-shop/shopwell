@@ -16,12 +16,40 @@ describe('menu editing safeguards', () => {
         jest.restoreAllMocks();
     });
 
-    it('offers save and create without a redundant toolbar cancel action', async () => {
+    it('opens menu edits in a Meteor modal with save and cancel in its footer', async () => {
         wrapper = await createWrapper();
         await selectFirstChild(wrapper);
-        expect(wrapper.find('.sw-permissions-menu-list__button-save').exists()).toBe(true);
+        expect(wrapper.find('.sw-permissions-menu-list__edit-modal .sw-permissions-menu-list__button-save').exists()).toBe(
+            true,
+        );
+        expect(wrapper.find('.sw-permissions-menu-list__edit-modal .sw-permissions-menu-list__button-cancel').exists()).toBe(
+            true,
+        );
         expect(wrapper.find('.sw-permissions-menu-list__button-create').exists()).toBe(true);
-        expect(wrapper.find('.sw-permissions-menu-list__button-cancel').exists()).toBe(false);
+        expect(wrapper.find('.sw-permissions-menu-list__navigation').exists()).toBe(false);
+    });
+
+    it('returns to the table after saving and can reopen the same menu', async () => {
+        wrapper = await createWrapper();
+        await selectFirstChild(wrapper);
+        await typeTitle(wrapper, 'My products');
+        await wrapper.get('.sw-permissions-menu-list__button-save').trigger('click');
+        await flushPromises();
+        expect(wrapper.find('.sw-permissions-menu-list__edit-modal').exists()).toBe(false);
+        await selectFirstChild(wrapper);
+        expect(wrapper.find('.sw-permissions-menu-list__edit-modal').exists()).toBe(true);
+    });
+
+    it('keeps unsaved modal edits until closing is confirmed', async () => {
+        wrapper = await createWrapper();
+        await selectFirstChild(wrapper);
+        await typeTitle(wrapper, 'My products');
+        await wrapper.get('.sw-permissions-menu-list__button-cancel').trigger('click');
+        expect(wrapper.find('.sw-permissions-menu-list__unsaved-modal').exists()).toBe(true);
+        expect(menuStore().saveItem).not.toHaveBeenCalled();
+        await wrapper.get('.sw-permissions-menu-list__discard-changes').trigger('click');
+        expect(wrapper.find('.sw-permissions-menu-list__edit-modal').exists()).toBe(false);
+        expect(menuStore().saveItem).not.toHaveBeenCalled();
     });
 
     it('preserves an edited draft until switching is explicitly confirmed', async () => {

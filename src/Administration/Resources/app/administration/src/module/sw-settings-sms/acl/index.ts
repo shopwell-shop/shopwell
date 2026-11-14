@@ -39,6 +39,7 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     category: 'permissions',
     parent: 'settings',
     key: 'sms_template',
+    resource: 'sms_gateway',
     roles: {
         viewer: {
             privileges: ['sms_template:read', 'sms_template_mapping:read'],
@@ -67,22 +68,11 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     category: 'permissions',
     parent: 'settings',
     key: 'sms_delivery',
+    resource: 'sms_gateway',
     roles: {
         viewer: {
             privileges: ['sms_delivery:read'],
             dependencies: [],
-        },
-        editor: {
-            privileges: [],
-            dependencies: ['sms_delivery.viewer'],
-        },
-        creator: {
-            privileges: [],
-            dependencies: ['sms_delivery.viewer'],
-        },
-        deleter: {
-            privileges: [],
-            dependencies: ['sms_delivery.viewer'],
         },
     },
 });

@@ -12,6 +12,7 @@ export type MenuPageState = {
     languageId: string;
     languages: Entity<'language'>[];
     showDeleteModal: boolean;
+    showEditModal: boolean;
     showUnsavedModal: boolean;
     pendingChange: (() => void) | null;
     pendingCancel: (() => void) | null;
@@ -159,6 +160,7 @@ export function createPageState(languageId: string): MenuPageState {
         languageId: languageId,
         languages: [],
         showDeleteModal: false,
+        showEditModal: false,
         showUnsavedModal: false,
         pendingChange: null,
         pendingCancel: null,

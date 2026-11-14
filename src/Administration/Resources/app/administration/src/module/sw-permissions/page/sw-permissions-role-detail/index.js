@@ -35,6 +35,7 @@ export default {
             role: null,
             confirmPasswordModal: false,
             detailedPrivileges: [],
+            permissionSearchTerm: '',
         };
     },
 
@@ -71,29 +72,6 @@ export default {
 
         roleId() {
             return this.$route.params.id?.toLowerCase();
-        },
-
-        roleDetailTabs() {
-            const createRouteTab = (label, routeName) => {
-                const route = {
-                    name: routeName,
-                    params: { id: this.$route.params.id },
-                };
-
-                return {
-                    label: this.$t(label),
-                    name: route.name,
-                    onClick: () => {
-                        void this.$router.push(route);
-                    },
-                };
-            };
-
-            return [
-                createRouteTab('sw-permissions.roles.tabs.menus', 'sw.permissions.role.detail.menus'),
-                createRouteTab('sw-permissions.roles.tabs.general', 'sw.permissions.role.detail.general'),
-                createRouteTab('sw-permissions.roles.tabs.detailed', 'sw.permissions.role.detail.detailed-privileges'),
-            ];
         },
 
         /**

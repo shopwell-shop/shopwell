@@ -108,10 +108,10 @@
     "sw-privileges": {
         "permissions": {
             "payment_provider_config": {
-                "label": "支付账户"
+                "label": "支付接口配置"
             },
             "payment_channel_config": {
-                "label": "支付产品"
+                "label": "支付产品配置"
             },
             "payment_account": {
                 "label": "支付账户"

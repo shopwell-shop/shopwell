@@ -60,9 +60,7 @@ describe('module/sw-permissions/page/sw-permissions-menu-list (editing)', () => 
         await flushPromises();
 
         expect(treeStub(wrapper).props('selectedId')).toBe('products');
-        expect(wrapper.find('.sw-permissions-menu-list__field-title').element.value).toBe(
-            'sw-product.general.mainMenuItemOverview',
-        );
+        expect(wrapper.find('.sw-permissions-menu-list__edit-modal').exists()).toBe(false);
     });
 
     it('places a renamed entry only when its level changed', async () => {
@@ -156,7 +154,7 @@ describe('module/sw-permissions/page/sw-permissions-menu-list (editing)', () => 
         expect(wrapper.find('.sw-modal-stub').exists()).toBe(false);
         expect(treeStub(wrapper).props('selectedId')).toBeNull();
         expect(wrapper.find('.sw-permissions-menu-list__form').exists()).toBe(false);
-        expect(wrapper.find('.mt-empty-state-stub').exists()).toBe(true);
+        expect(wrapper.find('.sw-permissions-menu-tree-stub').exists()).toBe(true);
     });
 
     it('names the subtree size in the delete confirmation', async () => {
@@ -171,10 +169,10 @@ describe('module/sw-permissions/page/sw-permissions-menu-list (editing)', () => 
         expect(wrapper.find('.sw-modal-stub').text()).toContain('sw-permissions.menu.deleteConfirmMessageWithChildren');
     });
 
-    it('shows the empty state until an entry is selected', async () => {
+    it('shows the tree table without an editor until an entry is selected', async () => {
         wrapper = await createWrapper();
 
-        expect(wrapper.find('.mt-empty-state-stub').exists()).toBe(true);
+        expect(wrapper.find('.sw-permissions-menu-tree-stub').exists()).toBe(true);
         expect(wrapper.find('.sw-permissions-menu-list__form').exists()).toBe(false);
     });
 });

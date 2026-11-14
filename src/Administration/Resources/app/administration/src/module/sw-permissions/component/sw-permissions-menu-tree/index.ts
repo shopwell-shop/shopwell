@@ -37,6 +37,11 @@ export default Shopwell.Component.wrapComponentConfig({
             required: true,
         },
 
+        routeLabels: {
+            type: Object as PropType<Record<string, string>>,
+            default: () => ({}),
+        },
+
         expandedIds: {
             type: Array as PropType<string[]>,
             required: false,
@@ -276,6 +281,13 @@ export default Shopwell.Component.wrapComponentConfig({
 
         typeLabel(item: RenderNode) {
             return `sw-permissions.menu.types.${item.type}`;
+        },
+
+        targetLabel(item: RenderNode): string {
+            if (item.type === 'link') return item.linkTarget ?? '—';
+            if (item.type !== 'menu') return '—';
+            const key = item.routeKey || item.internalKey;
+            return key ? (this.routeLabels[key] ?? key) : '—';
         },
 
         onDragStart(event: DragEvent, item: RenderNode) {
