@@ -72,12 +72,10 @@ describe('condition settings', () => {
         expect(wrapper.findAll('.sw-workflow-condition-settings__branch')).toHaveLength(2);
         const fields = wrapper.findAll('.sw-workflow-condition-settings__fields input');
         await fields[0].setValue('Supplies request');
-        await fields[0].trigger('blur');
         await applyChange();
         findSelect(wrapper, '.sw-workflow-condition-settings__field').vm.$emit('update:modelValue', 'request.reason');
         await applyChange();
         await wrapper.find('.sw-workflow-condition-settings__value input').setValue('Need supplies');
-        await wrapper.find('.sw-workflow-condition-settings__value input').trigger('blur');
         await applyChange();
         const moveUp = wrapper.findAll('.sw-workflow-condition-settings__heading')[1].findAll('button')[1];
         await moveUp.trigger('click');

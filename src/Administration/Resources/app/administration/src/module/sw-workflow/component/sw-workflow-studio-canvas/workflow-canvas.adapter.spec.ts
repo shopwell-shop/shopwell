@@ -10,7 +10,7 @@ describe('workflow canvas adapter', () => {
         expect(graph.nodes[0].data?.label).toBe('Start');
         expect(graph.nodes[0].data?.invalid).toBe(true);
         expect(graph.nodes[1].position.y).toBeGreaterThan(graph.nodes[0].position.y);
-        expect(graph.connections[0]).toEqual(expect.objectContaining({ sourcePort: 'out', targetPort: 'in' }));
+        expect(graph.edges[0]).toEqual(expect.objectContaining({ sourceHandle: 'out', targetHandle: 'in' }));
         expect(JSON.stringify(document)).toBe(original);
         expect(graph.nodes[0].data?.node).toEqual(document.nodes[0]);
         expect(graph.nodes[0].data?.node).not.toBe(document.nodes[0]);

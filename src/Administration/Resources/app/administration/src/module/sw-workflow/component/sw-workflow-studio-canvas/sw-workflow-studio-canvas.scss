@@ -36,7 +36,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 8px 12px;
+        width: 32px;
+        height: 32px;
+        padding: 0;
         border: 0;
         border-radius: 4px;
         background: transparent;
@@ -53,27 +55,32 @@
         outline: 2px solid var(--color-border-brand-default);
     }
 
-    button.sw-workflow-studio-canvas__fit {
-        border-left: 1px solid var(--color-border-primary-default);
-        border-right: 1px solid var(--color-border-primary-default);
-        border-radius: 0;
-        font-size: 11px;
-        white-space: nowrap;
-    }
-
     &__edge-insert {
         position: absolute;
-        pointer-events: all;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 120ms ease;
         background: var(--color-elevation-surface-default);
         border: 1px solid var(--color-border-primary-default);
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 22px;
-        height: 22px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         color: var(--color-icon-secondary-default);
         cursor: pointer;
+
+        &.is-visible,
+        &:focus-visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        @media (hover: none) {
+            opacity: 1;
+            pointer-events: all;
+        }
 
         &:hover,
         &:focus-visible {
@@ -81,5 +88,57 @@
             color: var(--color-text-brand-default);
             outline: none;
         }
+    }
+
+    &__node-select {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        border: 0;
+        padding: 0;
+    }
+
+    &__node:focus-within,
+    [data-canvas-connection]:focus-visible {
+        outline: 2px solid var(--color-border-brand-default);
+        outline-offset: 4px;
+    }
+
+    &__connection-label {
+        position: absolute;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 3px 8px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 4px;
+        background: var(--color-elevation-surface-default);
+        color: var(--color-text-secondary-default);
+        font-size: 11px;
+        pointer-events: all;
+    }
+
+    .vue-flow__handle {
+        width: 6px;
+        height: 6px;
+        background: var(--color-border-primary-default);
+        border: 1px solid var(--color-elevation-surface-default);
+    }
+
+    .vue-flow__node.selected .vue-flow__handle {
+        background: var(--color-shopwell-brand-500);
+    }
+
+    .vue-flow__edge-path {
+        stroke: var(--color-icon-secondary-default);
+        stroke-width: 1.3px;
+    }
+
+    .vue-flow__edge.selected .vue-flow__edge-path {
+        stroke: var(--color-shopwell-brand-500);
+        stroke-width: 2px;
     }
 }

@@ -53,7 +53,7 @@
                 class="sw-workflow-start-settings__label"
                 :label="$t('sw-workflow.form.label')"
                 :disabled="!allowEdit"
-                @blur="commit"
+                @update:model-value="commit"
             />
             <mt-select
                 :model-value="field.type"
@@ -90,7 +90,7 @@
                         v-model="option.label"
                         :label="$t('sw-workflow.form.option')"
                         :disabled="!allowEdit"
-                        @blur="commit"
+                        @update:model-value="commit"
                     />
                     <mt-button
                         variant="tertiary"

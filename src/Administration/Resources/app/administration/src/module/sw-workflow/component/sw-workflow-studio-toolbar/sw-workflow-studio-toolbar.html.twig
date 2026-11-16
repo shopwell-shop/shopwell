@@ -16,6 +16,7 @@
             <button
                 type="button"
                 :aria-label="$t('sw-workflow.actions.undo')"
+                :title="$t('sw-workflow.actions.undo')"
                 :disabled="!allowEdit || !canUndo"
                 @click="$emit('undo')"
             >
@@ -27,6 +28,7 @@
             <button
                 type="button"
                 :aria-label="$t('sw-workflow.actions.redo')"
+                :title="$t('sw-workflow.actions.redo')"
                 :disabled="!allowEdit || !canRedo"
                 @click="$emit('redo')"
             >
@@ -43,16 +45,30 @@
         <slot name="extension-actions"></slot>
         <mt-button
             class="sw-workflow-studio-toolbar__templates"
-            variant="secondary"
+            variant="tertiary"
+            size="small"
+            square
+            :aria-label="$t('sw-workflow.panels.templates')"
+            :title="$t('sw-workflow.panels.templates')"
             :disabled="!allowEdit"
             @click="$emit('templates')"
-        >{{ $t('sw-workflow.panels.templates') }}</mt-button>
+        ><mt-icon
+            name="regular-layer-group"
+            size="16px"
+        /></mt-button>
         <mt-button
             class="sw-workflow-studio-toolbar__export"
-            variant="secondary"
+            variant="tertiary"
+            size="small"
+            square
+            :aria-label="$t('sw-workflow.actions.export')"
+            :title="$t('sw-workflow.actions.export')"
             :link="downloadUrl"
             download="workflow.json"
-        >{{ $t('sw-workflow.actions.export') }}</mt-button>
+        ><mt-icon
+            name="regular-download"
+            size="16px"
+        /></mt-button>
         <slot name="document-actions"></slot>
     </div>
     {% endblock %}

@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import WorkflowNodePresentationService from '../../service/workflow-node-presentation.service';
 
 describe('sw-workflow-studio-node-settings', () => {
-    it('commits settings on blur without mutating the definition', async () => {
+    it('stages settings while typing without mutating the definition', async () => {
         const node = { id: 'a', type: 'example:task', typeVersion: 1, config: { label: 'Before', custom: 42 } };
         const wrapper = mount(await wrapTestComponent('sw-workflow-studio-node-settings', { sync: true }), {
             props: {
@@ -14,7 +14,6 @@ describe('sw-workflow-studio-node-settings', () => {
             global: { provide: { workflowNodePresentationService: new WorkflowNodePresentationService() } },
         });
         await wrapper.find('input').setValue('After');
-        await wrapper.find('input').trigger('blur');
         expect(wrapper.emitted('update-config')?.[0][0]).toEqual({ label: 'After', description: '' });
         expect(node.config).toEqual({ label: 'Before', custom: 42 });
         wrapper.unmount();

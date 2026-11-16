@@ -50,6 +50,7 @@
                 :allow-edit="allowEdit"
                 @update:document="onDocumentChange"
                 @diagnose="diagnose"
+                @settings-change="hasPendingSettings = $event"
             >
                 <template #document-info>
                     <router-link
@@ -70,7 +71,7 @@
                         :disabled="!allowEdit"
                         :max-length="255"
                     />
-                    <span class="sw-workflow-studio-toolbar__status">{{ $t(hasChanges ? 'sw-workflow.persistence.unsaved' : 'sw-workflow.persistence.saved') }}</span>
+                    <span class="sw-workflow-studio-toolbar__status">{{ $t(hasPendingSettings ? 'sw-workflow.panels.pendingSettings' : hasChanges ? 'sw-workflow.persistence.unsaved' : 'sw-workflow.persistence.saved') }}</span>
                 </template>
                 <template #document-actions>
                     <sw-workflow-publish

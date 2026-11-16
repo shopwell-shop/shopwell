@@ -22,7 +22,7 @@
             "fit": "Fit to canvas",
             "zoomIn": "Zoom in",
             "zoomOut": "Zoom out",
-            "hint": "Click + on a connection to add a step. Click a node to edit it."
+            "hint": "Hover over a connection to add a step. Select a node to configure it."
         },
         "panels": {
             "noSearchResults": "No matching nodes",
@@ -39,7 +39,13 @@
             "insertAfter": "Insert after {name}",
             "basicSettings": "Basic settings",
             "selectTitle": "Select a node",
-            "configurationHint": "This workflow is a draft. Saving does not activate or execute it."
+            "configurationHint": "This workflow is a draft. Saving does not activate or execute it.",
+            "unsavedTitle": "Apply node settings?",
+            "unsavedHint": "This node has unapplied settings. Apply or discard them before continuing.",
+            "keepEditing": "Keep editing",
+            "discardSettings": "Discard settings",
+            "applySettings": "Apply and continue",
+            "pendingSettings": "Node settings not applied"
         },
         "fields": {
             "label": "Node name",
@@ -98,7 +104,8 @@
             "condition_invalid_branches": "Add at least one condition branch with a unique identifier.",
             "approval_assignee_required": "Select an approver.",
             "approval_invalid_configuration": "Complete the approver and approval mode configuration.",
-            "approval_incompatible_mode": "This approval mode does not support the current approver source. Select another mode."
+            "approval_incompatible_mode": "This approval mode does not support the current approver source. Select another mode.",
+            "issueCount": "{count} issue | {count} issues"
         },
         "summaries": {
             "action": "Run an automated operation",

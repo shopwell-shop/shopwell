@@ -50,7 +50,7 @@
                 class="sw-workflow-condition-settings__branch-name"
                 :label="$t('sw-workflow.condition.name')"
                 :disabled="!allowEdit"
-                @blur="commit"
+                @update:model-value="commit"
             />
             <p
                 v-if="fields.length === 0"
@@ -128,7 +128,7 @@
                     class="sw-workflow-condition-settings__value"
                     :label="$t('sw-workflow.condition.value')"
                     :disabled="!allowEdit || hasStaleFieldType(branch)"
-                    @blur="commit"
+                    @update:model-value="commit"
                 />
                 <p
                     v-if="hasUnavailableValue(branch)"

@@ -14,6 +14,7 @@ export default Shopwell.Component.wrapComponentConfig({
     props: {
         session: { type: Object as PropType<CanvasContributionHost>, required: true },
         actionPosition: { type: String as PropType<CanvasActionPosition>, default: null },
+        iconOnly: { type: Boolean, default: false },
         componentPosition: { type: String as PropType<CanvasComponentPosition>, default: null },
         target: { type: Object as PropType<CanvasUiTarget>, default: () => ({}) },
     },

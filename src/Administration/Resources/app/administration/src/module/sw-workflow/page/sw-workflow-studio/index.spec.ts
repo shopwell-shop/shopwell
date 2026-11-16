@@ -20,6 +20,7 @@ async function createWrapper(service: {
             stubs: {
                 'sw-page': { template: '<div><slot name="content" /></div>' },
                 'sw-workflow-studio-editor': {
+                    name: 'sw-workflow-studio-editor',
                     props: [
                         'document',
                         'hasDiagnosed',
@@ -27,7 +28,7 @@ async function createWrapper(service: {
                         'diagnosticError',
                         'violations',
                     ],
-                    emits: ['diagnose', 'update:document'],
+                    emits: ['diagnose', 'update:document', 'settings-change'],
                     template: `<div><button class="retry" @click="$emit('diagnose', document)">Retry</button><button class="edit" @click="$emit('update:document', document)">Edit</button><span class="result">{{ hasDiagnosed }}</span><span class="pending">{{ isDiagnosing }}</span><span class="error">{{ diagnosticError }}</span><span class="violations">{{ violations.length }}</span></div>`,
                 },
             },

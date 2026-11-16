@@ -1,6 +1,6 @@
 # Workflow Studio extensions
 
-Workflow Studio uses Vue Flow only to render the canvas.
+Workflow Studio uses the native Vue Flow rendering and interaction APIs inside a shared Shopwell editor shell.
 The document, editing history, commands, events and extension lifecycle live in the Vue-independent `CanvasEditorSession<WorkflowDocument>`.
 The module registers services and components through the standard `Shopwell.Service()` and `Shopwell.Component` APIs, following Experience Studio's separation of registration, presentation, state and UI components.
 
@@ -13,18 +13,34 @@ Construct `CanvasEditorSession<YourDocument>` and install `CanvasExtension<YourD
 The session owns commands, selection, bounded history and extension resources.
 Malformed graph shapes and duplicate identifiers are rejected before committing a command, while disconnected nodes, dangling connections and cycles can remain in editable drafts.
 
-`sw-canvas-editor` receives an engine-independent `CanvasRenderGraph` projection.
-A node projection supplies its position, data, optional registered Shopwell component and input/output ports with optional sides.
-Register visual components through `Shopwell.Component.register()`; neither the projection nor plugin contexts expose Vue Flow types or stores.
-The owning domain selects a layout and supplies positions, and can pass a `CanvasConnectionRouter` through `route-connection`.
-The surface emits `select-node`, `select-connection`, `move-node`, `connect`, context-menu events and measured node sizes.
-Movement only previews coordinates inside the renderer; the owner accepts the final intent through a document command or the surface restores its supplied position.
-Setting `allow-edit` to false blocks move/connect intents and discards a current movement preview, while selection remains available.
+`sw-canvas-editor` accepts native Vue Flow `Node[]` and `Edge[]` through `nodes` and `edges`.
+Native options and event listeners are forwarded unchanged, including `nodeTypes`, `edgeTypes`, `applyDefault` and `nodes-change`.
+Use Vue Flow's `node-<type>`, `edge-<type>` and `connection-line` slots for custom renderers, and native `Handle`, `BaseEdge` and `EdgeLabelRenderer` components for geometry.
+Component maps should contain Vue components; Shopwell components can be placed inside renderer slots through the usual component registration and Twig overrides.
+The shell does not rename node types, synthesize handles or route edges.
+The owning editor chooses layout, editing permissions and whether native changes are applied automatically.
+Workflow uses `apply-default="false"` and keeps its session authoritative for selection and document edits.
+
+A component placed in the shell's default slot runs inside the Vue Flow provider.
+It can call `useVueFlow()` to access the current canvas, observe `onNodeClick` or other native hooks, and use native components such as `Panel`.
+The Workflow adapter exposes this provider position through its `canvas` slot.
+Plugins can also override the `sw_workflow_studio_canvas_extensions` Twig block to insert a registered observer or native panel without replacing the canvas template:
+
+```twig
+{% block sw_workflow_studio_canvas_extensions %}
+    {% parent %}
+    <example-workflow-observer />
+{% endblock %}
+```
+
+Register hooks in the child component's setup scope so Vue Flow disposes them when that component unmounts.
+Raw canvas events follow Vue Flow semantics; use a domain command to commit a document change with history and access checks.
+Native notification hooks do not replace the ordered, cancelable `command.beforeExecute` contract.
 
 The shell has optional `toolbar`, `sidebar-start`, `sidebar-end`, `footer`, `overlay` and `viewport-controls` slots.
-Node content, decorations, node tools and connection tools have separate slots, so an editor can provide its own controls without modifying the surface.
+Native renderer slots and the `node-tools` slot let an editor supply its own controls without modifying the surface.
 The `node-tools` slot uses the official `@vue-flow/node-toolbar` component to position controls outside the scaled graph.
-Tools appear on hover, keyboard focus or selection; Workflow supplies the edit button and contributed node actions.
+Tools appear on hover, keyboard focus or selection; Workflow supplies icon buttons with accessible labels for editing and contributed node actions.
 No empty sidebar is rendered without a contribution.
 `sw-canvas-contributions` renders a session's actions, components and dialogs using Shopwell components and snippets.
 The shell does not persist documents, choose templates, validate business rules, publish or execute a workflow.
@@ -69,8 +85,8 @@ Shopwell.Service('workflowExtensionService').register({
             command: 'example:rename-review',
             payload: 'Review order',
         });
-        context.events.subscribe('node.click', event => {
-            // Call event.preventDefault() to replace the default editor interaction.
+        context.events.subscribe('command.beforeExecute', event => {
+            // Call event.preventDefault() to reject a domain command before it changes the document.
         });
         return () => {
             // Dispose external subscriptions, observers or other resources owned by this session.
@@ -91,8 +107,13 @@ Errors in event handlers and disposers are isolated so other extensions continue
 
 Built-in commands are `core:insert-node`, `core:update-node`, `core:remove-node` and `core:load-template`.
 Node-specific edit semantics remain in the registered editing strategies, and template creation remains in `workflowTemplateService`.
-Node configuration dialogs stage local changes and submit one command on confirmation.
-Canceling the dialog discards its staged changes.
+Node configuration panels stage local changes and submit one command on application.
+Canceling the panel discards its staged changes.
+Changing selection or executing another command with unapplied settings asks the user to apply, discard or continue editing.
+The page receives `settings-change` events to protect navigation and prevent saving or publishing an incomplete draft.
+Connection insertion controls appear on pointer hover, keyboard focus or connection selection and anchor the node picker beside the connection.
+On touch devices the insertion controls remain visible.
+The shared canvas fits the measured graph initially; panel resizing and later measurements preserve the current viewport.
 The generic session itself only reserves `core:undo` and `core:redo`; node editing and template commands belong to the Workflow extension.
 
 Uninstalling an extension removes its registrations and subscriptions and invalidates retained contexts, including contexts passed to command callbacks and UI components.
@@ -100,7 +121,7 @@ Closing an editor disposes every installed extension.
 Switching to an externally replaced document starts a new session.
 Registering an extension is a trusted in-process API, not a JavaScript sandbox or a replacement for server-side ACL checks.
 
-## UI positions and semantic events
+## UI positions and session events
 
 | Contribution | Positions |
 | --- | --- |
@@ -114,14 +135,14 @@ Contributions are ordered by ascending `order`; equal orders retain registration
 A dialog contribution follows its current `when` condition; temporarily hidden dialogs retain their props until closed or unregistered.
 A dialog contribution can provide `titleKey` and is opened with `context.ui.openDialog(name, props)` and closed with `context.ui.closeDialog()`.
 
-Semantic interaction events are `node.click`, `node.contextmenu`, `connection.click`, `connection.insert`, `connection.contextmenu`, `canvas.click` and `canvas.contextmenu`.
-They carry definition identifiers instead of Vue Flow objects and support `preventDefault()`.
-Subscriptions run in descending priority order and return an optional early-unsubscribe disposer; extension teardown always removes the subscription.
+Session subscriptions run in descending priority order and return an early-unsubscribe disposer; extension teardown always removes the subscription.
+Raw node, edge and pane interactions use Vue Flow listeners and hooks directly.
 State notifications include `selection.changed`, `document.changed`, `command.executed`, `session.changed` and `session.destroyed`.
 
 ## Architecture references
 
 [diagram-js](https://github.com/bpmn-io/diagram-js) separates its event bus, command stack and context actions.
 [LogicFlow](https://github.com/didi/LogicFlow) and [X6](https://github.com/antvis/X6) expose plugin lifecycles independently of graph rendering.
-Workflow Studio adopts those boundaries while retaining Shopwell's service registration, component extension and translation conventions.
+Workflow Studio uses its own command history and resource lifecycle for document editing, while retaining Shopwell's service registration, component extension and translation conventions.
+The canvas uses [Vue Flow 1.48.2](https://github.com/bcakmakoglu/vue-flow/tree/v1.48.2), including its [native renderers](https://vueflow.dev/guide/node.html), [events](https://vueflow.dev/guide/vue-flow/events.html) and [controlled changes](https://vueflow.dev/guide/controlled-flow.html).
 New business nodes continue to register their definition, presentation, editing strategy and runtime behavior separately.

@@ -22,7 +22,7 @@
             "fit": "适应画布",
             "zoomIn": "放大",
             "zoomOut": "缩小",
-            "hint": "点击连线上的 + 添加节点，点击节点编辑配置。"
+            "hint": "悬停连接线可添加节点，点击节点可配置。"
         },
         "panels": {
             "noSearchResults": "没有找到匹配的节点",
@@ -39,7 +39,13 @@
             "library": "节点库",
             "settings": "节点设置",
             "selectHint": "选择画布中的节点，查看和编辑配置。",
-            "removeHint": "起止节点及包含后续配置的分支节点不能直接删除。"
+            "removeHint": "起止节点及包含后续配置的分支节点不能直接删除。",
+            "unsavedTitle": "是否应用节点配置？",
+            "unsavedHint": "当前节点有尚未应用的配置，请先应用或放弃，再继续操作。",
+            "keepEditing": "继续编辑",
+            "discardSettings": "放弃配置",
+            "applySettings": "应用并继续",
+            "pendingSettings": "节点配置未应用"
         },
         "fields": {
             "label": "节点名称",
@@ -104,7 +110,8 @@
             "condition_invalid_branches": "条件分支至少需要一个有效且标识唯一的分支。",
             "approval_assignee_required": "请选择审批人。",
             "approval_invalid_configuration": "请完善审批人和审批方式配置。",
-            "approval_incompatible_mode": "当前人员来源不支持此审批方式，请重新选择。"
+            "approval_incompatible_mode": "当前人员来源不支持此审批方式，请重新选择。",
+            "issueCount": "{count} 个问题"
         },
         "condition": {
             "title": "分支条件",

@@ -8,16 +8,20 @@
         v-for="action in actions"
         :key="action.name"
         :data-canvas-action="action.name"
-        variant="secondary"
+        :variant="iconOnly ? 'tertiary' : 'secondary'"
+        :size="iconOnly ? 'small' : undefined"
+        :square="iconOnly"
+        :title="iconOnly ? $t(action.labelKey) : undefined"
+        :aria-label="$t(action.labelKey)"
         :disabled="!session.canRunAction(action.name, target)"
         @click.stop="session.runAction(action.name, target)"
     >
         <mt-icon
-            v-if="action.icon"
-            :name="action.icon"
+            v-if="action.icon || iconOnly"
+            :name="action.icon || 'regular-ellipsis-h'"
             size="16px"
         />
-        {{ $t(action.labelKey) }}
+        <span v-if="!iconOnly">{{ $t(action.labelKey) }}</span>
     </mt-button>
     <component
         :is="item.component"

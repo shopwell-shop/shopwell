@@ -68,39 +68,46 @@ describe('canvas extension sessions', () => {
         session.dispose();
     });
 
-    it('supports ordered cancelable interactions and command interception without leaking across sessions', () => {
+    it('orders command interceptors and isolates them between sessions', () => {
         const first = new CanvasEditorSession(document);
         const second = new CanvasEditorSession(document);
         const calls: string[] = [];
+        const command = {
+            name: 'example:rename',
+            execute(draft: TestDocument) {
+                draft.title = 'Changed';
+                return draft;
+            },
+        };
+
         first.install({
-            name: 'example:interactions',
+            name: 'example:guard',
             setup(context) {
-                context.events.subscribe('node.click', () => calls.push('later'));
+                context.commands.register(command);
+                context.events.subscribe('command.beforeExecute', () => calls.push('later'));
                 context.events.subscribe(
-                    'node.click',
+                    'command.beforeExecute',
                     (event) => {
-                        calls.push(event.nodeId ?? '');
+                        calls.push(event.name);
                         event.preventDefault();
                     },
                     100,
                 );
-                context.events.subscribe('command.beforeExecute', (event) => event.preventDefault());
-                context.commands.register({
-                    name: 'example:rename',
-                    execute(draft) {
-                        draft.nodes[0].data = {};
-                        return draft;
-                    },
-                });
             },
         });
-        expect(first.interact('node.click', { nodeId: 'card' })).toBe(false);
-        expect(calls).toEqual(['card', 'later']);
-        expect(second.interact('node.click', { nodeId: 'card' })).toBe(true);
-        expect(second.canExecute('example:rename')).toBe(false);
-        expect(second.getState().selection).toEqual({ nodeId: null, connectionId: null });
+        second.install({
+            name: 'example:rename',
+            setup(context) {
+                context.commands.register(command);
+            },
+        });
+
         expect(first.execute('example:rename')).toBe(false);
+        expect(calls).toEqual(['example:rename', 'later']);
+        expect(first.getState().document).toEqual(document);
         expect(first.getState().canUndo).toBe(false);
+        expect(second.execute('example:rename')).toBe(true);
+        expect(second.getState().document.title).toBe('Changed');
         first.dispose();
         second.dispose();
     });
@@ -229,16 +236,16 @@ describe('canvas extension sessions', () => {
         session.install({
             name: 'example:remover',
             setup(context) {
-                context.events.subscribe('node.click', () => session.uninstall('example:removed'), 100);
+                context.events.subscribe('selection.changed', () => session.uninstall('example:removed'), 100);
             },
         });
         session.install({
             name: 'example:removed',
             setup(context) {
-                context.events.subscribe('node.click', listener);
+                context.events.subscribe('selection.changed', listener);
             },
         });
-        session.interact('node.click', { nodeId: 'card' });
+        session.selectNode('card');
         expect(listener).not.toHaveBeenCalled();
         session.dispose();
     });

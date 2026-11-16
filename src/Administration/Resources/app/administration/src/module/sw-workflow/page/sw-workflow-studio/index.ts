@@ -17,6 +17,7 @@ export default Shopwell.Component.wrapComponentConfig({
         name: string;
         revision: number;
         savedSnapshot: string | null;
+        hasPendingSettings: boolean;
         isSaving: boolean;
         saveError: 'conflict' | 'failed' | null;
         pendingNavigation: (() => void) | null;
@@ -40,6 +41,7 @@ export default Shopwell.Component.wrapComponentConfig({
             name: '',
             revision: 0,
             savedSnapshot: null,
+            hasPendingSettings: false,
             isSaving: false,
             saveError: null,
             pendingNavigation: null,
@@ -63,7 +65,9 @@ export default Shopwell.Component.wrapComponentConfig({
         hasChanges(): boolean {
             return (
                 this.isInitialized &&
-                (this.revision === 0 || this.savedSnapshot !== JSON.stringify({ name: this.name, document: this.document }))
+                (this.hasPendingSettings ||
+                    this.revision === 0 ||
+                    this.savedSnapshot !== JSON.stringify({ name: this.name, document: this.document }))
             );
         },
         allowEdit(): boolean {
@@ -75,7 +79,13 @@ export default Shopwell.Component.wrapComponentConfig({
             );
         },
         canSave(): boolean {
-            return this.allowEdit && this.hasChanges && this.name.trim().length > 0 && this.name.length <= 255;
+            return (
+                this.allowEdit &&
+                !this.hasPendingSettings &&
+                this.hasChanges &&
+                this.name.trim().length > 0 &&
+                this.name.length <= 255
+            );
         },
     },
     watch: {
@@ -140,6 +150,7 @@ export default Shopwell.Component.wrapComponentConfig({
             this.pendingNavigation = () => void this.load(true);
         },
         applyDraft(draft: WorkflowDraft): void {
+            this.hasPendingSettings = false;
             this.draftId = draft.id;
             this.name = draft.name;
             this.revision = draft.revision;

@@ -63,6 +63,7 @@
   "dependencies": {
     "@babel/parser": "7.29.7",
     "@babel/types": "7.29.7",
+    "@floating-ui/dom": "1.7.6",
     "@jridgewell/remapping": "2.3.5",
     "@jridgewell/sourcemap-codec": "1.5.5",
     "@shopwell-ag/dive": "4.1.0",

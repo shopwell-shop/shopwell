@@ -1,17 +1,31 @@
 {% block sw_workflow_studio_canvas %}
 <sw-canvas-editor
     class="sw-workflow-studio-canvas"
-    :graph="graph"
-    :allow-edit="allowEdit"
-    :allow-node-move="false"
-    :allow-connections="false"
-    :route-connection="routeConnection"
-    @select-node="$emit('select-node', $event)"
-    @select-connection="$emit('select-connection', $event)"
-    @node-contextmenu="$emit('node-contextmenu', $event)"
-    @connection-contextmenu="$emit('connection-contextmenu', $event)"
-    @canvas-click="$emit('canvas-click')"
-    @canvas-contextmenu="$emit('canvas-contextmenu', $event)"
+    :nodes="graph.nodes"
+    :edges="graph.edges"
+    :nodes-draggable="false"
+    :nodes-connectable="false"
+    :elements-selectable="false"
+    :nodes-focusable="false"
+    :edges-focusable="false"
+    :apply-default="false"
+    :selection-key-code="null"
+    :multi-selection-key-code="null"
+    :delete-key-code="null"
+    :edges-updatable="false"
+    :min-zoom="0.25"
+    :max-zoom="1.5"
+    @init="onInit"
+    @nodes-change="syncSelection"
+    @edges-change="syncSelection"
+    @node-click="onNodeClick"
+    @edge-click="onEdgeClick"
+    @edge-mouse-enter="showInsertion($event.edge.id)"
+    @edge-mouse-leave="hideInsertion"
+    @node-context-menu="onNodeContextmenu"
+    @edge-context-menu="onEdgeContextmenu"
+    @pane-click="$emit('canvas-click')"
+    @pane-context-menu="$event.preventDefault()"
     @node-sizes-change="onNodeSizesChange"
 >
     <template #overlay>
@@ -23,11 +37,37 @@
             {{ $t('sw-workflow.canvas.hint') }}
         </div>
     </template>
-    <template #node-decoration="{ node }">
-        <slot
-            name="node-decoration"
-            :node-id="node.id"
-        ></slot>
+    <template #node-workflow="node">
+        <handle
+            v-for="(port, index) in node.data.inputPorts"
+            :id="port"
+            :key="'input-' + port"
+            type="target"
+            :position="portPosition(true)"
+            :style="portStyle(index, node.data.inputPorts.length)"
+        />
+        <div class="sw-workflow-studio-canvas__node">
+            <button
+                class="sw-workflow-studio-canvas__node-select nodrag nopan"
+                type="button"
+                :data-canvas-node="node.id"
+                :aria-label="node.data.label"
+                @click.stop="$emit('select-node', node.id)"
+            ></button>
+            <sw-workflow-studio-node :data="node.data" />
+            <slot
+                name="node-decoration"
+                :node-id="node.id"
+            ></slot>
+        </div>
+        <handle
+            v-for="(port, index) in node.data.outputPorts"
+            :id="port"
+            :key="'output-' + port"
+            type="source"
+            :position="portPosition(false)"
+            :style="portStyle(index, node.data.outputPorts.length)"
+        />
     </template>
     <template
         v-if="$slots['node-tools']"
@@ -38,21 +78,53 @@
             :node-id="node.id"
         ></slot>
     </template>
-    <template #connection-tools="{ connection, route }">
-        <button
-            v-if="allowEdit"
-            class="sw-workflow-studio-canvas__edge-insert nodrag nopan"
-            type="button"
-            :aria-label="$t('sw-workflow.panels.nodes')"
-            :style="insertStyle(route)"
-            @click.stop="$emit('insert-node', connection.id)"
+    <template #edge-workflow="edge">
+        <g
+            tabindex="0"
+            role="button"
+            :aria-label="edge.label || edge.id"
+            :data-canvas-connection="edge.id"
+            @keydown="onConnectionKeydown($event, edge.id)"
+            @focus="showInsertion(edge.id)"
+            @blur="hideInsertion"
         >
-            <mt-icon
-                name="regular-plus-xs"
-                size="10px"
+            <base-edge
+                :id="edge.id"
+                :path="routeConnection(edge).path"
+                :interaction-width="24"
             />
-        </button>
+        </g>
+        <edge-label-renderer>
+            <span
+                v-if="edge.label"
+                class="sw-workflow-studio-canvas__connection-label nodrag nopan"
+                :style="labelStyle(edge)"
+                :title="edge.label"
+            >{{ edge.label }}</span>
+            <button
+                v-if="allowEdit"
+                class="sw-workflow-studio-canvas__edge-insert nodrag nopan"
+                :data-workflow-insertion="edge.id"
+                :class="{ 'is-visible': activeConnectionId === edge.id || selectedConnectionId === edge.id }"
+                type="button"
+                :aria-label="$t('sw-workflow.panels.nodes')"
+                :style="insertStyle(edge)"
+                @mouseenter="showInsertion(edge.id)"
+                @mouseleave="hideInsertion"
+                @focus="showInsertion(edge.id)"
+                @blur="hideInsertion"
+                @click.stop="insertNode(edge.id, $event)"
+            >
+                <mt-icon
+                    name="regular-plus-xs"
+                    size="10px"
+                />
+            </button>
+        </edge-label-renderer>
     </template>
+    {% block sw_workflow_studio_canvas_extensions %}
+    <slot name="canvas"></slot>
+    {% endblock %}
     <template #viewport-controls="{ fit, zoomIn, zoomOut }">
         <div class="sw-workflow-studio-canvas__controls">
             <button
@@ -67,10 +139,14 @@
             </button>
             <button
                 type="button"
-                class="sw-workflow-studio-canvas__fit"
+                :title="$t('sw-workflow.canvas.fit')"
+                :aria-label="$t('sw-workflow.canvas.fit')"
                 @click="fit"
             >
-                {{ $t('sw-workflow.canvas.fit') }}
+                <mt-icon
+                    name="regular-compress-arrows"
+                    size="16px"
+                />
             </button>
             <button
                 type="button"

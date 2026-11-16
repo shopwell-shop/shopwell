@@ -10,7 +10,6 @@ import type {
     CanvasExtension,
     CanvasActionPosition,
     CanvasComponentPosition,
-    CanvasInteraction,
     CanvasSelection,
     CanvasSessionOptions,
     CanvasUiTarget,
@@ -46,9 +45,6 @@ export type WorkflowActionPosition = CanvasActionPosition;
 
 /** @public */
 export type WorkflowComponentPosition = CanvasComponentPosition;
-
-/** @public */
-export type WorkflowInteraction = CanvasInteraction;
 
 /** @public */
 export type WorkflowSelection = CanvasSelection;

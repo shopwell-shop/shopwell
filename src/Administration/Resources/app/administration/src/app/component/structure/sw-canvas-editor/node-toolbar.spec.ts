@@ -14,10 +14,7 @@ async function createWrapper() {
         {
             attachTo: document.body,
             props: {
-                graph: {
-                    nodes: [{ id: 'card', position: { x: 40, y: 80 }, data: {} }],
-                    connections: [],
-                },
+                nodes: [{ id: 'card', position: { x: 40, y: 80 }, data: {} }],
             },
             slots: { 'node-tools': '<button class="edit-card">Edit card</button>' },
         },
@@ -78,7 +75,7 @@ describe('canvas node toolbar', () => {
 
     it('keeps tools open when focus moves from the node to a toolbar button', async () => {
         const wrapper = await createWrapper();
-        wrapper.get<HTMLButtonElement>('[data-canvas-node="card"]').element.focus();
+        wrapper.get<HTMLButtonElement>('.vue-flow__node[data-id="card"]').element.focus();
         await nextTick();
         expect(wrapper.find('.edit-card').exists()).toBe(true);
 
@@ -94,17 +91,13 @@ describe('canvas node toolbar', () => {
 
     it('anchors tools through the official toolbar outside the scaled graph', async () => {
         const wrapper = await createWrapper();
-        await wrapper.setProps({
-            graph: {
-                nodes: [{ id: 'card', position: { x: 40, y: 80 }, data: {}, selected: true }],
-                connections: [],
-            },
-        });
+        const flow = wrapper.getComponent(VueFlow);
+        const instance = useVueFlow(flow.props('id'));
+        instance.applyNodeChanges([{ id: 'card', type: 'select', selected: true }]);
+        await nextTick();
         const toolbar = wrapper.get('.vue-flow__node-toolbar');
         expect(toolbar.element.closest('.vue-flow__transformationpane')).toBeNull();
 
-        const flow = wrapper.getComponent(VueFlow);
-        const instance = useVueFlow(flow.props('id'));
         instance.applyNodeChanges([{ id: 'card', type: 'dimensions', dimensions: { width: 800, height: 600 } }]);
         await instance.setViewport({ x: 20, y: 30, zoom: 0.5 });
         await nextTick();

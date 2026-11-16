@@ -10,7 +10,6 @@ import type {
     CanvasEditorState,
     CanvasExtension,
     CanvasExtensionContext,
-    CanvasInteraction,
     CanvasSelection,
     CanvasSessionOptions,
     CanvasUiAction,
@@ -196,23 +195,6 @@ export class CanvasEditorSession<TDocument extends CanvasDocument> {
         return () => {
             listeners.delete(entry);
         };
-    }
-
-    interact(
-        name:
-            | 'node.click'
-            | 'node.contextmenu'
-            | 'connection.click'
-            | 'connection.insert'
-            | 'connection.contextmenu'
-            | 'canvas.click'
-            | 'canvas.contextmenu',
-        target: CanvasUiTarget & { position?: { x: number; y: number } },
-    ): boolean {
-        this.assertActive();
-        const event: CanvasInteraction = cancelable(clone(target));
-        this.emit(name, event);
-        return !event.defaultPrevented;
     }
 
     canExecute(name: string, payload?: unknown): boolean {

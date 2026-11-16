@@ -6,11 +6,14 @@
 
 Workflow Studio provides editable workflow drafts, an approval template, automatic diagnostics and JSON export.
 Its shared canvas editor is available independently through `CanvasEditorSession<TDocument>`, `sw-canvas-editor` and `sw-canvas-contributions`.
-The shared layer provides graph history, commands, semantic gestures, engine-independent render projections and optional shell regions; Workflow supplies its node types, layouts, forms and publication behavior.
+The shared layer provides graph history, commands and optional shell regions; the canvas accepts native Vue Flow nodes, edges, renderer slots, component maps and event listeners.
+Workflow supplies its node types, layouts, forms and publication behavior.
 Canvas extensions cannot commit malformed graph structures, and individual contribution disposers remove their owned dialog state without affecting later registrations.
-Workflow Studio extensions register through `workflowExtensionService.register()` and receive an isolated context for commands, semantic events, UI contributions and resource cleanup in each editor session.
+Workflow Studio extensions register through `workflowExtensionService.register()` and receive an isolated context for commands, session events, UI contributions and resource cleanup in each editor session.
 Document edits share access checks, undo/redo and the existing diagnostics pipeline; retained extension contexts become inactive on teardown.
-The designer now opens node selection from connection controls, stages node configuration in confirmation dialogs and previews templates before explicit replacement.
+The designer opens node selection beside hovered or focused connections, stages node configuration in a right-side panel and previews templates before explicit replacement.
+Unapplied settings are protected during selection changes, extension commands and page navigation; applying them creates one undoable edit.
+Opening panels preserves the canvas zoom and only pans when needed to keep the selected node visible.
 See `technical-docs/03-extensibility/09-workflow-studio.md` in the Administration for the extension contract and registration example.
 Registered layout callbacks receive an optional third argument containing measured node sizes and resolved output port order.
 The built-in layouts reserve routing space for branch labels and insertion controls, including nodes supplied by extensions.

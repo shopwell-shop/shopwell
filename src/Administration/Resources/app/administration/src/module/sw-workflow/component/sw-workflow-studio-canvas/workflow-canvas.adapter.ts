@@ -1,5 +1,6 @@
 /** @sw-package framework */
-import type { CanvasRenderGraph } from 'src/core/canvas-editor/canvas-renderer.types';
+import type { Edge, Node } from '@vue-flow/core';
+import type { WorkflowBranchLane } from 'src/core/workflow/workflow-studio.types';
 import { rankedWorkflowLayout } from '../../util/workflow-layout.util';
 import type { WorkflowDocument, WorkflowNode, WorkflowNodeTypeSpecification } from 'src/core/workflow/workflow.types';
 
@@ -16,6 +17,15 @@ export interface WorkflowCanvasNodeData {
     outputPorts: string[];
     invalid: boolean;
 }
+
+/** @private */
+export type WorkflowCanvasEdgeData = { branch: WorkflowBranchLane };
+
+/** @private */
+export type WorkflowCanvasGraph = {
+    nodes: (Node<WorkflowCanvasNodeData> & { data: WorkflowCanvasNodeData })[];
+    edges: Edge<WorkflowCanvasEdgeData>[];
+};
 
 function configText(node: WorkflowNode, key: string): string {
     const config = node.config;
@@ -42,7 +52,7 @@ export function toCanvasGraph(
             type: WorkflowNodeTypeSpecification,
         ) => { inputPorts: string[]; outputPorts: string[]; labels?: Record<string, string> };
     } = {},
-): CanvasRenderGraph {
+): WorkflowCanvasGraph {
     return {
         nodes: document.nodes.map((node) => {
             const type = types.find((item) => item.name === node.type && item.version === node.typeVersion);
@@ -51,10 +61,9 @@ export function toCanvasGraph(
             return {
                 id: node.id,
                 label: configuredLabel || labels[node.type] || node.type,
-                component: 'sw-workflow-studio-node',
+                type: 'workflow',
+                ariaLabel: configuredLabel || labels[node.type] || node.type,
                 position: positions[node.id] ?? { x: 0, y: 0 },
-                inputPorts: ports.inputPorts.map((id) => ({ id })),
-                outputPorts: ports.outputPorts.map((id) => ({ id })),
                 data: {
                     node: JSON.parse(JSON.stringify(node)) as WorkflowNode,
                     nodeType: node.type,
@@ -69,7 +78,7 @@ export function toCanvasGraph(
                 },
             };
         }),
-        connections: document.connections.map((edge) => {
+        edges: document.connections.map((edge) => {
             const source = document.nodes.find((node) => node.id === edge.source);
             const type = types.find((item) => item.name === source?.type && item.version === source?.typeVersion);
             const portLabels = source && type ? resolvePorts(source, type).labels : undefined;
@@ -79,11 +88,12 @@ export function toCanvasGraph(
                 .sort((a, b) => ports.indexOf(a.sourcePort) - ports.indexOf(b.sourcePort));
             return {
                 id: edge.id,
+                type: 'workflow',
                 source: edge.source,
                 data: { branch: { index: siblings.findIndex((item) => item.id === edge.id), count: siblings.length } },
                 target: edge.target,
-                sourcePort: edge.sourcePort,
-                targetPort: edge.targetPort,
+                sourceHandle: edge.sourcePort,
+                targetHandle: edge.targetPort,
                 label: portLabels?.[edge.sourcePort] ?? labels[edge.sourcePort] ?? '',
             };
         }),

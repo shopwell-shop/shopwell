@@ -44,19 +44,27 @@ async function createWrapper(
                     sync: true,
                 }),
                 'example-workflow-panel': { template: '<section class="example-workflow-panel">Plugin panel</section>' },
+                'mt-floating-ui': {
+                    name: 'mt-floating-ui',
+                    props: ['isOpened', 'anchorElement', 'floatingUiOptions'],
+                    template: '<section v-if="isOpened" role="dialog"><slot/></section>',
+                },
                 'sw-modal': {
                     template: '<section role="dialog"><slot/><footer><slot name="modal-footer"/></footer></section>',
                 },
                 'sw-workflow-studio-node-settings': {
+                    name: 'sw-workflow-studio-node-settings',
+                    props: ['node'],
                     emits: ['update-config'],
                     template:
-                        '<button class="patch" @click="$emit(\'update-config\', { label: \'Reviewed\' })">Edit</button>',
+                        '<button class="patch" :data-settings-node="node.id" @click="$emit(\'update-config\', { label: \'Reviewed\' })">Edit</button>',
                 },
                 'sw-workflow-studio-canvas': {
-                    props: ['document'],
-                    emits: ['select-node'],
+                    name: 'sw-workflow-studio-canvas',
+                    props: ['document', 'selectedConnectionId'],
+                    emits: ['select-node', 'insert-node'],
                     template:
-                        '<div><div v-for="node in document.nodes" :key="node.id"><button :data-node-id="node.id" @click="$emit(\'select-node\', node.id)">{{ node.type }}</button><slot name="node-tools" :node-id="node.id" /></div></div>',
+                        '<div><button :key="selectedConnectionId" data-workflow-insertion="start-end" class="insert-request" @click="$emit(\'insert-node\', \'start-end\', $event.currentTarget)">Insert</button><div v-for="node in document.nodes" :key="node.id"><button :data-node-id="node.id" @click="$emit(\'select-node\', node.id)">{{ node.type }}</button><slot name="node-tools" :node-id="node.id" /></div></div>',
                 },
             },
         },
@@ -66,10 +74,15 @@ async function createWrapper(
 describe('sw-workflow-studio-editor', () => {
     it('opens settings from the node toolbar without changing the document', async () => {
         const wrapper = await createWrapper();
+        const editButton = wrapper.get('[data-edit-node="start"]');
 
-        await wrapper.get('[data-edit-node="start"]').trigger('click');
+        expect(editButton.text()).toBe('');
+        expect(editButton.attributes('aria-label')).toBe('global.default.edit');
+        expect(editButton.classes()).toContain('mt-button--square');
 
-        expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
+        await editButton.trigger('click');
+
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(true);
         expect(wrapper.emitted('update:document')).toBeUndefined();
         wrapper.unmount();
     });
@@ -80,7 +93,7 @@ describe('sw-workflow-studio-editor', () => {
         expect(wrapper.find('[data-edit-node]').exists()).toBe(false);
         await wrapper.get('[data-node-id="start"]').trigger('click');
 
-        expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(true);
         expect(wrapper.find('.sw-workflow-studio-editor__save').exists()).toBe(false);
         wrapper.unmount();
     });
@@ -109,24 +122,28 @@ describe('sw-workflow-studio-editor', () => {
             },
         });
         const wrapper = await createWrapper(true, new WorkflowNodeEditingService(), extensions);
+        const action = wrapper.findAll('[data-canvas-action="example:inspect-node"]')[0];
 
-        await wrapper.findAll('[data-canvas-action="example:inspect-node"]')[0].trigger('click');
+        expect(action.text()).toBe('');
+        expect(action.attributes('aria-label')).toBe('global.default.view');
+        expect(action.find('.icon--regular-ellipsis-h').exists()).toBe(true);
+        await action.trigger('click');
 
         expect(receivedPayload).toEqual({ nodeId: 'start' });
-        expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(false);
         expect(wrapper.emitted('update:document')).toBeUndefined();
         wrapper.unmount();
     });
 
     it('opens node editing on demand and discards changes when canceled', async () => {
         const wrapper = await createWrapper();
-        expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(false);
         expect(wrapper.find('.sw-workflow-studio-editor__sidebar').exists()).toBe(false);
         await wrapper.find('[data-node-id="start"]').trigger('click');
         await wrapper.find('.patch').trigger('click');
         expect(wrapper.emitted('update:document')).toBeUndefined();
         await wrapper.find('.sw-workflow-studio-editor__cancel').trigger('click');
-        expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(false);
         expect(wrapper.emitted('update:document')).toBeUndefined();
         wrapper.unmount();
     });
@@ -152,13 +169,10 @@ describe('sw-workflow-studio-editor', () => {
                     position: 'toolbar',
                     labelKey: 'example.rename',
                 });
-                context.events.subscribe('node.click', (event) => event.preventDefault());
                 return cleanup;
             },
         });
         const wrapper = await createWrapper(true, new WorkflowNodeEditingService(), extensions);
-        await wrapper.find('[data-node-id="start"]').trigger('click');
-        expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
         await wrapper.find('[data-canvas-action="example:rename"]').trigger('click');
         expect((wrapper.emitted('update:document')?.[0][0] as WorkflowDocument).nodes[0].config).toEqual({
             label: 'Plugin change',
@@ -235,7 +249,7 @@ describe('sw-workflow-studio-editor', () => {
         expect(JSON.parse(decodeURIComponent(url.split(',')[1]))).toEqual(document);
         wrapper.unmount();
     });
-    it('discards a staged node edit when an extension changes selection', async () => {
+    it('protects a staged node edit when an extension changes selection', async () => {
         const extensions = new WorkflowExtensionService();
         let context: WorkflowExtensionContext | undefined;
         extensions.register({
@@ -249,8 +263,108 @@ describe('sw-workflow-studio-editor', () => {
         await wrapper.find('.patch').trigger('click');
         context?.selection.selectNode('end');
         await flushPromises();
-        expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(true);
+        expect(wrapper.find('.sw-workflow-studio-editor__unsaved-dialog').exists()).toBe(true);
         expect(wrapper.emitted('update:document')).toBeUndefined();
+        wrapper.unmount();
+    });
+
+    it('protects staged settings from plugin commands and can resume the command', async () => {
+        const extensions = new WorkflowExtensionService();
+        extensions.register({
+            name: 'example:rename',
+            setup(context) {
+                context.commands.register({
+                    name: 'example:rename',
+                    execute(document) {
+                        document.nodes[1].config = { label: 'Changed by plugin' };
+                        return document;
+                    },
+                });
+                context.ui.registerAction({
+                    name: 'example:rename',
+                    position: 'toolbar',
+                    labelKey: 'example.rename',
+                    command: 'example:rename',
+                });
+            },
+        });
+        const wrapper = await createWrapper(true, new WorkflowNodeEditingService(), extensions);
+        await wrapper.get('[data-node-id="start"]').trigger('click');
+        await wrapper.get('.patch').trigger('click');
+        await wrapper.get('[data-canvas-action="example:rename"]').trigger('click');
+
+        expect(wrapper.emitted('update:document')).toBeUndefined();
+        expect(wrapper.find('.sw-workflow-studio-editor__unsaved-dialog').exists()).toBe(true);
+        await wrapper.get('.sw-workflow-studio-editor__apply-pending').trigger('click');
+        const updated = wrapper.emitted('update:document')?.[1][0] as WorkflowDocument;
+        expect(updated.nodes[0].config).toEqual({ label: 'Reviewed' });
+        expect(updated.nodes[1].config).toEqual({ label: 'Changed by plugin' });
+        wrapper.unmount();
+    });
+
+    it('keeps staged settings when the same node is selected again', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.get('[data-node-id="start"]').trigger('click');
+        await wrapper.get('.patch').trigger('click');
+        await wrapper.get('[data-node-id="start"]').trigger('click');
+        await wrapper.get('.sw-workflow-studio-editor__save').trigger('click');
+
+        const document = wrapper.emitted('update:document')?.[0][0] as WorkflowDocument;
+        expect(document.nodes[0].config).toEqual({ label: 'Reviewed' });
+        wrapper.unmount();
+    });
+
+    it('lets the user keep editing, then apply before changing nodes', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.get('[data-node-id="start"]').trigger('click');
+        await wrapper.get('.patch').trigger('click');
+        await wrapper.get('[data-node-id="end"]').trigger('click');
+
+        expect(wrapper.find('.sw-workflow-studio-editor__unsaved-dialog').exists()).toBe(true);
+        await wrapper.get('.sw-workflow-studio-editor__keep-editing').trigger('click');
+        expect(wrapper.find('.sw-workflow-studio-editor__unsaved-dialog').exists()).toBe(false);
+        expect(wrapper.emitted('update:document')).toBeUndefined();
+
+        await wrapper.get('[data-node-id="end"]').trigger('click');
+        await wrapper.get('.sw-workflow-studio-editor__apply-pending').trigger('click');
+        const document = wrapper.emitted('update:document')?.[0][0] as WorkflowDocument;
+        expect(document.nodes[0].config).toEqual({ label: 'Reviewed' });
+        expect(wrapper.get('[data-settings-node]').attributes('data-settings-node')).toBe('end');
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(true);
+
+        await wrapper.get('.sw-workflow-studio-editor__cancel').trigger('click');
+        await wrapper.get('.sw-workflow-studio-toolbar__history button').trigger('click');
+        expect(wrapper.emitted('update:document')?.[1][0]).toEqual(createWorkflowDraft());
+        wrapper.unmount();
+    });
+
+    it('can discard a staged edit before switching nodes', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.get('[data-node-id="start"]').trigger('click');
+        await wrapper.get('.patch').trigger('click');
+        await wrapper.get('[data-node-id="end"]').trigger('click');
+        await wrapper.get('.sw-workflow-studio-editor__discard-pending').trigger('click');
+
+        expect(wrapper.find('.sw-workflow-studio-editor__unsaved-dialog').exists()).toBe(false);
+        expect(wrapper.emitted('update:document')).toBeUndefined();
+        expect(wrapper.find('.sw-workflow-studio-editor__settings').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    it('anchors the node picker at the requested insertion point', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.get('.insert-request').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.find('.sw-workflow-studio-editor__node-picker').exists()).toBe(true);
+        expect(wrapper.getComponent({ name: 'mt-floating-ui' }).props('anchorElement')).toBe(
+            wrapper.get('.insert-request').element,
+        );
+        const options = wrapper.getComponent({ name: 'mt-floating-ui' }).props('floatingUiOptions') as {
+            middleware: { name: string }[];
+        };
+        expect(options.middleware.map((middleware) => middleware.name)).toContain('shift');
         wrapper.unmount();
     });
 });
@@ -273,12 +387,14 @@ describe('workflow extension scenarios', () => {
         });
         await flushPromises();
 
-        expect(wrapper.get('.sw-workflow-studio-editor__diagnostics').findAll('button')).toHaveLength(1);
+        expect(wrapper.find('.sw-workflow-studio-editor__issue-list').exists()).toBe(false);
+        await wrapper.get('.sw-workflow-studio-editor__issues-toggle').trigger('click');
+        expect(wrapper.get('.sw-workflow-studio-editor__issue-list').findAll('button')).toHaveLength(1);
         expect(wrapper.emitted('update:document')).toBeUndefined();
 
         unregister();
         await flushPromises();
-        expect(wrapper.get('.sw-workflow-studio-editor__diagnostics').findAll('button')).toHaveLength(0);
+        expect(wrapper.find('.sw-workflow-studio-editor__issue-list').exists()).toBe(false);
         wrapper.unmount();
     });
 

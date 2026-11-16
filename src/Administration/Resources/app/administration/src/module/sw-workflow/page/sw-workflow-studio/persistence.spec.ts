@@ -39,7 +39,8 @@ async function createWrapper(
             stubs: {
                 'sw-page': { template: '<div><slot name="content" /></div>' },
                 'sw-workflow-studio-editor': {
-                    template: '<div><slot name="document-info" /><slot name="document-actions" /></div>',
+                    emits: ['settings-change'],
+                    template: `<div><slot name="document-info" /><slot name="document-actions" /><button class="stage-settings" @click="$emit('settings-change', true)">Stage</button><button class="cancel-settings" @click="$emit('settings-change', false)">Cancel</button></div>`,
                 },
                 'mt-text-field': {
                     props: ['modelValue', 'disabled', 'size'],
@@ -56,6 +57,23 @@ async function createWrapper(
 }
 
 describe('workflow draft persistence', () => {
+    it('protects unapplied node settings from saving, publication and browser navigation', async () => {
+        const { wrapper, service } = await createWrapper();
+        expect(wrapper.get('sw-workflow-publish').attributes('has-changes')).toBe('false');
+        await wrapper.get('.stage-settings').trigger('click');
+        expect(wrapper.get('sw-workflow-publish').attributes('has-changes')).toBe('true');
+        await wrapper.get('input').setValue('Renamed');
+        expect(wrapper.get('.sw-workflow-studio__save').attributes('disabled')).toBeDefined();
+        const event = new Event('beforeunload', { cancelable: true });
+        window.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(true);
+        expect(service.updateDraft).not.toHaveBeenCalled();
+
+        await wrapper.get('.cancel-settings').trigger('click');
+        expect(wrapper.get('.sw-workflow-studio__save').attributes('disabled')).toBeUndefined();
+        wrapper.unmount();
+    });
+
     it('saves a new draft and navigates once after the pending save finishes', async () => {
         const { wrapper, service, router } = await createWrapper(undefined, true, null);
         router.replace.mockImplementation(() => {

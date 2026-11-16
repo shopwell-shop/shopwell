@@ -38,7 +38,6 @@ describe('request form settings', () => {
         const key = fields()[1].key;
         expect(key).toMatch(/^field_[a-zA-Z0-9_]+$/);
         await wrapper.find('.sw-workflow-start-settings__label input').setValue('Expense amount');
-        await wrapper.find('.sw-workflow-start-settings__label input').trigger('blur');
         await applyChange();
         expect(fields()[1]).toMatchObject({ key, label: 'Expense amount' });
         await wrapper.findAll('.sw-workflow-start-settings__heading')[1].findAll('button')[1].trigger('click');
@@ -74,7 +73,6 @@ describe('request form settings', () => {
         await applyChange();
         const value = fields()[0].options![0].value;
         await wrapper.find('.sw-workflow-start-settings__option input').setValue('Travel');
-        await wrapper.find('.sw-workflow-start-settings__option input').trigger('blur');
         await applyChange();
         expect(fields()[0].options).toEqual([{ value, label: 'Travel' }]);
         await wrapper.find('input[type="checkbox"]').setValue(true);

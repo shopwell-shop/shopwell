@@ -14,20 +14,7 @@ export type CanvasEditorState<TDocument extends CanvasDocument> = {
     canRedo: boolean;
 };
 /** @public */
-export type CanvasInteraction = CanvasUiTarget & {
-    position?: { x: number; y: number };
-    defaultPrevented: boolean;
-    preventDefault(): void;
-};
-/** @public */
 export type CanvasEditorEvents<TDocument extends CanvasDocument> = {
-    'node.click': CanvasInteraction;
-    'node.contextmenu': CanvasInteraction;
-    'connection.click': CanvasInteraction;
-    'connection.insert': CanvasInteraction;
-    'connection.contextmenu': CanvasInteraction;
-    'canvas.click': CanvasInteraction;
-    'canvas.contextmenu': CanvasInteraction;
     'selection.changed': CanvasSelection;
     'document.changed': TDocument;
     'command.beforeExecute': { name: string; payload: unknown; preventDefault(): void; defaultPrevented: boolean };
