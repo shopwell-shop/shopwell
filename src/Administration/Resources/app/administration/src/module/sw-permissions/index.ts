@@ -87,18 +87,12 @@ Shopwell.Module.register('sw-permissions', {
     navigation: [
         {
             id: 'sw-permissions-role',
-            parent: 'sw-system',
-            label: 'sw-permissions.roles.general.label',
             path: 'sw.permissions.role',
-            position: 20,
             privilege: 'permissions.viewer',
         },
         {
             id: 'sw-permissions-menu',
-            parent: 'sw-system',
-            label: 'sw-permissions.menu.headline',
             path: 'sw.permissions.menu',
-            position: 30,
             privilege: 'admin_menu.viewer',
         },
     ],

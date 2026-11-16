@@ -24,8 +24,35 @@ function node(overrides: Partial<DatabaseMenuNode> & { id: string }): DatabaseMe
 }
 
 describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', () => {
+    it('does not render an XML binding as an unmanaged fallback', () => {
+        expect(mergeDatabaseNavigation([{ id: 'example-page', path: 'example.index' }], [])).toEqual([]);
+    });
+
+    it('combines XML defaults with page bindings and renders XML folders without a binding', () => {
+        const bindings = [{ id: 'example-page', path: 'example.index', privilege: 'example.viewer' }];
+        const tree = [
+            node({
+                id: 'system-row',
+                internalKey: 'sw-system',
+                type: 'folder',
+                title: 'System',
+                children: [node({ id: 'page-row', internalKey: 'example-page', type: 'menu', title: 'Example' })],
+            }),
+        ];
+
+        expect(mergeDatabaseNavigation(bindings, tree)).toEqual([
+            expect.objectContaining({ id: 'system-row', label: { label: 'System', translated: true } }),
+            expect.objectContaining({
+                id: 'example-page',
+                path: 'example.index',
+                parent: 'system-row',
+                privilege: 'example.viewer',
+            }),
+        ]);
+    });
+
     it('does not restore unmanaged declarations for custom roles', () => {
-        expect(mergeDatabaseNavigation(declared, [], undefined, { managedKeys: [], allowUnmanaged: false })).toEqual([]);
+        expect(mergeDatabaseNavigation(declared, [], { managedKeys: [], allowUnmanaged: false })).toEqual([]);
     });
 
     it('returns the declarations untouched when the database renders nothing', () => {
@@ -61,33 +88,15 @@ describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', ()
         expect(entry.parent).toBeUndefined();
     });
 
-    it('translates the stored title and marks the label as already translated', () => {
+    it('uses stored titles as literal text even when they resemble snippet keys', () => {
         const tree = [node({ id: 'a', internalKey: 'sw-dashboard', title: 'sw-dashboard.general.mainMenuItemGeneral' })];
-        const translate = jest.fn((key: string) => `translated:${key}`);
 
-        const [entry] = mergeDatabaseNavigation(declared, tree, translate);
-
-        expect(translate).toHaveBeenCalledWith('sw-dashboard.general.mainMenuItemGeneral');
-        expect(entry.label).toEqual({
-            label: 'translated:sw-dashboard.general.mainMenuItemGeneral',
-            translated: true,
-        });
-    });
-
-    it('keeps the raw stored title when the translator fails', () => {
-        // a broken translator is a rendering detail, losing the whole sidebar is not
-        const tree = [node({ id: 'a', internalKey: 'sw-dashboard', title: 'sw-dashboard.general.mainMenuItemGeneral' })];
-        const translate = jest.fn(() => {
-            throw new Error('i18n is not ready');
-        });
-
-        const [entry] = mergeDatabaseNavigation(declared, tree, translate);
+        const [entry] = mergeDatabaseNavigation(declared, tree);
 
         expect(entry.label).toEqual({
             label: 'sw-dashboard.general.mainMenuItemGeneral',
             translated: true,
         });
-        expect(entry.path).toBe('sw.dashboard.index');
     });
 
     it('keeps the declared label when the stored row has no title', () => {
@@ -232,7 +241,7 @@ describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', ()
     });
 
     it('does not restore managed entries absent from the visible tree', () => {
-        const merged = mergeDatabaseNavigation(declared, [], (key) => key, {
+        const merged = mergeDatabaseNavigation(declared, [], {
             managedKeys: [
                 'sw-dashboard',
                 'sw.product.index',

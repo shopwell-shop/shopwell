@@ -68,12 +68,8 @@ Module.register('sw-product-stream', {
     navigation: [
         {
             path: 'sw.product.stream.index',
-            label: 'sw-product-stream.general.mainMenuItemGeneral',
             id: 'sw-product-stream',
             privilege: 'product_stream.viewer',
-            parent: 'sw-catalogue',
-            color: 'var(--sw-color-module-green-default)',
-            position: 30,
         },
     ],
 

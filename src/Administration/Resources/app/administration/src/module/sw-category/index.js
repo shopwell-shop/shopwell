@@ -192,11 +192,7 @@ Module.register('sw-category', {
         {
             id: 'sw-category',
             path: 'sw.category.index',
-            label: 'sw-category.general.mainMenuItemIndex',
-            color: 'var(--sw-color-module-green-default)',
-            parent: 'sw-catalogue',
             privilege: 'category.viewer',
-            position: 25,
         },
     ],
 

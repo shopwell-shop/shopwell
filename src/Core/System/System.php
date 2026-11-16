@@ -5,6 +5,7 @@ namespace Shopwell\Core\System;
 use Shopwell\Core\Framework\Bundle;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\CustomEntity\CustomEntityRegistrar;
+use Shopwell\Core\System\DependencyInjection\CompilerPass\AdminMenuCompilerPass;
 use Shopwell\Core\System\DependencyInjection\CompilerPass\NumberRangeIncrementerCompilerPass;
 use Shopwell\Core\System\DependencyInjection\CompilerPass\SalesChannelEntityCompilerPass;
 use Shopwell\Core\System\Payment\DependencyInjection\PaymentProviderCompilerPass;
@@ -64,6 +65,7 @@ class System extends Bundle
             $phpLoader->load('services_test.php');
         }
 
+        $container->addCompilerPass(new AdminMenuCompilerPass());
         $container->addCompilerPass(new SalesChannelEntityCompilerPass());
         $container->addCompilerPass(new NumberRangeIncrementerCompilerPass());
         $container->addCompilerPass(new SmsConfigurationCompilerPass());

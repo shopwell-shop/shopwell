@@ -55,9 +55,6 @@ Module.register('sw-membership', {
             // twice: once from the database row and once from this declaration.
             id: 'sw-membership-purchases',
             path: 'sw.membership.purchases',
-            label: 'sw-membership.purchase.general.mainMenuItemGeneral',
-            icon: 'regular-clipboard',
-            parent: 'sw-order',
             privilege: 'loyalty.viewer',
         },
     ],

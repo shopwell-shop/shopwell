@@ -78,11 +78,7 @@ Module.register('sw-settings-listing', {
     navigation: [
         {
             id: 'sw-settings-listing',
-            label: 'sw-settings-listing.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.listing.index',
-            icon: 'regular-products',
-            position: 620,
             privilege: 'system.system_config',
         },
     ],

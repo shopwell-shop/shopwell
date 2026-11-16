@@ -21,6 +21,7 @@ function item(id: string, parentId: string | null): AdminMenuItem {
 describe('admin menu configuration', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
+        Shopwell.Store.get('session').currentLocale = 'en-GB';
         Object.values(api).forEach((mock) => mock.mockReset());
         api.getTree.mockResolvedValue([]);
         api.getRouteAllowlist.mockResolvedValue([]);
@@ -50,6 +51,34 @@ describe('admin menu configuration', () => {
         await store.loadVisibleTree();
         expect(api.getNavigation).toHaveBeenCalledTimes(2);
         expect(store.managedKeys).toEqual([]);
+    });
+
+    it('reloads literal menu titles when the interface locale changes', async () => {
+        const store = Shopwell.Store.get('adminMenuConfig');
+        await store.loadVisibleTree();
+        Shopwell.Store.get('session').currentLocale = 'zh-CN';
+        await store.loadVisibleTree();
+
+        expect(api.getNavigation).toHaveBeenCalledTimes(2);
+    });
+
+    it('discards a response for an obsolete interface locale', async () => {
+        const store = Shopwell.Store.get('adminMenuConfig');
+        let resolvePrevious!: (value: unknown) => void;
+        api.getNavigation.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolvePrevious = resolve;
+                }),
+        );
+        const previous = store.loadVisibleTree();
+        Shopwell.Store.get('session').currentLocale = 'zh-CN';
+        await store.loadVisibleTree();
+        resolvePrevious({ menu: [], managedKeys: ['old-locale'], allowUnmanaged: true });
+        await previous;
+
+        expect(store.managedKeys).toEqual(['sw-settings-tax']);
+        expect(store.allowUnmanaged).toBe(false);
     });
 
     it('discards an obsolete account response after a newer request completes', async () => {

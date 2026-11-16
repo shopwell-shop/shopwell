@@ -30,11 +30,7 @@ Shopwell.Module.register('sw-settings-mailer', {
     navigation: [
         {
             id: 'sw-settings-mailer',
-            label: 'sw-settings-mailer.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.mailer.index',
-            icon: 'regular-envelope',
-            position: 720,
             privilege: 'system.system_config',
         },
     ],

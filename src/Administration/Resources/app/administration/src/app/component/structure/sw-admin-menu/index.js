@@ -185,15 +185,10 @@ The admin menu only supports up to three levels of nesting.`,
         databaseNavigation() {
             const store = Shopwell.Store.get('adminMenuConfig');
 
-            return mergeDatabaseNavigation(
-                this.navigationEntries,
-                store?.visibleTree ?? [],
-                (key) => this.tWithFallback(key),
-                {
-                    managedKeys: store?.isVisibleLoadFailed ? [] : (store?.managedKeys ?? []),
-                    allowUnmanaged: store?.allowUnmanaged ?? true,
-                },
-            );
+            return mergeDatabaseNavigation(this.navigationEntries, store?.visibleTree ?? [], {
+                managedKeys: store?.isVisibleLoadFailed ? [] : (store?.managedKeys ?? []),
+                allowUnmanaged: store?.allowUnmanaged ?? true,
+            });
         },
 
         mainMenuEntries() {
@@ -300,6 +295,15 @@ The admin menu only supports up to three levels of nesting.`,
             this.onFlyoutLeave();
             this.isUserActionsActive = false;
             this.$nextTick(() => this.expandAncestorBranchesForCurrentRoute());
+        },
+        currentLocale() {
+            const store = Shopwell.Store.get('adminMenuConfig');
+            void store.loadVisibleTree();
+            if (store.isLoaded) {
+                void store.loadRouteAllowlist().catch(() => {
+                    // Keep the current choices if refreshing only their translated labels fails.
+                });
+            }
         },
         'currentUser.id'() {
             void Shopwell.Store.get('adminMenuConfig').loadVisibleTree();

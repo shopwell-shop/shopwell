@@ -51,13 +51,8 @@ Module.register('sw-newsletter-recipient', {
     navigation: [
         {
             id: 'sw-newsletter-recipient',
-            icon: 'regular-inbox',
-            color: 'var(--sw-color-module-yellow-default)',
             path: 'sw.newsletter.recipient.index',
             privilege: 'newsletter_recipient.viewer',
-            label: 'sw-newsletter-recipient.general.mainMenuItemGeneral',
-            parent: 'sw-marketing',
-            position: 20,
         },
     ],
 

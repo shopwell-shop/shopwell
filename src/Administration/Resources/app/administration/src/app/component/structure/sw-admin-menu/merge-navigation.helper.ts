@@ -83,22 +83,14 @@ function navigationIdentity(source: NavigationEntryLike, node: DatabaseMenuNode,
     return source.id && !matched.has(source.id) ? source.id : node.id;
 }
 
-function navigationMetadata(node: DatabaseMenuNode, source: NavigationEntryLike, translate: (key: string) => string) {
+function navigationMetadata(node: DatabaseMenuNode, source: NavigationEntryLike) {
     return {
-        label: node.title ? { label: translate(node.title), translated: true } : source.label,
+        label: node.title ? { label: node.title, translated: true } : source.label,
         icon: node.icon ?? source.icon,
         color: node.color ?? source.color,
         privilege: source.privilege ?? node.privilege ?? undefined,
         menuPrivilege: node.privilege,
     };
-}
-
-function resolveNavigationLabel(key: string, translate: (key: string) => string): string {
-    try {
-        return translate(key) || key;
-    } catch {
-        return key;
-    }
 }
 
 function findNavigationSource(
@@ -122,14 +114,11 @@ function canRenderNode(node: DatabaseMenuNode, source: NavigationEntryLike | und
 /**
  * @param declared flat list of the entries the modules declare
  * @param databaseTree nested tree as returned by the `visible` action, already ordered
- * @param translate resolves a stored title; a stored title is a snippet key for core entries
- *                  and plain text for entries an administrator created
  */
 /** @private */
 export function mergeDatabaseNavigation(
     declared: NavigationEntryLike[],
     databaseTree: DatabaseMenuNode[],
-    translate: (key: string) => string = (key) => key,
     { managedKeys = [], allowUnmanaged = true }: NavigationPolicy = {},
 ): NavigationEntryLike[] {
     const declaredById = new Map(declared.flatMap((entry) => (entry.id ? [[entry.id, entry] as const] : [])));
@@ -138,8 +127,6 @@ export function mergeDatabaseNavigation(
     const managed = new Set(managedKeys);
     const matched = new Set<string>();
     const merged: NavigationEntryLike[] = [];
-
-    const resolveLabel = (key: string) => resolveNavigationLabel(key, translate);
 
     const collectKeys = (nodes: DatabaseMenuNode[]): void => {
         nodes.forEach((node) => {
@@ -164,7 +151,7 @@ export function mergeDatabaseNavigation(
                 matched.add(nodeKey(node));
                 renderLevel(node.children ?? [], parentId, restrictions, {
                     groupId: node.id,
-                    groupTitle: resolveLabel(node.title ?? ''),
+                    groupTitle: node.title ?? '',
                 });
                 return;
             }
@@ -179,7 +166,7 @@ export function mergeDatabaseNavigation(
 
             const entry: NavigationEntryLike = {
                 ...declaration,
-                ...navigationMetadata(node, declaration, resolveLabel),
+                ...navigationMetadata(node, declaration),
                 id,
                 ...navigationTarget(node, declaration),
                 parent: parentId ?? undefined,
@@ -207,6 +194,7 @@ export function mergeDatabaseNavigation(
 
     declared.forEach((entry) => {
         if (
+            !entry.label ||
             !allowUnmanaged ||
             (entry.id !== undefined && (matched.has(entry.id) || managed.has(entry.id))) ||
             (entry.path && (managed.has(entry.path) || matched.has(entry.path)))

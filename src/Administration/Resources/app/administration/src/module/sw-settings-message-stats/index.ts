@@ -30,11 +30,7 @@ Shopwell.Module.register('sw-settings-message-stats', {
     navigation: [
         {
             id: 'sw-settings-message-stats',
-            label: 'sw-settings-message-stats.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.message.stats.index',
-            icon: 'regular-bars-square',
-            position: 730,
             privilege: 'system.system_config',
         },
     ],

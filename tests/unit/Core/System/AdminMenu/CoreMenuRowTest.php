@@ -19,7 +19,7 @@ class CoreMenuRowTest extends TestCase
         $row = new CoreMenuRow('row', 'menu-key', 'link', 'icon', 'blue', 'catalog:read', '_blank', 'parent', 'previous', ['label' => 'menu.label'], 'catalog');
         static::assertSame([
             'internalKey' => 'menu-key', 'type' => 'link', 'icon' => 'icon', 'color' => 'blue',
-            'privilege' => 'catalog:read', 'linkTarget' => '_blank', 'groupName' => 'catalog',
+            'privilege' => 'catalog:read', 'linkTarget' => '_blank', 'groupName' => 'catalog', 'title' => null, 'translations' => [],
         ], $row->declarationFields());
         static::assertSame(['id' => 'row', 'parentId' => 'parent', 'afterMenuItemId' => 'previous'], $row->placement());
         static::assertSame([

@@ -139,24 +139,15 @@ Shopwell.Module.register('sw-workflow', {
     navigation: [
         {
             id: 'sw-workflow-tasks',
-            label: 'sw-workflow.runtime.navigation',
             path: 'sw.workflow.tasks',
-            parent: 'sw-workflow',
-            position: 25,
             privilege: 'workflow_participant.viewer',
         },
         {
             id: 'sw-workflow',
-            label: 'sw-workflow.navigation.root',
-            icon: 'regular-flow',
-            position: 72,
         },
         {
             id: 'sw-workflow-design',
-            label: 'sw-workflow.navigation.design',
             path: 'sw.workflow.index',
-            parent: 'sw-workflow',
-            position: 10,
             privilege: 'workflow.viewer',
         },
     ],

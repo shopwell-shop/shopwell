@@ -87,6 +87,7 @@ class AdminMenuItemDefinition extends EntityDefinition
             (new StringField('route_key', 'routeKey'))->setDescription('Declared target page, independent of the identity of a system or plugin menu item. Falls back to internalKey for legacy records.'),
             (new StringField('group_name', 'groupName'))->setDescription('Group the item is listed under (`general`, `customer`, …). Entries without a group are listed on their own.'),
             new TranslatedField('title'),
+            new TranslatedField('customFields'),
             // the group *key* above is untranslated, the label a language shows for it is not
             new TranslatedField('groupTitle'),
             (new StringField('icon', 'icon'))->setDescription('Meteor icon name shown next to the label.'),

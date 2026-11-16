@@ -110,12 +110,14 @@ class AdminMenuController extends AbstractController
         defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['admin_menu_item:read']],
         methods: [Request::METHOD_GET]
     )]
-    public function routeWhitelist(): JsonResponse
+    public function routeWhitelist(Request $request): JsonResponse
     {
+        $locale = $request->query->getString('locale');
+
         return new JsonResponse([
             'routes' => array_map(static fn ($definition) => [
                 'internalKey' => $definition->internalKey,
-                'title' => $definition->title,
+                'title' => $definition->translations[$locale]['title'] ?? $definition->title,
                 'type' => $definition->type,
                 'parent' => $definition->parent,
                 'privilege' => $definition->privilege,
@@ -136,10 +138,10 @@ class AdminMenuController extends AbstractController
         defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration']],
         methods: [Request::METHOD_GET]
     )]
-    public function visible(Context $context): JsonResponse
+    public function visible(Request $request, Context $context): JsonResponse
     {
         return new JsonResponse([
-            ...$this->treeBuilder->buildNavigation($context),
+            ...$this->treeBuilder->buildNavigation($context, $request->query->getString('locale') ?: null),
             'managedKeys' => array_map(
                 static fn ($definition): string => $definition->internalKey,
                 $this->routeRegistry->getDefinitions()
@@ -154,7 +156,7 @@ class AdminMenuController extends AbstractController
      * the sidebar already receives the label of the current one - a single map serves both
      * without a second endpoint.
      *
-     * @return array<string, array{title: ?string, groupTitle: ?string}>
+     * @return array<string, array{title: ?string, groupTitle: ?string, customFields: array<string, mixed>|null}>
      */
     private static function translationsOf(AdminMenuItemEntity $item): array
     {
@@ -164,6 +166,7 @@ class AdminMenuController extends AbstractController
             $translations[$translation->getLanguageId()] = [
                 'title' => $translation->getTitle(),
                 'groupTitle' => $translation->getGroupTitle(),
+                'customFields' => $translation->getCustomFields(),
             ];
         }
 

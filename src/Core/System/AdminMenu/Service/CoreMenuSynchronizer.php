@@ -253,14 +253,37 @@ class CoreMenuSynchronizer
      */
     private function matchesDeclaration(AdminMenuItemEntity $item, CoreMenuRow $row): bool
     {
-        // the label is deliberately not compared: it belongs to the translation table and to
-        // whoever wrote it there, a declaration only supplies the key the page falls back to
-        return $item->getType() === $row->type
+        $previousDefaults = $item->getDefaultMeta() ?? [];
+
+        return ($previousDefaults['title'] ?? null) === $row->title
+            && $this->normalizeTranslationValues($previousDefaults['translations'] ?? []) === $this->normalizeTranslationValues($row->translations)
+            && $item->getType() === $row->type
             && $item->getGroupName() === $row->groupName
             && $item->getIcon() === $row->icon
             && $item->getColor() === $row->color
             && $item->getPrivilege() === $row->privilege
             && $item->getLinkTarget() === $row->linkTarget;
+    }
+
+    /**
+     * JSON object key order is insignificant, but list order and scalar types are not.
+     *
+     * @param array<array-key, mixed> $values
+     *
+     * @return array<array-key, mixed>
+     */
+    private function normalizeTranslationValues(array $values): array
+    {
+        if (!array_is_list($values)) {
+            ksort($values);
+        }
+        foreach ($values as $key => $value) {
+            if (\is_array($value)) {
+                $values[$key] = $this->normalizeTranslationValues($value);
+            }
+        }
+
+        return $values;
     }
 
     private function isPlaced(AdminMenuItemEntity $item, CoreMenuRow $row): bool

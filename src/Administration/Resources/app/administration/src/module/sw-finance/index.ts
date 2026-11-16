@@ -124,29 +124,19 @@ Module.register('sw-finance', {
     navigation: [
         {
             id: 'sw-finance',
-            label: 'sw-finance.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-green-default)',
-            icon: 'regular-money-bill',
             // between the automation module (70) and the extension store (80): money is operated on
             // right after the flows that trigger it, and before the catalogue of extensions
-            position: 75,
             // deliberately no privilege: neither of the two children may make the entry disappear, a
             // role with only one of them still has to find its way in
         },
         {
             id: 'sw-finance-transfer',
-            position: 30,
             path: 'sw.finance.transfer',
-            label: 'sw-finance.navigation.transfer',
-            parent: 'sw-finance',
             privilege: 'payment_transfer.viewer',
         },
         {
             id: 'sw-finance-wallet-transactions',
-            position: 40,
             path: 'sw.finance.walletTransactions',
-            label: 'sw-finance.navigation.walletTransactions',
-            parent: 'sw-finance',
             privilege: 'wallet.viewer',
         },
     ],

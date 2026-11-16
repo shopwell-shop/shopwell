@@ -46,12 +46,7 @@ Module.register('sw-review', {
     navigation: [
         {
             id: 'sw-review',
-            label: 'sw-review.general.mainMenuItemList',
-            color: 'var(--sw-color-module-green-default)',
             path: 'sw.review.index',
-            icon: 'regular-star',
-            parent: 'sw-catalogue',
-            position: 20,
             privilege: 'review.viewer',
         },
     ],

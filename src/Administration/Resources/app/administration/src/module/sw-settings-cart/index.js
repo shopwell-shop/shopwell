@@ -34,11 +34,7 @@ Module.register('sw-settings-cart', {
     navigation: [
         {
             id: 'sw-settings-cart',
-            label: 'sw-settings-cart.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.cart.index',
-            icon: 'regular-shopping-cart',
-            position: 110,
             privilege: 'system.system_config',
         },
     ],

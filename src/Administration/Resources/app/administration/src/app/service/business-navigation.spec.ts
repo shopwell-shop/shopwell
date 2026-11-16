@@ -1,6 +1,8 @@
 /**
  * @sw-package framework
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import createMenuService from './menu.service';
 import type { NavigationEntryLike } from '../component/structure/sw-admin-menu/merge-navigation.helper';
 import PrivilegesService from './privileges.service';
@@ -58,11 +60,11 @@ const modules = [
     'sw-settings-number-range',
     'sw-settings-oauth2-login',
     'sw-settings-order-return',
-    'sw-settings-organization',
+    'sw-organization',
     'sw-settings-payment',
     'sw-settings-payment-gateway',
     'sw-settings-payment-provider',
-    'sw-settings-position',
+    'sw-position',
     'sw-settings-product-feature-sets',
     'sw-settings-rule',
     'sw-settings-search',
@@ -91,12 +93,62 @@ describe('original navigation with workflow and content articles', () => {
         }
     });
 
-    function entries(): NavigationEntryLike[] {
+    function bindings(): NavigationEntryLike[] {
         const menu = new createMenuService(Shopwell.Module) as {
             getNavigationFromAdminModules(): NavigationEntryLike[];
         };
         return menu.getNavigationFromAdminModules();
     }
+
+    function entries(): NavigationEntryLike[] {
+        const file = resolve(__dirname, '../../../../../../../Core/System/AdminMenu/Resources/config/admin-menu.xml');
+        const xml = new DOMParser().parseFromString(readFileSync(file, 'utf8'), 'application/xml');
+        return Array.from(xml.getElementsByTagName('menu')).map((menu) => {
+            const id = menu.getAttribute('id')!;
+            const binding = bindings().find((entry) => entry.id === id || entry.path === id);
+            let parent = menu.parentElement;
+            while (parent?.getAttribute('type') === 'group') parent = parent.parentElement;
+            return {
+                ...binding,
+                id,
+                label: Array.from(menu.children).find((child) => child.tagName === 'title')?.textContent,
+                parent:
+                    parent?.tagName === 'menu'
+                        ? (parent.getAttribute('id') ?? undefined)
+                        : (menu.getAttribute('parent') ?? undefined),
+                position: Number(menu.getAttribute('position') ?? 0),
+                privilege: menu.getAttribute('privilege') ?? undefined,
+                type: menu.getAttribute('type') ?? 'menu',
+            };
+        });
+    }
+
+    it('binds every XML page to a registered route with the matching navigation permission', () => {
+        const registeredRoutes = new Set(
+            Array.from(Shopwell.Module.getModuleRegistry().values()).flatMap((module) => Array.from(module.routes.keys())),
+        );
+        for (const entry of entries().filter((item) => item.type === 'menu')) {
+            const binding = bindings().find((item) => item.id === entry.id || item.path === entry.id);
+            expect(binding).toBeDefined();
+            expect(registeredRoutes.has(binding?.path ?? '')).toBe(true);
+        }
+        expect(
+            entries()
+                .filter((entry) => entry.type === 'menu')
+                .flatMap((entry) => {
+                    const binding = bindings().find((item) => item.id === entry.id || item.path === entry.id);
+                    return binding?.privilege === entry.privilege
+                        ? []
+                        : [{ id: entry.id, xml: entry.privilege, frontend: binding?.privilege }];
+                }),
+        ).toEqual([]);
+        for (const binding of bindings()) {
+            expect(entries().some((entry) => entry.id === binding.id || entry.id === binding.path)).toBe(true);
+            expect(binding.label).toBeUndefined();
+            expect(binding.parent).toBeUndefined();
+            expect(binding.position).toBeUndefined();
+        }
+    });
 
     it('retains the original business roots and independent workflow', () => {
         expect(
@@ -150,17 +202,32 @@ describe('original navigation with workflow and content articles', () => {
         ]);
         expect(navigation.find((entry) => entry.id === 'sw-workflow')?.parent).toBeUndefined();
         expect(navigation.find((entry) => entry.id === 'sw-workflow-design')?.parent).toBe('sw-workflow');
-        expect(navigation.filter((entry) => entry.parent === 'sw-workflow').map((entry) => entry.id)).toEqual([
-            'sw-workflow-tasks',
+        expect(
+            navigation
+                .filter((entry) => entry.parent === 'sw-workflow')
+                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map((entry) => entry.id),
+        ).toEqual([
             'sw-workflow-design',
+            'sw-workflow-tasks',
         ]);
+    });
+
+    it('places organization and positions under System without settings cards', () => {
+        for (const [id, path, privilege] of [
+            ['sw-organization', 'sw.organization.index', 'organization.viewer'],
+            ['sw-position', 'sw.position.index', 'position.viewer'],
+        ]) {
+            expect(entries().find((entry) => entry.id === id)).toEqual(
+                expect.objectContaining({ parent: 'sw-system', path, privilege }),
+            );
+            expect(Shopwell.Module.getModuleRegistry().get(id)?.manifest.settingsItem).toBeUndefined();
+        }
     });
 
     it('retains the original settings entries and grouping declarations', () => {
         const navigation = entries();
         for (const id of [
-            'sw-settings-organization',
-            'sw-settings-position',
             'sw-settings-rule',
             'sw-settings-state-machine',
             'sw-settings-oauth2-login',
@@ -168,9 +235,7 @@ describe('original navigation with workflow and content articles', () => {
         ]) {
             expect(navigation.find((entry) => entry.id === id)?.parent).toBe('sw-settings');
         }
-        expect(navigation.find((entry) => entry.id === 'sw-newsletter-recipient')?.label).toBe(
-            'sw-newsletter-recipient.general.mainMenuItemGeneral',
-        );
+        expect(navigation.find((entry) => entry.id === 'sw-newsletter-recipient')?.label).toBe('Newsletter recipients');
         expect(navigation.some((entry) => entry.id === 'sw-settings-security')).toBe(false);
         expect(navigation.find((entry) => entry.id === 'sw-user')?.parent).toBe('sw-system');
         expect(Shopwell.Module.getModuleRegistry().get('sw-flow')?.manifest.settingsItem).toEqual(

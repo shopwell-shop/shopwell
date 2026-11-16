@@ -1,0 +1,243 @@
+{% block sw_organization_detail %}
+<sw-page class="sw-organization-detail">
+    {% block sw_organization_detail_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="organization"
+            :initial-search="searchTerm"
+            :placeholder="$t('sw-organization.detail.placeholderSearchTree')"
+            :type-search-always-in-container="false"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_organization_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_organization_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_organization_detail_smart_bar_header_title_text %}
+            {{ identifier }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_organization_detail_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            :disabled="isBusy || !organizationId || !!newUnit"
+            :save-changes-function="saveOnLanguageChange"
+            :abort-change-function="abortOnLanguageChange"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_organization_detail_actions %}
+    <template #smart-bar-actions>
+        <mt-button
+            class="sw-organization-detail__add-organization"
+            size="default"
+            :variant="editableEntity ? 'secondary' : 'primary'"
+            :disabled="!canCreate || isBusy || createOrganization"
+            @click="onAddOrganization"
+        >
+            {{ $t('sw-organization.list.buttonAddOrganization') }}
+        </mt-button>
+        <template v-if="editableEntity">
+            <mt-button
+                class="sw-organization-detail__cancel"
+                size="default"
+                variant="secondary"
+                :disabled="isBusy"
+                @click="onCancel"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            <mt-button
+                class="sw-organization-detail__save"
+                size="default"
+                variant="primary"
+                :disabled="!allowSave || isBusy"
+                :is-loading="isSaving"
+                @click="onSave"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+        </template>
+    </template>
+    {% endblock %}
+
+    {% block sw_organization_detail_sidebar %}
+    <template #side-content>
+        <div class="sw-organization-detail__sidebar">
+            <div class="sw-organization-detail__tree-header">
+                <span>{{ $t('sw-organization.general.mainMenuItemGeneral') }}</span>
+                <span class="sw-organization-detail__tree-count">{{ organizations.length }}</span>
+            </div>
+            {% block sw_organization_detail_tree %}
+            <sw-organization-unit-tree
+                :organizations="treeOrganizations"
+                :units="treeUnits"
+                :search-term="searchTerm"
+                :unit-counts="unitCounts"
+                :loaded-organization-ids="loadedOrganizationIds"
+                :selected-organization-id="organization?.id ?? null"
+                :selected-unit-id="selectedUnitId"
+                :is-loading="isLoadingNavigation"
+                :disabled="isBusy"
+                @select-organization="onSelectOrganization"
+                @select-unit="onSelectUnit"
+                @add-root="onAddRootUnit"
+                @delete-organization="onDeleteOrganization"
+                @delete-unit="onDeleteUnit"
+                @load-organization="onLoadOrganization"
+                @add-child="onAddChild"
+            />
+            {% endblock %}
+        </div>
+    </template>
+    {% endblock %}
+
+    {% block sw_organization_detail_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_organization_detail_loading %}
+            <sw-skeleton
+                v-if="isLoading"
+                variant="detail-bold"
+            />
+            {% endblock %}
+            <mt-empty-state
+                v-else-if="loadFailed"
+                :headline="$t('sw-organization.detail.messageLoadError')"
+                icon="regular-exclamation-triangle"
+            >
+                <template #button>
+                    <mt-button
+                        variant="primary"
+                        @click="createdComponent"
+                    >
+                        {{ $t('sw-organization.detail.buttonRetry') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            <template v-else-if="editableEntity">
+                {% block sw_organization_detail_unit_form %}
+                {% block sw_organization_detail_unit_form_card %}
+                <mt-card
+                    :key="editableEntity.id"
+                    v-autofocus
+                    position-identifier="sw-organization-detail-unit"
+                    :title="selectedUnit ? $t('sw-organization.detail.labelUnitSettings') : $t('sw-organization.detail.labelOrganizationSettings')"
+                >
+                    {% block sw_organization_detail_unit_form_fields %}
+                    <mt-text-field
+                        v-model="editableEntity.name"
+                        :class="selectedUnit ? 'sw-organization-detail__unit-name' : 'sw-organization-detail__organization-name'"
+                        :label="selectedUnit ? $t('sw-organization.detail.labelUnitName') : $t('sw-organization.list.labelName')"
+                        :placeholder="$t('sw-organization.detail.placeholderUnitName')"
+                        :error="nameInvalid ? { detail: 'sw-organization.detail.messageUnitNameRequired' } : editableEntityNameError"
+                        :disabled="!allowSave || isBusy"
+                        required
+                    />
+                    <mt-select
+                        v-if="selectedUnit"
+                        class="sw-organization-detail__unit-parent"
+                        :model-value="selectedUnit.parentId ?? ''"
+                        :label="$t('sw-organization.detail.labelParentUnit')"
+                        :options="parentOptions"
+                        :error="editableEntityParentIdError"
+                        :help-text="$t('sw-organization.detail.helpTextParentUnit')"
+                        :disabled="!allowSave || isBusy"
+                        @update:model-value="onParentChange"
+                    />
+                    <mt-switch
+                        v-model="editableEntity.active"
+                        class="sw-organization-detail__unit-active"
+                        :label="$t('sw-organization.detail.labelUnitActive')"
+                        :disabled="!allowSave || isBusy"
+                    />
+                    <mt-button
+                        v-if="!selectedUnit && !createOrganization"
+                        class="sw-organization-detail__add-root-unit"
+                        variant="secondary"
+                        :disabled="!canCreate || isBusy"
+                        @click="onAddRootUnit()"
+                    >
+                        {{ $t('sw-organization.detail.buttonAddUnit') }}
+                    </mt-button>
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+                {% endblock %}
+
+                {% block sw_organization_detail_unit_danger_zone %}{% endblock %}
+            </template>
+            <mt-empty-state
+                v-else
+                class="sw-organization-detail__empty"
+                icon="regular-officebuilding"
+                :headline="organizations.length ? $t('sw-organization.detail.messageSelectNode') : $t('sw-organization.list.messageEmpty')"
+                :description="$t('sw-organization.detail.messageWorkspaceDescription')"
+            >
+                <template #button>
+                    <mt-button
+                        variant="primary"
+                        :disabled="!canCreate || isBusy"
+                        @click="onAddOrganization"
+                    >
+                        {{ $t('sw-organization.list.buttonAddOrganization') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+        </sw-card-view>
+
+        {% block sw_organization_detail_delete_unit_modal %}
+        <sw-modal
+            v-if="deleteTarget"
+            :closable="!isDeleting"
+            position-identifier="sw-organization-detail-unit-danger"
+            :class="deleteTarget.unit ? 'sw-organization-detail__delete-unit-modal' : 'sw-organization-detail__delete-organization-modal'"
+            variant="small"
+            :title="$t('global.default.warning')"
+            @modal-close="onCloseDeleteModal"
+        >
+            {% block sw_organization_detail_delete_unit_modal_text %}
+            <p>{{ deleteConfirmation }}</p>
+            {% endblock %}
+            {% block sw_organization_detail_delete_unit_modal_footer %}
+            <template #modal-footer>
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    :disabled="isDeleting"
+                    @click="onCloseDeleteModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                <mt-button
+                    size="small"
+                    variant="critical"
+                    :disabled="isDeleting"
+                    :is-loading="isDeleting"
+                    @click="onConfirmDelete"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+            </template>
+            {% endblock %}
+        </sw-modal>
+        {% endblock %}
+
+        <sw-discard-changes-modal
+            v-if="pendingAction"
+            @keep-editing="keepEditing"
+            @discard-changes="discardChanges"
+        />
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

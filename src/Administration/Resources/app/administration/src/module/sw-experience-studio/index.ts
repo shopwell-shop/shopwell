@@ -182,19 +182,10 @@ Shopwell.Module.register('sw-experience-studio', {
     navigation: [
         {
             id: 'sw-content',
-            label: 'global.sw-admin-menu.navigation.mainMenuItemContent',
-            color: 'var(--color-pink-500)',
-            icon: 'regular-image-text',
-            position: 40,
         },
         {
             id: 'sw-experience-studio',
-            label: 'sw-experience-studio.general.mainMenuItemGeneral',
-            color: 'var(--color-pink-500)',
             path: 'sw.experience.studio.index',
-            icon: 'regular-pencil-s',
-            position: 5,
-            parent: 'sw-content',
             privilege: 'experience_studio.viewer',
         },
     ],

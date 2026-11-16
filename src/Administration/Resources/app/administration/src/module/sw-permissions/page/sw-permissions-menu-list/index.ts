@@ -78,9 +78,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         routeLabels(): Record<string, string> {
-            return Object.fromEntries(
-                this.routeAllowlist.map((route) => [route.internalKey, this.tWithFallback(route.title)]),
-            );
+            return Object.fromEntries(this.routeAllowlist.map((route) => [route.internalKey, route.title]));
         },
 
         isLoading() {

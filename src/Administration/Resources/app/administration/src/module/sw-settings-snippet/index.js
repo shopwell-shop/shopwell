@@ -72,11 +72,7 @@ Module.register('sw-settings-snippet', {
     navigation: [
         {
             id: 'sw-settings-snippet',
-            label: 'sw-settings-snippet.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.snippet.index',
-            icon: 'regular-globe-stand',
-            position: 430,
             privilege: 'snippet.viewer',
         },
     ],

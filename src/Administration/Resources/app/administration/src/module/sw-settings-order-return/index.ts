@@ -60,11 +60,7 @@ Module.register('sw-settings-order-return', {
     navigation: [
         {
             id: 'sw-settings-order-return',
-            label: 'sw-settings-order-return.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.order.return.index',
-            icon: 'regular-undo',
-            position: 630,
             privilege: 'system.system_config',
         },
     ],

@@ -9,7 +9,19 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('fundamentals@framework')]
 class AdminMenuException extends HttpException
 {
+    public const INVALID_DEFINITION = 'ADMIN_MENU__INVALID_DEFINITION';
+
     public const INVALID_MENU_ITEM_ID = 'ADMIN_MENU__INVALID_MENU_ITEM_ID';
+
+    public static function invalidDefinition(string $key, string $reason): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_DEFINITION,
+            'Invalid menu definition "{{ key }}": {{ reason }}',
+            ['key' => $key, 'reason' => $reason]
+        );
+    }
 
     public static function invalidMenuItemId(mixed $id): self
     {

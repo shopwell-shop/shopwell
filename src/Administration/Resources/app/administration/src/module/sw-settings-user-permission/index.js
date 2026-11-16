@@ -30,11 +30,7 @@ Shopwell.Module.register('sw-settings-user-permission', {
     navigation: [
         {
             id: 'sw-settings-user-permission',
-            label: 'sw-settings-user-permission.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.user.permission.index',
-            icon: 'regular-lock',
-            position: 790,
             privilege: 'user.viewer',
         },
     ],

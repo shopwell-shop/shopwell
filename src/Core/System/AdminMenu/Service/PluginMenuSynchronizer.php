@@ -118,6 +118,7 @@ class PluginMenuSynchronizer
 
     private function synchronize(PluginEntity $plugin, bool $active): void
     {
+        $this->routeRegistry->refreshPluginDefinitions($plugin->getName());
         $context = $this->createContext();
         $declarations = $this->routeRegistry->getPluginDefinitions($plugin->getName());
         $stored = $this->storedItems($plugin, $context);
@@ -171,6 +172,7 @@ class PluginMenuSynchronizer
             ...$payload,
             'type' => $declaration->type,
             'title' => $declaration->title,
+            'translations' => $declaration->translations,
             'icon' => $declaration->icon,
             'color' => $declaration->color,
             'privilege' => $declaration->privilege,
@@ -299,6 +301,7 @@ class PluginMenuSynchronizer
             'internalKey' => $declaration->internalKey,
             'type' => $declaration->type,
             'title' => $declaration->title,
+            'translations' => $declaration->translations,
             'icon' => $declaration->icon,
             'color' => $declaration->color,
             'privilege' => $declaration->privilege,

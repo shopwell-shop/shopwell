@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
+use Shopwell\Core\System\AdminMenu\AdminMenuXmlReader;
 use Shopwell\Core\System\AdminMenu\CoreAdminMenuProvider;
 use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuRowsBuilder;
@@ -59,7 +60,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         $flattened = $this->flatten($tree);
 
-        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider()]))->collectCore()), $flattened);
+        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))]))->collectCore()), $flattened);
         static::assertArrayHasKey('sw-system', $flattened);
         static::assertArrayHasKey('sw-permissions-menu', $flattened);
     }
@@ -71,7 +72,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         $tree = $this->builder()->build($this->context);
         $flattened = $this->flatten($tree);
 
-        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider()]))->collectCore()), $flattened);
+        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))]))->collectCore()), $flattened);
 
         // the first level follows the declared positions
         static::assertSame('sw-dashboard', $tree[0]['internalKey']);
@@ -80,7 +81,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         // and the system menu carries the three sub menus of the redesign
         $system = $flattened['sw-system'];
         static::assertSame(
-            ['sw-user', 'sw-permissions-role', 'sw-permissions-menu'],
+            ['sw-user', 'sw-organization', 'sw-position', 'sw-permissions-role', 'sw-permissions-menu'],
             array_map(static fn (array $node): ?string => $node['internalKey'], $system['children'])
         );
     }
@@ -129,13 +130,14 @@ class VisibleMenuTreeBuilderTest extends TestCase
             $this->menuItemRepository,
             $this->registry(),
             static::getContainer()->get(AclRoleLoader::class),
-            static::getContainer()->get('acl_role.repository')
+            static::getContainer()->get('acl_role.repository'),
+            static::getContainer()->get('event_dispatcher')
         );
     }
 
     private function registry(): AdminMenuRouteRegistry
     {
-        return new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider()]));
+        return new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))]));
     }
 
     /**

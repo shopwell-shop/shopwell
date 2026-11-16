@@ -22,6 +22,20 @@ use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 #[CoversClass(PluginMenuSynchronizer::class)]
 class PluginMenuSynchronizerTest extends TestCase
 {
+    public function testWritesLiteralTranslationsAndCustomFields(): void
+    {
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection()]);
+        $translations = [
+            'en-GB' => ['title' => 'Positions'],
+            'zh-CN' => ['title' => '岗位', 'customFields' => ['example_hint' => '按职责分配']],
+        ];
+        $definition = new AdminMenuDefinitionStruct('example', title: 'Positions', translations: $translations);
+        $this->synchronizer($repository, $definition)->syncActivation($this->plugin());
+
+        static::assertSame('Positions', $repository->upserts[0][0]['title']);
+        static::assertSame($translations, $repository->upserts[0][0]['translations']);
+    }
+
     public function testEmptyDeclarationsAndRowsDoNotWrite(): void
     {
         $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [

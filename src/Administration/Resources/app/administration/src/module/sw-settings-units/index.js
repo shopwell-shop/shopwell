@@ -58,11 +58,7 @@ Module.register('sw-settings-units', {
     navigation: [
         {
             id: 'sw-settings-units',
-            label: 'sw-settings-units.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.units.index',
-            icon: 'regular-box',
-            position: 200,
             privilege: 'scale_unit.viewer',
         },
     ],

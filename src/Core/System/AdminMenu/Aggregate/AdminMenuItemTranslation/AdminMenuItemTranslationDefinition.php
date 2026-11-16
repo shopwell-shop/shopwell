@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -45,6 +46,7 @@ class AdminMenuItemTranslationDefinition extends EntityTranslationDefinition
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([
+            (new CustomFields())->addFlags(new ApiAware()),
             (new StringField('title', 'title'))->addFlags(new ApiAware())->setDescription('Translated label of the menu item shown in the administration navigation.'),
             (new StringField('group_title', 'groupTitle'))->addFlags(new ApiAware())->setDescription('Translated label of the group this item is listed under.'),
         ]);

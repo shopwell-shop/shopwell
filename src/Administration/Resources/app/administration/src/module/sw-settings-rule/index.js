@@ -120,13 +120,8 @@ Module.register('sw-settings-rule', {
     navigation: [
         {
             id: 'sw-settings-rule',
-            label: 'sw-settings-rule.general.mainMenuItemGeneral',
             path: 'sw.settings.rule.index',
-            icon: 'regular-rule',
-            color: 'var(--sw-color-module-red-default)',
-            parent: 'sw-settings',
             privilege: 'rule.viewer',
-            position: 300,
         },
     ],
 

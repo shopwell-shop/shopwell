@@ -58,11 +58,7 @@ Module.register('sw-settings-state-machine', {
     navigation: [
         {
             id: 'sw-settings-state-machine',
-            label: 'sw-settings-state-machine.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.state.machine.index',
-            icon: 'regular-history',
-            position: 190,
             privilege: 'state_machine.viewer',
         },
     ],

@@ -60,8 +60,8 @@ describe('settings menu navigation', () => {
         );
         expect(Object.keys(groups)).toEqual(['regional', 'plugins']);
         expect(groups.regional.map((item) => item.label)).toEqual([
-            { label: 'Taxes', translated: false },
-            { label: 'Currencies', translated: false },
+            { label: 'Taxes', translated: true },
+            { label: 'Currencies', translated: true },
         ]);
         expect(groups.regional[0]).toMatchObject({
             groupTitle: 'Regional settings',
@@ -151,7 +151,7 @@ describe('settings menu navigation', () => {
         expect(groups.resources[0]).toMatchObject({
             groupTitle: 'Resources',
             href: 'https://example.com',
-            label: { label: 'Docs', translated: false },
+            label: { label: 'Docs', translated: true },
         });
     });
     it('finds settings below a custom parent and retains folder restrictions', () => {

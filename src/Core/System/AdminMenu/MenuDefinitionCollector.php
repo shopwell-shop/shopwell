@@ -5,19 +5,18 @@ namespace Shopwell\Core\System\AdminMenu;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * Collects the navigation declarations of every registered
- * {@link AdminMenuDefinitionProviderInterface} - the core provider and one provider per
- * plugin that registers the `shopwell.admin_menu_definition_provider` tag.
- *
- * The collector keeps the providers grouped by their owning plugin, so the plugin
- * lifecycle can sync exactly the definitions of the plugin whose lifecycle event is
- * being handled, while the route whitelist only needs the flattened set of internal keys.
- *
- * @see AdminMenuRouteRegistry
+ * Collects declarations by owner and validates the combined graph before any owner is synced.
+ * Plugins may attach entries to core menus or their own entries, but cannot depend on another
+ * plugin's menu lifecycle. Duplicate identities are always an error, never an override.
  */
 #[Package('fundamentals@framework')]
 class MenuDefinitionCollector
 {
+    /**
+     * @var array<string, list<AdminMenuDefinitionStruct>>|null
+     */
+    private ?array $definitionsByOwner = null;
+
     /**
      * @internal
      *
@@ -28,11 +27,24 @@ class MenuDefinitionCollector
     }
 
     /**
+     * Re-read a plugin's XML at its lifecycle boundary, then validate a fresh graph.
+     */
+    public function refreshForPlugin(string $technicalName): void
+    {
+        foreach ($this->providers as $provider) {
+            if ($provider instanceof XmlAdminMenuProvider && $provider->getPluginTechnicalName() === $technicalName) {
+                $provider->refresh();
+            }
+        }
+        $this->definitionsByOwner = null;
+    }
+
+    /**
      * @return list<AdminMenuDefinitionStruct>
      */
     public function collectCore(): array
     {
-        return $this->collect(fn (AdminMenuDefinitionProviderInterface $provider): bool => $provider->getPluginTechnicalName() === null);
+        return $this->getDefinitionsByOwner()[''] ?? [];
     }
 
     /**
@@ -40,7 +52,7 @@ class MenuDefinitionCollector
      */
     public function collectForPlugin(string $technicalName): array
     {
-        return $this->collect(fn (AdminMenuDefinitionProviderInterface $provider): bool => $provider->getPluginTechnicalName() === $technicalName);
+        return $this->getDefinitionsByOwner()[$technicalName] ?? [];
     }
 
     /**
@@ -48,26 +60,83 @@ class MenuDefinitionCollector
      */
     public function collectAll(): array
     {
-        return $this->collect(static fn (): bool => true);
+        return array_merge([], ...array_values($this->getDefinitionsByOwner()));
     }
 
     /**
-     * @param \Closure(AdminMenuDefinitionProviderInterface): bool $filter
-     *
-     * @return list<AdminMenuDefinitionStruct>
+     * @return array<string, list<AdminMenuDefinitionStruct>>
      */
-    private function collect(\Closure $filter): array
+    private function getDefinitionsByOwner(): array
     {
-        $definitions = [];
-
-        foreach ($this->providers as $provider) {
-            if (!$filter($provider)) {
-                continue;
-            }
-
-            $definitions = [...$definitions, ...MenuGroupNormalizer::normalize($provider->getDefinitions(), $provider->getPluginTechnicalName())];
+        if ($this->definitionsByOwner !== null) {
+            return $this->definitionsByOwner;
         }
 
-        return $definitions;
+        $byOwner = [];
+        foreach ($this->providers as $provider) {
+            $owner = $provider->getPluginTechnicalName() ?? '';
+            $byOwner[$owner] = [...($byOwner[$owner] ?? []), ...$provider->getDefinitions()];
+        }
+
+        $index = [];
+        $owners = [];
+        foreach ($byOwner as $owner => $definitions) {
+            $byOwner[$owner] = MenuGroupNormalizer::normalize($definitions, $owner === '' ? null : $owner);
+            foreach ($byOwner[$owner] as $definition) {
+                if (isset($index[$definition->internalKey])) {
+                    throw AdminMenuException::invalidDefinition($definition->internalKey, 'Duplicate identity in menu providers.');
+                }
+
+                $index[$definition->internalKey] = $definition;
+                $owners[$definition->internalKey] = $owner;
+            }
+        }
+
+        $this->validateParents($index, $owners);
+        $this->validateCycles($index);
+        $this->definitionsByOwner = $byOwner;
+
+        return $byOwner;
+    }
+
+    /**
+     * @param array<string, AdminMenuDefinitionStruct> $index
+     * @param array<string, string> $owners
+     */
+    private function validateParents(array $index, array $owners): void
+    {
+        foreach ($index as $key => $definition) {
+            $parent = $definition->parent;
+            if ($parent === null) {
+                continue;
+            }
+            if (!isset($index[$parent])) {
+                throw AdminMenuException::invalidDefinition($key, \sprintf('Parent "%s" is not declared.', $parent));
+            }
+            if ($owners[$parent] !== '' && $owners[$parent] !== $owners[$key]) {
+                throw AdminMenuException::invalidDefinition($key, \sprintf('Parent "%s" belongs to plugin "%s".', $parent, $owners[$parent]));
+            }
+        }
+    }
+
+    /**
+     * @param array<string, AdminMenuDefinitionStruct> $index
+     */
+    private function validateCycles(array $index): void
+    {
+        $complete = [];
+        foreach ($index as $key => $definition) {
+            $path = [];
+            $cursor = $key;
+            while ($cursor !== null && !isset($complete[$cursor])) {
+                if (isset($path[$cursor])) {
+                    throw AdminMenuException::invalidDefinition($key, \sprintf('Parent cycle includes "%s".', $cursor));
+                }
+
+                $path[$cursor] = true;
+                $cursor = $index[$cursor]->parent;
+            }
+            $complete += $path;
+        }
     }
 }

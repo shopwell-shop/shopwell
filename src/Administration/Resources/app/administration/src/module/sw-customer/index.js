@@ -144,18 +144,10 @@ Module.register('sw-customer', {
     navigation: [
         {
             id: 'sw-customer',
-            label: 'sw-customer.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-orange-default)',
-            icon: 'regular-users',
-            position: 40,
             privilege: 'customer.viewer',
         },
         {
             path: 'sw.customer.index',
-            label: 'sw-customer.general.mainMenuItemList',
-            color: 'var(--sw-color-module-orange-default)',
-            icon: 'regular-users',
-            parent: 'sw-customer',
             privilege: 'customer.viewer',
         },
     ],

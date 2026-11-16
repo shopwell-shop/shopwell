@@ -15,6 +15,8 @@ use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
+use Shopwell\Core\System\AdminMenu\Event\AdminMenuVisibilityEvent;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Builds the navigation tree a single administration user sees.
@@ -46,6 +48,7 @@ class VisibleMenuTreeBuilder
         private readonly AdminMenuRouteRegistry $routeRegistry,
         private readonly AclRoleLoader $aclRoleLoader,
         private readonly EntityRepository $roleRepository,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -60,7 +63,7 @@ class VisibleMenuTreeBuilder
     /**
      * @return array{menu: list<array<string, mixed>>, allowUnmanaged: bool}
      */
-    public function buildNavigation(Context $context): array
+    public function buildNavigation(Context $context, ?string $locale = null): array
     {
         $items = $this->menuItemRepository
             ->search($this->createCriteria(), $context)
@@ -99,7 +102,7 @@ class VisibleMenuTreeBuilder
                 'internalKey' => $item->getInternalKey(),
                 'routeKey' => $item->getRouteKey(),
                 'type' => $item->getType(),
-                'title' => $item->getTitle() ?? $groupDefinition?->title,
+                'title' => $this->translatedTitle($item, $locale),
                 'groupName' => $item->getGroupName() ?? $groupDefinition?->groupName,
                 'groupTitle' => $item->getGroupTitle(),
                 'icon' => $item->getIcon(),
@@ -115,8 +118,17 @@ class VisibleMenuTreeBuilder
             $this->routeRegistry->getCoreDefinitions(),
             $storedKeys,
             $nodeKeyByInternalKey,
-            $nodes
+            $nodes,
+            $locale
         );
+
+        $visibility = new AdminMenuVisibilityEvent($context, $locale);
+        $this->eventDispatcher->dispatch($visibility);
+        foreach ($nodes as $id => $node) {
+            if ($node['internalKey'] !== null && $visibility->isHidden($node['internalKey'])) {
+                unset($nodes[$id]);
+            }
+        }
 
         return $this->filterForRoles($this->renderLevel(null, $nodes), $roles, $context);
     }
@@ -130,8 +142,27 @@ class VisibleMenuTreeBuilder
     {
         $criteria = new Criteria();
         $criteria->addAssociation('plugin');
+        $criteria->addAssociation('translations.language.locale');
 
         return $criteria;
+    }
+
+    private function translatedTitle(AdminMenuItemEntity $item, ?string $locale): ?string
+    {
+        if ($locale !== null) {
+            foreach ($item->getTranslations() ?? [] as $translation) {
+                if ($translation->getLanguage()?->getLocale()?->getCode() === $locale && $translation->getTitle() !== null) {
+                    return $translation->getTitle();
+                }
+            }
+        }
+
+        $definition = $item->getInternalKey() !== null ? $this->routeRegistry->get($item->getInternalKey()) : null;
+        if ($locale !== null && !$item->isConfigOverridden() && isset($definition?->translations[$locale])) {
+            return $definition->translations[$locale]['title'];
+        }
+
+        return $item->getTitle() ?? $definition?->title;
     }
 
     private function isVisible(AdminMenuItemEntity $item): bool
@@ -246,7 +277,8 @@ class VisibleMenuTreeBuilder
         array $coreDefinitions,
         array $storedKeys,
         array $nodeKeyByInternalKey,
-        array &$nodes
+        array &$nodes,
+        ?string $locale
     ): void {
         $missingByInternalKey = [];
 
@@ -263,7 +295,7 @@ class VisibleMenuTreeBuilder
                 'afterMenuItemId' => null,
                 'internalKey' => $definition->internalKey,
                 'type' => $definition->type,
-                'title' => $definition->title,
+                'title' => $definition->translations[$locale ?? '']['title'] ?? $definition->title,
                 'groupName' => $definition->groupName,
                 'groupTitle' => null,
                 'icon' => $definition->icon,

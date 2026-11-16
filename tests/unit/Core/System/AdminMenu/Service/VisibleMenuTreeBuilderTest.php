@@ -18,10 +18,16 @@ use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuItemTranslationCollection;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuItemTranslationEntity;
+use Shopwell\Core\System\AdminMenu\Event\AdminMenuVisibilityEvent;
 use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
 use Shopwell\Core\System\AdminMenu\MenuGroupNormalizer;
 use Shopwell\Core\System\AdminMenu\Service\VisibleMenuTreeBuilder;
+use Shopwell\Core\System\Language\LanguageEntity;
+use Shopwell\Core\System\Locale\LocaleEntity;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @internal
@@ -34,9 +40,72 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
     private Context $context;
 
+    private EventDispatcher $dispatcher;
+
     protected function setUp(): void
     {
         $this->context = Context::createDefaultContext();
+        $this->dispatcher = new EventDispatcher();
+    }
+
+    public function testVisibilityEventHidesStoredAndSynthesizedMenusAndTheirChildren(): void
+    {
+        $received = null;
+        $this->dispatcher->addListener(AdminMenuVisibilityEvent::class, static function (AdminMenuVisibilityEvent $event) use (&$received): void {
+            $received = $event;
+            $event->hide('finance', 'reports');
+        });
+        $registry = $this->createRegistry(
+            new AdminMenuDefinitionStruct('finance', type: 'folder'),
+            new AdminMenuDefinitionStruct('transfer', parent: 'finance'),
+            new AdminMenuDefinitionStruct('reports'),
+            new AdminMenuDefinitionStruct('dashboard'),
+        );
+        $items = [$this->createItem('finance-row', type: 'folder', internalKey: 'finance')];
+
+        $tree = $this->createBuilder($items, $registry)->buildNavigation($this->context, 'zh-CN')['menu'];
+
+        static::assertSame(['dashboard'], $this->flatten($tree));
+        static::assertInstanceOf(AdminMenuVisibilityEvent::class, $received);
+        static::assertSame($this->context, $received->getContext());
+        static::assertSame('zh-CN', $received->getLocale());
+    }
+
+    public function testVisibilityEventCannotRestoreMenusOutsideTheRoleSelection(): void
+    {
+        $this->dispatcher->addListener(AdminMenuVisibilityEvent::class, static function (AdminMenuVisibilityEvent $event): void {
+            $event->hide('other');
+        });
+        $registry = $this->createRegistry(new AdminMenuDefinitionStruct('finance'));
+
+        $navigation = $this->createBuilder([], $registry, ['role-a'], $this->createRoles('role-a'))
+            ->buildNavigation($this->createUserContext());
+
+        static::assertSame([], $navigation['menu']);
+        static::assertFalse($navigation['allowUnmanaged']);
+    }
+
+    public function testUsesTheInterfaceLocaleForLiteralStoredAndUnstoredTitles(): void
+    {
+        $item = $this->createItem('system-row', type: 'folder', internalKey: 'sw-system');
+        $item->setTitle('System');
+        $locale = new LocaleEntity();
+        $locale->setCode('zh-CN');
+        $language = new LanguageEntity();
+        $language->setLocale($locale);
+        $translation = new AdminMenuItemTranslationEntity();
+        $translation->setUniqueIdentifier('translation');
+        $translation->setLanguage($language);
+        $translation->setTitle('我的系统');
+        $item->setTranslations(new AdminMenuItemTranslationCollection([$translation]));
+        $registry = $this->createRegistry(
+            new AdminMenuDefinitionStruct('sw-system', type: 'folder', title: 'System'),
+            new AdminMenuDefinitionStruct('sw-organization', title: 'Organizations', parent: 'sw-system', translations: ['zh-CN' => ['title' => '组织机构']]),
+        );
+        $tree = $this->createBuilder([$item], $registry)->buildNavigation($this->context, 'zh-CN')['menu'];
+
+        static::assertSame('我的系统', $tree[0]['title']);
+        static::assertSame('组织机构', $tree[0]['children'][0]['title']);
     }
 
     public function testOrdersSiblingsByTheirAfterChainNotByInsertionOrder(): void
@@ -68,7 +137,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         static::assertSame('localization', $tree[0]['groupName']);
         static::assertSame('Regional settings', $tree[0]['groupTitle']);
         static::assertSame('group', $tree[1]['type']);
-        static::assertSame('sw-permissions.menu.groups.localization', $tree[1]['title']);
+        static::assertSame('localization', $tree[1]['title']);
         static::assertSame('sw-settings-currency', $tree[1]['children'][0]['internalKey']);
     }
 
@@ -87,7 +156,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         $tree = $builder->build($this->context);
 
-        static::assertSame('sw-permissions.menu.groups.customer', $tree[0]['children'][0]['title']);
+        static::assertSame('customer', $tree[0]['children'][0]['title']);
         static::assertSame('customer', $tree[0]['children'][0]['groupName']);
 
         $group->setTitle('Customer tools');
@@ -339,7 +408,8 @@ class VisibleMenuTreeBuilderTest extends TestCase
             StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection($items)]),
             $registry,
             $roleLoader,
-            StaticEntityRepository::of(AclRoleCollection::class, [$roles ?? new AclRoleCollection()])
+            StaticEntityRepository::of(AclRoleCollection::class, [$roles ?? new AclRoleCollection()]),
+            $this->dispatcher
         );
     }
 

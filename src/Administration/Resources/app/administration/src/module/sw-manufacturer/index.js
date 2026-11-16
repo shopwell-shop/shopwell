@@ -64,11 +64,7 @@ Module.register('sw-manufacturer', {
         {
             path: 'sw.manufacturer.index',
             privilege: 'product_manufacturer.viewer',
-            label: 'sw-manufacturer.general.mainMenuItemList',
             id: 'sw-manufacturer',
-            parent: 'sw-catalogue',
-            color: 'var(--sw-color-module-green-default)',
-            position: 50,
         },
     ],
 

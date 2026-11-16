@@ -35,11 +35,7 @@ Shopwell.Module.register('sw-dashboard', {
     navigation: [
         {
             id: 'sw-dashboard',
-            label: 'sw-dashboard.general.mainMenuItemGeneral',
-            color: 'var(--color-text-brand-default)',
-            icon: 'regular-dashboard',
             path: 'sw.dashboard.index',
-            position: 10,
         },
     ],
 });

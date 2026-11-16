@@ -191,11 +191,21 @@ class AdminMenuValidatorTest extends TestCase
     {
         $menuItemRepository = StaticEntityRepository::of(AdminMenuItemCollection::class);
 
-        $this->createValidator($menuItemRepository)->markOverriddenAfterWrite(
+        $event = $this->createTranslationWriteEvent(EntityWriteResult::OPERATION_INSERT);
+        $event->getContext()->addExtension(PluginMenuSynchronizer::CONTEXT_EXTENSION, new ArrayStruct());
+        $this->createValidator($menuItemRepository)->markOverriddenAfterWrite($event);
+
+        static::assertSame([], $menuItemRepository->updates);
+    }
+
+    public function testAddingATranslationMarksTheOwningItemAsOverridden(): void
+    {
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class);
+        $this->createValidator($repository)->markOverriddenAfterWrite(
             $this->createTranslationWriteEvent(EntityWriteResult::OPERATION_INSERT)
         );
 
-        static::assertSame([], $menuItemRepository->updates);
+        static::assertSame([[['id' => $this->itemId, 'configOverridden' => true]]], $repository->updates);
     }
 
     public function testWritesOfOtherEntitiesAreNotFollowedUp(): void
@@ -292,7 +302,7 @@ class AdminMenuValidatorTest extends TestCase
                 new EntityWrittenEvent(
                     AdminMenuItemTranslationDefinition::ENTITY_NAME,
                     [new EntityWriteResult(
-                        ['admin_menu_item_id' => $this->itemId],
+                        ['adminMenuItemId' => $this->itemId],
                         ['title' => 'Ein eigener Titel'],
                         AdminMenuItemTranslationDefinition::ENTITY_NAME,
                         $operation

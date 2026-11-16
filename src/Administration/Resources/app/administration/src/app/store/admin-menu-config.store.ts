@@ -9,6 +9,7 @@
 type AdminMenuItemTranslation = {
     title: string | null;
     groupTitle: string | null;
+    customFields?: Record<string, unknown> | null;
 };
 
 /** @private */
@@ -169,6 +170,7 @@ const adminMenuConfigStore = Shopwell.Store.register({
         allowUnmanaged: false,
         isVisibleLoaded: false,
         visibleUserId: null as string | null,
+        visibleLocale: null as string | null,
         visibleRequestId: 0,
         isLoadFailed: false,
         isVisibleLoadFailed: false,
@@ -226,6 +228,14 @@ const adminMenuConfigStore = Shopwell.Store.register({
             }
         },
 
+        async loadRouteAllowlist() {
+            const locale = Shopwell.Store.get('session').currentLocale;
+            const routes = await this.api().getRouteAllowlist();
+            if (locale === Shopwell.Store.get('session').currentLocale) {
+                this.routeAllowlist = routes;
+            }
+        },
+
         /**
          * Loads the navigation tree of the current user.
          *
@@ -234,22 +244,26 @@ const adminMenuConfigStore = Shopwell.Store.register({
          */
         async loadVisibleTree(force = false) {
             const userId = Shopwell.Store.get('session').currentUser?.id ?? null;
-            if (this.isVisibleLoaded && this.visibleUserId === userId && !force) {
+            const locale = Shopwell.Store.get('session').currentLocale;
+            if (this.isVisibleLoaded && this.visibleUserId === userId && this.visibleLocale === locale && !force) {
                 return;
             }
 
-            if (this.visibleUserId !== userId) {
+            if (this.visibleUserId !== userId || this.visibleLocale !== locale) {
                 this.visibleTree = [];
                 this.managedKeys = [];
                 this.allowUnmanaged = false;
                 this.isVisibleLoaded = false;
                 this.isVisibleLoadFailed = false;
                 this.visibleUserId = userId;
+                this.visibleLocale = locale;
             }
 
             const requestId = ++this.visibleRequestId;
             const isCurrentRequest = () =>
-                requestId === this.visibleRequestId && userId === (Shopwell.Store.get('session').currentUser?.id ?? null);
+                requestId === this.visibleRequestId &&
+                userId === (Shopwell.Store.get('session').currentUser?.id ?? null) &&
+                locale === Shopwell.Store.get('session').currentLocale;
 
             try {
                 const navigation = await this.api().getNavigation();

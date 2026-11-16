@@ -62,7 +62,7 @@ function settingsTarget(node: DatabaseMenuNode, source: Partial<SettingsNavigati
         to: href ? undefined : (source.to ?? (entry.path || undefined)),
         href,
         label: node.title
-            ? { label: node.title, translated: false }
+            ? { label: node.title, translated: true }
             : (source.label ?? (typeof entry.label === 'string' ? entry.label : undefined)),
         icon: node.icon ?? source.icon ?? entry.icon ?? 'regular-link',
         privilege: source.privilege ?? entry.privilege,

@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<admin-menu xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:noNamespaceSchemaLocation="../../Schema/admin-menu.xsd">
+    <menu id="sw-dashboard" icon="regular-dashboard" position="10" color="var(--color-text-brand-default)">
+        <title lang="en-GB">Dashboard</title>
+        <title lang="zh-CN">主页</title>
+    </menu>
+    <menu id="sw-catalogue" type="folder" icon="regular-products" position="20" color="var(--sw-color-module-green-default)">
+        <title lang="en-GB">Products</title>
+        <title lang="zh-CN">商品</title>
+        <menu id="sw-product" icon="regular-products" position="10" privilege="product.viewer" color="var(--sw-color-module-green-default)">
+            <title lang="en-GB">Overview</title>
+            <title lang="zh-CN">商品</title>
+        </menu>
+        <menu id="sw-review" icon="regular-star" position="20" privilege="review.viewer" color="var(--sw-color-module-green-default)">
+            <title lang="en-GB">Reviews</title>
+            <title lang="zh-CN">评价</title>
+        </menu>
+        <menu id="sw-category" position="25" privilege="category.viewer" color="var(--sw-color-module-green-default)">
+            <title lang="en-GB">Categories</title>
+            <title lang="zh-CN">分类</title>
+        </menu>
+        <menu id="sw-product-stream" position="30" privilege="product_stream.viewer" color="var(--sw-color-module-green-default)">
+            <title lang="en-GB">Dynamic product groups</title>
+            <title lang="zh-CN">动态商品组</title>
+        </menu>
+        <menu id="sw-property" position="40" privilege="property.viewer" color="var(--sw-color-module-green-default)">
+            <title lang="en-GB">Properties</title>
+            <title lang="zh-CN">属性</title>
+        </menu>
+        <menu id="sw-manufacturer" position="50" privilege="product_manufacturer.viewer" color="var(--sw-color-module-green-default)">
+            <title lang="en-GB">Manufacturers</title>
+            <title lang="zh-CN">制造商</title>
+        </menu>
+    </menu>
+    <menu id="sw-order" type="folder" icon="regular-shopping-bag" position="30" privilege="order.viewer" color="var(--sw-color-module-purple-default)">
+        <title lang="en-GB">Orders</title>
+        <title lang="zh-CN">订单</title>
+        <menu id="sw.order.index" privilege="order.viewer">
+            <title lang="en-GB">Sales orders</title>
+            <title lang="zh-CN">销售订单</title>
+        </menu>
+        <menu id="sw-membership-purchases" icon="regular-clipboard" privilege="loyalty.viewer">
+            <title lang="en-GB">Membership orders</title>
+            <title lang="zh-CN">会员订单</title>
+        </menu>
+    </menu>
+    <menu id="sw-customer" type="folder" icon="regular-users" position="40" privilege="customer.viewer" color="var(--sw-color-module-orange-default)">
+        <title lang="en-GB">Customers</title>
+        <title lang="zh-CN">客户</title>
+        <menu id="sw.customer.index" icon="regular-users" privilege="customer.viewer" color="var(--sw-color-module-orange-default)">
+            <title lang="en-GB">Overview</title>
+            <title lang="zh-CN">客户</title>
+        </menu>
+    </menu>
+    <menu id="sw-order-return" type="folder" icon="regular-undo" position="45" color="var(--sw-color-module-orange-default)">
+        <title lang="en-GB">Returns</title>
+        <title lang="zh-CN">售后</title>
+        <menu id="sw-order-return-list" privilege="order_return.viewer">
+            <title lang="en-GB">Returns</title>
+            <title lang="zh-CN">售后单</title>
+        </menu>
+    </menu>
+    <menu id="sw-content" type="folder" icon="regular-image-text" position="50" color="var(--color-pink-500)">
+        <title lang="en-GB">Content</title>
+        <title lang="zh-CN">内容</title>
+        <menu id="sw-experience-studio" icon="regular-palette" position="10" privilege="experience_studio.viewer" color="var(--color-pink-500)">
+            <title lang="en-GB">Experience Studio</title>
+            <title lang="zh-CN">体验工作室</title>
+        </menu>
+        <menu id="sw-media" icon="regular-image" position="20" privilege="media.viewer" color="var(--sw-color-module-pink-default)">
+            <title lang="en-GB">Media</title>
+            <title lang="zh-CN">媒体</title>
+        </menu>
+        <menu id="sw-blog" type="folder" icon="regular-file-text" position="30" color="#9AA8B5">
+            <title lang="en-GB">Blog</title>
+            <title lang="zh-CN">文章</title>
+            <menu id="sw-blog-content" position="10" privilege="blog.viewer">
+                <title lang="en-GB">Content</title>
+                <title lang="zh-CN">文章</title>
+            </menu>
+            <menu id="sw-blog-category" position="20" privilege="blog.viewer">
+                <title lang="en-GB">Categories</title>
+                <title lang="zh-CN">分类</title>
+            </menu>
+            <menu id="sw-blog-author" position="30" privilege="blog.viewer">
+                <title lang="en-GB">Authors</title>
+                <title lang="zh-CN">作者</title>
+            </menu>
+            <menu id="sw-blog-comment" position="40" privilege="blog.viewer">
+                <title lang="en-GB">Comments</title>
+                <title lang="zh-CN">评论</title>
+            </menu>
+        </menu>
+    </menu>
+    <menu id="sw-marketing" type="folder" icon="regular-megaphone" position="60" privilege="promotion.viewer" color="var(--sw-color-module-yellow-default)">
+        <title lang="en-GB">Marketing</title>
+        <title lang="zh-CN">营销</title>
+        <menu id="sw-promotion-v2" icon="regular-discount" position="10" privilege="promotion.viewer" color="var(--sw-color-module-yellow-default)">
+            <title lang="en-GB">Promotions</title>
+            <title lang="zh-CN">促销活动</title>
+        </menu>
+        <menu id="sw-newsletter-recipient" icon="regular-inbox" position="20" privilege="newsletter_recipient.viewer" color="var(--sw-color-module-yellow-default)">
+            <title lang="en-GB">Newsletter recipients</title>
+            <title lang="zh-CN">邮件订阅者</title>
+        </menu>
+    </menu>
+    <menu id="sw-workflow" type="folder" icon="regular-flow" position="72">
+        <title lang="en-GB">Workflow</title>
+        <title lang="zh-CN">工作流</title>
+        <menu id="sw-workflow-design" position="10" privilege="workflow.viewer">
+            <title lang="en-GB">Workflow management</title>
+            <title lang="zh-CN">流程管理</title>
+        </menu>
+        <menu id="sw-workflow-tasks" icon="regular-check-circle" position="25" privilege="workflow_participant.viewer">
+            <title lang="en-GB">My approvals</title>
+            <title lang="zh-CN">我的审批</title>
+        </menu>
+    </menu>
+    <menu id="sw-finance" type="folder" icon="regular-money-bill" position="75" color="var(--sw-color-module-green-default)">
+        <title lang="en-GB">Finance</title>
+        <title lang="zh-CN">财务</title>
+        <menu id="sw.payment.index" position="10" privilege="payment_order.viewer">
+            <title lang="en-GB">Payment orders</title>
+            <title lang="zh-CN">支付订单</title>
+        </menu>
+        <menu id="sw.payment.refund" position="20" privilege="payment_refund.viewer">
+            <title lang="en-GB">Refunds</title>
+            <title lang="zh-CN">退款订单</title>
+        </menu>
+        <menu id="sw-finance-transfer" position="30" privilege="payment_transfer.viewer">
+            <title lang="en-GB">Transfer Requests</title>
+            <title lang="zh-CN">转账申请</title>
+        </menu>
+        <menu id="sw-finance-wallet-transactions" position="40" privilege="wallet.viewer">
+            <title lang="en-GB">Wallet Transactions</title>
+            <title lang="zh-CN">钱包流水</title>
+        </menu>
+    </menu>
+    <menu id="sw-system" type="folder" icon="regular-user-shield" position="95">
+        <title lang="en-GB">System</title>
+        <title lang="zh-CN">系统</title>
+        <menu id="sw-user" position="10" privilege="user.viewer">
+            <title lang="en-GB">Users</title>
+            <title lang="zh-CN">用户</title>
+        </menu>
+        <menu id="sw-organization" icon="regular-officebuilding" position="20" privilege="organization.viewer">
+            <title lang="en-GB">Organizations</title>
+            <title lang="zh-CN">组织机构</title>
+        </menu>
+        <menu id="sw-position" icon="regular-briefcase" position="30" privilege="position.viewer">
+            <title lang="en-GB">Positions</title>
+            <title lang="zh-CN">岗位</title>
+        </menu>
+        <menu id="sw-permissions-role" position="40" privilege="permissions.viewer">
+            <title lang="en-GB">Roles</title>
+            <title lang="zh-CN">角色</title>
+        </menu>
+        <menu id="sw-permissions-menu" position="50" privilege="admin_menu.viewer">
+            <title lang="en-GB">Menu</title>
+            <title lang="zh-CN">菜单</title>
+        </menu>
+    </menu>
+    <menu id="sw-extension" type="folder" icon="regular-plug" position="980" color="var(--sw-color-module-brand-default)">
+        <title lang="en-GB">Extensions</title>
+        <title lang="zh-CN">扩展</title>
+        <menu id="sw-extension-store" position="10" privilege="system.extension_store">
+            <title lang="en-GB">Store</title>
+            <title lang="zh-CN">商店</title>
+        </menu>
+        <menu id="sw-extension-my-extensions" position="10" privilege="system.plugin_maintain">
+            <title lang="en-GB">My extensions</title>
+            <title lang="zh-CN">我的扩展</title>
+        </menu>
+    </menu>
+    <menu id="sw-settings" icon="regular-cog" position="990" color="var(--sw-color-module-neutral-default)">
+        <title lang="en-GB">Settings</title>
+        <title lang="zh-CN">设置</title>
+        <menu id="sw-settings-group-general" type="group" position="100" group="general">
+            <title lang="en-GB">General</title>
+            <title lang="zh-CN">通用</title>
+            <menu id="sw-settings-basic-information" icon="regular-bars" position="100" privilege="system.system_config">
+                <title lang="en-GB">Basic information</title>
+                <title lang="zh-CN">常规信息</title>
+            </menu>
+            <menu id="sw-settings-cart" icon="regular-shopping-cart" position="110" privilege="system.system_config">
+                <title lang="en-GB">Cart settings</title>
+                <title lang="zh-CN">购物车</title>
+            </menu>
+            <menu id="sw-settings-dictionary" icon="regular-layer-group" position="120" privilege="dictionary.viewer">
+                <title lang="en-GB">Dictionaries</title>
+                <title lang="zh-CN">数据字典</title>
+            </menu>
+            <menu id="sw-settings-measurement" icon="regular-balance-scale" position="130" privilege="system.system_config">
+                <title lang="en-GB">Measurement system</title>
+                <title lang="zh-CN">计量单位</title>
+            </menu>
+            <menu id="sw-settings-number-range" icon="regular-file-signature" position="140" privilege="number_ranges.viewer">
+                <title lang="en-GB">Number ranges</title>
+                <title lang="zh-CN">编号格式</title>
+            </menu>
+            <menu id="sw-settings-oauth2-login" icon="regular-key" position="150" privilege="oauth2_client.viewer">
+                <title lang="en-GB">Third party login</title>
+                <title lang="zh-CN">第三方登录</title>
+            </menu>
+            <menu id="sw-settings-search" icon="regular-search" position="180" privilege="product_search_config.viewer">
+                <title lang="en-GB">Search</title>
+                <title lang="zh-CN">搜索</title>
+            </menu>
+            <menu id="sw-settings-state-machine" icon="regular-history" position="190" privilege="state_machine.viewer">
+                <title lang="en-GB">Status management</title>
+                <title lang="zh-CN">状态管理</title>
+            </menu>
+            <menu id="sw-settings-units" icon="regular-box" position="200" privilege="scale_unit.viewer">
+                <title lang="en-GB">Product units</title>
+                <title lang="zh-CN">商品单位</title>
+            </menu>
+        </menu>
+        <menu id="sw-settings-group-customer" type="group" position="200" group="customer">
+            <title lang="en-GB">Customer</title>
+            <title lang="zh-CN">客户</title>
+            <menu id="sw-settings-customer-group" icon="regular-users" position="200" privilege="customer_groups.viewer">
+                <title lang="en-GB">Customer groups</title>
+                <title lang="zh-CN">客户组</title>
+            </menu>
+            <menu id="sw-settings-login-registration" icon="regular-sign-in" position="210" privilege="system.system_config">
+                <title lang="en-GB">Log-in &amp; sign-up</title>
+                <title lang="zh-CN">登录 &amp; 注册</title>
+            </menu>
+            <menu id="sw-settings-membership" icon="regular-star" position="220" privilege="loyalty.viewer">
+                <title lang="en-GB">Loyalty tiers</title>
+                <title lang="zh-CN">会员等级</title>
+            </menu>
+            <menu id="sw-settings-membership-plans" icon="regular-shopping-bag" position="230" privilege="loyalty.viewer">
+                <title lang="en-GB">Membership plans</title>
+                <title lang="zh-CN">会员套餐</title>
+            </menu>
+        </menu>
+        <menu id="sw-settings-group-automation" type="group" position="300" group="automation">
+            <title lang="en-GB">Automation</title>
+            <title lang="zh-CN">自动化</title>
+            <menu id="sw-settings-rule" icon="regular-rule" position="300" privilege="rule.viewer" color="var(--sw-color-module-red-default)">
+                <title lang="en-GB">Rule Builder</title>
+                <title lang="zh-CN">规则构建器</title>
+            </menu>
+        </menu>
+        <menu id="sw-settings-group-localization" type="group" position="400" group="localization">
+            <title lang="en-GB">Localisation</title>
+            <title lang="zh-CN">国际化</title>
+            <menu id="sw-settings-country" icon="regular-map" position="400" privilege="country.viewer">
+                <title lang="en-GB">Countries</title>
+                <title lang="zh-CN">国家</title>
+            </menu>
+            <menu id="sw-settings-currency" icon="regular-euro" position="410" privilege="currencies.viewer">
+                <title lang="en-GB">Currencies</title>
+                <title lang="zh-CN">货币</title>
+            </menu>
+            <menu id="sw-settings-language" icon="regular-flag" position="420" privilege="language.viewer">
+                <title lang="en-GB">Languages</title>
+                <title lang="zh-CN">语言</title>
+            </menu>
+            <menu id="sw-settings-snippet" icon="regular-globe-stand" position="430" privilege="snippet.viewer">
+                <title lang="en-GB">Snippets</title>
+                <title lang="zh-CN">文本模块</title>
+            </menu>
+            <menu id="sw-settings-tax" icon="regular-chart-pie" position="440" privilege="tax.viewer">
+                <title lang="en-GB">Tax</title>
+                <title lang="zh-CN">税</title>
+            </menu>
+        </menu>
+        <menu id="sw-settings-group-content" type="group" position="500" group="content">
+            <title lang="en-GB">Content</title>
+            <title lang="zh-CN">内容</title>
+            <menu id="sw-settings-custom-field" icon="regular-bars-square" position="500" privilege="custom_field.viewer">
+                <title lang="en-GB">Custom fields</title>
+                <title lang="zh-CN">自定义字段</title>
+            </menu>
+            <menu id="sw-settings-media" icon="regular-image" position="510" privilege="system.system_config">
+                <title lang="en-GB">Media</title>
+                <title lang="zh-CN">媒体</title>
+            </menu>
+            <menu id="sw-settings-newsletter" icon="regular-inbox" position="520" privilege="system.system_config">
+                <title lang="en-GB">Newsletter</title>
+                <title lang="zh-CN">邮件订阅</title>
+            </menu>
+            <menu id="sw-settings-seo" icon="regular-search" position="530" privilege="system.system_config">
+                <title lang="en-GB">SEO</title>
+                <title lang="zh-CN">搜索引擎优化</title>
+            </menu>
+            <menu id="sw-settings-sitemap" icon="regular-sitemap" position="540" privilege="system.system_config">
+                <title lang="en-GB">Sitemap</title>
+                <title lang="zh-CN">站点地图</title>
+            </menu>
+            <menu id="sw-settings-tag" icon="regular-tag" position="550" privilege="tag.viewer">
+                <title lang="en-GB">Tags</title>
+                <title lang="zh-CN">标签</title>
+            </menu>
+        </menu>
+        <menu id="sw-settings-group-commerce" type="group" position="600" group="commerce">
+            <title lang="en-GB">Commerce</title>
+            <title lang="zh-CN">电子商务</title>
+            <menu id="sw-settings-delivery-times" icon="regular-clock" position="600" privilege="delivery_times.viewer">
+                <title lang="en-GB">Delivery times</title>
+                <title lang="zh-CN">配送时间</title>
+            </menu>
+            <menu id="sw-settings-document" icon="regular-file-text" position="610" privilege="document.viewer">
+                <title lang="en-GB">Documents</title>
+                <title lang="zh-CN">文档</title>
+            </menu>
+            <menu id="sw-settings-listing" icon="regular-products" position="620" privilege="system.system_config">
+                <title lang="en-GB">Products</title>
+                <title lang="zh-CN">商品列表</title>
+            </menu>
+            <menu id="sw-settings-order-return" icon="regular-undo" position="630" privilege="system.system_config">
+                <title lang="en-GB">Return settings</title>
+                <title lang="zh-CN">售后设置</title>
+            </menu>
+            <menu id="sw-settings-payment" icon="regular-credit-card" position="640" privilege="payment.viewer">
+                <title lang="en-GB">Payment methods</title>
+                <title lang="zh-CN">支付方式</title>
+            </menu>
+            <menu id="sw-settings-product-feature-sets" icon="regular-check-square" position="650" privilege="product_feature_sets.viewer">
+                <title lang="en-GB">Essential characteristics</title>
+                <title lang="zh-CN">基本特征</title>
+            </menu>
+            <menu id="sw-settings-shipping" icon="regular-truck" position="660" privilege="shipping.viewer">
+                <title lang="en-GB">Shipping</title>
+                <title lang="zh-CN">配送方式</title>
+            </menu>
+        </menu>
+        <menu id="sw-settings-group-system" type="group" position="700" group="system">
+            <title lang="en-GB">System</title>
+            <title lang="zh-CN">系统</title>
+            <menu id="sw-settings-cache" icon="regular-files" position="700" privilege="system.clear_cache">
+                <title lang="en-GB">Caches &amp; indexes</title>
+                <title lang="zh-CN">缓存与索引</title>
+            </menu>
+            <menu id="sw-settings-logging" icon="regular-server" position="710" privilege="system.logging">
+                <title lang="en-GB">Event logs</title>
+                <title lang="zh-CN">事件日志</title>
+            </menu>
+            <menu id="sw-settings-mailer" icon="regular-envelope" position="720" privilege="system.system_config">
+                <title lang="en-GB">Mailer</title>
+                <title lang="zh-CN">邮件服务</title>
+            </menu>
+            <menu id="sw-settings-message-stats" icon="regular-bars-square" position="730" privilege="system.system_config">
+                <title lang="en-GB">Message queue statistics</title>
+                <title lang="zh-CN">消息队列统计</title>
+            </menu>
+            <menu id="sw-settings-services" icon="regular-view-grid" position="740" privilege="system.plugin_maintain">
+                <title lang="en-GB">Shopwell Services</title>
+                <title lang="zh-CN">云服务</title>
+            </menu>
+            <menu id="sw-settings-shopwell-updates" icon="regular-sync" position="750" privilege="system.core_update">
+                <title lang="en-GB">Shopwell updates</title>
+                <title lang="zh-CN">系统更新</title>
+            </menu>
+            <menu id="sw-settings-sms" icon="regular-envelope" position="760" privilege="sms_gateway.viewer">
+                <title lang="en-GB">SMS</title>
+                <title lang="zh-CN">短信</title>
+            </menu>
+            <menu id="sw-settings-store" icon="regular-laptop" position="770" privilege="system.system_config">
+                <title lang="en-GB">Shopwell Account</title>
+                <title lang="zh-CN">软件授权</title>
+            </menu>
+            <menu id="sw-settings-usage-data" icon="regular-shield" position="780" privilege="system.system_config">
+                <title lang="en-GB">Privacy</title>
+                <title lang="zh-CN">隐私设置</title>
+            </menu>
+            <menu id="sw-settings-user-permission" icon="regular-lock" position="790" privilege="user.viewer">
+                <title lang="en-GB">Users &amp; login</title>
+                <title lang="zh-CN">用户与登录</title>
+            </menu>
+        </menu>
+        <menu id="sw-settings-group-payment" type="group" position="800" group="payment">
+            <title lang="en-GB">Payment</title>
+            <title lang="zh-CN">支付</title>
+            <menu id="sw-settings-payment-gateway" icon="regular-plug" position="800" privilege="payment_app.viewer">
+                <title lang="en-GB">Payment apps</title>
+                <title lang="zh-CN">支付应用</title>
+            </menu>
+            <menu id="sw-settings-payment-provider" icon="regular-credit-card" position="810" privilege="payment_account.viewer">
+                <title lang="en-GB">Payment accounts</title>
+                <title lang="zh-CN">支付账户</title>
+            </menu>
+        </menu>
+    </menu>
+</admin-menu>

@@ -59,11 +59,7 @@ Module.register('sw-settings', {
     navigation: [
         {
             id: 'sw-settings',
-            label: 'sw-settings.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-neutral-default)',
-            icon: 'regular-cog',
             path: 'sw.settings.index',
-            position: 90,
         },
     ],
 });

@@ -158,20 +158,11 @@ Module.register('sw-promotion-v2', {
     navigation: [
         {
             id: 'sw-marketing',
-            label: 'global.sw-admin-menu.navigation.mainMenuItemMarketing',
-            color: 'var(--sw-color-module-yellow-default)',
-            icon: 'regular-megaphone',
-            position: 60,
             privilege: 'promotion.viewer',
         },
         {
             id: 'sw-promotion-v2',
             path: 'sw.promotion.v2.index',
-            label: 'sw-promotion-v2.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-yellow-default)',
-            icon: 'regular-discount',
-            position: 10,
-            parent: 'sw-marketing',
             privilege: 'promotion.viewer',
         },
     ],

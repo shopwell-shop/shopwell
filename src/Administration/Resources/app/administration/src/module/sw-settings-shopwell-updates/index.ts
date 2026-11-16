@@ -43,11 +43,7 @@ Module.register('sw-settings-shopwell-updates', {
     navigation: [
         {
             id: 'sw-settings-shopwell-updates',
-            label: 'sw-settings-shopwell-updates.general.menuTitle',
-            parent: 'sw-settings',
             path: 'sw.settings.shopwell.updates.wizard',
-            icon: 'regular-sync',
-            position: 750,
             privilege: 'system.core_update',
         },
     ],

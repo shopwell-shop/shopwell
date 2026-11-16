@@ -52,11 +52,7 @@ Module.register('sw-settings-oauth2-login', {
     navigation: [
         {
             id: 'sw-settings-oauth2-login',
-            label: 'sw-settings-oauth2-login.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.oauth2.login.index',
-            icon: 'regular-key',
-            position: 150,
             privilege: 'oauth2_client.viewer',
         },
     ],

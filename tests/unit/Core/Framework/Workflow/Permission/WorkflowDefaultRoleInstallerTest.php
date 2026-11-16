@@ -25,6 +25,7 @@ use Shopwell\Core\Framework\Workflow\Permission\WorkflowDefaultRolesEvent;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
+use Shopwell\Core\System\AdminMenu\AdminMenuXmlReader;
 use Shopwell\Core\System\AdminMenu\CoreAdminMenuProvider;
 use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuRowsBuilder;
@@ -168,7 +169,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
 
     public function testCreatedRolesHaveReachableNavigationWithoutSelectingTheirParents(): void
     {
-        $provider = new CoreAdminMenuProvider();
+        $provider = new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE));
         $definitions = array_column($provider->getDefinitions(), null, 'internalKey');
         $rowsBuilder = new CoreMenuRowsBuilder();
         $menuItems = new AdminMenuItemCollection();
@@ -206,6 +207,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
                 new AdminMenuRouteRegistry(new MenuDefinitionCollector([$provider])),
                 $roleLoader,
                 new StaticEntityRepository([new AclRoleCollection([$role])]),
+                new EventDispatcher(),
             );
 
             $tree = $treeBuilder->build(new Context(new AdminApiSource($userId)));

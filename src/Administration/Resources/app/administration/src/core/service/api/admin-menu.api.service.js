@@ -45,11 +45,16 @@ class AdminMenuApiService {
     }
 
     getNavigation() {
-        return this.httpClient.get('/_action/admin-menu/visible', { headers: this.getHeaders() }).then((response) => ({
-            menu: response.data.menu ?? [],
-            managedKeys: response.data.managedKeys ?? [],
-            allowUnmanaged: response.data.allowUnmanaged === true,
-        }));
+        return this.httpClient
+            .get('/_action/admin-menu/visible', {
+                headers: this.getHeaders(),
+                params: { locale: Shopwell.Store.get('session').currentLocale },
+            })
+            .then((response) => ({
+                menu: response.data.menu ?? [],
+                managedKeys: response.data.managedKeys ?? [],
+                allowUnmanaged: response.data.allowUnmanaged === true,
+            }));
     }
 
     /**
@@ -60,9 +65,14 @@ class AdminMenuApiService {
     getRouteAllowlist() {
         const headers = this.getHeaders();
 
-        return this.httpClient.get('/_action/admin-menu/route-whitelist', { headers }).then((response) => {
-            return response.data.routes ?? [];
-        });
+        return this.httpClient
+            .get('/_action/admin-menu/route-whitelist', {
+                headers,
+                params: { locale: Shopwell.Store.get('session').currentLocale },
+            })
+            .then((response) => {
+                return response.data.routes ?? [];
+            });
     }
 
     createItem(payload) {

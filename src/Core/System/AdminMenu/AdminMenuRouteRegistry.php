@@ -31,6 +31,15 @@ class AdminMenuRouteRegistry
     {
     }
 
+    /**
+     * @internal
+     */
+    public function refreshPluginDefinitions(string $technicalName): void
+    {
+        $this->collector->refreshForPlugin($technicalName);
+        $this->index = null;
+    }
+
     public function has(string $internalKey): bool
     {
         return isset($this->getIndex()[$internalKey]);
@@ -70,8 +79,7 @@ class AdminMenuRouteRegistry
      */
     private function getIndex(): array
     {
-        // The definitions are code, so the index is built once per container lifetime
-        // and never invalidated.
+        // Provider arguments are compiled defaults; rebuild the container after XML changes.
         $this->index ??= array_column($this->collector->collectAll(), null, 'internalKey');
 
         return $this->index;

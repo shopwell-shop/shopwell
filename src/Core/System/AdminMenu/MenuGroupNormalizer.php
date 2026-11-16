@@ -6,7 +6,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Hasher;
 
 /**
- * Keeps legacy provider groupName declarations compatible with independent group nodes.
+ * Normalizes programmatic groupName declarations into independent group nodes.
  *
  * @internal
  */
@@ -40,7 +40,7 @@ final class MenuGroupNormalizer
                 $groups[$key] = new AdminMenuDefinitionStruct(
                     internalKey: $key,
                     type: AdminMenuItemDefinition::TYPE_GROUP,
-                    title: \in_array($definition->groupName, ['general', 'system', 'localization', 'content', 'customer', 'automation', 'commerce', 'account', 'plugins', 'payment'], true) ? 'sw-permissions.menu.groups.' . $definition->groupName : $definition->groupName,
+                    title: $definition->groupName,
                     parent: $definition->parent,
                     position: $definition->position,
                     groupName: $definition->groupName,

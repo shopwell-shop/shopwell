@@ -52,16 +52,10 @@ Shopwell.Module.register('sw-user', {
     navigation: [
         {
             id: 'sw-system',
-            label: 'global.sw-admin-menu.navigation.mainMenuItemSystem',
-            icon: 'regular-user-shield',
-            position: 95,
         },
         {
             id: 'sw-user',
-            parent: 'sw-system',
-            label: 'sw-user.general.label',
             path: 'sw.user.index',
-            position: 10,
             privilege: 'user.viewer',
         },
     ],

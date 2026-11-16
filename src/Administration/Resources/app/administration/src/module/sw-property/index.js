@@ -76,11 +76,7 @@ Module.register('sw-property', {
     navigation: [
         {
             id: 'sw-property',
-            label: 'sw-property.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-green-default)',
-            parent: 'sw-catalogue',
             path: 'sw.property.index',
-            position: 40,
             privilege: 'property.viewer',
         },
     ],

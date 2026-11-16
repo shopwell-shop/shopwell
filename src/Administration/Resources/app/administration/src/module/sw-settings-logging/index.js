@@ -41,11 +41,7 @@ Module.register('sw-settings-logging', {
     navigation: [
         {
             id: 'sw-settings-logging',
-            label: 'sw-settings-logging.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.logging.index',
-            icon: 'regular-server',
-            position: 710,
             privilege: 'system.logging',
         },
     ],

@@ -272,7 +272,7 @@ export default Shopwell.Component.wrapComponentConfig({
         getGroupLabel(settingsGroup: string) {
             const title = this.configuredSettingsGroups[settingsGroup]?.find((item) => item.groupTitle)?.groupTitle;
             if (title) {
-                return this.$te(title) ? this.$t(title) : title;
+                return title;
             }
             const upper = settingsGroup.charAt(0).toUpperCase() + settingsGroup.slice(1);
             const key = `sw-settings.index.tab${upper}`;

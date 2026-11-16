@@ -229,26 +229,16 @@ Shopwell.Module.register('sw-extension', {
     navigation: [
         {
             id: 'sw-extension',
-            label: 'sw-extension.mainMenu.mainMenuItemExtensionStore',
-            color: 'var(--sw-color-module-brand-default)',
-            icon: 'regular-plug',
-            position: 80,
         },
         {
             id: 'sw-extension-store',
-            parent: 'sw-extension',
-            label: 'sw-extension.mainMenu.store',
             path: 'sw.extension.store',
             privilege: 'system.extension_store',
-            position: 10,
         },
         {
             id: 'sw-extension-my-extensions',
-            parent: 'sw-extension',
-            label: 'sw-extension.mainMenu.purchased',
             path: 'sw.extension.my-extensions',
             privilege: 'system.plugin_maintain',
-            position: 10,
         },
     ],
 });

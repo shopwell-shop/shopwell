@@ -1,0 +1,1 @@
+<admin-menu><menu id="example" type="link" link="javascript:alert(1)"><title lang="en-GB">Example</title></menu></admin-menu>

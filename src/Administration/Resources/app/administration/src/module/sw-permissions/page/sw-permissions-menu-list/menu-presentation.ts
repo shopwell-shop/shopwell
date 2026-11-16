@@ -28,7 +28,7 @@ function groupLabelOf(
     const stored = item.translations?.[context.languageId]?.groupTitle;
 
     if (stored) {
-        return context.translate(stored);
+        return stored;
     }
 
     const key = `sw-permissions.menu.groups.${groupName}`;
@@ -41,17 +41,17 @@ function labelOf(context: MenuPresentationContext, item: AdminMenuItem): string 
     const stored = item.translations?.[context.languageId]?.title;
 
     if (stored) {
-        return context.translate(stored);
+        return stored;
     }
 
     if (item.title) {
-        return context.translate(item.title);
+        return item.title;
     }
 
     const declared = context.routeAllowlist.find((route) => route.internalKey === item.internalKey);
 
     if (declared?.title) {
-        return context.translate(declared.title);
+        return declared.title;
     }
 
     return item.internalKey || context.translate('sw-permissions.menu.labelUntitled');
@@ -87,7 +87,7 @@ function routeOptions(context: MenuPresentationContext): TreeSelectOption[] {
             route.internalKey,
             {
                 value: route.internalKey,
-                label: context.translate(route.title),
+                label: route.title,
                 description: route.type === 'menu' ? route.internalKey : undefined,
                 selectable: route.type === 'menu',
                 children: [] as TreeSelectOption[],

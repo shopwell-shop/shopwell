@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\AdminMenu;
 
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\PluginEntity;
@@ -15,6 +16,8 @@ use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuI
 #[Package('fundamentals@framework')]
 class AdminMenuItemEntity extends Entity
 {
+    use EntityCustomFieldsTrait;
+
     use EntityIdTrait;
 
     protected ?string $parentId = null;

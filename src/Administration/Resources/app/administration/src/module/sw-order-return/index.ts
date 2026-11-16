@@ -82,20 +82,14 @@ Module.register('sw-order-return', {
     navigation: [
         {
             id: 'sw-order-return',
-            label: 'sw-order-return.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-orange-default)',
-            icon: 'regular-undo',
             // between the customers (40) and the content modules (50): a return belongs to the
             // fulfilment half of the menu - orders (30), customers (40), returns (45) - and not to
-            position: 45,
             // deliberately no privilege: the settings page of the module lives outside this menu, so a
             // role that may only maintain reasons still has to find its way in
         },
         {
             id: 'sw-order-return-list',
             path: 'sw.order.return.list',
-            label: 'sw-order-return.navigation.list',
-            parent: 'sw-order-return',
             privilege: 'order_return.viewer',
         },
     ],

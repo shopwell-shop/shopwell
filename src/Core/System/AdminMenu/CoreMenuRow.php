@@ -13,14 +13,14 @@ use Shopwell\Core\Framework\Log\Package;
  * and the chain order in one place, so neither the installation nor the repair has to know
  * how an id is derived from an internal key.
  *
- * The label is not part of the row: the declaration carries a snippet key, the management
- * page stores what a person writes into the translation table. A key written here would be a
- * key the page shows and an overwrite waiting to happen on the next person who edits it.
+ * Literal titles and locale-keyed custom fields are written through the translation
+ * association. Administrator customization is protected by the synchronizer.
  */
 #[Package('fundamentals@framework')]
 final class CoreMenuRow
 {
     /**
+     * @param array<string, array{title: string, customFields?: array<string, mixed>}> $translations
      * @param array<string, mixed> $defaultMeta snapshot of the declaration this row was built from
      */
     public function __construct(
@@ -35,6 +35,8 @@ final class CoreMenuRow
         public readonly ?string $afterMenuItemId,
         public readonly array $defaultMeta,
         public readonly ?string $groupName = null,
+        public readonly ?string $title = null,
+        public readonly array $translations = [],
     ) {
     }
 
@@ -55,6 +57,8 @@ final class CoreMenuRow
             'privilege' => $this->privilege,
             'linkTarget' => $this->linkTarget,
             'groupName' => $this->groupName,
+            'title' => $this->title,
+            'translations' => $this->translations,
         ];
     }
 

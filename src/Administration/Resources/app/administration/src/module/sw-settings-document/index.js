@@ -54,11 +54,7 @@ Module.register('sw-settings-document', {
     navigation: [
         {
             id: 'sw-settings-document',
-            label: 'sw-settings-document.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.document.index',
-            icon: 'regular-file-text',
-            position: 610,
             privilege: 'document.viewer',
         },
     ],

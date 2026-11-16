@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<admin-menu>
+    <menu id="sw-system" type="folder" position="95">
+        <title lang="en-GB">System</title>
+        <title lang="zh-CN">系统</title>
+        <menu id="example-page" position="20" privilege="example.viewer" group="general" icon="regular-briefcase" color="#123456">
+            <title lang="en-GB">Example</title>
+            <title lang="zh-CN">示例</title>
+            <custom-fields lang="zh-CN">
+                <custom-field name="example_hint">岗位说明</custom-field>
+                <custom-field name="example_options" type="json">{"compact":true,"order":2,"tags":["a","b"]}</custom-field>
+            </custom-fields>
+        </menu>
+        <menu id="example-link" type="link" link="https://example.com/help"><title lang="en-GB">Help</title></menu>
+        <menu id="example-group" type="group"><title lang="en-GB">Group</title></menu>
+    </menu>
+    <menu id="example-hidden" type="hidden"><title lang="en-GB">Hidden</title></menu>
+</admin-menu>

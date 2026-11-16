@@ -48,6 +48,7 @@ class AdminMenuControllerTest extends TestCase
             'languageId' => 'language-id',
             'title' => '客户',
             'groupTitle' => '业务',
+            'customFields' => ['example_hint' => '说明'],
         ]);
         $translation->setUniqueIdentifier('translation-id');
         $item->setTranslations(new AdminMenuItemTranslationCollection([$translation]));
@@ -65,7 +66,7 @@ class AdminMenuControllerTest extends TestCase
         static::assertIsArray($items);
         static::assertTrue(array_is_list($items));
         static::assertSame(self::ITEM_ID, $items[0]['id']);
-        static::assertSame(['language-id' => ['title' => '客户', 'groupTitle' => '业务']], $items[0]['translations']);
+        static::assertSame(['language-id' => ['title' => '客户', 'groupTitle' => '业务', 'customFields' => ['example_hint' => '说明']]], $items[0]['translations']);
         static::assertNull($items[0]['pluginName']);
         static::assertSame(['plugin', 'translations'], array_keys($repository->searchedCriteria[0]->getAssociations()));
     }
@@ -117,7 +118,7 @@ class AdminMenuControllerTest extends TestCase
             static::createStub(VisibleMenuTreeBuilder::class)
         );
 
-        $content = $controller->routeWhitelist()->getContent();
+        $content = $controller->routeWhitelist(new Request())->getContent();
         static::assertIsString($content);
         static::assertSame(['routes' => [[
             'internalKey' => 'sw.customer.index', 'title' => 'customer.title', 'type' => 'menu',
@@ -138,7 +139,7 @@ class AdminMenuControllerTest extends TestCase
             $builder
         );
 
-        static::assertSame(json_encode(['menu' => $tree, 'allowUnmanaged' => false, 'managedKeys' => []], \JSON_THROW_ON_ERROR), $controller->visible($context)->getContent());
+        static::assertSame(json_encode(['menu' => $tree, 'allowUnmanaged' => false, 'managedKeys' => []], \JSON_THROW_ON_ERROR), $controller->visible(new Request(), $context)->getContent());
         $route = (new AttributeRouteControllerLoader())->load(AdminMenuController::class)->get('api.action.admin-menu.visible');
         static::assertNotNull($route);
         static::assertTrue($route->getDefault('auth_required'));

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation;
 
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\TranslationEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
@@ -12,6 +13,8 @@ use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 #[Package('fundamentals@framework')]
 class AdminMenuItemTranslationEntity extends TranslationEntity
 {
+    use EntityCustomFieldsTrait;
+
     protected string $adminMenuItemId;
 
     protected ?string $title = null;

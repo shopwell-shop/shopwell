@@ -46,6 +46,15 @@ describe('src/app/component/structure/sw-admin-menu (database driven navigation)
         expect(store.loadVisibleTree).toHaveBeenCalled();
     });
 
+    it('reloads navigation after the interface locale changes', async () => {
+        store.loadVisibleTree.mockClear();
+        Shopwell.Store.get('session').currentLocale = 'zh-CN';
+        await nextTick();
+        expect(store.loadVisibleTree).toHaveBeenCalledTimes(1);
+        Shopwell.Store.get('session').currentLocale = 'en-GB';
+        await nextTick();
+    });
+
     it('renders the stored order and wording over the declarations', async () => {
         store.visibleTree = [
             { id: 'v2', internalKey: 'sw.second.top.level', title: 'Stored second', children: [] },

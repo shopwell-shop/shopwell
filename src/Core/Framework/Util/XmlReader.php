@@ -5,6 +5,9 @@ namespace Shopwell\Core\Framework\Util;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\Config\Util\XmlUtils;
 
+/**
+ * @template TDefinition of array<string, mixed> = array<string, mixed>
+ */
 #[Package('framework')]
 abstract class XmlReader
 {
@@ -16,7 +19,7 @@ abstract class XmlReader
     /**
      * load and validate xml file - parse to array
      *
-     * @return array<array<string, mixed>>
+     * @return array<TDefinition>
      */
     public function read(string $xmlFile): array
     {
@@ -154,7 +157,7 @@ abstract class XmlReader
     /**
      * This method is the main entry point to parse a xml file.
      *
-     * @return array<array<string, mixed>>
+     * @return array<TDefinition>
      */
     abstract protected function parseFile(\DOMDocument $xml): array;
 }

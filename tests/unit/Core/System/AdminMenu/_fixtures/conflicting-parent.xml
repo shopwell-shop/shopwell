@@ -1,0 +1,1 @@
+<admin-menu><menu id="parent"><title lang="en-GB">A</title><menu id="example" parent="other"><title lang="en-GB">B</title></menu></menu></admin-menu>

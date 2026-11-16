@@ -66,12 +66,7 @@ Module.register('sw-media', {
     navigation: [
         {
             id: 'sw-media',
-            label: 'sw-media.general.mainMenuItemGeneral',
-            color: 'var(--sw-color-module-pink-default)',
-            icon: 'regular-image',
             path: 'sw.media.index',
-            position: 20,
-            parent: 'sw-content',
             privilege: 'media.viewer',
         },
     ],

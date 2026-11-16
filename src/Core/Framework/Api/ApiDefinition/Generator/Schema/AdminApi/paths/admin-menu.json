@@ -78,7 +78,18 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "description": "Administration interface locale, for example zh-CN. Titles are literal localized text; omitted or unavailable locales use the stored or declared default title.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/_action/admin-menu/route-whitelist": {
@@ -141,7 +152,18 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "description": "Administration interface locale, for example zh-CN. Titles are literal localized text; omitted or unavailable locales use the stored or declared default title.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/_action/admin-menu/move": {
@@ -220,7 +242,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Literal localized title, not a snippet key."
           },
           "icon": {
             "type": [
@@ -299,6 +322,22 @@
                     "string",
                     "null"
                   ]
+                },
+                "customFields": {
+                  "oneOf": [
+                    {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "array",
+                      "maxItems": 0
+                    }
+                  ],
+                  "description": "Translated custom field values; an empty map may be serialized as []."
                 }
               },
               "required": [
@@ -361,7 +400,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Literal localized title, not a snippet key."
           },
           "icon": {
             "type": [

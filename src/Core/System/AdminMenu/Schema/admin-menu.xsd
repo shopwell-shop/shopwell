@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:simpleType name="nonEmptyString">
+        <xs:restriction base="xs:token">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="menuType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="menu"/>
+            <xs:enumeration value="folder"/>
+            <xs:enumeration value="group"/>
+            <xs:enumeration value="link"/>
+            <xs:enumeration value="hidden"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="linkTarget">
+        <xs:restriction base="xs:anyURI">
+            <xs:pattern value="https?://.+"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="menu" type="menuNode"/>
+    <xs:complexType name="menuNode">
+        <xs:sequence>
+            <xs:element name="title" minOccurs="1" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:simpleContent>
+                        <xs:extension base="nonEmptyString">
+                            <xs:attribute name="lang" type="xs:language" use="required"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="custom-fields" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="custom-field" minOccurs="1" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:simpleContent>
+                                    <xs:extension base="xs:string">
+                                        <xs:attribute name="name" type="nonEmptyString" use="required"/>
+                                        <xs:attribute name="type" default="string">
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:string">
+                                                    <xs:enumeration value="string"/>
+                                                    <xs:enumeration value="json"/>
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                        </xs:attribute>
+                                    </xs:extension>
+                                </xs:simpleContent>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="lang" type="xs:language" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element ref="menu" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="id" type="nonEmptyString" use="required"/>
+        <xs:attribute name="type" type="menuType" default="menu"/>
+        <xs:attribute name="parent" type="nonEmptyString"/>
+        <xs:attribute name="position" type="xs:int"/>
+        <xs:attribute name="privilege" type="nonEmptyString"/>
+        <xs:attribute name="icon" type="nonEmptyString"/>
+        <xs:attribute name="color" type="nonEmptyString"/>
+        <xs:attribute name="group" type="nonEmptyString"/>
+        <xs:attribute name="link" type="linkTarget"/>
+    </xs:complexType>
+    <xs:element name="admin-menu">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="menu" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

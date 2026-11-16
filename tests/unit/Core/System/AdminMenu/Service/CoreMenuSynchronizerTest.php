@@ -23,6 +23,20 @@ use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 #[CoversClass(CoreMenuSynchronizer::class)]
 class CoreMenuSynchronizerTest extends TestCase
 {
+    public function testWritesLiteralTranslationsAndCustomFields(): void
+    {
+        $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection()]);
+        $translations = [
+            'en-GB' => ['title' => 'Positions'],
+            'zh-CN' => ['title' => '岗位', 'customFields' => ['example_hint' => '按职责分配']],
+        ];
+        $definition = new AdminMenuDefinitionStruct('example', title: 'Positions', translations: $translations);
+        $this->synchronizer($repository, $definition)->synchronize();
+
+        static::assertSame('Positions', $repository->upserts[0][0]['title']);
+        static::assertSame($translations, $repository->upserts[0][0]['translations']);
+    }
+
     public function testAnEmptyRegistryDoesNotReadOrWriteTheRepository(): void
     {
         $repository = StaticEntityRepository::of(AdminMenuItemCollection::class);
@@ -77,6 +91,7 @@ class CoreMenuSynchronizerTest extends TestCase
     {
         $item = $this->item('sw-customer');
         $item->setTitle('Customers chosen by the merchant');
+        $item->setConfigOverridden(true);
         $repository = StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection([$item])]);
 
         static::assertSame(0, $this->synchronizer($repository, new AdminMenuDefinitionStruct('sw-customer', title: 'snippet.customer'))->synchronize());

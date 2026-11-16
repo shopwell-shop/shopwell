@@ -4,7 +4,6 @@ namespace Shopwell\Tests\Integration\Core\System\AdminMenu\Service;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -12,16 +11,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\Migration\V6_7\Migration1794287381AdminMenuGroups;
 use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionProviderInterface;
 use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionStruct;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
+use Shopwell\Core\System\AdminMenu\AdminMenuXmlReader;
 use Shopwell\Core\System\AdminMenu\CoreAdminMenuProvider;
 use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
-use Shopwell\Core\System\AdminMenu\MenuGroupNormalizer;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuRowsBuilder;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuSynchronizer;
 
@@ -76,31 +74,27 @@ class CoreMenuSynchronizerTest extends TestCase
             // a core entry belongs to the product: customizable, but not deletable
             static::assertTrue($item->isSysLocked());
             static::assertNull($item->getPluginId());
-            // the label is not part of the row: the declaration carries a snippet key, and the
-            // navigation falls back to it until a person writes a label of their own
-            static::assertNull($item->getTitle());
+            static::assertSame($declaration->title, $item->getTitle());
             static::assertSame($declaration->groupName, $item->getGroupName());
             static::assertNotNull($item->getDefaultMeta());
         }
     }
 
-    public function testMigratedDefaultsStillReceiveProviderChanges(): void
+    public function testDefaultsStillReceiveProviderChanges(): void
     {
-        $connection = static::getContainer()->get(Connection::class);
-        $date = (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
-        $settingsId = Uuid::randomBytes();
-        $pageId = Uuid::randomBytes();
-        $connection->insert('admin_menu_item', ['id' => $settingsId, 'internal_key' => 'sw-settings', 'type' => 'menu', 'config_overridden' => 0, 'created_at' => $date]);
-        $connection->insert('admin_menu_item', ['id' => $pageId, 'internal_key' => 'sw-settings-basic-information', 'type' => 'menu', 'parent_id' => $settingsId, 'group_name' => 'general', 'config_overridden' => 0, 'created_at' => $date]);
-        (new Migration1794287381AdminMenuGroups())->update($connection);
-        $this->createSynchronizer($this->providerWith('sw-settings-basic-information', ['icon' => 'regular-star', 'privilege' => 'updated.viewer', 'groupName' => 'system', 'position' => 5]))->synchronize();
+        $this->createSynchronizer()->synchronize();
+        $this->createSynchronizer($this->providerWith('sw-settings-basic-information', [
+            'icon' => 'regular-star',
+            'privilege' => 'updated.viewer',
+            'position' => 5,
+        ]))->synchronize();
+
         $items = $this->coreItems();
         $page = $items['sw-settings-basic-information'];
         static::assertFalse($page->isConfigOverridden());
         static::assertSame('regular-star', $page->getIcon());
         static::assertSame('updated.viewer', $page->getPrivilege());
-        static::assertNotNull($page->getParentId());
-        static::assertSame($items[MenuGroupNormalizer::key('sw-settings', 'system', null)]->getId(), $page->getParentId());
+        static::assertSame($items['sw-settings-group-general']->getId(), $page->getParentId());
     }
 
     public function testMaterializesTheDeclaredHierarchyAndOrder(): void
@@ -185,15 +179,13 @@ class CoreMenuSynchronizerTest extends TestCase
         static::assertSame('regular-image-plus', $this->coreItems()['sw-media']->getIcon());
     }
 
-    public function testDoesNotWriteARenamedLabelIntoTheTable(): void
+    public function testWritesLiteralRenamedTitlesIntoTheTranslationTable(): void
     {
         $this->createSynchronizer()->synchronize();
 
-        // a renamed declaration is a label change in code - writing it into the table would put
-        // a snippet key there and show it to the next administrator who edits the entry
-        $this->createSynchronizer($this->renamedProvider('sw-media', 'sw-media.general.mainMenuItemRenamed'))->synchronize();
+        $this->createSynchronizer($this->renamedProvider('sw-media', 'Media library'))->synchronize();
 
-        static::assertNull($this->coreItems()['sw-media']->getTitle());
+        static::assertSame('Media library', $this->coreItems()['sw-media']->getTitle());
     }
 
     public function testRecreatesARowThatWentMissing(): void
@@ -249,7 +241,7 @@ class CoreMenuSynchronizerTest extends TestCase
             public function getDefinitions(): array
             {
                 return array_values(array_filter(
-                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    (new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getDefinitions(),
                     static fn (AdminMenuDefinitionStruct $declaration): bool => $declaration->internalKey !== 'sw-media',
                 ));
             }
@@ -293,7 +285,7 @@ class CoreMenuSynchronizerTest extends TestCase
             public function getDefinitions(): array
             {
                 return array_values(array_filter(
-                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    (new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getDefinitions(),
                     static fn (AdminMenuDefinitionStruct $declaration): bool => $declaration->internalKey !== 'sw-review',
                 ));
             }
@@ -315,7 +307,7 @@ class CoreMenuSynchronizerTest extends TestCase
             public function getDefinitions(): array
             {
                 $definitions = array_values(array_filter(
-                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    (new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getDefinitions(),
                     static fn (AdminMenuDefinitionStruct $definition): bool => $definition->internalKey !== 'sw-blog' && $definition->parent !== 'sw-blog',
                 ));
                 $definitions[] = new AdminMenuDefinitionStruct(
@@ -394,8 +386,15 @@ class CoreMenuSynchronizerTest extends TestCase
 
             public function getDefinitions(): array
             {
+                $definitions = (new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getDefinitions();
+                foreach ($definitions as $definition) {
+                    if ($definition->parent === 'sw-catalogue') {
+                        $definition->parent = null;
+                    }
+                }
+
                 return array_values(array_filter(
-                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    $definitions,
                     static fn (AdminMenuDefinitionStruct $declaration): bool => $declaration->internalKey !== 'sw-catalogue',
                 ));
             }
@@ -420,7 +419,7 @@ class CoreMenuSynchronizerTest extends TestCase
      */
     private function coreDefinitions(): array
     {
-        return (new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider()])))->getCoreDefinitions();
+        return (new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))])))->getCoreDefinitions();
     }
 
     /**
@@ -432,7 +431,7 @@ class CoreMenuSynchronizerTest extends TestCase
     {
         return new CoreMenuSynchronizer(
             $this->menuItemRepository,
-            new AdminMenuRouteRegistry(new MenuDefinitionCollector([$provider ?? new CoreAdminMenuProvider()])),
+            new AdminMenuRouteRegistry(new MenuDefinitionCollector([$provider ?? new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))])),
             new CoreMenuRowsBuilder()
         );
     }
@@ -473,7 +472,7 @@ class CoreMenuSynchronizerTest extends TestCase
             {
                 $definitions = [];
 
-                foreach ((new CoreAdminMenuProvider())->getDefinitions() as $declaration) {
+                foreach ((new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getDefinitions() as $declaration) {
                     if ($declaration->internalKey !== $this->internalKey) {
                         $definitions[] = $declaration;
 
@@ -491,6 +490,9 @@ class CoreMenuSynchronizerTest extends TestCase
                         privilege: $this->overrides['privilege'] ?? $declaration->privilege,
                         linkTarget: $declaration->linkTarget,
                         groupName: $this->overrides['groupName'] ?? $declaration->groupName,
+                        translations: isset($this->overrides['title'])
+                            ? array_replace($declaration->translations, ['en-GB' => ['title' => $this->overrides['title']]])
+                            : $declaration->translations,
                     );
                 }
 

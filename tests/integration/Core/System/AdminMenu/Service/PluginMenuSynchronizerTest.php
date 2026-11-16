@@ -19,9 +19,12 @@ use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
+use Shopwell\Core\System\AdminMenu\AdminMenuXmlReader;
 use Shopwell\Core\System\AdminMenu\CoreAdminMenuProvider;
 use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
 use Shopwell\Core\System\AdminMenu\Service\PluginMenuSynchronizer;
+use Shopwell\Core\System\AdminMenu\XmlAdminMenuProvider;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Runs the whole plugin lifecycle matrix against the database: install, activate,
@@ -60,6 +63,33 @@ class PluginMenuSynchronizerTest extends TestCase
         $this->menuItemRepository = static::getContainer()->get('admin_menu_item.repository');
         $this->plugin = $this->createPlugin();
         $this->declarations = $this->defaultDeclarations();
+    }
+
+    public function testXmlUpdateRefreshesDeclarationsInTheExistingContainer(): void
+    {
+        $filesystem = new Filesystem();
+        $directory = sys_get_temp_dir() . '/plugin-menu-update-' . Uuid::randomHex();
+        $file = $directory . '/admin-menu.xml';
+        try {
+            $filesystem->dumpFile($file, '<admin-menu><menu id="example-old"><title lang="en-GB">Old</title></menu></admin-menu>');
+            $reader = new AdminMenuXmlReader();
+            $provider = new XmlAdminMenuProvider($reader->read($file), self::PLUGIN_NAME, $file, $reader, $filesystem);
+            $registry = new AdminMenuRouteRegistry(new MenuDefinitionCollector([$provider]));
+            $synchronizer = new PluginMenuSynchronizer($this->menuItemRepository, $registry);
+            $this->plugin->setActive(true);
+            $synchronizer->syncActivation($this->plugin);
+            static::assertArrayHasKey('example-old', $this->searchItems());
+            $filesystem->dumpFile($file, '<admin-menu><menu id="example-new"><title lang="en-GB">New</title></menu></admin-menu>');
+
+            $synchronizer->syncUpdate($this->plugin);
+
+            $items = $this->searchItems();
+            static::assertTrue($items['example-new']->isActive());
+            static::assertSame('New', $items['example-new']->getTitle());
+            static::assertFalse($items['example-old']->isActive());
+        } finally {
+            $filesystem->remove($directory);
+        }
     }
 
     public function testInstallSeedsTheEntriesInvisible(): void
@@ -136,7 +166,7 @@ class PluginMenuSynchronizerTest extends TestCase
 
     public function testUpdateAddsNewDeclarations(): void
     {
-        $synchronizer = $this->installAndActivate();
+        $this->installAndActivate();
 
         $this->declarations[] = new AdminMenuDefinitionStruct(
             internalKey: 'swag-admin-menu-reports',
@@ -145,7 +175,7 @@ class PluginMenuSynchronizerTest extends TestCase
             position: 20,
         );
 
-        $synchronizer->syncUpdate($this->plugin);
+        $this->createSynchronizer()->syncUpdate($this->plugin);
 
         $items = $this->searchItems();
 
@@ -157,14 +187,14 @@ class PluginMenuSynchronizerTest extends TestCase
 
     public function testUpdateHidesAnEntryThePluginDropped(): void
     {
-        $synchronizer = $this->installAndActivate();
+        $this->installAndActivate();
 
         $this->declarations = array_values(array_filter(
             $this->declarations,
             static fn (AdminMenuDefinitionStruct $declaration): bool => $declaration->internalKey !== 'swag-admin-menu-list'
         ));
 
-        $synchronizer->syncUpdate($this->plugin);
+        $this->createSynchronizer()->syncUpdate($this->plugin);
 
         $items = $this->searchItems();
 
@@ -175,7 +205,7 @@ class PluginMenuSynchronizerTest extends TestCase
 
     public function testUpdateKeepsWhatAnAdministratorCustomized(): void
     {
-        $synchronizer = $this->installAndActivate();
+        $this->installAndActivate();
 
         $list = $this->searchItems()['swag-admin-menu-list'];
 
@@ -203,7 +233,7 @@ class PluginMenuSynchronizerTest extends TestCase
             $this->declarations
         );
 
-        $synchronizer->syncUpdate($this->plugin);
+        $this->createSynchronizer()->syncUpdate($this->plugin);
 
         $updated = $this->searchItems()['swag-admin-menu-list'];
 
@@ -291,7 +321,7 @@ class PluginMenuSynchronizerTest extends TestCase
             ),
         ];
 
-        $synchronizer = $this->installAndActivate();
+        $this->installAndActivate();
 
         $parentId = $this->searchItems()['swag-admin-menu-product-tab']->getParentId();
         static::assertNotNull($parentId);
@@ -303,7 +333,7 @@ class PluginMenuSynchronizerTest extends TestCase
         static::assertTrue($core->isSysLocked());
 
         // a second sync must not seed the core entry twice
-        $synchronizer->syncUpdate($this->plugin);
+        $this->createSynchronizer()->syncUpdate($this->plugin);
 
         $coreItems = $this->menuItemRepository->search(
             (new Criteria())
@@ -401,7 +431,7 @@ class PluginMenuSynchronizerTest extends TestCase
 
         return new PluginMenuSynchronizer(
             $this->menuItemRepository,
-            new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider(), $provider]))
+            new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)), $provider]))
         );
     }
 

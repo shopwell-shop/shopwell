@@ -292,8 +292,24 @@ function registerModule(moduleId: string, module: ModuleManifest): false | Modul
         type,
     };
 
+    if (!registerModuleNavigation(module, moduleDefinition)) {
+        return false;
+    }
+
+    registerModuleFeatures(moduleId, module);
+
+    modules.set(moduleId, moduleDefinition);
+
+    return moduleDefinition;
+}
+
+function isXmlNavigationBinding(entry: Navigation): boolean {
+    return !!(entry.id || entry.path) && !entry.label;
+}
+
+function registerModuleNavigation(module: ModuleManifest, moduleDefinition: ModuleDefinition): boolean {
     // Add the navigation of the module to the module definition. We'll create a menu entry later on
-    if (hasOwnProperty(module, 'navigation') && module.navigation) {
+    if (module.navigation) {
         if (!types.isArray(module.navigation)) {
             warn('ModuleFactory', 'The route definition has to be an array.', module.navigation);
             return false;
@@ -302,7 +318,10 @@ function registerModule(moduleId: string, module: ModuleManifest): false | Modul
         module.navigation = module.navigation.filter((navigationEntry) => {
             navigationEntry.moduleType = module.type;
 
-            if (module.type === 'plugin' && !navigationEntry.parent) {
+            // Unlabelled entries bind XML menu identities to registered frontend routes.
+            const isXmlBinding = isXmlNavigationBinding(navigationEntry);
+
+            if (module.type === 'plugin' && !isXmlBinding && !navigationEntry.parent) {
                 warn(
                     'ModuleFactory',
                     'Navigation entries from plugins are not allowed on the first level.',
@@ -321,12 +340,12 @@ function registerModule(moduleId: string, module: ModuleManifest): false | Modul
                 return false;
             }
 
-            if (!navigationEntry.label || !navigationEntry.label.length) {
+            if (!isXmlBinding && (!navigationEntry.label || !navigationEntry.label.length)) {
                 warn('ModuleFactory', 'The navigation entry needs a property called "label"');
                 return false;
             }
 
-            if (module.type === 'plugin') {
+            if (module.type === 'plugin' && !isXmlBinding) {
                 if (navigationEntry.position) {
                     navigationEntry.position += 1000;
                 } else {
@@ -339,6 +358,10 @@ function registerModule(moduleId: string, module: ModuleManifest): false | Modul
         moduleDefinition.navigation = module.navigation;
     }
 
+    return true;
+}
+
+function registerModuleFeatures(moduleId: string, module: ModuleManifest): void {
     if (hasOwnProperty(module, 'settingsItem') && module.settingsItem) {
         addSettingsItemsToStore(moduleId, module);
     }
@@ -346,10 +369,6 @@ function registerModule(moduleId: string, module: ModuleManifest): false | Modul
     if (hasOwnProperty(module, 'extensionEntryRoute') && module.extensionEntryRoute) {
         addEntryRouteToExtensionRouteStore(module.extensionEntryRoute);
     }
-
-    modules.set(moduleId, moduleDefinition);
-
-    return moduleDefinition;
 }
 
 /**

@@ -152,6 +152,8 @@ class CoreMenuRowsBuilder
             afterMenuItemId: $predecessor,
             defaultMeta: $declaration->jsonSerialize(),
             groupName: $declaration->groupName,
+            title: $declaration->title,
+            translations: $declaration->translations,
         );
     }
 

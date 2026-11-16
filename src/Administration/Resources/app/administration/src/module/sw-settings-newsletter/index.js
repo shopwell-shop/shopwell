@@ -34,11 +34,7 @@ Module.register('sw-settings-newsletter', {
     navigation: [
         {
             id: 'sw-settings-newsletter',
-            label: 'sw-settings-newsletter.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.newsletter.index',
-            icon: 'regular-inbox',
-            position: 520,
             privilege: 'system.system_config',
         },
     ],

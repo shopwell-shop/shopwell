@@ -9,9 +9,9 @@ use Shopwell\Core\Framework\Struct\Struct;
  * A single navigation entry as declared by an {@link AdminMenuDefinitionProviderInterface}.
  *
  * The declaration is the default of a menu item: the plugin lifecycle seeds it into the
- * database, where an administrator may customize every field afterwards. The `title` is a
- * snippet key - it is resolved into every installed language when the row is written, so
- * the table carries readable labels and an administrator edits text, never a key.
+ * database, where an administrator may customize every field afterwards. Titles are literal
+ * text. Locale-keyed translations and their custom fields are written through DAL into
+ * admin_menu_item_translation; menu labels do not depend on Administration snippets.
  *
  * `position` orders the entry among its siblings; it is materialized into the
  * `after_menu_item_id` chain when the definition is seeded, so the database only ever
@@ -21,6 +21,7 @@ use Shopwell\Core\Framework\Struct\Struct;
 final class AdminMenuDefinitionStruct extends Struct
 {
     /**
+     * @param array<string, array{title: string, customFields?: array<string, mixed>}> $translations
      * @param string $internalKey Module navigation id or admin route name the entry points at
      * @param string $type One of the AdminMenuItemDefinition TYPE_* constants
      * @param string $parent Internal key of the parent entry, null for top level entries
@@ -38,6 +39,7 @@ final class AdminMenuDefinitionStruct extends Struct
         public ?string $privilege = null,
         public ?string $linkTarget = null,
         public ?string $groupName = null,
+        public array $translations = [],
     ) {
     }
 }

@@ -73,14 +73,14 @@ export default function createSearchTypeService() {
         },
         organization: {
             entityName: 'organization',
-            placeholderSnippet: 'sw-settings-organization.general.placeholderSearchBar',
-            listingRoute: 'sw.settings.organization.index',
+            placeholderSnippet: 'sw-organization.general.placeholderSearchBar',
+            listingRoute: 'sw.organization.index',
             hideOnGlobalSearchBar: true,
         },
         position: {
             entityName: 'position',
-            placeholderSnippet: 'sw-settings-position.general.placeholderSearchBar',
-            listingRoute: 'sw.settings.position.index',
+            placeholderSnippet: 'sw-position.general.placeholderSearchBar',
+            listingRoute: 'sw.position.index',
             hideOnGlobalSearchBar: true,
         },
         product_manufacturer: {

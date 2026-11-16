@@ -223,22 +223,23 @@ Menu-side role assignment and the `/_action/admin-menu/assign-roles` endpoint we
 
 ### Configurable administration menus
 
-Menu sections can now be managed as independent `group` nodes in both navigation and settings.
-Legacy provider `groupName` declarations and translated group titles are migrated automatically.
-The optional `routeKey` field selects a page without changing a system or plugin node’s `internalKey` identity.
-Settings overview groups now follow the visible administration menu configuration, including translated group titles and custom links.
-The visible menu endpoint returns `groupName`, `groupTitle`, and `managedKeys` so clients can apply stored groups without restoring hidden provider entries from module declarations.
-The route whitelist includes installed plugin providers alongside core declarations.
+Core and plugins declare nested menu defaults in `Resources/config/admin-menu.xml`, using readable stable IDs and literal localized titles.
+The container validates and compiles XML; plugin files are discovered automatically for active plugins.
+Translated `customFields` are available on `admin_menu_item` and `admin_menu_item_translation`, and XML can provide per-language values.
+Unmodified stored defaults follow declarations; administrator customizations remain preserved.
+Frontend navigation bindings supply routes and privileges, while XML owns labels, grouping and order.
+The visible and route-whitelist endpoints accept `locale` for interface-language titles.
+Plugins can subscribe to `AdminMenuVisibilityEvent` to hide declared entries and their subtrees based on runtime conditions; role selections and route/API permissions still apply.
+See [Administration menus](technical-docs/03-extensibility/10-admin-menu.md) for declarations and extension examples.
 
-### Organization settings layout
+### Organization workspace
 
-Organization settings now open a shared tree workspace, with organizations as independent roots and their units nested below them.
+Organizations and positions are under System, using the `sw-organization` and `sw-position` modules and the `sw.organization.*` and `sw.position.*` routes.
+The organization workspace displays organizations as independent roots and units nested below them.
 The index, create and detail routes reuse this workspace; the detail route accepts `unitId` and `parentId` query parameters to restore unit selection and creation context.
-Extensions can use the sidebar and node action slots of `sw-settings-organization-unit-tree`, which now receives both organizations and units.
-Extensions of the former `sw_settings_organization_detail_split`, `left`, `left_header`, `right`, and `no_selection` blocks should target `sw_settings_organization_detail_sidebar`, `tree`, or `unit_form` instead, using the `sw_settings_organization_detail_` prefix.
-New organizations open the `sw.settings.organization.create` route, which reuses the detail form.
-New units open an unsaved entity in the detail form with the selected parent prefilled.
-The former organization and unit creation modal blocks are replaced by the detail form blocks.
+Extensions can use the sidebar and node action slots of `sw-organization-unit-tree`, which receives organizations and units.
+The detail blocks use the `sw_organization_detail_` prefix.
+New organizations open `sw.organization.create`; new units open an unsaved entity in the detail form with the selected parent prefilled.
 Changes are persisted through Save and reverted through Cancel using the entity repository.
 
 ### Blog editor and extension points

@@ -36,11 +36,7 @@ Module.register('sw-settings-cache', {
     navigation: [
         {
             id: 'sw-settings-cache',
-            label: 'sw-settings-cache.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.cache.index',
-            icon: 'regular-files',
-            position: 700,
             privilege: 'system.clear_cache',
         },
     ],

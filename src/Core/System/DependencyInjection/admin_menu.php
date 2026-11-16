@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
 use Shopwell\Core\System\AdminMenu\AdminMenuValidator;
+use Shopwell\Core\System\AdminMenu\AdminMenuXmlReader;
 use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemRole\AdminMenuItemRoleDefinition;
 use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuItemTranslationDefinition;
 use Shopwell\Core\System\AdminMenu\Api\AdminMenuController;
@@ -39,9 +40,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(AdminMenuItemTranslationDefinition::class)
         ->tag('shopwell.entity.definition');
 
+    $services->set(AdminMenuXmlReader::class);
+
     // ---- the declaration providers ----
-    // the navigation declarations of the core; a plugin adds its own provider, tagged with
-    // `shopwell.admin_menu_definition_provider`, in its own service container
+    // XML defaults are compiled by AdminMenuCompilerPass. Programmatic providers use the
+    // same tag when a declaration cannot be expressed as static XML.
     $services->set(CoreAdminMenuProvider::class)
         ->tag('shopwell.admin_menu_definition_provider');
 
@@ -58,6 +61,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AdminMenuRouteRegistry::class),
             service(AclRoleLoader::class),
             service('acl_role.repository'),
+            service('event_dispatcher'),
         ]);
 
     $services->set(AdminMenuConfigService::class)
@@ -71,8 +75,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CoreMenuRowsBuilder::class);
 
-    // the rows are seeded by the installation migration; this service repairs them for an
-    // upgrade, a restored backup or a table that was cleaned up
+    // The installer seeds defaults; the command can synchronize them again explicitly.
     $services->set(CoreMenuSynchronizer::class)
         ->args([
             service('admin_menu_item.repository'),

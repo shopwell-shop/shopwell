@@ -147,11 +147,7 @@ Module.register('sw-settings-country', {
     navigation: [
         {
             id: 'sw-settings-country',
-            label: 'sw-settings-country.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.country.index',
-            icon: 'regular-map',
-            position: 400,
             privilege: 'country.viewer',
         },
     ],

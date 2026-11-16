@@ -40,14 +40,14 @@ describe('menu refinements', () => {
     it.each([
         ['en', 'General'],
         ['zh', '常规'],
-    ])('resolves migrated group fallback titles in %s and preserves custom titles', (languageId, title) => {
+    ])('uses literal group titles in %s and preserves custom titles', (languageId, title) => {
         const group: MenuTreeNode = {
             id: 'group',
             type: 'group',
             internalKey: 'group',
             groupName: null,
             children: [],
-            translations: { [languageId]: { title: 'sw-permissions.menu.groups.general', groupTitle: null } },
+            translations: { [languageId]: { title, groupTitle: null } },
             parentId: null,
             afterMenuItemId: null,
             title: null,

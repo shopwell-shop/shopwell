@@ -150,11 +150,11 @@ class AdminMenuValidator implements EventSubscriberInterface
         $itemIds = [];
 
         foreach ($translationEvent->getWriteResults() as $result) {
-            if ($result->getOperation() !== EntityWriteResult::OPERATION_UPDATE) {
+            if (!\in_array($result->getOperation(), [EntityWriteResult::OPERATION_INSERT, EntityWriteResult::OPERATION_UPDATE], true)) {
                 continue;
             }
 
-            $menuItemId = $result->getPrimaryKey()['admin_menu_item_id'] ?? null;
+            $menuItemId = $result->getPrimaryKey()['adminMenuItemId'] ?? null;
 
             if (\is_string($menuItemId)) {
                 $itemIds[] = $menuItemId;

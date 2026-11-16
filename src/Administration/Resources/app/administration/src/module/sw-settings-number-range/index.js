@@ -56,11 +56,7 @@ Module.register('sw-settings-number-range', {
     navigation: [
         {
             id: 'sw-settings-number-range',
-            label: 'sw-settings-number-range.general.mainMenuItemGeneral',
-            parent: 'sw-settings',
             path: 'sw.settings.number.range.index',
-            icon: 'regular-file-signature',
-            position: 140,
             privilege: 'number_ranges.viewer',
         },
     ],

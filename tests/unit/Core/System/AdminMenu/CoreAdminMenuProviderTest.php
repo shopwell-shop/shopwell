@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionStruct;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
+use Shopwell\Core\System\AdminMenu\AdminMenuXmlReader;
 use Shopwell\Core\System\AdminMenu\CoreAdminMenuProvider;
 
 /**
@@ -26,12 +27,12 @@ class CoreAdminMenuProviderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->definitions = (new CoreAdminMenuProvider())->getDefinitions();
+        $this->definitions = (new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getDefinitions();
     }
 
     public function testTheCoreProviderDoesNotClaimAPlugin(): void
     {
-        static::assertNull((new CoreAdminMenuProvider())->getPluginTechnicalName());
+        static::assertNull((new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getPluginTechnicalName());
     }
 
     public function testEveryInternalKeyIsDeclaredOnce(): void
@@ -65,8 +66,9 @@ class CoreAdminMenuProviderTest extends TestCase
 
         foreach (['sw-settings-membership', 'sw-settings-membership-plans'] as $key) {
             static::assertArrayHasKey($key, $definitions);
-            static::assertSame('sw-settings', $definitions[$key]->parent);
-            static::assertSame('customer', $definitions[$key]->groupName);
+            static::assertNotNull($definitions[$key]->parent);
+            static::assertSame('sw-settings', $definitions[$definitions[$key]->parent]->parent);
+            static::assertSame('customer', $definitions[$definitions[$key]->parent]->groupName);
             static::assertSame('loyalty.viewer', $definitions[$key]->privilege);
         }
     }
@@ -81,7 +83,7 @@ class CoreAdminMenuProviderTest extends TestCase
         static::assertCount(1, $blogs);
         static::assertSame('sw-content', $blogs[0]->parent);
         static::assertSame(AdminMenuItemDefinition::TYPE_FOLDER, $blogs[0]->type);
-        static::assertSame('sw-blog.general.mainMenuItemGeneral', $blogs[0]->title);
+        static::assertSame('Blog', $blogs[0]->title);
 
         $children = array_values(array_filter(
             $this->definitions,
@@ -111,8 +113,8 @@ class CoreAdminMenuProviderTest extends TestCase
         static::assertArrayHasKey('sw-workflow-tasks', $definitions);
         static::assertSame('sw-workflow', $definitions['sw-workflow-tasks']->parent);
         static::assertSame('workflow_participant.viewer', $definitions['sw-workflow-tasks']->privilege);
-        static::assertSame('sw-workflow.runtime.navigation', $definitions['sw-workflow-tasks']->title);
-        static::assertNull((new CoreAdminMenuProvider())->getPluginTechnicalName());
+        static::assertSame('My approvals', $definitions['sw-workflow-tasks']->title);
+        static::assertNull((new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getPluginTechnicalName());
     }
 
     public function testSettingsRetainTheirOriginalGroups(): void
@@ -120,19 +122,54 @@ class CoreAdminMenuProviderTest extends TestCase
         $definitions = array_column($this->definitions, null, 'internalKey');
         foreach ([
             'sw-settings-rule' => 'automation',
-            'sw-settings-organization' => 'general',
             'sw-settings-country' => 'localization',
             'sw-settings-media' => 'content',
             'sw-settings-cart' => 'general',
             'sw-settings-logging' => 'system',
             'sw-settings-payment-provider' => 'payment',
         ] as $key => $group) {
-            static::assertSame('sw-settings', $definitions[$key]->parent, $key);
-            static::assertSame($group, $definitions[$key]->groupName, $key);
+            static::assertNotNull($definitions[$key]->parent);
+            $parent = $definitions[$definitions[$key]->parent];
+            static::assertSame('sw-settings', $parent->parent, $key);
+            static::assertSame($group, $parent->groupName, $key);
         }
         static::assertNull($definitions['sw-order-return']->parent);
         static::assertSame('sw-system', $definitions['sw-user']->parent);
         static::assertArrayNotHasKey('sw-settings-security', $definitions);
+    }
+
+    public function testOrganizationAndPositionsBelongToSystem(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+
+        static::assertArrayNotHasKey('sw-settings-organization', $definitions);
+        static::assertArrayNotHasKey('sw-settings-position', $definitions);
+        static::assertSame('sw-system', $definitions['sw-organization']->parent);
+        static::assertSame('organization.viewer', $definitions['sw-organization']->privilege);
+        static::assertNull($definitions['sw-organization']->groupName);
+        static::assertSame('sw-system', $definitions['sw-position']->parent);
+        static::assertSame('position.viewer', $definitions['sw-position']->privilege);
+        static::assertNull($definitions['sw-position']->groupName);
+    }
+
+    public function testCoreXmlUsesReadableGroupsAndLiteralTranslatedTitles(): void
+    {
+        foreach ($this->definitions as $definition) {
+            static::assertArrayHasKey('en-GB', $definition->translations);
+            static::assertArrayHasKey('zh-CN', $definition->translations);
+            static::assertSame($definition->translations['en-GB']['title'], $definition->title);
+            static::assertStringNotContainsString('.general.', $definition->title ?? '');
+            if ($definition->type === AdminMenuItemDefinition::TYPE_GROUP) {
+                static::assertSame('sw-settings-group-' . $definition->groupName, $definition->internalKey);
+            }
+        }
+    }
+
+    public function testXmlPreservesModuleIconColors(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+        static::assertSame('var(--sw-color-module-green-default)', $definitions['sw-catalogue']->color);
+        static::assertSame('var(--color-text-brand-default)', $definitions['sw-dashboard']->color);
     }
 
     public function testEveryParentIsDeclaredAsWell(): void
@@ -188,6 +225,7 @@ class CoreAdminMenuProviderTest extends TestCase
                     AdminMenuItemDefinition::TYPE_FOLDER,
                     AdminMenuItemDefinition::TYPE_LINK,
                     AdminMenuItemDefinition::TYPE_HIDDEN,
+                    AdminMenuItemDefinition::TYPE_GROUP,
                 ],
                 \sprintf('The entry %s declares an unknown type.', $definition->internalKey)
             );
