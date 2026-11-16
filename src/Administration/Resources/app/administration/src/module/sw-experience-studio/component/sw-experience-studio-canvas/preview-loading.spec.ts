@@ -2,9 +2,11 @@ import { mount } from '@vue/test-utils';
 import { h } from 'vue';
 import type { Component } from 'vue';
 import debounce from 'lodash/debounce';
-import type { ContentElementNode } from 'src/core/service/content-element.types';
+import ContentSystemPreviewApiService from 'src/core/service/api/content-system-preview.api.service';
+import createLoginService from 'src/core/service/login.service';
+import createHTTPClient from 'src/core/factory/http.factory';
 
-const request = jest.fn<Promise<string>, [{ layout: ContentElementNode[] }]>();
+const request = jest.fn<Promise<string>, Parameters<ContentSystemPreviewApiService['previewEntityUrl']>>();
 const previewCreated = jest.fn();
 
 async function createWrapper() {
@@ -64,8 +66,12 @@ describe('Experience Studio canvas loads only visible previews', () => {
     let wrapper: Awaited<ReturnType<typeof createWrapper>>;
 
     beforeAll(() => {
+        const client = createHTTPClient(Shopwell.Context.api);
+        const service = new ContentSystemPreviewApiService(client, createLoginService(client, Shopwell.Context.api));
+        service.previewEntityUrl = request;
+
         // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Register the local preview service stub for this suite.
-        Shopwell.Service().register('contentSystemPreviewService', () => ({ previewEntityUrl: request }));
+        Shopwell.Service().register('contentSystemPreviewService', () => service);
     });
 
     beforeEach(() => {
@@ -90,7 +96,7 @@ describe('Experience Studio canvas loads only visible previews', () => {
         await flushPromises();
 
         expect(request).toHaveBeenCalledTimes(1);
-        expect(request.mock.calls[0][0].layout[0].id).toBe('element-0');
+        expect(request.mock.calls[0][0].layout[0]).toEqual(expect.objectContaining({ id: 'element-0' }));
     });
 
     it('cancels the old visible preview request when panning hides it before its debounce expires', async () => {
@@ -104,6 +110,6 @@ describe('Experience Studio canvas loads only visible previews', () => {
 
         expect(wrapper.findAll('[data-frame-id]')).toHaveLength(3);
         expect(request).toHaveBeenCalledTimes(1);
-        expect(request.mock.calls[0][0].layout[0].id).toBe('element-1');
+        expect(request.mock.calls[0][0].layout[0]).toEqual(expect.objectContaining({ id: 'element-1' }));
     });
 });

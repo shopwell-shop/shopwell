@@ -1,8 +1,11 @@
 import { shallowMount } from '@vue/test-utils';
 import type { Component } from 'vue';
 import debounce from 'lodash/debounce';
+import ContentSystemPreviewApiService from 'src/core/service/api/content-system-preview.api.service';
+import createLoginService from 'src/core/service/login.service';
+import createHTTPClient from 'src/core/factory/http.factory';
 
-const request = jest.fn<Promise<string>, []>();
+const request = jest.fn<Promise<string>, Parameters<ContentSystemPreviewApiService['previewEntityUrl']>>();
 
 function deferred<T>() {
     let resolve!: (value: T) => void;
@@ -31,8 +34,12 @@ describe('Experience Studio preview request lifecycle', () => {
     let wrapper: Awaited<ReturnType<typeof createWrapper>>;
 
     beforeAll(() => {
+        const client = createHTTPClient(Shopwell.Context.api);
+        const service = new ContentSystemPreviewApiService(client, createLoginService(client, Shopwell.Context.api));
+        service.previewEntityUrl = request;
+
         // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Register the local preview service stub for this suite.
-        Shopwell.Service().register('contentSystemPreviewService', () => ({ previewEntityUrl: request }));
+        Shopwell.Service().register('contentSystemPreviewService', () => service);
     });
 
     beforeEach(() => {
