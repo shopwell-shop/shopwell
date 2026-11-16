@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowGraphDiagnostics;
 use Shopwell\Core\Framework\Workflow\Draft\Entity\WorkflowDraftDefinition;
 use Shopwell\Core\Framework\Workflow\Draft\WorkflowDraftStore;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Condition\ConditionWorkflowNodeLoader;
 use Shopwell\Core\Framework\Workflow\Node\Condition\ConditionWorkflowSubscriber;
 use Shopwell\Core\Framework\Workflow\Permission\WorkflowDefaultRoleInstaller;
@@ -49,7 +50,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ConditionWorkflowNodeLoader::class)->tag('workflow.node_type_loader');
     $services->set(ConditionWorkflowSubscriber::class)->tag('kernel.event_subscriber');
-    $services->set(ApprovalWorkflowSubscriber::class)->tag('kernel.event_subscriber');
+    $services->set(ApprovalWorkflowSubscriber::class)->args([service(ApprovalModeRegistry::class)])->tag('kernel.event_subscriber');
 
     $services->set(BuiltInWorkflowNodeTypeLoader::class)
         ->tag('workflow.node_type_loader');

@@ -70,7 +70,7 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
      * @param list<string> $taskStates
      */
     #[DataProvider('stageStates')]
-    public function testApprovalProjectionRetainsActualPathAndClassifiesStage(string $instanceState, ?string $currentNode, string $countersignType, array $taskStates, string $expectedStatus): void
+    public function testApprovalProjectionRetainsActualPathAndClassifiesStage(string $instanceState, ?string $currentNode, string $countersignType, array $taskStates, ?string $executionStatus, ?string $executionResult, string $expectedStatus): void
     {
         $instance = new WorkflowInstanceEntity();
         $instance->id = 'instance';
@@ -81,7 +81,7 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
         $instance->graphSnapshot = ['nodes' => [
             ['id' => 'start', 'type' => 'snaker:start'],
             ['id' => 'review', 'type' => 'snaker:task', 'properties' => [
-                'approvalStage' => true, 'name' => 'Review', 'assigneeValue' => ['reviewer'], 'countersignType' => $countersignType,
+                'approvalStage' => true, 'name' => 'Review', 'assigneeValue' => ['finance'], 'assigneeUserIds' => ['reviewer'], 'countersignType' => $countersignType,
             ]],
             ['id' => 'end', 'type' => 'snaker:end'],
         ], 'edges' => [
@@ -110,7 +110,7 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
         }
 
         $actualPath = ['nodeIds' => ['start'], 'edgeIds' => []];
-        $event = new WorkflowInstancePresentationEvent($instance, Context::createDefaultContext(), ['selectedPath' => $actualPath], withDetail: true);
+        $event = new WorkflowInstancePresentationEvent($instance, Context::createDefaultContext(), ['selectedPath' => $actualPath, 'executions' => $executionStatus === null ? [] : [['nodeId' => 'review', 'round' => 1, 'status' => $executionStatus, 'result' => $executionResult]]], withDetail: true);
         $tasks = new StaticEntityRepository([new WorkflowTaskCollection($taskEntities), new WorkflowTaskCollection($taskEntities)]);
         $subscriber = $this->subscriber($tasks);
         $dispatcher = new EventDispatcher();
@@ -130,19 +130,17 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, ?string, string, list<string>, string}>
+     * @return iterable<string, array{string, ?string, string, list<string>, ?string, ?string, string}>
      */
     public static function stageStates(): iterable
     {
-        yield 'current pending task is active' => [WorkflowInstanceStates::RUNNING, 'review', 'single', [WorkflowTaskStates::TODO], 'active'];
-        yield 'rejected task takes priority over current stage' => [WorkflowInstanceStates::RUNNING, 'review', 'single', [WorkflowTaskStates::REJECTED], 'rejected'];
-        yield 'agreed stage is approved' => [WorkflowInstanceStates::RUNNING, 'end', 'single', [WorkflowTaskStates::AGREED], 'approved'];
-        yield 'countersign with all agreed is approved' => [WorkflowInstanceStates::RUNNING, 'end', 'countersign', [WorkflowTaskStates::AGREED], 'approved'];
-        yield 'single approval allows canceled siblings' => [WorkflowInstanceStates::RUNNING, 'end', 'single', [WorkflowTaskStates::AGREED, WorkflowTaskStates::CANCELED], 'approved'];
-        yield 'countersign requires every participant to agree' => [WorkflowInstanceStates::RUNNING, 'end', 'countersign', [WorkflowTaskStates::AGREED, WorkflowTaskStates::CANCELED], 'pending'];
-        yield 'an outstanding sibling prevents approval' => [WorkflowInstanceStates::RUNNING, 'end', 'single', [WorkflowTaskStates::AGREED, WorkflowTaskStates::TODO], 'pending'];
-        yield 'unreached running stage is pending' => [WorkflowInstanceStates::RUNNING, null, 'single', [WorkflowTaskStates::TODO], 'pending'];
-        yield 'unfinished stage on canceled instance is skipped' => [WorkflowInstanceStates::CANCELED, null, 'single', [WorkflowTaskStates::TODO], 'skipped'];
+        yield 'current pending task is active' => [WorkflowInstanceStates::RUNNING, 'review', 'single', [WorkflowTaskStates::TODO], 'waiting', null, 'active'];
+        yield 'rejected execution is rejected' => [WorkflowInstanceStates::RUNNING, 'end', 'single', [WorkflowTaskStates::REJECTED], 'completed', 'rejected', 'rejected'];
+        yield 'agreed execution is approved' => [WorkflowInstanceStates::RUNNING, 'end', 'single', [WorkflowTaskStates::AGREED], 'completed', null, 'approved'];
+        yield 'quorum may approve after an individual rejection' => [WorkflowInstanceStates::COMPLETED, null, 'example:quorum', [WorkflowTaskStates::REJECTED, WorkflowTaskStates::AGREED, WorkflowTaskStates::AGREED], 'completed', null, 'approved'];
+        yield 'a rejection does not finish a waiting quorum' => [WorkflowInstanceStates::RUNNING, 'review', 'example:quorum', [WorkflowTaskStates::REJECTED, WorkflowTaskStates::TODO], 'waiting', null, 'active'];
+        yield 'unreached stage is pending' => [WorkflowInstanceStates::RUNNING, null, 'single', [WorkflowTaskStates::TODO], null, null, 'pending'];
+        yield 'canceled execution is skipped' => [WorkflowInstanceStates::CANCELED, null, 'single', [WorkflowTaskStates::TODO], 'canceled', null, 'skipped'];
     }
 
     /**

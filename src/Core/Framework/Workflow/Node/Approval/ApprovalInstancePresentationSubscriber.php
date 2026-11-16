@@ -14,13 +14,12 @@ use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyEntity;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
+use Shopwell\Core\Framework\Workflow\Execution\Node\WorkflowNodeExecutionEntity;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskHistoryEntity;
-use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -76,7 +75,7 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
             'plannedPath' => $plannedPath,
             'tasks' => $this->taskPresenter->presentMany($currentTasks, $context),
             'approvalTasks' => $approvalTasks,
-            'approvalStages' => $this->presentStages($instance, $approvalNodes, $approvalTasks, $plannedPath['nodeIds'], $context),
+            'approvalStages' => $this->presentStages($instance, $approvalNodes, $approvalTasks, $plannedPath['nodeIds'], $event->getData()['executions'], $context),
             'history' => $this->presentHistory($instance->id, $context),
             'copies' => $this->presentCopies($instance->id, $context),
         ]);
@@ -86,15 +85,27 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
      * @param list<GraphNode> $approvalNodes
      * @param list<array<string, mixed>> $tasks
      * @param list<string> $plannedNodes
+     * @param list<array<string, mixed>> $executions
      *
      * @return list<array<string, mixed>>
      */
-    private function presentStages(WorkflowInstanceEntity $instance, array $approvalNodes, array $tasks, array $plannedNodes, Context $context): array
+    private function presentStages(WorkflowInstanceEntity $instance, array $approvalNodes, array $tasks, array $plannedNodes, array $executions, Context $context): array
     {
         $participantIds = [];
 
         foreach ($approvalNodes as $node) {
-            $participantIds = [...$participantIds, ...$node->property('assigneeValue', [])];
+            $participantIds = [...$participantIds, ...$node->property('assigneeUserIds', [])];
+        }
+
+        foreach ($tasks as $task) {
+            $participantIds[] = $task['assignee']['id'];
+        }
+
+        $executionsByNode = [];
+        foreach ($executions as $execution) {
+            if ($execution['round'] === $instance->round) {
+                $executionsByNode[$execution['nodeId']] = $execution;
+            }
         }
 
         $names = $this->users->names(array_values(array_unique($participantIds)), $context);
@@ -102,14 +113,18 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
 
         foreach ($approvalNodes as $node) {
             $stageTasks = array_values(array_filter($tasks, static fn (array $task): bool => $task['nodeId'] === $node->id));
-            $countersignType = $node->property('countersignType', WorkflowCountersignTypes::SINGLE);
+            $participantIds = $node->property('assigneeUserIds', []);
+            foreach ($stageTasks as $task) {
+                $participantIds[] = $task['assignee']['id'];
+            }
+            $participantIds = array_values(array_unique($participantIds));
             $stages[] = [
                 'nodeId' => $node->id,
                 'nodeName' => $node->property('name', $node->id),
                 'description' => $node->property('description', ''),
-                'countersignType' => $countersignType,
-                'status' => $this->stageStatus($instance, $node->id, $stageTasks, $countersignType, $plannedNodes),
-                'participants' => array_map(static fn (string $id): array => ['id' => $id, 'name' => $names[$id] ?? $id], $node->property('assigneeValue', [])),
+                'countersignType' => $node->property('countersignType'),
+                'status' => $this->stageStatus($instance, $node->id, $executionsByNode[$node->id] ?? null, $plannedNodes),
+                'participants' => array_map(static fn (string $id): array => ['id' => $id, 'name' => $names[$id] ?? $id], $participantIds),
                 'tasks' => $stageTasks,
             ];
         }
@@ -118,27 +133,17 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
     }
 
     /**
-     * @param list<array<string, mixed>> $tasks
+     * @param array<string, mixed>|null $execution
      * @param list<string> $plannedNodes
      */
-    private function stageStatus(WorkflowInstanceEntity $instance, string $nodeId, array $tasks, string $countersignType, array $plannedNodes): string
+    private function stageStatus(WorkflowInstanceEntity $instance, string $nodeId, ?array $execution, array $plannedNodes): string
     {
-        $states = array_column($tasks, 'state');
-
-        if (\in_array(WorkflowTaskStates::REJECTED, $states, true)) {
-            return 'rejected';
-        }
-
-        if ($instance->isRunning() && $instance->currentNodeId === $nodeId) {
-            return 'active';
-        }
-
-        $hasAgreed = \in_array(WorkflowTaskStates::AGREED, $states, true);
-        $hasPending = \in_array(WorkflowTaskStates::TODO, $states, true);
-        $allAgreed = array_unique($states) === [WorkflowTaskStates::AGREED];
-
-        if ($hasAgreed && !$hasPending && ($countersignType !== WorkflowCountersignTypes::COUNTERSIGN || $allAgreed)) {
-            return 'approved';
+        if ($execution !== null) {
+            return match ($execution['status']) {
+                WorkflowNodeExecutionEntity::COMPLETED => $execution['result'] === 'rejected' ? 'rejected' : 'approved',
+                WorkflowNodeExecutionEntity::RUNNING, WorkflowNodeExecutionEntity::WAITING => 'active',
+                default => 'skipped',
+            };
         }
 
         if ($instance->isRunning() && \in_array($nodeId, $plannedNodes, true)) {

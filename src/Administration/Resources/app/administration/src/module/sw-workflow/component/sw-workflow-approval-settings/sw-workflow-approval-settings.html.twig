@@ -30,7 +30,7 @@
     <mt-select
         v-if="modeOptions.length > 1 || !mode"
         class="sw-workflow-approval-settings__mode-select"
-        :model-value="mode ? settings.approval.mode : null"
+        :model-value="modeValue"
         :options="modeOptions"
         :label="$t('sw-workflow.approval.mode')"
         :placeholder="$t('sw-workflow.approval.selectMode')"

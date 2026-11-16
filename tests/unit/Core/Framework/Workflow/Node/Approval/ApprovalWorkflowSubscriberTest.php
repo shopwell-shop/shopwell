@@ -11,6 +11,8 @@ use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Event\WorkflowValidationEvent;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalMode;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -25,7 +27,7 @@ class ApprovalWorkflowSubscriberTest extends TestCase
         $document = new WorkflowDocument([new WorkflowNode('review', 'core:approval', 1)], []);
         $event = new WorkflowValidationEvent($document);
         $dispatcher = new EventDispatcher();
-        $dispatcher->addSubscriber(new ApprovalWorkflowSubscriber());
+        $dispatcher->addSubscriber(new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes()));
 
         $dispatcher->dispatch($event);
 
@@ -45,7 +47,7 @@ class ApprovalWorkflowSubscriberTest extends TestCase
         $node = new WorkflowNode('review', 'core:approval', 1, $config);
         $event = new WorkflowValidationEvent(new WorkflowDocument([$node], []));
 
-        (new ApprovalWorkflowSubscriber())->validate($event);
+        (new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes()))->validate($event);
 
         static::assertSame([], $event->getViolations());
         static::assertSame($config, $node->config);
@@ -112,7 +114,7 @@ class ApprovalWorkflowSubscriberTest extends TestCase
             ]),
         ], []));
 
-        (new ApprovalWorkflowSubscriber())->validate($event);
+        (new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes()))->validate($event);
 
         static::assertEquals([new WorkflowViolation($code, '/nodes/0/config/assignee' . $path, 'review')], $event->getViolations());
     }
@@ -157,7 +159,7 @@ class ApprovalWorkflowSubscriberTest extends TestCase
             ]),
         ], []));
 
-        (new ApprovalWorkflowSubscriber())->validate($event);
+        (new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes()))->validate($event);
 
         static::assertEquals([new WorkflowViolation($code, '/nodes/0/config/assignee/config/userIds', 'review')], $event->getViolations());
     }
@@ -197,7 +199,7 @@ class ApprovalWorkflowSubscriberTest extends TestCase
             ]),
         ], []));
 
-        (new ApprovalWorkflowSubscriber())->validate($event);
+        (new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes()))->validate($event);
 
         static::assertEquals([new WorkflowViolation('approval_incompatible_mode', '/nodes/0/config/approval/mode', 'review')], $event->getViolations());
     }
@@ -222,7 +224,7 @@ class ApprovalWorkflowSubscriberTest extends TestCase
             ]),
         ], []));
 
-        (new ApprovalWorkflowSubscriber())->validate($event);
+        (new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes()))->validate($event);
 
         static::assertEquals([new WorkflowViolation('approval_invalid_configuration', '/nodes/0/config/approval', 'review')], $event->getViolations());
     }
@@ -248,6 +250,25 @@ class ApprovalWorkflowSubscriberTest extends TestCase
         yield 'extension configuration must also be an object' => [['mode' => 'example:quorum', 'config' => false]];
     }
 
+    public function testInstalledNewVersionOfBuiltInModeOwnsItsConfigurationAndParticipantRules(): void
+    {
+        $mode = static::createStub(ApprovalMode::class);
+        $mode->method('getName')->willReturn('core:all');
+        $mode->method('getType')->willReturn('countersign');
+        $mode->method('getVersion')->willReturn(2);
+        $mode->method('supportsMultipleAssignees')->willReturn(false);
+        $event = new WorkflowValidationEvent(new WorkflowDocument([
+            new WorkflowNode('review', 'core:approval', 1, [
+                'assignee' => ['source' => 'core:user', 'config' => ['userId' => '0123456789abcdef0123456789abcdef']],
+                'approval' => ['mode' => 'core:all', 'version' => 2, 'config' => ['required' => 1]],
+            ]),
+        ], []));
+
+        (new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes([$mode])))->validate($event);
+
+        static::assertSame([], $event->getViolations());
+    }
+
     public function testIgnoresOtherNodeTypesAndVersionsWhileKeepingDiagnosticNodePosition(): void
     {
         $event = new WorkflowValidationEvent(new WorkflowDocument([
@@ -257,7 +278,7 @@ class ApprovalWorkflowSubscriberTest extends TestCase
             new WorkflowNode('review', 'core:approval', 1),
         ], []));
 
-        (new ApprovalWorkflowSubscriber())->validate($event);
+        (new ApprovalWorkflowSubscriber(ApprovalRegistryFixture::modes()))->validate($event);
 
         static::assertEquals([
             new WorkflowViolation('approval_assignee_required', '/nodes/3/config/assignee', 'review'),

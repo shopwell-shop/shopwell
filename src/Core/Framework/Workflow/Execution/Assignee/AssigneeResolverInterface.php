@@ -16,7 +16,7 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 interface AssigneeResolverInterface
 {
     /**
-     * Return one of the types defined in WorkflowAssigneeTypes.
+     * Return the stable execution identifier compiled by the corresponding assignee source.
      */
     public function getAssigneeType(): string;
 

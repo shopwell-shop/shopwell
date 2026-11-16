@@ -142,4 +142,41 @@ describe('approval settings', () => {
         expect(wrapper.find('.sw-workflow-approval-settings__unavailable').exists()).toBe(true);
         expect(wrapper.emitted('update-config')).toHaveLength(1);
     });
+    it('selects the saved mode version and preserves its settings on participant changes', async () => {
+        const service = new WorkflowApprovalService();
+        service.registerSource({
+            name: 'example:team',
+            labelKey: 'example.team',
+            settingsComponent: 'sw-workflow-users-assignee-select',
+            summaryComponent: 'example-summary',
+        });
+        service.registerMode({
+            name: 'example:quorum',
+            version: 1,
+            labelKey: 'example.v1',
+            descriptionKey: 'example.description',
+        });
+        service.registerMode({
+            name: 'example:quorum',
+            version: 2,
+            labelKey: 'example.v2',
+            descriptionKey: 'example.description',
+        });
+        const wrapper = await createWrapper(true, service);
+        const config = {
+            assignee: { source: 'example:team', config: { userIds: [] } },
+            approval: { mode: 'example:quorum', version: 2, config: { required: 2 } },
+        };
+        await wrapper.setProps({ node: { ...node, config } });
+
+        const select = wrapper.findComponent('.sw-workflow-approval-settings__mode-select') as VueWrapper<
+            ComponentPublicInstance<{ modelValue: string | null }>
+        >;
+        expect(select.props('modelValue')).toBe('example:quorum@2');
+        select.vm.$emit('update:modelValue', 'example:quorum');
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toEqual({
+            ...config,
+            approval: { mode: 'example:quorum', config: {} },
+        });
+    });
 });
