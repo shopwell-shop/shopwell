@@ -2,6 +2,20 @@
 
 ## Core
 
+### User organization assignments
+
+The installation migration seeds the editable Shopwell organization, Headquarters department and Employee position.
+New users receive their initial department and position from these organization records.
+Write department assignments through `user.organizationUnitMappings` and scoped positions through `user.positionMappings` or their Admin API repositories; `user.positions` is a read-only projection.
+Each normal user requires exactly one primary department and primary position; use the Sync API when replacing related assignments together.
+Department memberships expose `isLeader`, `leaderPosition` and `supervisorMembershipId` to the Admin API.
+A supervisor references a specific membership in the same organization, so reporting lines remain explicit for users with multiple departments.
+Approval workflows can select `core:department-leaders` as their assignee source with an empty configuration.
+This source uses the initiator's primary department and supports all-must-approve or first-decision modes.
+The user editor configures department leaders and department-specific positions.
+Assignees are resolved when entering a node, must be active and authorized, and remain attached to tasks already created when organization relationships change.
+Core now directly requires `symfony/expression-language` with a minimum version of 7.4.21 within the 7.4 series.
+
 ### Experimental Workflow Studio
 
 Workflow Studio provides editable workflow drafts, an approval template, automatic diagnostics and JSON export.
@@ -31,6 +45,14 @@ Updates and deletes require `expectedRevision` and return HTTP 409 on conflictin
 Approval nodes support a single named user or multiple users with all-must-approve and first-decision rules, and display current approver names.
 `workflowApprovalService.registerSource()` and `registerMode()` provide independent settings components for business extensions; sources also provide their node summary component and optional `supportedModes` to constrain compatible rules.
 When a source declares `supportedModes`, extensions opt in custom rules through `workflowApprovalService.registerSupportedMode(sourceName, modeName)`.
+Approval mode registrations accept an explicit positive `version`; saved nodes select that exact implementation, and unavailable versions are not replaced automatically.
+Source compatibility entries use a mode name for version 1 or `name@version` for later versions; `registerSupportedMode(sourceName, modeName, version)` owns a version-specific opt-in.
+Backend strategies implement `ApprovalMode` and register the `shopwell.workflow.approval.mode` tag; participant configuration compilers implement `ApprovalAssigneeSource` with the `shopwell.workflow.approval.assignee_source` tag.
+`CompileApprovalConfigurationExtension` supports publication-time selection overrides; the resulting strategy type, version and configuration are pinned in the execution graph and instance snapshot.
+Keep referenced versions installed while published definitions or running instances use them.
+Personnel sources pair their compiled assignment type with the existing experimental `AssigneeResolverInterface`; its execution context and entity contracts remain experimental.
+Plugin resolvers receive the normalized request form during preview and execution, and unavailable dynamic participants prevent submission or stage entry.
+Instance details use actual node execution outcomes rather than inferring approval policy from individual task votes.
 Approval source, mode and compatibility registrations, request form data sources and release actions reject duplicate names and return disposers.
 Removing a source or mode also removes its compatibility registrations; reinstalling requires explicitly opting in again.
 Template `create(types, { translate })` receives the current interface translation context; authored labels and form fields are translated only when creating the document.

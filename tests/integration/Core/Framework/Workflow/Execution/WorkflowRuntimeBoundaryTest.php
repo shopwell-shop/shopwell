@@ -10,14 +10,21 @@ use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
+use Shopwell\Core\Framework\Workflow\Definition\Connection\WorkflowConnection;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
+use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
+use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
+use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowInstancePresenter;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\CounterSignCalculator;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\StartExecutor;
@@ -32,6 +39,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\ShapeRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\SingleEndRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\SingleStartRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\WorkflowGraphValidator;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowCancellationStore;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEngine;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionContext;
@@ -42,9 +50,22 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowTransactionRunner;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskCompletion;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeRegistry;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssignment;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
+use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStateHandler;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\QuorumApprovalMode;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Validator\Validation;
 
 /**
  * @internal
@@ -93,7 +114,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
     #[DataProvider('organizationSources')]
     public function testRemovingAnInstalledResolverBlocksStartingThePublishedGraphBeforeWritingAnInstance(string $type): void
     {
-        $installed = $this->service(new AssigneeResolverRegistry([new BoundaryOrganizationResolver($type)]));
+        $installed = $this->runtime(new AssigneeResolverRegistry([new BoundaryOrganizationResolver($type)]))['workflows'];
         $definitionId = $installed->createDefinition([
             'code' => Uuid::randomHex(),
             'name' => 'Organization capability lifecycle',
@@ -107,7 +128,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
         static::assertCount(1, $tasks);
         static::assertSame([$this->userId], array_column($tasks->getElements(), 'assigneeId'));
         static::assertSame([$type], array_column($tasks->getElements(), 'assigneeType'));
-        $withoutExtension = $this->service(new AssigneeResolverRegistry([]));
+        $withoutExtension = $this->runtime(new AssigneeResolverRegistry([]))['workflows'];
 
         try {
             $withoutExtension->start($definitionId, [], '', $this->context);
@@ -126,6 +147,87 @@ class WorkflowRuntimeBoundaryTest extends TestCase
         static::assertCount(1, static::getContainer()->get(WorkflowTaskFinder::class)->forInstance($instanceId, $this->context));
     }
 
+    public function testPluginSourceAndVersionedModeRunFromPublicationThroughFinalDecision(): void
+    {
+        $container = static::getContainer();
+        $connection = $container->get(Connection::class);
+        $reviewerIds = [$this->userId];
+        $reviewerIds[] = TestUser::createNewTestUser($connection)->getUserId();
+        $reviewerIds[] = TestUser::createNewTestUser($connection)->getUserId();
+        $container->get('user.repository')->update(array_map(
+            static fn (string $id): array => ['id' => $id, 'admin' => true],
+            $reviewerIds,
+        ), Context::createDefaultContext());
+        $modes = ApprovalRegistryFixture::modes([new QuorumApprovalMode()]);
+        $runtime = $this->runtime(new AssigneeResolverRegistry([new BoundaryTeamResolver()]), $modes);
+        $compiler = new ApprovalWorkflowCompiler(new ApprovalConfigurationCompiler(
+            new ApprovalAssigneeRegistry([new BoundaryTeamSource()]),
+            $modes,
+            new ExtensionDispatcher(new EventDispatcher()),
+        ));
+        $codec = new WorkflowDocumentCodec(Validation::createValidator());
+        $release = new WorkflowReleaseEntity();
+        $release->assign([
+            'id' => Uuid::randomHex(), 'revision' => 1, 'name' => 'Plugin team approval',
+            'publisher' => ApprovalWorkflowPublisher::NAME,
+            'document' => $codec->encode(new WorkflowDocument([
+                new WorkflowNode('start', 'core:start', 1),
+                new WorkflowNode('review', 'core:approval', 1, [
+                    'assignee' => ['source' => 'example:team', 'config' => ['userIds' => $reviewerIds]],
+                    'approval' => ['mode' => 'example:quorum', 'version' => 2, 'config' => ['required' => 2]],
+                ]),
+                new WorkflowNode('end', 'core:end', 1),
+            ], [
+                new WorkflowConnection('begin', 'start', 'out', 'review', 'in'),
+                new WorkflowConnection('accept', 'review', 'approved', 'end', 'in'),
+                new WorkflowConnection('reject', 'review', 'rejected', 'end', 'in'),
+            ])),
+        ]);
+        $publisher = new ApprovalWorkflowPublisher(
+            $codec,
+            $compiler,
+            $container->get('workflow_execution_definition.repository'),
+            $container->get('user.repository'),
+            $runtime['validator'],
+        );
+
+        $publisher->publish($release, $this->context);
+        $instanceId = $runtime['workflows']->start($release->getId(), [], '', $this->context);
+        $finder = $container->get(WorkflowTaskFinder::class);
+        $tasks = $finder->forInstance($instanceId, $this->context);
+        static::assertCount(3, $tasks);
+        static::assertSame(['example:team'], array_values(array_unique(array_column($tasks->getElements(), 'assigneeType'))));
+        static::assertSame(['example:quorum'], array_values(array_unique(array_column($tasks->getElements(), 'countersignType'))));
+        $byAssignee = [];
+        foreach ($tasks as $task) {
+            $byAssignee[$task->assigneeId] = $task->id;
+        }
+
+        $runtime['approvals']->approve($byAssignee[$reviewerIds[0]], 'First vote', $this->context);
+        static::assertSame('running', $runtime['workflows']->loadInstance($instanceId, $this->context)->state());
+        $runtime['approvals']->approve($byAssignee[$reviewerIds[1]], 'Threshold reached', new Context(new AdminApiSource($reviewerIds[1])));
+
+        $instance = $runtime['workflows']->loadInstance($instanceId, $this->context);
+        static::assertSame('agreed', $instance->state());
+        static::assertNull($instance->result);
+        static::assertSame(2, $instance->snapshot()['nodes'][1]['properties']['approvalModeVersion']);
+        static::assertSame(['required' => 2], $instance->snapshot()['nodes'][1]['properties']['approvalModeConfig']);
+        $detail = $container->get(WorkflowInstancePresenter::class)->present($instance, $this->context, withDetail: true);
+        static::assertSame('approved', $detail['approvalStages'][0]['status']);
+        static::assertEqualsCanonicalizing($reviewerIds, array_column($detail['approvalStages'][0]['participants'], 'id'));
+        static::assertSame('canceled', $runtime['approvals']->loadTask($byAssignee[$reviewerIds[2]], $this->context)->state());
+        $historyCriteria = (new Criteria())->addFilter(new EqualsFilter('instanceId', $instanceId));
+        static::assertSame(2, $container->get('workflow_task_history.repository')->search($historyCriteria, $this->context)->getTotal());
+
+        try {
+            $runtime['approvals']->approve($byAssignee[$reviewerIds[1]], 'Duplicate decision', new Context(new AdminApiSource($reviewerIds[1])));
+            static::fail('Completed tasks must not accept duplicate decisions.');
+        } catch (WorkflowExecutionException $exception) {
+            static::assertSame(WorkflowExecutionException::taskAlreadyHandled($byAssignee[$reviewerIds[1]])->getErrorCode(), $exception->getErrorCode());
+        }
+        static::assertSame(2, $container->get('workflow_task_history.repository')->search($historyCriteria, $this->context)->getTotal());
+    }
+
     /**
      * @return iterable<string, array{string}>
      */
@@ -135,8 +237,12 @@ class WorkflowRuntimeBoundaryTest extends TestCase
         yield 'unit manager resolver' => ['unitLeader'];
     }
 
-    private function service(AssigneeResolverRegistry $resolvers): WorkflowService
+    /**
+     * @return array{workflows: WorkflowService, approvals: ApprovalWorkflowService, validator: WorkflowGraphValidator}
+     */
+    private function runtime(AssigneeResolverRegistry $resolvers, ?ApprovalModeRegistry $modes = null): array
     {
+        $modes ??= ApprovalRegistryFixture::modes();
         $container = static::getContainer();
         $events = $container->get(WorkflowEventQueue::class);
         $states = $container->get(WorkflowInstanceStateHandler::class);
@@ -144,7 +250,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
         $executors = new NodeExecutorRegistry([
             new StartExecutor(),
             new EndExecutor(),
-            new TaskExecutor($resolvers, $container->get('workflow_task.repository'), $events, $container->get(WorkflowTaskStateHandler::class)),
+            new TaskExecutor($resolvers, $container->get('workflow_task.repository'), $events, $container->get(WorkflowTaskStateHandler::class), $modes),
         ]);
         $engine = new WorkflowEngine(
             $executors,
@@ -161,10 +267,10 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             new SingleEndRule(),
             new CycleRule(),
             new ReachabilityRule(),
-            new NodePropertiesRule($resolvers),
+            new NodePropertiesRule($resolvers, $modes),
         ]);
 
-        return new WorkflowService(
+        $workflows = new WorkflowService(
             $container->get('workflow_execution_definition.repository'),
             $container->get('workflow_instance.repository'),
             $engine,
@@ -177,6 +283,27 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             $container->get(WorkflowInputSchema::class),
             $clock,
         );
+        $approvals = new ApprovalWorkflowService(
+            $workflows,
+            $container->get('workflow_task.repository'),
+            $container->get('workflow_copy.repository'),
+            $container->get(WorkflowTransactionRunner::class),
+            $events,
+            $container->get(WorkflowTaskFinder::class),
+            $container->get(WorkflowTaskStateHandler::class),
+            $states,
+            $container->get(WorkflowCancellationStore::class),
+            new ApprovalTaskCompletion(
+                new CounterSignCalculator($modes),
+                $container->get(WorkflowTaskStateHandler::class),
+                $container->get(WorkflowTaskFinder::class),
+                $container->get(WorkflowRecorder::class),
+                $events,
+                $engine,
+            ),
+        );
+
+        return ['workflows' => $workflows, 'approvals' => $approvals, 'validator' => $validator];
     }
 
     /**
@@ -219,5 +346,37 @@ final readonly class BoundaryOrganizationResolver implements AssigneeResolverInt
     public function resolve(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context): array
     {
         return [$instance->initiatorId];
+    }
+}
+
+/**
+ * @internal
+ */
+final class BoundaryTeamSource implements ApprovalAssigneeSource
+{
+    public function getName(): string
+    {
+        return 'example:team';
+    }
+
+    public function compile(array $configuration): ApprovalAssignment
+    {
+        return new ApprovalAssignment('example:team', ['finance'], multiple: true, configuration: $configuration, knownUserIds: $configuration['userIds']);
+    }
+}
+
+/**
+ * @internal
+ */
+final class BoundaryTeamResolver implements AssigneeResolverInterface
+{
+    public function getAssigneeType(): string
+    {
+        return 'example:team';
+    }
+
+    public function resolve(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context): array
+    {
+        return $node->property('assigneeConfig')['userIds'];
     }
 }

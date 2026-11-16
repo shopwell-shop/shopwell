@@ -5,6 +5,16 @@ import './service/extension/approval-workflow.registration';
 
 /** @private */
 Shopwell.Component.register(
+    'sw-workflow-organization-assignee-settings',
+    () => import('./component/sw-workflow-organization-assignee-settings'),
+);
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-organization-assignee-summary',
+    () => import('./component/sw-workflow-organization-assignee-summary'),
+);
+/** @private */
+Shopwell.Component.register(
     'sw-workflow-users-assignee-select',
     () => import('./component/sw-workflow-users-assignee-select'),
 );

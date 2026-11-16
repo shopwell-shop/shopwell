@@ -136,7 +136,17 @@
                     },
                     "invalidEmailErrorMessage": "Please enter a valid email address.",
                     "duplicateEmailErrorMessage": "This email address has been registered already."
-                }
+                },
+                "organizationLoadError": "Organization data could not be loaded. Please retry.",
+                "buttonRetryOrganization": "Retry",
+                "labelPrimaryPosition": "Primary position",
+                "helperPrimaryReporting": "Workflows use the primary department to find its department leaders.",
+                "helperScopedPositions": "These positions belong to this department. The same position can be held in multiple departments.",
+                "labelDepartmentLeader": "Department leader",
+                "labelLeaderPosition": "Leader order",
+                "helperLeaderPosition": "Lower numbers come first. Countersign requires every leader to decide.",
+                "organizationUnavailable": "Department unavailable",
+                "positionUnavailable": "Position unavailable"
             },
             "filter": {
                 "labelRole": "Role",

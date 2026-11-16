@@ -41,6 +41,16 @@ class WorkflowException extends HttpException
         return new self(Response::HTTP_CONFLICT, 'FRAMEWORK__WORKFLOW_PUBLISHER_UNAVAILABLE', 'Workflow publisher "{{ name }}" is unavailable.', ['name' => $name]);
     }
 
+    public static function approvalModeUnavailable(string $name, int $version): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            'FRAMEWORK__WORKFLOW_APPROVAL_MODE_UNAVAILABLE',
+            'Approval mode "{{ name }}" version {{ version }} is unavailable.',
+            ['name' => $name, 'version' => $version]
+        );
+    }
+
     public static function duplicatePublisher(string $name): self
     {
         return new self(Response::HTTP_INTERNAL_SERVER_ERROR, 'FRAMEWORK__WORKFLOW_DUPLICATE_PUBLISHER', 'Workflow publisher "{{ name }}" is registered more than once.', ['name' => $name]);

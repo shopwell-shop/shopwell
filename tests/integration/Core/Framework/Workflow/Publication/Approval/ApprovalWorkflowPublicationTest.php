@@ -7,6 +7,7 @@ use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleEntity;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntitySearchedEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -17,6 +18,9 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionEntity;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Permission\WorkflowDefaultRolesEvent;
+use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
+use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimePreviewEvent;
+use Shopwell\Core\System\Organization\OrganizationDefaults;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 
 /**
@@ -319,6 +323,51 @@ class ApprovalWorkflowPublicationTest extends TestCase
         static::assertStringContainsString('approval_assignee_unavailable', $this->errorSummary($other));
     }
 
+    public function testDepartmentLeaderPreviewAndStartedTasksUseTheOrganizationRelationship(): void
+    {
+        $browser = $this->getBrowser(permissions: $this->permissions());
+        $initiatorId = $this->actorId();
+        $context = Context::createDefaultContext();
+        $connection = static::getContainer()->get(Connection::class);
+        $leaderId = Uuid::randomHex();
+        static::getContainer()->get('user.repository')->create([[
+            'id' => $leaderId, 'username' => $leaderId, 'name' => 'Department leader',
+            'email' => $leaderId . '@example.com', 'password' => 'shopwell', 'active' => true, 'admin' => true,
+            'localeId' => Uuid::fromBytesToHex($connection->fetchOne('SELECT id FROM locale LIMIT 1')),
+        ]], $context);
+        $leaderMembershipId = $connection->fetchOne('SELECT LOWER(HEX(id)) FROM user_organization_unit WHERE user_id = UNHEX(?) AND is_primary = 1', [$leaderId]);
+        static::getContainer()->get('user_organization_unit.repository')->update([['id' => $leaderMembershipId, 'isLeader' => true]], $context);
+        $membershipId = Uuid::randomHex();
+        static::getContainer()->get('user.repository')->update([[
+            'id' => $initiatorId,
+            'organizationUnitMappings' => [[
+                'id' => $membershipId, 'organizationUnitId' => OrganizationDefaults::UNIT,
+                'isPrimary' => true,
+            ]],
+            'positionMappings' => [['positionId' => OrganizationDefaults::POSITION, 'isPrimary' => true]],
+        ]], $context);
+        $draftId = $this->draft($browser, $leaderId, assigneeSource: 'core:department-leaders');
+        $browser->jsonRequest('POST', '/api/_action/workflow/draft/' . $draftId . '/publish', ['expectedRevision' => 1, 'publisher' => 'core:approval']);
+        static::assertSame(201, $browser->getResponse()->getStatusCode(), $this->errorSummary($browser));
+        $releaseId = $this->response($browser)['id'];
+        $release = static::getContainer()->get('workflow_release.repository')->search(new Criteria([$releaseId]), $context)->first();
+        static::assertInstanceOf(WorkflowReleaseEntity::class, $release);
+        $preview = new WorkflowRuntimePreviewEvent($release, ['reason' => 'Customer visit'], Context::createDefaultContext(new AdminApiSource($initiatorId)));
+        $taskCount = (int) $connection->fetchOne('SELECT COUNT(*) FROM workflow_task');
+        static::getContainer()->get('event_dispatcher')->dispatch($preview);
+
+        $steps = $preview->getSteps();
+        static::assertNotNull($steps);
+        static::assertCount(1, $steps);
+        static::assertCount(1, $steps[0]['assignees']);
+        static::assertSame($leaderId, $steps[0]['assignees'][0]['id']);
+        static::assertSame($taskCount, (int) $connection->fetchOne('SELECT COUNT(*) FROM workflow_task'));
+        $instanceId = $this->start($browser, $releaseId);
+        static::getContainer()->get('user_organization_unit.repository')->update([['id' => $leaderMembershipId, 'isLeader' => false]], $context);
+
+        static::assertSame([$leaderId], $connection->fetchFirstColumn('SELECT LOWER(HEX(assignee_id)) FROM workflow_task WHERE instance_id = UNHEX(?)', [$instanceId]));
+    }
+
     /**
      * @return list<string>
      */
@@ -362,15 +411,15 @@ class ApprovalWorkflowPublicationTest extends TestCase
         return $this->response($browser)['id'];
     }
 
-    private function draft(TestBrowser $browser, string $assigneeId, string $firstConnectionId = 'start-approval'): string
+    private function draft(TestBrowser $browser, string $assigneeId, string $firstConnectionId = 'start-approval', string $assigneeSource = 'core:user'): string
     {
         $id = Uuid::randomHex();
         $browser->jsonRequest('POST', '/api/_action/workflow/draft', ['id' => $id, 'name' => 'Expense approval', 'document' => [
             'schemaVersion' => 1, 'policy' => 'core:structured', 'nodes' => [
                 ['id' => 'start', 'type' => 'core:start', 'typeVersion' => 1, 'config' => ['inputType' => 'core:approval-request']],
                 ['id' => 'approval', 'type' => 'core:approval', 'typeVersion' => 1, 'config' => [
-                    'assignee' => ['source' => 'core:user', 'config' => ['userId' => $assigneeId]],
-                    'approval' => ['mode' => 'core:single', 'config' => []],
+                    'assignee' => ['source' => $assigneeSource, 'config' => $assigneeSource === 'core:user' ? ['userId' => $assigneeId] : []],
+                    'approval' => ['mode' => $assigneeSource === 'core:department-leaders' ? 'core:all' : 'core:single', 'config' => []],
                 ]],
                 ['id' => 'end', 'type' => 'core:end', 'typeVersion' => 1, 'config' => []],
                 ['id' => 'rejected-end', 'type' => 'core:end', 'typeVersion' => 1, 'config' => []],

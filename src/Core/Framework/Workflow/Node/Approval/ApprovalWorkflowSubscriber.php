@@ -4,9 +4,12 @@ namespace Shopwell\Core\Framework\Workflow\Node\Approval;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowAssigneeSources;
 use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Event\WorkflowValidationEvent;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
+use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -15,6 +18,10 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 #[Package('framework')]
 final class ApprovalWorkflowSubscriber implements EventSubscriberInterface
 {
+    public function __construct(private readonly ApprovalModeRegistry $modes)
+    {
+    }
+
     public static function getSubscribedEvents(): array
     {
         return [WorkflowValidationEvent::class => 'validate'];
@@ -35,16 +42,46 @@ final class ApprovalWorkflowSubscriber implements EventSubscriberInterface
             }
 
             $approval = $this->metadata($config['approval'] ?? null, 'mode');
-            if ($approval === null || (\in_array($approval['mode'], ['core:single', 'core:all', 'core:any'], true) && $approval['config'] !== [])) {
+            if ($approval === null) {
+                $event->addViolation(new WorkflowViolation('approval_invalid_configuration', $path . '/approval', $node->id));
+
+                continue;
+            }
+
+            $version = \array_key_exists('version', $approval) ? $approval['version'] : 1;
+            if (!\is_int($version) || $version < 1) {
+                $event->addViolation(new WorkflowViolation('approval_invalid_configuration', $path . '/approval', $node->id));
+
+                continue;
+            }
+
+            try {
+                $mode = $this->modes->get($approval['mode'], $version);
+            } catch (WorkflowException) {
+                // Preserve unavailable extensions in drafts; publication requires the implementation.
+                continue;
+            }
+
+            try {
+                $mode->validateConfiguration($approval['config']);
+            } catch (WorkflowException) {
                 $event->addViolation(new WorkflowViolation('approval_invalid_configuration', $path . '/approval', $node->id));
 
                 continue;
             }
 
             $assignee = $this->metadata($config['assignee'] ?? null, 'source');
-            if ($assigneeViolation === null && $assignee !== null
-                && (($assignee['source'] === 'core:user' && \in_array($approval['mode'], ['core:all', 'core:any'], true))
-                    || ($assignee['source'] === 'core:users' && $approval['mode'] === 'core:single'))) {
+            if ($assigneeViolation !== null || $assignee === null) {
+                continue;
+            }
+
+            $multiple = match ($assignee['source']) {
+                WorkflowAssigneeSources::USER => false,
+                WorkflowAssigneeSources::USERS, WorkflowAssigneeSources::DEPARTMENT_LEADERS => true,
+                default => null,
+            };
+
+            if ($multiple !== null && $multiple !== $mode->supportsMultipleAssignees()) {
                 $event->addViolation(new WorkflowViolation('approval_incompatible_mode', $path . '/approval/mode', $node->id));
             }
         }
@@ -61,11 +98,15 @@ final class ApprovalWorkflowSubscriber implements EventSubscriberInterface
             return new WorkflowViolation('approval_invalid_configuration', $path, $nodeId);
         }
 
-        if ($assignee['source'] === 'core:users') {
+        if ($assignee['source'] === WorkflowAssigneeSources::DEPARTMENT_LEADERS) {
+            return $assignee['config'] === [] ? null : new WorkflowViolation('approval_invalid_configuration', $path . '/config', $nodeId);
+        }
+
+        if ($assignee['source'] === WorkflowAssigneeSources::USERS) {
             return $this->validateUserIds($assignee['config']['userIds'] ?? null, $path . '/config/userIds', $nodeId);
         }
 
-        if ($assignee['source'] !== 'core:user') {
+        if ($assignee['source'] !== WorkflowAssigneeSources::USER) {
             return null;
         }
 

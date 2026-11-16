@@ -10,11 +10,14 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowUserLookup;
 use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowPreviewSubscriber;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ComparisonConditionEvaluator;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ExprNormalizer;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\WorkflowConditionEvaluator;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionEntity;
+use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
@@ -23,6 +26,8 @@ use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Shopwell\Core\System\User\UserCollection;
 use Shopwell\Core\System\User\UserEntity;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\QuorumApprovalMode;
 
 /**
  * @internal
@@ -80,13 +85,85 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
         static::assertSame([], $definitions->searchedCriteria);
     }
 
+    public function testEmptyAssigneesBlockSubmissionInsteadOfDisablingOnlyThePreview(): void
+    {
+        $definitions = new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$this->definition()])]);
+        $resolver = static::createStub(AssigneeResolverInterface::class);
+        $resolver->method('getAssigneeType')->willReturn('user');
+        $resolver->method('resolve')->willReturn([]);
+        $subscriber = $this->subscriber($definitions, StaticEntityRepository::of(UserCollection::class), $resolver);
+
+        $this->expectExceptionObject(WorkflowException::publicationRejected('approval_assignee_unavailable'));
+
+        $subscriber->preview($this->event(['amount' => '1', 'currency' => 'CNY']));
+    }
+
+    public function testFormDependentResolverReceivesTheNormalizedPreviewForm(): void
+    {
+        $resolver = static::createStub(AssigneeResolverInterface::class);
+        $resolver->method('getAssigneeType')->willReturn('user');
+        $resolver->method('resolve')->willReturnCallback(static function (WorkflowInstanceEntity $instance): array {
+            return ($instance->form()['currency'] ?? null) === 'CNY' && isset($instance->snapshot()['nodes']) ? ['reviewer'] : [];
+        });
+        $event = $this->event(['amount' => '1', 'currency' => 'CNY']);
+        $subscriber = $this->subscriber(
+            new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$this->definition()])]),
+            new StaticEntityRepository([new UserCollection()]),
+            $resolver,
+        );
+
+        $subscriber->preview($event);
+
+        $steps = $event->getSteps();
+        static::assertNotNull($steps);
+        static::assertArrayHasKey(0, $steps);
+        static::assertSame([['id' => 'reviewer', 'name' => 'reviewer']], $steps[0]['assignees']);
+    }
+
+    public function testPreviewUsesTheVersionedPluginMode(): void
+    {
+        $definition = $this->definition();
+        $definition->graphData['nodes'][1]['properties']['countersignType'] = 'example:quorum';
+        $definition->graphData['nodes'][1]['properties']['approvalModeVersion'] = 2;
+        $definition->graphData['nodes'][1]['properties']['approvalModeConfig'] = ['required' => 2];
+        $event = $this->event(['amount' => '1', 'currency' => 'CNY']);
+
+        $this->subscriber(
+            new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]),
+            new StaticEntityRepository([new UserCollection()])
+        )->preview($event);
+
+        $steps = $event->getSteps();
+        static::assertNotNull($steps);
+        static::assertArrayHasKey(0, $steps);
+        static::assertSame('example:quorum', $steps[0]['rule']);
+    }
+
     /**
      * @param StaticEntityRepository<WorkflowExecutionDefinitionCollection> $definitions
      * @param StaticEntityRepository<UserCollection> $users
      */
-    private function subscriber(StaticEntityRepository $definitions, StaticEntityRepository $users): ApprovalWorkflowPreviewSubscriber
+    private function subscriber(StaticEntityRepository $definitions, StaticEntityRepository $users, ?AssigneeResolverInterface $resolver = null): ApprovalWorkflowPreviewSubscriber
     {
-        return new ApprovalWorkflowPreviewSubscriber($definitions, new ApprovalRoute(new WorkflowConditionEvaluator(new ComparisonConditionEvaluator(new ExprNormalizer()), new ApprovalCondition())), new WorkflowInputSchema(), new WorkflowUserLookup($users));
+        if ($resolver === null) {
+            $resolver = static::createStub(AssigneeResolverInterface::class);
+            $resolver->method('getAssigneeType')->willReturn('user');
+            $resolver->method('resolve')->willReturn(['reviewer']);
+        }
+
+        $conditionEvaluator = new WorkflowConditionEvaluator(
+            new ComparisonConditionEvaluator(new ExprNormalizer()),
+            new ApprovalCondition()
+        );
+
+        return new ApprovalWorkflowPreviewSubscriber(
+            $definitions,
+            new ApprovalRoute($conditionEvaluator),
+            new WorkflowInputSchema(),
+            new WorkflowUserLookup($users),
+            new AssigneeResolverRegistry([$resolver]),
+            ApprovalRegistryFixture::modes([new QuorumApprovalMode()])
+        );
     }
 
     /**
@@ -112,8 +189,8 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
             ['id' => 'start', 'type' => 'snaker:start'],
             ['id' => 'finance', 'type' => 'snaker:task', 'properties' => ['name' => 'Finance review', 'assigneeType' => 'user', 'assigneeValue' => ['reviewer'], 'countersignType' => 'countersign']],
             ['id' => 'policy', 'type' => 'snaker:condition', 'properties' => ['name' => 'Review policy']],
-            ['id' => 'foreign', 'type' => 'snaker:task', 'properties' => ['name' => 'Foreign review', 'assigneeType' => 'user', 'assigneeValue' => ['reviewer']]],
-            ['id' => 'amount', 'type' => 'snaker:task', 'properties' => ['name' => 'Amount review', 'assigneeType' => 'user', 'assigneeValue' => ['reviewer']]],
+            ['id' => 'foreign', 'type' => 'snaker:task', 'properties' => ['name' => 'Foreign review', 'assigneeType' => 'user', 'assigneeValue' => ['reviewer'], 'countersignType' => 'single']],
+            ['id' => 'amount', 'type' => 'snaker:task', 'properties' => ['name' => 'Amount review', 'assigneeType' => 'user', 'assigneeValue' => ['reviewer'], 'countersignType' => 'single']],
             ['id' => 'end', 'type' => 'snaker:end'],
         ], 'edges' => [
             ['id' => 'begin', 'sourceNodeId' => 'start', 'targetNodeId' => 'finance'],

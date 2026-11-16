@@ -17,7 +17,7 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.workflowApprovalService.getSource(this.settings.assignee.source);
         },
         mode() {
-            return this.workflowApprovalService.getMode(this.settings.approval.mode);
+            return this.workflowApprovalService.getMode(this.settings.approval.mode, this.settings.approval.version ?? 1);
         },
     },
 });

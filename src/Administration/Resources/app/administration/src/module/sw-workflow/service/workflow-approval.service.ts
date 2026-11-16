@@ -10,11 +10,13 @@ export interface WorkflowAssigneeSource {
     labelKey: string;
     settingsComponent: string;
     summaryComponent: string;
+    /** Mode names address version 1; later versions use name@version. */
     supportedModes?: string[];
 }
 /** @public */
 export interface WorkflowApprovalMode {
     name: string;
+    version?: number;
     labelKey: string;
     descriptionKey: string;
     settingsComponent?: string;
@@ -22,7 +24,7 @@ export interface WorkflowApprovalMode {
 /** @public */
 export interface WorkflowApprovalSettings {
     assignee: { source: string; config: Record<string, unknown> };
-    approval: { mode: string; config: Record<string, unknown> };
+    approval: { mode: string; version?: number; config: Record<string, unknown> };
 }
 
 function object(value: unknown): Record<string, unknown> {
@@ -52,7 +54,17 @@ export default class WorkflowApprovalService {
 
     registerMode(mode: WorkflowApprovalMode): () => void {
         const definition = { ...mode };
-        const unregister = registerWorkflowContribution(this.approvalModes, definition.name, definition);
+        const version = mode.version ?? 1;
+
+        if (!Number.isInteger(version) || version < 1) {
+            throw new Error('Approval mode versions must be positive integers.');
+        }
+
+        const unregister = registerWorkflowContribution(
+            this.approvalModes,
+            this.modeKey(definition.name, version),
+            definition,
+        );
         return () => {
             unregister();
             for (const [key, support] of this.supportedModes) {
@@ -63,19 +75,22 @@ export default class WorkflowApprovalService {
         };
     }
 
-    registerSupportedMode(sourceName: string, modeName: string): () => void {
+    registerSupportedMode(sourceName: string, modeName: string, version = 1): () => void {
         const source = this.assigneeSources.get(sourceName);
-        const mode = this.approvalModes.get(modeName);
+        const mode = this.approvalModes.get(this.modeKey(modeName, version));
 
         if (!source || !mode || !source.supportedModes) {
             throw new Error('Mode opt-ins require a registered mode and a source with explicit supported modes.');
         }
 
-        if (source.supportedModes.includes(modeName)) {
+        if (source.supportedModes.includes(this.modeReference(modeName, version))) {
             throw new Error(`Duplicate workflow mode support: ${sourceName}, ${modeName}`);
         }
 
-        return registerWorkflowContribution(this.supportedModes, JSON.stringify([sourceName, modeName]), { source, mode });
+        return registerWorkflowContribution(this.supportedModes, JSON.stringify([sourceName, modeName, version]), {
+            source,
+            mode,
+        });
     }
 
     sources(): WorkflowAssigneeSource[] {
@@ -102,14 +117,33 @@ export default class WorkflowApprovalService {
 
         const additionalModes = [...this.supportedModes.values()]
             .filter((support) => support.source === source)
-            .map((support) => support.mode.name);
+            .map((support) => this.modeReference(support.mode.name, support.mode.version ?? 1));
         return { ...source, supportedModes: [...source.supportedModes, ...additionalModes] };
     }
 
-    getMode(name: string): WorkflowApprovalMode | undefined {
-        const mode = this.approvalModes.get(name);
+    getMode(name: string, version = 1): WorkflowApprovalMode | undefined {
+        const mode = this.approvalModes.get(this.modeKey(name, version));
         return mode ? { ...mode } : undefined;
     }
+
+    supportsMode(sourceName: string, modeName: string, version = 1): boolean {
+        const source = this.getSource(sourceName);
+
+        if (!source) {
+            return false;
+        }
+
+        return !source.supportedModes || source.supportedModes.includes(this.modeReference(modeName, version));
+    }
+
+    private modeReference(name: string, version: number): string {
+        return version === 1 ? name : this.modeKey(name, version);
+    }
+
+    private modeKey(name: string, version: number): string {
+        return `${name}@${version}`;
+    }
+
     read(node: WorkflowNode): WorkflowApprovalSettings {
         const config = object(node.config);
         const assignee = object(config.assignee);
@@ -128,7 +162,11 @@ export default class WorkflowApprovalService {
 
         return {
             assignee: { source: assigneeSource, config: object(assignee.config) },
-            approval: { mode: approvalMode, config: object(approval.config) },
+            approval: {
+                mode: approvalMode,
+                ...('version' in approval ? { version: typeof approval.version === 'number' ? approval.version : 0 } : {}),
+                config: object(approval.config),
+            },
         };
     }
 }

@@ -5,7 +5,7 @@ namespace Shopwell\Core\Framework\Workflow\Execution;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * Assignee types resolved by the registry; organizational sources require an installed extension resolver.
+ * Assignee types resolved by the registry; organization-backed sources use the initiator's primary membership.
  *
  * @internal
  */
@@ -23,7 +23,7 @@ final class WorkflowAssigneeTypes
     public const INITIATOR = 'initiator';
 
     /**
-     * The initiator's manager; requires an extension resolver.
+     * Leader resolution requires an extension.
      */
     public const LEADER = 'leader';
 
@@ -33,7 +33,7 @@ final class WorkflowAssigneeTypes
     public const ROLE = 'role';
 
     /**
-     * Department managers; requires an extension resolver.
+     * The ordered leaders of the initiator's primary department.
      */
     public const UNIT_LEADER = 'unitLeader';
 

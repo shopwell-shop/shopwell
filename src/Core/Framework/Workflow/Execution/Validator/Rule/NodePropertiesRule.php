@@ -9,8 +9,9 @@ use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\ValidationContext;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Violation;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowAssigneeTypes;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
+use Shopwell\Core\Framework\Workflow\WorkflowException;
 
 /**
  * Validate required properties and installed resolver capabilities without resolving users or roles.
@@ -20,8 +21,10 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 #[Package('framework')]
 final class NodePropertiesRule implements GraphRuleInterface
 {
-    public function __construct(private readonly AssigneeResolverRegistry $resolvers)
-    {
+    public function __construct(
+        private readonly AssigneeResolverRegistry $resolvers,
+        private readonly ApprovalModeRegistry $modes,
+    ) {
     }
 
     public function validate(GraphData $graph, ValidationContext $context): array
@@ -51,19 +54,15 @@ final class NodePropertiesRule implements GraphRuleInterface
             $violations[] = Violation::error('WORKFLOW_EXECUTION_006', 'An approval node must have a name.', $node->id);
         }
 
-        $countersignType = $node->property('countersignType');
-
-        if (!\is_string($countersignType) || !\in_array($countersignType, WorkflowCountersignTypes::ALL, true)) {
-            $violations[] = Violation::error(
-                'WORKFLOW_EXECUTION_006',
-                \sprintf('Invalid approval mode on the approval node (current value: %s).', $this->describe($countersignType)),
-                $node->id
-            );
+        try {
+            $this->modes->forNode($node);
+        } catch (WorkflowException $exception) {
+            $violations[] = Violation::error('WORKFLOW_EXECUTION_006', $exception->getMessage(), $node->id);
         }
 
         $assigneeType = $node->property('assigneeType');
 
-        if (!\is_string($assigneeType) || !\in_array($assigneeType, WorkflowAssigneeTypes::ALL, true)) {
+        if (!\is_string($assigneeType) || $assigneeType === '' || mb_strlen($assigneeType) > 32) {
             $violations[] = Violation::error(
                 'WORKFLOW_EXECUTION_006',
                 \sprintf('Invalid assignee type on the approval node (current value: %s).', $this->describe($assigneeType)),

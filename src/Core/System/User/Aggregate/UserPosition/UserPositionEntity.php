@@ -3,19 +3,28 @@
 namespace Shopwell\Core\System\User\Aggregate\UserPosition;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitEntity;
 use Shopwell\Core\System\Position\PositionEntity;
 use Shopwell\Core\System\User\UserEntity;
 
 /**
- * A single assignment of a position to a user. The mapping table has no id of
- * its own - the pair of user and position is the identity.
+ * A position held by a user within one of their departments.
  *
  * @codeCoverageIgnore
  */
 #[Package('fundamentals@framework')]
 class UserPositionEntity extends Entity
 {
+    use EntityIdTrait;
+
+    protected string $organizationUnitId;
+
+    protected bool $isPrimary = false;
+
+    protected ?OrganizationUnitEntity $organizationUnit = null;
+
     protected string $userId;
 
     protected string $positionId;
@@ -23,6 +32,36 @@ class UserPositionEntity extends Entity
     protected ?UserEntity $user = null;
 
     protected ?PositionEntity $position = null;
+
+    public function getOrganizationUnitId(): string
+    {
+        return $this->organizationUnitId;
+    }
+
+    public function setOrganizationUnitId(string $organizationUnitId): void
+    {
+        $this->organizationUnitId = $organizationUnitId;
+    }
+
+    public function getIsPrimary(): bool
+    {
+        return $this->isPrimary;
+    }
+
+    public function setIsPrimary(bool $isPrimary): void
+    {
+        $this->isPrimary = $isPrimary;
+    }
+
+    public function getOrganizationUnit(): ?OrganizationUnitEntity
+    {
+        return $this->organizationUnit;
+    }
+
+    public function setOrganizationUnit(?OrganizationUnitEntity $organizationUnit): void
+    {
+        $this->organizationUnit = $organizationUnit;
+    }
 
     public function getUserId(): string
     {

@@ -2,11 +2,13 @@
 
 namespace Shopwell\Core\System\DependencyInjection;
 
+use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationTranslation\OrganizationTranslationDefinition;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\Aggregate\OrganizationUnitTranslation\OrganizationUnitTranslationDefinition;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\DataAbstractionLayer\OrganizationReportingValidator;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\DataAbstractionLayer\OrganizationUnitIndexer;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
 use Shopwell\Core\System\Organization\OrganizationDefinition;
@@ -28,6 +30,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(OrganizationUnitTranslationDefinition::class)
         ->tag('shopwell.entity.definition');
+
+    $services->set(OrganizationReportingValidator::class)
+        ->args([service(Connection::class)])
+        ->tag('kernel.event_subscriber');
 
     $services->set(OrganizationUnitIndexer::class)
         ->args([

@@ -8,6 +8,7 @@ use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLog
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\Api\Acl\Role\AclUserRoleDefinition;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -42,6 +43,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\WebhookDefinition;
 use Shopwell\Core\System\Locale\LocaleDefinition;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
+use Shopwell\Core\System\Organization\OrganizationDefaults;
 use Shopwell\Core\System\Position\PositionDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryDefinition;
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyDefinition;
@@ -90,6 +92,8 @@ class UserDefinition extends EntityDefinition
         return [
             'admin' => false,
             'timeZone' => self::DEFAULT_TIME_ZONE,
+            'organizationUnitMappings' => [['organizationUnitId' => OrganizationDefaults::UNIT, 'isPrimary' => true]],
+            'positionMappings' => [['positionId' => OrganizationDefaults::POSITION, 'isPrimary' => true]],
         ];
     }
 
@@ -149,7 +153,8 @@ class UserDefinition extends EntityDefinition
             (new OneToManyAssociationField('organizationUnitMappings', UserOrganizationUnitDefinition::class, 'user_id'))->addFlags(new CascadeDelete()),
             (new ManyToManyAssociationField('organizationUnits', OrganizationUnitDefinition::class, UserOrganizationUnitDefinition::class, 'user_id', 'organization_unit_id'))->addFlags(new ApiAware(), new WriteProtected()),
             (new ManyToManyIdField('organization_unit_ids', 'organizationUnitIds', 'organizationUnits'))->addFlags(new ApiAware()),
-            (new ManyToManyAssociationField('positions', PositionDefinition::class, UserPositionDefinition::class, 'user_id', 'position_id'))->addFlags(new ApiAware()),
+            (new OneToManyAssociationField('positionMappings', UserPositionDefinition::class, 'user_id'))->addFlags(new ApiAware(AdminApiSource::class), new CascadeDelete()),
+            (new ManyToManyAssociationField('positions', PositionDefinition::class, UserPositionDefinition::class, 'user_id', 'position_id'))->addFlags(new ApiAware(), new WriteProtected()),
             (new ManyToManyIdField('position_ids', 'positionIds', 'positions'))->addFlags(new ApiAware()),
             (new OneToManyAssociationField('createdContentWorkspaces', ContentWorkspaceDefinition::class, 'created_by_id'))->addFlags(new SetNullOnDelete()),
         ]);

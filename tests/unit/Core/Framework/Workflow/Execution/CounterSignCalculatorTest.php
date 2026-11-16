@@ -8,11 +8,15 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\CounterSignCalculator;
+use Shopwell\Core\Framework\Workflow\Execution\CounterSignResult;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalMode;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalVotes;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskCollection;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 
 /**
  * Specify approval-mode differences, including the requirement that every assignee reject an or-sign node.
@@ -27,7 +31,7 @@ class CounterSignCalculatorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->calculator = new CounterSignCalculator();
+        $this->calculator = new CounterSignCalculator(ApprovalRegistryFixture::modes());
     }
 
     /**
@@ -167,6 +171,28 @@ class CounterSignCalculatorTest extends TestCase
 
         static::assertSame('agreed', $result->status());
         static::assertSame(2, $result->total());
+    }
+
+    public function testPluginReceivesThePinnedConfigurationAndCountedVotes(): void
+    {
+        $mode = static::createStub(ApprovalMode::class);
+        $mode->method('getName')->willReturn('example:quorum');
+        $mode->method('getType')->willReturn('example:quorum');
+        $mode->method('getVersion')->willReturn(2);
+        $mode->method('resolve')->willReturnCallback(static function (ApprovalVotes $votes, array $configuration): CounterSignResult {
+            if ($votes->agreed >= $configuration['required']) {
+                return CounterSignResult::agreed($votes->agreed, $votes->rejected, $votes->total);
+            }
+
+            return CounterSignResult::pending($votes->agreed, $votes->rejected, $votes->total);
+        });
+        $calculator = new CounterSignCalculator(ApprovalRegistryFixture::modes([$mode]));
+        $tasks = $this->tasks([WorkflowTaskStates::AGREED, WorkflowTaskStates::AGREED, WorkflowTaskStates::TODO, WorkflowTaskStates::CANCELED]);
+
+        $result = $calculator->resolve($tasks, 'example:quorum', null, ['required' => 2], 2);
+
+        static::assertTrue($result->isAgreed());
+        static::assertSame(3, $result->total());
     }
 
     /**

@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 use Symfony\Component\Validator\Validation;
 
 /**
@@ -25,7 +26,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
 {
     public function testCompilesApprovalPathAndUsesRuntimeRejectionTermination(): void
     {
-        $graph = (new ApprovalWorkflowCompiler())->compile(self::document());
+        $graph = ApprovalRegistryFixture::compiler()->compile(self::document());
 
         static::assertSame([WorkflowNodeTypes::START, WorkflowNodeTypes::TASK, WorkflowNodeTypes::END], array_column($graph['nodes'], 'type'));
         static::assertSame(['start', 'approval', 'approved'], array_column($graph['nodes'], 'id'));
@@ -37,7 +38,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
     public function testCompilesTheDefaultDesignerApprovalRequestDocument(): void
     {
         $document = (new WorkflowDocumentCodec(Validation::createValidator()))->decode((string) file_get_contents(__DIR__ . '/_fixtures/default-approval-request.json'));
-        $graph = (new ApprovalWorkflowCompiler())->compile($document);
+        $graph = ApprovalRegistryFixture::compiler()->compile($document);
 
         static::assertSame(['start', 'approval', 'end'], array_column($graph['nodes'], 'id'));
         static::assertSame('审批', $graph['nodes'][1]['properties']['name']);
@@ -55,7 +56,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
             'assignee' => ['source' => 'core:users', 'config' => ['userIds' => $ids]],
             'approval' => ['mode' => $mode, 'config' => []],
         ]);
-        $graph = (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(array_values($nodes), $document->connections));
+        $graph = ApprovalRegistryFixture::compiler()->compile(new WorkflowDocument(array_values($nodes), $document->connections));
 
         static::assertSame(array_map('strtolower', $ids), $graph['nodes'][1]['properties']['assigneeValue']);
         static::assertSame($runtimeMode, $graph['nodes'][1]['properties']['countersignType']);
@@ -68,6 +69,31 @@ class ApprovalWorkflowCompilerTest extends TestCase
     {
         yield 'all reviewers must agree' => ['core:all', 'countersign'];
         yield 'first decision includes rejection' => ['core:any', 'firstDecision'];
+    }
+
+    #[DataProvider('organizationAssignments')]
+    public function testCompilesOrganizationAssignments(string $source, string $mode, string $runtimeType, string $runtimeMode): void
+    {
+        $document = self::document();
+        $nodes = $document->nodes;
+        $nodes[1] = new WorkflowNode('approval', 'core:approval', 1, [
+            'assignee' => ['source' => $source, 'config' => []],
+            'approval' => ['mode' => $mode, 'config' => []],
+        ]);
+        $graph = ApprovalRegistryFixture::compiler()->compile(new WorkflowDocument(array_values($nodes), $document->connections));
+
+        static::assertSame($runtimeType, $graph['nodes'][1]['properties']['assigneeType']);
+        static::assertSame([], $graph['nodes'][1]['properties']['assigneeValue']);
+        static::assertSame($runtimeMode, $graph['nodes'][1]['properties']['countersignType']);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string}>
+     */
+    public static function organizationAssignments(): iterable
+    {
+        yield 'department leaders countersign' => ['core:department-leaders', 'core:all', 'unitLeader', 'countersign'];
+        yield 'department leaders first decision' => ['core:department-leaders', 'core:any', 'unitLeader', 'firstDecision'];
     }
 
     public function testOrdersStagesByConnectionsAndPreservesStageText(): void
@@ -83,7 +109,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
         $connections[1] = new WorkflowConnection('accept', 'approval', 'approved', 'second', 'in');
         $connections[] = new WorkflowConnection('second-accept', 'second', 'approved', 'approved', 'in');
         $connections[] = new WorkflowConnection('second-reject', 'second', 'rejected', 'rejected', 'in');
-        $graph = (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument([$second, ...array_reverse($nodes)], array_values(array_reverse($connections))));
+        $graph = ApprovalRegistryFixture::compiler()->compile(new WorkflowDocument([$second, ...array_reverse($nodes)], array_values(array_reverse($connections))));
         static::assertSame(['start', 'approval', 'second', 'approved'], array_column($graph['nodes'], 'id'));
         static::assertSame('Finance', $graph['nodes'][2]['properties']['name']);
         static::assertSame('Check the amount', $graph['nodes'][2]['properties']['description']);
@@ -95,7 +121,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
         $document = self::document();
         $connections = $document->connections;
         $connections[2] = new WorkflowConnection('reject', 'approval', 'rejected', 'approved', 'in');
-        $graph = (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(\array_slice($document->nodes, 0, 3), array_values($connections)));
+        $graph = ApprovalRegistryFixture::compiler()->compile(new WorkflowDocument(\array_slice($document->nodes, 0, 3), array_values($connections)));
 
         static::assertCount(3, $graph['nodes']);
         static::assertCount(2, $graph['edges']);
@@ -106,7 +132,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
     {
         $this->expectExceptionObject(WorkflowException::publicationRejected('unsupported_approval_workflow'));
 
-        (new ApprovalWorkflowCompiler())->compile($document);
+        ApprovalRegistryFixture::compiler()->compile($document);
     }
 
     /**
@@ -179,7 +205,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
     public function testCompilesConditionalTreeWithImmutableSchemaAndOrderedBranches(): void
     {
         $document = (new WorkflowDocumentCodec(Validation::createValidator()))->decode((string) file_get_contents(__DIR__ . '/_fixtures/expense-approval-request.json'));
-        $graph = (new ApprovalWorkflowCompiler())->compile($document);
+        $graph = ApprovalRegistryFixture::compiler()->compile($document);
         static::assertSame(['start', 'department', 'threshold', 'finance', 'default-end'], array_column($graph['nodes'], 'id'));
         static::assertSame('amount', $graph['nodes'][0]['properties']['inputSchema'][1]['type']);
         static::assertSame(['high', 'default'], array_column(array_values(array_filter($graph['edges'], static fn (array $edge): bool => $edge['sourceNodeId'] === 'threshold')), 'id'));
@@ -206,7 +232,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
         }
         $document = (new WorkflowDocumentCodec(Validation::createValidator()))->decode(json_encode($raw, \JSON_THROW_ON_ERROR));
         $this->expectExceptionObject(WorkflowException::publicationRejected('unsupported_approval_workflow'));
-        (new ApprovalWorkflowCompiler())->compile($document);
+        ApprovalRegistryFixture::compiler()->compile($document);
     }
 
     /**
@@ -245,7 +271,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
         if (!$accepted) {
             $this->expectExceptionObject(WorkflowException::publicationRejected('unsupported_approval_workflow'));
         }
-        $graph = (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(array_values($nodes), array_values($connections)));
+        $graph = ApprovalRegistryFixture::compiler()->compile(new WorkflowDocument(array_values($nodes), array_values($connections)));
         static::assertSame($nodeIdentifier ? $identifier : 'approval', $graph['nodes'][1]['id']);
     }
 
@@ -273,7 +299,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
             'approval' => ['mode' => 'core:single', 'config' => []],
         ]);
         try {
-            (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(array_values($nodes), $document->connections));
+            ApprovalRegistryFixture::compiler()->compile(new WorkflowDocument(array_values($nodes), $document->connections));
             static::fail('Invalid reviewer must reject publication.');
         } catch (WorkflowException $exception) {
             $violations = $exception->getParameters()['violations'];
@@ -293,7 +319,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
             ['key' => 'amount', 'label' => 'Duplicate', 'type' => 'number'],
         ]]);
         try {
-            (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(array_values($nodes), $document->connections));
+            ApprovalRegistryFixture::compiler()->compile(new WorkflowDocument(array_values($nodes), $document->connections));
             static::fail('Duplicate fields must reject publication.');
         } catch (WorkflowException $exception) {
             $violations = $exception->getParameters()['violations'];
@@ -310,7 +336,7 @@ class ApprovalWorkflowCompilerTest extends TestCase
         $raw['nodes'][2]['config']['branches'][0]['value'] = 'not-a-number';
         $document = (new WorkflowDocumentCodec(Validation::createValidator()))->decode(json_encode($raw, \JSON_THROW_ON_ERROR));
         try {
-            (new ApprovalWorkflowCompiler())->compile($document);
+            ApprovalRegistryFixture::compiler()->compile($document);
             static::fail('Invalid conditions must reject publication.');
         } catch (WorkflowException $exception) {
             $violations = $exception->getParameters()['violations'];

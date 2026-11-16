@@ -30,7 +30,7 @@ class UserOrganizationUnitMappingTest extends TestCase
         $userId = $this->createUser($context, 'mapping-user');
 
         $orgUnitA = $this->createOrganizationUnit('unit-a', null);
-        $orgUnitB = $this->createOrganizationUnit('unit-b', $orgUnitA);
+        $orgUnitB = $this->createOrganizationUnit('unit-b', null);
         $positionId = $this->createPosition($context);
 
         /** @var EntityRepository<UserCollection> $userRepository */
@@ -42,7 +42,7 @@ class UserOrganizationUnitMappingTest extends TestCase
                 ['id' => Uuid::randomHex(), 'organizationUnitId' => $orgUnitA],
                 ['id' => Uuid::randomHex(), 'organizationUnitId' => $orgUnitB],
             ],
-            'positions' => [['id' => $positionId]],
+            'positionMappings' => [['id' => Uuid::randomHex(), 'positionId' => $positionId, 'organizationUnitId' => $orgUnitA]],
         ];
 
         $userRepository->update([$payload], $context);
@@ -54,13 +54,13 @@ class UserOrganizationUnitMappingTest extends TestCase
             'SELECT COUNT(*) FROM user_organization_unit WHERE user_id = :userId',
             ['userId' => Uuid::fromHexToBytes($userId)]
         );
-        static::assertSame(2, $mappingCount, 'duplicate assignments must not create duplicate mapping rows');
+        static::assertSame(3, $mappingCount, 'duplicate assignments must not create duplicate mapping rows');
 
         $positionCount = (int) $connection->fetchOne(
             'SELECT COUNT(*) FROM user_position WHERE user_id = :userId',
             ['userId' => Uuid::fromHexToBytes($userId)]
         );
-        static::assertSame(1, $positionCount);
+        static::assertSame(2, $positionCount);
     }
 
     public function testWritingPrimaryUnitResetsOtherPrimaryMappings(): void
@@ -121,7 +121,7 @@ class UserOrganizationUnitMappingTest extends TestCase
             'SELECT COUNT(*) FROM user_organization_unit WHERE user_id = :userId',
             ['userId' => Uuid::fromHexToBytes($userId)]
         );
-        static::assertSame(0, $mappingCount, 'mapping rows must be removed with the unit');
+        static::assertSame(1, $mappingCount, 'the deleted unit mapping is removed while the default membership remains');
     }
 
     public function testConvenienceOrganizationUnitsAssociationIsReadOnly(): void

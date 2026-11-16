@@ -8,7 +8,6 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyDefinition;
 use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigDefinition;
 use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitDefinition;
-use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitPrimarySubscriber;
 use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionDefinition;
 use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryDefinition;
 use Shopwell\Core\System\User\Api\UserRecoveryController;
@@ -17,6 +16,7 @@ use Shopwell\Core\System\User\Recovery\UserRecoveryService;
 use Shopwell\Core\System\User\Service\UserValidationService;
 use Shopwell\Core\System\User\UserDefinition;
 use Shopwell\Core\System\User\UserExceptionHandler;
+use Shopwell\Core\System\User\Validation\UserOrganizationAssignmentValidator;
 use Shopwell\Core\System\User\Validation\UserPreWriteValidator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -86,7 +86,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('service_container'),
         ]);
 
-    $services->set(UserOrganizationUnitPrimarySubscriber::class)
+    $services->set(UserOrganizationAssignmentValidator::class)
         ->args([
             service(Connection::class),
         ])

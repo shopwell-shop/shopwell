@@ -6,7 +6,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Execution\CounterSignCalculator;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowTaskCompletedEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowRecorder;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEngine;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionContext;
@@ -49,8 +48,15 @@ final readonly class ApprovalTaskCompletion
         $this->recorder->recordTaskCompletion($task, $agreed, $comment, $context->context());
         $this->events->push(new WorkflowTaskCompletedEvent($task->instanceId, $task->id, $task->nodeId, $task->assigneeId, $agreed, $comment));
         $siblings = $this->tasks->forNode($task->instanceId, $task->nodeId, $task->round, $context->context());
-        $expectedTotal = $task->countersignType === WorkflowCountersignTypes::ORDER_SIGN ? \count($task->assigneeSnapshot()) : null;
-        $result = $this->counterSigns->resolve($siblings, $task->countersignType, $expectedTotal);
+        $node = $context->graph()->node($task->nodeId);
+        $snapshot = $task->assigneeSnapshot();
+        $result = $this->counterSigns->resolve(
+            $siblings,
+            $task->countersignType,
+            $snapshot === [] ? null : \count($snapshot),
+            $node->property('approvalModeConfig', []),
+            $node->property('approvalModeVersion', 1)
+        );
 
         if (!$result->isPending()) {
             foreach ($siblings as $sibling) {

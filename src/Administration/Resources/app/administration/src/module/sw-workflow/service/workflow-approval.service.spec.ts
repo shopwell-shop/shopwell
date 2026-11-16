@@ -38,6 +38,11 @@ describe('approval extensions', () => {
         expect(service.modes()).toEqual([mode]);
         expect(service.getMode(mode.name)).toEqual(mode);
     });
+    it('offers organizational sources with executable approval modes', () => {
+        const service = Shopwell.Service('workflowApprovalService');
+        expect(service.getSource('core:supervisor')).toBeUndefined();
+        expect(service.getSource('core:department-leaders')?.supportedModes).toEqual(['core:all', 'core:any']);
+    });
     it('connects the default source and mode to approval presentation extensions', () => {
         const service = Shopwell.Service('workflowApprovalService');
         expect(service.getSource('core:user')?.settingsComponent).toBe('sw-workflow-user-assignee-select');
@@ -112,5 +117,63 @@ describe('approval registration lifecycle', () => {
         service.registerSource({ ...source, supportedModes: ['core:single'] });
         expect(service.getSource(source.name)!.supportedModes).toEqual(['core:single']);
         removeNewSupport();
+    });
+});
+
+describe('versioned approval modes', () => {
+    it('keeps both implementations and selects an exact saved version', () => {
+        const service = new WorkflowApprovalService();
+        const original = {
+            name: 'example:quorum',
+            version: 1,
+            labelKey: 'example.original',
+            descriptionKey: 'example.hint',
+        };
+        const updated = { ...original, version: 2, labelKey: 'example.updated' };
+        const removeOriginal = service.registerMode(original);
+        service.registerMode(updated);
+
+        expect(service.getMode(original.name, 1)).toEqual(original);
+        expect(service.getMode(original.name, 2)).toEqual(updated);
+        expect(service.getMode(original.name, 3)).toBeUndefined();
+
+        removeOriginal();
+
+        expect(service.getMode(original.name, 1)).toBeUndefined();
+        expect(service.getMode(original.name, 2)).toEqual(updated);
+    });
+
+    it('keeps version-specific opt-ins independent through registration and cleanup', () => {
+        const service = new WorkflowApprovalService();
+        service.registerSource({
+            name: 'example:team',
+            labelKey: 'team',
+            settingsComponent: 'settings',
+            summaryComponent: 'summary',
+            supportedModes: [],
+        });
+        const mode = { name: 'example:quorum', labelKey: 'quorum', descriptionKey: 'description' };
+        service.registerMode({ ...mode, version: 1 });
+        service.registerMode({ ...mode, version: 2 });
+        service.registerMode({ ...mode, version: 3 });
+        const removeV2 = service.registerSupportedMode('example:team', mode.name, 2);
+
+        expect(service.getSource('example:team')!.supportedModes).toEqual(['example:quorum@2']);
+        const removeV3 = service.registerSupportedMode('example:team', mode.name, 3);
+        expect(service.getSource('example:team')!.supportedModes).toEqual(['example:quorum@2', 'example:quorum@3']);
+        removeV2();
+        expect(service.getSource('example:team')!.supportedModes).toEqual(['example:quorum@3']);
+        removeV3();
+        expect(service.getSource('example:team')!.supportedModes).toEqual([]);
+    });
+
+    it('retains the saved version and opaque plugin configuration while reading a node', () => {
+        const service = new WorkflowApprovalService();
+        const config = {
+            assignee: { source: 'example:reviewers', config: { team: 'finance' } },
+            approval: { mode: 'example:quorum', version: 2, config: { required: 2 } },
+        };
+
+        expect(service.read({ id: 'review', type: 'core:approval', typeVersion: 1, config })).toEqual(config);
     });
 });

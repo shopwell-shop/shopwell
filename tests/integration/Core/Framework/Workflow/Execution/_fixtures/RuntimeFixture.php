@@ -9,8 +9,8 @@ use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
-use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 use Symfony\Component\Validator\Validation;
 
 /**
@@ -36,7 +36,7 @@ final class RuntimeFixture
         $this->context = new Context($source);
         $raw = (string) file_get_contents(\dirname(__DIR__, 6) . '/unit/Core/Framework/Workflow/Publication/Approval/_fixtures/default-approval-request.json');
         $codec = new WorkflowDocumentCodec(Validation::createValidator());
-        $graph = (new ApprovalWorkflowCompiler())->compile($codec->decode(str_replace('0123456789abcdef0123456789abcdef', $this->userId, $raw)));
+        $graph = ApprovalRegistryFixture::compiler()->compile($codec->decode(str_replace('0123456789abcdef0123456789abcdef', $this->userId, $raw)));
         $definitionId = $flows->createDefinition(['code' => 'runtime-' . Uuid::randomHex(), 'name' => 'Runtime approval', 'graphData' => $graph], $this->context);
         $flows->publishDefinition($definitionId, $this->context);
         $this->release = new WorkflowReleaseEntity();

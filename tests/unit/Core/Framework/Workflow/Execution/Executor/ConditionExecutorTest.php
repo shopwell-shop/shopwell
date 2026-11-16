@@ -6,12 +6,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowSignal;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\ConditionExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionContext;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowSignal;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 
 /**

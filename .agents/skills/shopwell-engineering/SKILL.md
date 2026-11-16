@@ -65,6 +65,15 @@ If no suitable public implementation exists, state the local contract, assumptio
 
 ## Review the result
 
+Review each implementation increment before handing it back, including fixes made after earlier review.
+Record whether it changes the shared skeleton or only a business extension, and name the affected contracts and dependency direction.
+If the skeleton changes, explain the general capability that requires it and verify existing consumers and extension lifecycle behavior.
+If the change belongs to an extension, check that its business identifiers, conditions and UI do not leak into the shared skeleton.
+For an extensibility claim, exercise a representative extension through the intended registration or event seam and verify that the skeleton needs no edits.
+Use the nearest established source and tests, including Experience Studio or ContentSystem when their responsibility matches, to assess naming, directory ownership, component choices and state flow.
+Inspect every changed file and the final diff for readable control flow, cohesive responsibilities, formatting and avoidable abstractions; lint success alone is insufficient.
+Report the skeleton impact, review findings and resolutions, verification evidence and remaining limits with the implementation result.
+
 Trace one successful path and one failure path through the actual callers.
 Check that a plugin can use the promised seam without importing implementation internals, and that the implementation retains authorization and state ownership.
 Inspect the changed source for readability as well as the rendered UI when layout or interaction changes.

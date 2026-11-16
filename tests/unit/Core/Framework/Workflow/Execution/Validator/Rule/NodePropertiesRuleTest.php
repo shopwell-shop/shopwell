@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\NodePropertiesRule
 use Shopwell\Core\Framework\Workflow\Execution\Validator\ValidationContext;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionContext;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 
 /**
  * @internal
@@ -25,7 +26,7 @@ class NodePropertiesRuleTest extends TestCase
     #[DataProvider('organizationTypes')]
     public function testUnavailableResolverIsRejectedBeforeExecution(string $type): void
     {
-        $rule = new NodePropertiesRule(new AssigneeResolverRegistry([]));
+        $rule = new NodePropertiesRule(new AssigneeResolverRegistry([]), ApprovalRegistryFixture::modes());
         $violations = $rule->validate($this->graph($type), new ValidationContext());
 
         static::assertCount(1, $violations);
@@ -42,7 +43,7 @@ class NodePropertiesRuleTest extends TestCase
         $registry = new AssigneeResolverRegistry([$resolver]);
         $graph = $this->graph($type);
 
-        static::assertSame([], (new NodePropertiesRule($registry))->validate($graph, new ValidationContext()));
+        static::assertSame([], (new NodePropertiesRule($registry, ApprovalRegistryFixture::modes()))->validate($graph, new ValidationContext()));
         $instance = new WorkflowInstanceEntity();
         $execution = new WorkflowExecutionContext($graph, $instance, Context::createDefaultContext(), null, 1);
         static::assertSame(['manager'], $registry->for($type)->resolve($instance, $graph->nodeList()[0], $execution));

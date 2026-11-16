@@ -24,6 +24,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\ValidationContext;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Violation;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\WorkflowGraphValidator;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 
 /**
  * Assert stable validation codes used by the editor to locate graph problems.
@@ -52,7 +53,7 @@ class WorkflowGraphValidatorTest extends TestCase
                 $resolver->method('getAssigneeType')->willReturn($type);
 
                 return $resolver;
-            }, ['user', 'role', 'initiator']))),
+            }, ['user', 'role', 'initiator'])), ApprovalRegistryFixture::modes()),
             new EdgeConditionRule($normalizer),
             new BranchMergeRule(),
         ]);

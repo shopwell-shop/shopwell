@@ -2,6 +2,8 @@
 import './acl';
 
 /** @private */
+Shopwell.Component.register('sw-user-organization-settings', () => import('./components/sw-user-organization-settings'));
+/** @private */
 Shopwell.Component.extend('sw-user-create', 'sw-user-detail', () => import('./page/sw-user-create'));
 /** @private */
 Shopwell.Component.register('sw-user-detail', () => import('./page/sw-user-detail'));

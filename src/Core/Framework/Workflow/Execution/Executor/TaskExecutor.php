@@ -11,13 +11,13 @@ use Shopwell\Core\Framework\Workflow\Execution\CounterSignResult;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowTaskCreatedEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\NodeOutcome;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionContext;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowSignal;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskCollection;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStateHandler;
@@ -38,6 +38,7 @@ final class TaskExecutor implements NodeExecutorInterface
         private readonly EntityRepository $taskRepository,
         private readonly WorkflowEventQueue $events,
         private readonly WorkflowTaskStateHandler $taskStates,
+        private readonly ApprovalModeRegistry $modes,
     ) {
     }
 
@@ -48,7 +49,8 @@ final class TaskExecutor implements NodeExecutorInterface
 
     public function enter(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context): NodeOutcome
     {
-        $countersignType = WorkflowCountersignTypes::fromNode($node);
+        $mode = $this->modes->forNode($node);
+        $countersignType = $mode->getType();
         $assigneeType = $node->property('assigneeType');
 
         if (!\is_string($assigneeType) || $assigneeType === '') {
@@ -61,7 +63,7 @@ final class TaskExecutor implements NodeExecutorInterface
             throw WorkflowExecutionException::noAssignee($node->id, $assigneeType);
         }
 
-        if ($countersignType === WorkflowCountersignTypes::ORDER_SIGN) {
+        if ($mode->isSequential()) {
             // Create the first task now; resume creates subsequent tasks from ext.assignees.
             $this->createTask($instance, $node, $assignees[0], $countersignType, $context, 1, $assignees);
 
@@ -101,7 +103,9 @@ final class TaskExecutor implements NodeExecutorInterface
             return NodeOutcome::complete('rejected');
         }
 
-        if ($completedTask->countersignType === WorkflowCountersignTypes::ORDER_SIGN && $result === CounterSignResult::PENDING) {
+        $mode = $this->modes->forNode($node);
+
+        if ($mode->isSequential() && $result === CounterSignResult::PENDING) {
             $next = $this->nextAssignee($completedTask);
 
             if ($next !== null) {
@@ -109,7 +113,7 @@ final class TaskExecutor implements NodeExecutorInterface
                     $instance,
                     $node,
                     $next,
-                    WorkflowCountersignTypes::ORDER_SIGN,
+                    $mode->getType(),
                     $context,
                     $completedTask->sequence + 1,
                     $completedTask->assigneeSnapshot()

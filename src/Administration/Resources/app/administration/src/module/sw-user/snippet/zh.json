@@ -136,7 +136,17 @@
                     },
                     "invalidEmailErrorMessage": "请输入有效的邮箱地址。",
                     "duplicateEmailErrorMessage": "该邮箱地址已被使用。"
-                }
+                },
+                "organizationLoadError": "组织资料加载失败，请重试。",
+                "buttonRetryOrganization": "重试",
+                "labelPrimaryPosition": "主岗位",
+                "helperPrimaryReporting": "工作流根据主归属部门查找部门负责人。",
+                "helperScopedPositions": "岗位只属于当前部门，同一岗位可在不同部门分别任职。",
+                "labelDepartmentLeader": "担任本部门负责人",
+                "labelLeaderPosition": "负责人顺序",
+                "helperLeaderPosition": "数字越小越靠前；会签时需要所有负责人审批。",
+                "organizationUnavailable": "部门不可用",
+                "positionUnavailable": "岗位不可用"
             },
             "filter": {
                 "labelRole": "角色",

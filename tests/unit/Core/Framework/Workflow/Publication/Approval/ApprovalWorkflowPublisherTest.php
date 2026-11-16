@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionEntity;
-use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
+use Shopwell\Core\Framework\Workflow\Execution\Validator\WorkflowGraphValidator;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseCheckEvent;
@@ -20,6 +20,7 @@ use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Shopwell\Core\System\User\UserCollection;
 use Shopwell\Core\System\User\UserEntity;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 use Symfony\Component\Validator\Validation;
 
 /**
@@ -34,7 +35,7 @@ class ApprovalWorkflowPublisherTest extends TestCase
         $release = $this->release();
         $definitions = StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class);
         $users = $this->users(['0123456789abcdef0123456789abcdef']);
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), $definitions, $users);
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, $users, new WorkflowGraphValidator([]));
 
         $publisher->publish($release, Context::createDefaultContext());
 
@@ -55,7 +56,7 @@ class ApprovalWorkflowPublisherTest extends TestCase
     {
         $definitions = StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class);
         $users = $this->users([]);
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), $definitions, $users);
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, $users, new WorkflowGraphValidator([]));
 
         $this->expectExceptionObject(WorkflowException::publicationRejected('approval_assignee_unavailable'));
         try {
@@ -76,7 +77,7 @@ class ApprovalWorkflowPublisherTest extends TestCase
         $release->setDocument(json_encode($document, \JSON_THROW_ON_ERROR));
         $definitions = StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class);
         $users = $this->users(['0123456789abcdef0123456789abcdef']);
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), $definitions, $users);
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, $users, new WorkflowGraphValidator([]));
 
         $this->expectExceptionObject(WorkflowException::publicationRejected('approval_assignee_unavailable'));
         try {
@@ -100,7 +101,7 @@ class ApprovalWorkflowPublisherTest extends TestCase
         $release->setDocument(json_encode($document, \JSON_THROW_ON_ERROR));
         $definitions = StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class);
         $users = $this->users(['0123456789abcdef0123456789abcdef']);
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), $definitions, $users);
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, $users, new WorkflowGraphValidator([]));
         $this->expectExceptionObject(WorkflowException::publicationRejected('approval_assignee_unavailable'));
         try {
             $publisher->publish($release, Context::createDefaultContext());
@@ -118,7 +119,7 @@ class ApprovalWorkflowPublisherTest extends TestCase
         $user->setAdmin(false);
         $users = new StaticEntityRepository([new UserCollection([$user])]);
         $definitions = StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class);
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), $definitions, $users);
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, $users, new WorkflowGraphValidator([]));
 
         $this->expectExceptionObject(WorkflowException::publicationRejected('approval_assignee_forbidden'));
         try {
@@ -143,14 +144,48 @@ class ApprovalWorkflowPublisherTest extends TestCase
         }
         $user->setAclRoles(new AclRoleCollection($roles));
         $definitions = StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class);
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), $definitions, new StaticEntityRepository([new UserCollection([$user])]));
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, new StaticEntityRepository([new UserCollection([$user])]), new WorkflowGraphValidator([]));
         $publisher->publish($this->release(), Context::createDefaultContext());
         static::assertCount(1, $definitions->creates);
     }
 
+    public function testReleaseRecheckUsesThePublishedSnapshotInsteadOfRecompilingOverrides(): void
+    {
+        $release = $this->release();
+        $definition = new WorkflowExecutionDefinitionEntity();
+        $definition->id = $release->getId();
+        $definition->setUniqueIdentifier($definition->id);
+        $definition->status = 'published';
+        $definition->graphData = ApprovalRegistryFixture::compiler()->compile(
+            (new WorkflowDocumentCodec(Validation::createValidator()))->decode($release->getDocument())
+        );
+        $definitions = new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]);
+        $publisher = new ApprovalWorkflowPublisher(
+            new WorkflowDocumentCodec(Validation::createValidator()),
+            ApprovalRegistryFixture::compiler(),
+            $definitions,
+            $this->users(['0123456789abcdef0123456789abcdef']),
+            new WorkflowGraphValidator([])
+        );
+        $release->setDocument('{}');
+
+        $publisher->check(new WorkflowReleaseCheckEvent($release, Context::createDefaultContext()));
+
+        static::assertCount(1, $definitions->searchedCriteria);
+    }
+
     public function testReleaseRecheckRejectsAnUnavailableReviewer(): void
     {
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class), $this->users([]));
+        $release = $this->release();
+        $definition = new WorkflowExecutionDefinitionEntity();
+        $definition->id = $release->getId();
+        $definition->setUniqueIdentifier($definition->id);
+        $definition->status = 'published';
+        $definition->graphData = ApprovalRegistryFixture::compiler()->compile(
+            (new WorkflowDocumentCodec(Validation::createValidator()))->decode($release->getDocument())
+        );
+        $definitions = new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]);
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, $this->users([]), new WorkflowGraphValidator([]));
         $this->expectExceptionObject(WorkflowException::publicationRejected('approval_assignee_unavailable'));
         $publisher->check(new WorkflowReleaseCheckEvent($this->release(), Context::createDefaultContext()));
     }
@@ -162,7 +197,7 @@ class ApprovalWorkflowPublisherTest extends TestCase
         $definition->setUniqueIdentifier($definition->id);
         $definition->status = 'disabled';
         $definitions = new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]);
-        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), new ApprovalWorkflowCompiler(), $definitions, $this->users(['0123456789abcdef0123456789abcdef']));
+        $publisher = new ApprovalWorkflowPublisher(new WorkflowDocumentCodec(Validation::createValidator()), ApprovalRegistryFixture::compiler(), $definitions, $this->users(['0123456789abcdef0123456789abcdef']), new WorkflowGraphValidator([]));
         $this->expectExceptionObject(WorkflowException::publicationRejected('workflow_definition_unavailable'));
         $publisher->check(new WorkflowReleaseCheckEvent($this->release(), Context::createDefaultContext()));
     }

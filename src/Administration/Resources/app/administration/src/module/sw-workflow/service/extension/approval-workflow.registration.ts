@@ -21,6 +21,13 @@ Shopwell.Service().register('workflowApprovalService', () => {
         summaryComponent: 'sw-workflow-users-assignee-summary',
         supportedModes: [WORKFLOW_APPROVAL_MODES.ALL, WORKFLOW_APPROVAL_MODES.ANY],
     });
+    service.registerSource({
+        name: WORKFLOW_ASSIGNEE_SOURCES.DEPARTMENT_LEADERS,
+        labelKey: 'sw-workflow.approval.departmentLeaders',
+        settingsComponent: 'sw-workflow-organization-assignee-settings',
+        summaryComponent: 'sw-workflow-organization-assignee-summary',
+        supportedModes: [WORKFLOW_APPROVAL_MODES.ALL, WORKFLOW_APPROVAL_MODES.ANY],
+    });
     service.registerMode({
         name: WORKFLOW_APPROVAL_MODES.ALL,
         labelKey: 'sw-workflow.approval.all',

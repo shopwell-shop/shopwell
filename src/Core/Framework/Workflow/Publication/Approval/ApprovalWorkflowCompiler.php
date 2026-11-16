@@ -3,17 +3,15 @@
 namespace Shopwell\Core\Framework\Workflow\Publication\Approval;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Definition\Connection\WorkflowConnection;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
 use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowAssigneeTypes;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 
 /**
@@ -25,6 +23,7 @@ use Shopwell\Core\Framework\Workflow\WorkflowException;
 final class ApprovalWorkflowCompiler
 {
     public function __construct(
+        private readonly ApprovalConfigurationCompiler $approvals,
         private readonly WorkflowInputSchema $forms = new WorkflowInputSchema(),
         private readonly ApprovalCondition $conditions = new ApprovalCondition(),
     ) {
@@ -149,7 +148,6 @@ final class ApprovalWorkflowCompiler
                         'approvalStage' => true,
                         'name' => \is_string($config['label'] ?? null) && trim($config['label']) !== '' ? $config['label'] : '审批',
                         'description' => $config['description'] ?? '',
-                        'assigneeType' => WorkflowAssigneeTypes::USER,
                         ...$properties,
                     ],
                     'ports' => ['approved' => []],
@@ -434,52 +432,23 @@ final class ApprovalWorkflowCompiler
     }
 
     /**
-     * @param array<array-key, mixed> $config
+     * @param array<string, mixed> $config
      *
-     * @return array{assigneeValue: list<string>, countersignType: string}
+     * @return array<string, mixed>
      */
     private function approvalConfiguration(array $config, string $path, string $nodeId): array
     {
-        $assignee = $this->map($config['assignee'] ?? null);
-        $approval = $this->map($config['approval'] ?? null);
+        $compiled = $this->approvals->compile($config, $path, $nodeId);
 
-        if (!$this->keys($assignee, ['source', 'config'])) {
-            throw $this->rejected('invalid_assignee_configuration', $path . '/assignee', $nodeId);
-        }
-
-        if (!$this->keys($approval, ['mode', 'config']) || $this->map($approval['config'] ?? null) !== []) {
-            throw $this->rejected('invalid_approval_configuration', $path . '/approval', $nodeId);
-        }
-
-        $userConfig = $this->map($assignee['config']);
-
-        if ($assignee['source'] === 'core:user' && $approval['mode'] === 'core:single' && $this->keys($userConfig, ['userId'])) {
-            $ids = [$userConfig['userId']];
-            $idsPath = $path . '/assignee/config/userId';
-            $mode = WorkflowCountersignTypes::SINGLE;
-        } elseif ($assignee['source'] === 'core:users' && \in_array($approval['mode'], ['core:all', 'core:any'], true) && $this->keys($userConfig, ['userIds'])) {
-            $ids = $userConfig['userIds'];
-            $idsPath = $path . '/assignee/config/userIds';
-            $mode = $approval['mode'] === 'core:all' ? WorkflowCountersignTypes::COUNTERSIGN : WorkflowCountersignTypes::FIRST_DECISION;
-        } else {
-            throw $this->rejected('unsupported_approval_assignment', $path . '/assignee', $nodeId);
-        }
-
-        if (!\is_array($ids) || !array_is_list($ids) || $ids === []) {
-            throw $this->rejected('reviewers_required', $idsPath, $nodeId);
-        }
-
-        $normalized = [];
-
-        foreach ($ids as $index => $id) {
-            if (!\is_string($id) || !Uuid::isValid(strtolower($id)) || \in_array(strtolower($id), $normalized, true)) {
-                throw $this->rejected('invalid_reviewer', $idsPath . ($assignee['source'] === 'core:users' ? '/' . $index : ''), $nodeId);
-            }
-
-            $normalized[] = strtolower($id);
-        }
-
-        return ['assigneeValue' => $normalized, 'countersignType' => $mode];
+        return [
+            'assigneeType' => $compiled->assignment->type,
+            'assigneeValue' => $compiled->assignment->values,
+            'assigneeConfig' => $compiled->assignment->configuration,
+            'assigneeUserIds' => $compiled->assignment->knownUserIds,
+            'countersignType' => $compiled->mode->getType(),
+            'approvalModeVersion' => $compiled->mode->getVersion(),
+            'approvalModeConfig' => $compiled->configuration,
+        ];
     }
 
     private function rejected(string $code, string $path, ?string $nodeId = null): WorkflowException
@@ -497,16 +466,5 @@ final class ApprovalWorkflowCompiler
         }
 
         return \is_array($value) && ($value === [] || !array_is_list($value)) ? $value : null;
-    }
-
-    /**
-     * @param array<array-key, mixed>|null $value
-     * @param list<string> $keys
-     *
-     * @phpstan-assert-if-true array<array-key, mixed> $value
-     */
-    private function keys(?array $value, array $keys): bool
-    {
-        return $value !== null && \count($value) === \count($keys) && array_diff(array_keys($value), $keys) === [];
     }
 }

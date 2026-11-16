@@ -28,6 +28,7 @@ export const WORKFLOW_NODE_PORTS = {
 export const WORKFLOW_ASSIGNEE_SOURCES = {
     USER: 'core:user',
     USERS: 'core:users',
+    DEPARTMENT_LEADERS: 'core:department-leaders',
 } as const;
 
 /** @public */

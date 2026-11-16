@@ -3,6 +3,7 @@
  */
 import useTheme from 'src/app/composables/use-theme';
 import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
+import { buildAssignmentOperations, readOrganizationAssignments } from './user-organization-assignments';
 import template from './sw-user-detail.html.twig';
 import './sw-user-detail.scss';
 
@@ -22,6 +23,7 @@ export default {
         'mediaDefaultFolderService',
         'userValidationService',
         'integrationService',
+        'syncService',
         'repositoryFactory',
         'acl',
         'feature',
@@ -61,10 +63,7 @@ export default {
             // Only edited for the own user — the theme select & module icon colors select are hidden otherwise.
             userThemeSelection: null,
             userModuleIconColorsSelection: null,
-            selectedUnitIds: [],
-            selectedPositionIds: [],
-            primaryUnitId: null,
-            unitMappings: [],
+            organizationAssignments: { departments: [], primaryPosition: null },
             // The three sections are tabs on a page that edits one `user` object, so the tab is local
             // state: switching tabs must not drop the draft, and the create page (which extends this
             // component) has no routes of its own to navigate to.
@@ -159,25 +158,16 @@ export default {
             return this.repositoryFactory.create('organization_unit');
         },
 
+        userPositionRepository() {
+            return this.repositoryFactory.create('user_position');
+        },
+
         positionRepository() {
             return this.repositoryFactory.create('position');
         },
 
         userOrganizationUnitRepository() {
             return this.repositoryFactory.create('user_organization_unit');
-        },
-
-        selectedUnitOptions() {
-            const names = {};
-
-            (this.user?.organizationUnits ?? []).forEach((unit) => {
-                names[unit.id] = unit.translated?.name ?? unit.name ?? unit.id;
-            });
-
-            return this.selectedUnitIds.map((unitId) => ({
-                value: unitId,
-                label: names[unitId] ?? unitId,
-            }));
         },
 
         userCriteria() {
@@ -415,72 +405,42 @@ export default {
 
             criteria.addFilter(Criteria.equals('userId', this.userId));
 
-            const mappings = await this.userOrganizationUnitRepository.search(criteria);
+            const [mappings, positions] = await Promise.all([
+                this.userOrganizationUnitRepository.search(criteria),
+                this.userPositionRepository.search(criteria),
+            ]);
 
-            this.unitMappings = [...mappings];
-            this.selectedUnitIds = this.unitMappings.map((mapping) => mapping.organizationUnitId);
-            this.primaryUnitId = this.unitMappings.find((mapping) => mapping.isPrimary)?.organizationUnitId ?? null;
-            this.selectedPositionIds = [...(this.user.positionIds ?? [])];
+            this.organizationAssignments = readOrganizationAssignments([...mappings], [...positions]);
         },
 
-        onPrimaryUnitChange(unitId) {
-            this.primaryUnitId = unitId;
-        },
-
-        /**
-         * Diffs the mapping rows against the selection: removed assignments are deleted, added
-         * ones are created, and the primary flag moves with the primary select - the same
-         * diff-not-replace pattern the blog detail uses for its category assignments.
-         */
         async syncAssignments() {
-            const selectedIds = [...new Set(this.selectedUnitIds)];
+            const criteria = new Criteria(1, 500);
+            criteria.addFilter(Criteria.equals('userId', this.user.id));
 
-            if (selectedIds.length > 0 && !selectedIds.includes(this.primaryUnitId)) {
-                this.primaryUnitId = selectedIds[0];
+            const [memberships, positions] = await Promise.all([
+                this.userOrganizationUnitRepository.search(criteria),
+                this.userPositionRepository.search(criteria),
+            ]);
+            if (this.isCreationMode && this.organizationAssignments.departments.length === 0) {
+                this.organizationAssignments = readOrganizationAssignments([...memberships], [...positions]);
             }
 
-            const mappingsById = {};
-
-            this.unitMappings.forEach((mapping) => {
-                mappingsById[mapping.organizationUnitId] = mapping;
+            const operations = buildAssignmentOperations({
+                userId: this.user.id,
+                draft: this.organizationAssignments,
+                memberships: [...memberships],
+                positions: [...positions],
+                createId: Shopwell.Utils.createId,
             });
+            const changes = Object.fromEntries(
+                Object.entries(operations).filter(([, operation]) => operation.payload.length > 0),
+            );
 
-            const idsToRemove = this.unitMappings
-                .filter((mapping) => !selectedIds.includes(mapping.organizationUnitId))
-                .map((mapping) => mapping.id);
-
-            const idsToAssign = selectedIds.filter((unitId) => !mappingsById[unitId]);
-
-            for (const mappingId of idsToRemove) {
-                await this.userOrganizationUnitRepository.delete(mappingId);
+            if (Object.keys(changes).length > 0) {
+                await this.syncService.sync(changes);
             }
 
-            for (const unitId of idsToAssign) {
-                const mapping = this.userOrganizationUnitRepository.create();
-
-                mapping.userId = this.userId;
-                mapping.organizationUnitId = unitId;
-                mapping.isPrimary = unitId === this.primaryUnitId;
-
-                await this.userOrganizationUnitRepository.save(mapping);
-            }
-
-            for (const unitId of selectedIds.filter((unitId) => unitId in mappingsById)) {
-                const mapping = mappingsById[unitId];
-                const shouldBePrimary = unitId === this.primaryUnitId;
-
-                if (mapping.isPrimary !== shouldBePrimary) {
-                    mapping.isPrimary = shouldBePrimary;
-
-                    await this.userOrganizationUnitRepository.save(mapping);
-                }
-            }
-
-            // the positions ride on the user entity itself
-            this.user.positionIds = [...new Set(this.selectedPositionIds)];
-
-            await this.userRepository.save(this.user);
-
+            this.userId = this.user.id;
             await this.loadAssignments();
         },
 
@@ -612,8 +572,16 @@ export default {
                     return;
                 }
 
+                // Existing administrators need valid assignments before their administrator status can be removed.
+                if (!this.isCreationMode) {
+                    await this.syncAssignments();
+                }
+
                 await this.userRepository.save(this.user, context);
-                await this.syncAssignments();
+
+                if (this.isCreationMode) {
+                    await this.syncAssignments();
+                }
 
                 if (this.currentUser.id === this.user.id) {
                     if (this.user.password) {

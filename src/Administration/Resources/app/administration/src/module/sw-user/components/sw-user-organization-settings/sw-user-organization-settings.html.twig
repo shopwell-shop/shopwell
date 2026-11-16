@@ -1,0 +1,85 @@
+{% block sw_user_organization_settings %}
+<div class="sw-user-organization-settings">
+    <mt-banner
+        v-if="loadFailed"
+        variant="critical"
+    >
+        {{ $t('sw-user.users.user-detail.organizationLoadError') }}
+        <mt-button
+            variant="secondary"
+            size="small"
+            @click="loadSelection"
+        >
+            {{ $t('sw-user.users.user-detail.buttonRetryOrganization') }}
+        </mt-button>
+    </mt-banner>
+
+    {% block sw_user_organization_settings_memberships %}
+    <mt-card
+        position-identifier="sw-user-detail-organization-units"
+        :title="$t('sw-user.users.user-detail.cardOrganizationUnits')"
+    >
+        <sw-entity-multi-id-select
+            :value="unitIds"
+            :repository="unitRepository"
+            :disabled="disabled"
+            :label="$t('sw-user.users.user-detail.labelOrganizationUnits')"
+            :placeholder="$t('sw-user.users.user-detail.placeholderSelectUnits')"
+            @update:value="changeUnits"
+        />
+        <mt-select
+            v-if="value.departments.length"
+            :model-value="primaryDepartment"
+            :options="unitOptions"
+            :disabled="disabled"
+            :label="$t('sw-user.users.user-detail.labelPrimaryUnit')"
+            :help-text="$t('sw-user.users.user-detail.helperPrimaryReporting')"
+            @update:model-value="changePrimaryDepartment"
+        />
+        <mt-select
+            v-if="positionOptions.length"
+            :model-value="primaryPosition"
+            :options="positionOptions"
+            :disabled="disabled"
+            :label="$t('sw-user.users.user-detail.labelPrimaryPosition')"
+            @update:model-value="changePrimaryPosition"
+        />
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_user_organization_settings_department %}
+    <mt-card
+        v-for="department in value.departments"
+        :key="department.id"
+        :title="unitName(department.organizationUnitId)"
+        position-identifier="sw-user-detail-positions"
+    >
+        <sw-entity-multi-id-select
+            :value="department.positionIds"
+            :repository="positionRepository"
+            :disabled="disabled"
+            :label="$t('sw-user.users.user-detail.labelPositions')"
+            :help-text="$t('sw-user.users.user-detail.helperScopedPositions')"
+            :placeholder="$t('sw-user.users.user-detail.placeholderSelectPositions')"
+            @update:value="updateDepartment(department.id, { positionIds: $event })"
+        />
+        <mt-switch
+            :model-value="department.isLeader"
+            :disabled="disabled"
+            :label="$t('sw-user.users.user-detail.labelDepartmentLeader')"
+            @update:model-value="updateDepartment(department.id, { isLeader: $event })"
+        />
+        <mt-number-field
+            v-if="department.isLeader"
+            :model-value="department.leaderPosition"
+            number-type="int"
+            :min="0"
+            :disabled="disabled"
+            :label="$t('sw-user.users.user-detail.labelLeaderPosition')"
+            :help-text="$t('sw-user.users.user-detail.helperLeaderPosition')"
+            @update:model-value="updateDepartment(department.id, { leaderPosition: $event })"
+        />
+    </mt-card>
+    {% endblock %}
+</div>
+{% endblock %}

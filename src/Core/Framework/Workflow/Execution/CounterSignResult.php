@@ -6,8 +6,6 @@ use Shopwell\Core\Framework\Log\Package;
 
 /**
  * Return the decision and counts for tasks included in the current aggregation.
- *
- * @internal
  */
 #[Package('framework')]
 final class CounterSignResult

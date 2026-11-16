@@ -18,7 +18,15 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.workflowApprovalService.getSource(this.settings.assignee.source);
         },
         mode() {
-            return this.workflowApprovalService.getMode(this.settings.approval.mode);
+            return this.workflowApprovalService.getMode(this.settings.approval.mode, this.settings.approval.version ?? 1);
+        },
+        modeValue(): string | null {
+            if (!this.mode) {
+                return null;
+            }
+
+            const version = this.mode.version ?? 1;
+            return version === 1 ? this.mode.name : `${this.mode.name}@${version}`;
         },
         sourceOptions() {
             return this.workflowApprovalService
@@ -26,16 +34,34 @@ export default Shopwell.Component.wrapComponentConfig({
                 .map((source) => ({ value: source.name, label: this.$t(source.labelKey) }));
         },
         modeCompatible(): boolean {
-            return !this.source?.supportedModes || this.source.supportedModes.includes(this.settings.approval.mode);
+            return this.workflowApprovalService.supportsMode(
+                this.settings.assignee.source,
+                this.settings.approval.mode,
+                this.settings.approval.version ?? 1,
+            );
         },
         modeOptions() {
             const modes = this.workflowApprovalService
                 .modes()
-                .filter((mode) => !this.source?.supportedModes || this.source.supportedModes.includes(mode.name))
-                .map((mode) => ({ value: mode.name, label: this.$t(mode.labelKey), disabled: false }));
+                .filter((mode) =>
+                    this.workflowApprovalService.supportsMode(this.settings.assignee.source, mode.name, mode.version ?? 1),
+                )
+                .map((mode) => ({
+                    value: (mode.version ?? 1) === 1 ? mode.name : `${mode.name}@${mode.version}`,
+                    name: mode.name,
+                    version: mode.version ?? 1,
+                    label: this.$t(mode.labelKey),
+                    disabled: false,
+                }));
 
             if (this.mode && !this.modeCompatible) {
-                modes.push({ value: this.mode.name, label: this.$t(this.mode.labelKey), disabled: true });
+                modes.push({
+                    value: (this.mode.version ?? 1) === 1 ? this.mode.name : `${this.mode.name}@${this.mode.version}`,
+                    name: this.mode.name,
+                    version: this.mode.version ?? 1,
+                    label: this.$t(this.mode.labelKey),
+                    disabled: true,
+                });
             }
 
             return modes;
@@ -65,24 +91,48 @@ export default Shopwell.Component.wrapComponentConfig({
                 return;
             }
 
-            const supportedModes = this.workflowApprovalService.getSource(source)?.supportedModes;
-            const defaultMode = supportedModes?.find((name) => this.workflowApprovalService.getMode(name));
-            const approval =
-                supportedModes && !supportedModes.includes(this.settings.approval.mode) && defaultMode
-                    ? { mode: defaultMode, config: {} }
-                    : this.settings.approval;
+            const defaultMode = this.workflowApprovalService
+                .modes()
+                .find((mode) => this.workflowApprovalService.supportsMode(source, mode.name, mode.version ?? 1));
+            const compatible = this.workflowApprovalService.supportsMode(
+                source,
+                this.settings.approval.mode,
+                this.settings.approval.version ?? 1,
+            );
+            let approval = this.settings.approval;
+
+            if (!compatible && defaultMode) {
+                approval = {
+                    mode: defaultMode.name,
+                    ...((defaultMode.version ?? 1) !== 1 ? { version: defaultMode.version } : {}),
+                    config: {},
+                };
+            }
+
             this.$emit('update-config', { assignee: { source, config: {} }, approval });
         },
-        changeMode(mode: string): void {
+        changeMode(value: string): void {
+            const selected = this.modeOptions.find((option) => option.value === value && !option.disabled);
+
+            if (!this.allowEdit || !selected) {
+                return;
+            }
+
             if (
-                !this.allowEdit ||
-                mode === this.settings.approval.mode ||
-                !this.modeOptions.some((option) => option.value === mode && !option.disabled)
+                selected.name === this.settings.approval.mode &&
+                selected.version === (this.settings.approval.version ?? 1)
             ) {
                 return;
             }
 
-            this.$emit('update-config', { ...this.settings, approval: { mode, config: {} } });
+            this.$emit('update-config', {
+                ...this.settings,
+                approval: {
+                    mode: selected.name,
+                    ...(selected.version !== 1 ? { version: selected.version } : {}),
+                    config: {},
+                },
+            });
         },
     },
 });

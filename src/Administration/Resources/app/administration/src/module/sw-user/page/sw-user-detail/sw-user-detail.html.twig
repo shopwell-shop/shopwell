@@ -434,61 +434,13 @@
                     v-if="isSectionVisible('organization')"
                     class="sw-user-detail__tab-panel"
                 >
-                    {% block sw_user_detail_card_organization_units %}
-                    <mt-card
+                    {% block sw_user_detail_organization_settings %}
+                    <sw-user-organization-settings
                         v-if="user"
-                        class="sw-user-detail__organization-units-card"
-                        position-identifier="sw-user-detail-organization-units"
-                        :title="$t('sw-user.users.user-detail.cardOrganizationUnits')"
-                        :is-loading="isLoading"
-                    >
-                        {% block sw_user_detail_card_organization_units_select %}
-                        <sw-entity-multi-id-select
-                            v-model:value="selectedUnitIds"
-                            class="sw-user-detail__organization-units-select"
-                            :repository="organizationUnitRepository"
-                            :disabled="!acl.can('user.editor') || undefined"
-                            :label="$t('sw-user.users.user-detail.labelOrganizationUnits')"
-                            :placeholder="$t('sw-user.users.user-detail.placeholderSelectUnits')"
-                            :help-text="selectedUnitIds.length === 0 ? $t('sw-user.users.user-detail.helperNoUnit') : ''"
-                        />
-                        {% endblock %}
-
-                        {% block sw_user_detail_card_organization_units_primary %}
-                        <mt-select
-                            v-if="selectedUnitIds.length > 0"
-                            class="sw-user-detail__primary-unit-select"
-                            :model-value="primaryUnitId"
-                            :disabled="!acl.can('user.editor') || undefined"
-                            :label="$t('sw-user.users.user-detail.labelPrimaryUnit')"
-                            :placeholder="$t('sw-user.users.user-detail.placeholderSelectPrimaryUnit')"
-                            :help-text="$t('sw-user.users.user-detail.helperPrimaryUnit')"
-                            :options="selectedUnitOptions"
-                            @update:model-value="onPrimaryUnitChange"
-                        />
-                        {% endblock %}
-                    </mt-card>
-                    {% endblock %}
-
-                    {% block sw_user_detail_card_positions %}
-                    <mt-card
-                        v-if="user"
-                        class="sw-user-detail__positions-card"
-                        position-identifier="sw-user-detail-positions"
-                        :title="$t('sw-user.users.user-detail.cardPositions')"
-                        :is-loading="isLoading"
-                    >
-                        {% block sw_user_detail_card_positions_select %}
-                        <sw-entity-multi-id-select
-                            v-model:value="selectedPositionIds"
-                            class="sw-user-detail__positions-select"
-                            :repository="positionRepository"
-                            :disabled="!acl.can('user.editor') || undefined"
-                            :label="$t('sw-user.users.user-detail.labelPositions')"
-                            :placeholder="$t('sw-user.users.user-detail.placeholderSelectPositions')"
-                        />
-                        {% endblock %}
-                    </mt-card>
+                        v-model:value="organizationAssignments"
+                        class="sw-user-detail__organization-settings"
+                        :disabled="isLoading || !acl.can('user.editor')"
+                    />
                     {% endblock %}
                 </div>
                 {% endblock %}

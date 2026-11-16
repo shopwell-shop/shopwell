@@ -24,6 +24,7 @@ async function createWrapper(
         },
     },
     saveUser = () => Promise.resolve(),
+    sync = jest.fn(() => Promise.resolve()),
 ) {
     wrapper = mount(
         await wrapTestComponent('sw-user-detail', {
@@ -71,6 +72,7 @@ async function createWrapper(
                         checkUserEmail: () => Promise.resolve({ emailIsUnique: true }),
                     },
                     integrationService: {},
+                    syncService: { sync },
                     repositoryFactory: {
                         create: (entityName) => {
                             if (entityName === 'user') {
@@ -109,7 +111,7 @@ async function createWrapper(
                                 };
                             }
 
-                            if (entityName === 'user_organization_unit') {
+                            if (entityName === 'user_organization_unit' || entityName === 'user_position') {
                                 return {
                                     search: () => Promise.resolve([]),
                                     save: () => Promise.resolve(),
@@ -279,7 +281,7 @@ describe('modules/sw-user/page/sw-user-detail', () => {
         expect(wrapper.vm.activeTab).toBe('general');
         expect(wrapper.find('.sw-user-detail__grid-name').exists()).toBe(true);
         expect(wrapper.find('.sw-user-detail__grid-aclRoles').exists()).toBe(false);
-        expect(wrapper.find('.sw-user-detail__organization-units-card').exists()).toBe(false);
+        expect(wrapper.find('.sw-user-detail__organization-settings').exists()).toBe(false);
     });
 
     it('should only show the section that belongs to the selected tab', async () => {
@@ -287,11 +289,11 @@ describe('modules/sw-user/page/sw-user-detail', () => {
 
         expect(wrapper.find('.sw-user-detail__grid-aclRoles').exists()).toBe(true);
         expect(wrapper.find('.sw-user-detail__grid-name').exists()).toBe(false);
-        expect(wrapper.find('.sw-user-detail__organization-units-card').exists()).toBe(false);
+        expect(wrapper.find('.sw-user-detail__organization-settings').exists()).toBe(false);
 
         await selectTab('organization');
 
-        expect(wrapper.find('.sw-user-detail__organization-units-card').exists()).toBe(true);
+        expect(wrapper.find('.sw-user-detail__organization-settings').exists()).toBe(true);
         expect(wrapper.find('.sw-user-detail__grid-aclRoles').exists()).toBe(false);
         expect(wrapper.find('.sw-user-detail__grid-name').exists()).toBe(false);
     });
@@ -815,6 +817,60 @@ describe('modules/sw-user/page/sw-user-detail', () => {
 
         expect(mockedLoginService.verifyUserToken).not.toHaveBeenCalled();
         expect(mockedLoginService.setBearerAuthentication).not.toHaveBeenCalled();
+    });
+
+    it('saves selected assignments before demoting an existing administrator', async () => {
+        let assignmentsSaved = false;
+        let persistedAdmin = true;
+        const save = jest.fn(async (user) => {
+            if (!assignmentsSaved && !user.admin) {
+                throw new Error('A non-administrator requires department and position assignments.');
+            }
+            persistedAdmin = user.admin;
+        });
+        const sync = jest.fn(async () => {
+            assignmentsSaved = true;
+        });
+        await wrapper.unmount();
+        wrapper = await createWrapper(
+            ['user.editor'],
+            {
+                global: {
+                    stubs: {
+                        'sw-verify-user-modal': {
+                            template: '<button class="confirm-save" @click="$emit(\'verified\')">Confirm</button>',
+                        },
+                    },
+                },
+            },
+            save,
+            sync,
+        );
+        await wrapper.setData({
+            currentUser: { id: 'current-user' },
+            user: { id: 'edited-user', admin: false, email: 'edited@example.com' },
+            organizationAssignments: {
+                departments: [
+                    {
+                        id: 'membership',
+                        organizationUnitId: 'department',
+                        isPrimary: true,
+                        isLeader: false,
+                        leaderPosition: 0,
+                        supervisorMembershipId: null,
+                        positionIds: ['position'],
+                    },
+                ],
+                primaryPosition: 'department:position',
+            },
+        });
+
+        await wrapper.find('.sw-user-detail__save-action').trigger('click');
+        await wrapper.find('.confirm-save').trigger('click');
+        await flushPromises();
+
+        expect(save).toHaveBeenCalled();
+        expect(persistedAdmin).toBe(false);
     });
 
     it('should stop loading when the email is already used', async () => {

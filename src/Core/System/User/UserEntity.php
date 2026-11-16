@@ -22,6 +22,7 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachi
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyCollection;
 use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigCollection;
 use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitCollection;
+use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionCollection;
 use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
 
 #[Package('fundamentals@framework')]
@@ -107,6 +108,8 @@ class UserEntity extends Entity
      * @var array<string>|null
      */
     protected ?array $organizationUnitIds = null;
+
+    protected ?UserPositionCollection $positionMappings = null;
 
     protected ?PositionCollection $positions = null;
 
@@ -451,6 +454,16 @@ class UserEntity extends Entity
     public function setOrganizationUnitIds(?array $organizationUnitIds): void
     {
         $this->organizationUnitIds = $organizationUnitIds;
+    }
+
+    public function getPositionMappings(): ?UserPositionCollection
+    {
+        return $this->positionMappings;
+    }
+
+    public function setPositionMappings(UserPositionCollection $positionMappings): void
+    {
+        $this->positionMappings = $positionMappings;
     }
 
     public function getPositions(): ?PositionCollection

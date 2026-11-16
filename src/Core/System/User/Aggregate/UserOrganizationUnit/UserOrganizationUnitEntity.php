@@ -23,6 +23,14 @@ class UserOrganizationUnitEntity extends Entity
 {
     use EntityIdTrait;
 
+    protected bool $isLeader = false;
+
+    protected int $leaderPosition = 0;
+
+    protected ?string $supervisorMembershipId = null;
+
+    protected ?self $supervisorMembership = null;
+
     protected string $userId;
 
     protected string $organizationUnitId;
@@ -32,6 +40,46 @@ class UserOrganizationUnitEntity extends Entity
     protected ?UserEntity $user = null;
 
     protected ?OrganizationUnitEntity $organizationUnit = null;
+
+    public function isLeader(): bool
+    {
+        return $this->isLeader;
+    }
+
+    public function setIsLeader(bool $isLeader): void
+    {
+        $this->isLeader = $isLeader;
+    }
+
+    public function getLeaderPosition(): int
+    {
+        return $this->leaderPosition;
+    }
+
+    public function setLeaderPosition(int $leaderPosition): void
+    {
+        $this->leaderPosition = $leaderPosition;
+    }
+
+    public function getSupervisorMembershipId(): ?string
+    {
+        return $this->supervisorMembershipId;
+    }
+
+    public function setSupervisorMembershipId(?string $supervisorMembershipId): void
+    {
+        $this->supervisorMembershipId = $supervisorMembershipId;
+    }
+
+    public function getSupervisorMembership(): ?self
+    {
+        return $this->supervisorMembership;
+    }
+
+    public function setSupervisorMembership(?self $supervisorMembership): void
+    {
+        $this->supervisorMembership = $supervisorMembership;
+    }
 
     public function getUserId(): string
     {
