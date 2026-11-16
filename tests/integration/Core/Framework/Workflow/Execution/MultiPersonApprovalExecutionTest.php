@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\Test\TestCaseHelper\TestBrowser;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
-use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
 
@@ -220,13 +220,13 @@ class MultiPersonApprovalExecutionTest extends TestCase
         $source = new AdminApiSource($userIds[0]);
         $source->setIsAdmin(true);
         $context = new Context($source);
-        $service = static::getContainer()->get(ApprovalWorkflowService::class);
+        $service = static::getContainer()->get(WorkflowService::class);
         $definitionId = $service->createDefinition([
             'code' => 'rollback-' . Uuid::randomHex(), 'name' => 'Rollback approval', 'graphData' => [
                 'nodes' => [
                     ['id' => 'start', 'type' => 'snaker:start', 'properties' => []],
-                    ['id' => 'first', 'type' => 'snaker:task', 'properties' => ['name' => 'First approval', 'assigneeType' => 'user', 'assigneeValue' => \array_slice($userIds, 0, 2), 'countersignType' => 'firstDecision']],
-                    ['id' => 'second', 'type' => 'snaker:task', 'properties' => ['name' => 'Second approval', 'assigneeType' => 'user', 'assigneeValue' => [$userIds[2]], 'countersignType' => 'single']],
+                    ['id' => 'first', 'type' => 'snaker:task', 'properties' => ['approvalStage' => true, 'name' => 'First approval', 'assigneeType' => 'user', 'assigneeValue' => \array_slice($userIds, 0, 2), 'countersignType' => 'firstDecision']],
+                    ['id' => 'second', 'type' => 'snaker:task', 'properties' => ['approvalStage' => true, 'name' => 'Second approval', 'assigneeType' => 'user', 'assigneeValue' => [$userIds[2]], 'countersignType' => 'single']],
                     ['id' => 'end', 'type' => 'snaker:end', 'properties' => []],
                 ], 'edges' => [
                     ['id' => 'start-first', 'sourceNodeId' => 'start', 'targetNodeId' => 'first', 'properties' => []],

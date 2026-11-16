@@ -15,39 +15,37 @@ use Shopwell\Core\Framework\Log\Package;
 final class WorkflowNodeTypes
 {
     /**
-     * 开始节点（发起人节点），一张图有且仅有一个
+     * The unique start node.
      */
     public const START = 'snaker:start';
 
     /**
-     * 审批节点，属性决定审批人与多人审批方式
+     * A task node whose properties select assignees and the approval mode.
      */
     public const TASK = 'snaker:task';
 
     /**
-     * 抄送节点：只写抄送记录，不生成待办、不阻塞流转
+     * A copy node records recipients without creating tasks or blocking execution.
      */
     public const COPY = 'snaker:copy';
 
     /**
-     * 结束节点，一张图有且仅有一个
+     * The unique end node.
      */
     public const END = 'snaker:end';
 
     /**
-     * 契约允许的全部节点类型；校验器用它判断"类型未知"
+     * Routes through conditional outgoing edges without creating tasks.
      */
     public const CONDITION = 'snaker:condition';
 
     /**
-     * 契约允许的全部节点类型；校验器用它判断"类型未知"
+     * Node types accepted by the execution contract.
      */
     public const ALL = [self::START, self::TASK, self::COPY, self::END, self::CONDITION];
 
     /**
-     * 预留（当前**不实现**，只是把词表位置留好）：
-     * SUBPROCESS（子流程）。
-     * 加它们时同时要加执行器，否则 `NodeExecutorRegistry` 会在运行期抛 unsupportedNodeType。
+     * Reserved subprocess type; register an executor when implementing it.
      */
     public const FUTURE_SUBPROCESS = 'snaker:subprocess';
 }

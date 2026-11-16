@@ -20,6 +20,7 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\User\UserCollection;
+use Shopwell\Core\System\User\UserEntity;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -128,6 +129,45 @@ class WorkflowInstancePresenterTest extends TestCase
 
         static::assertArrayNotHasKey('executions', $summary);
         $this->assertResponseSchema($summary, 'WorkflowExecutionInstance');
+    }
+
+    public function testSummariesLoadInitiatorNamesOnceForTheWholePage(): void
+    {
+        $initiator = new UserEntity();
+        $initiator->setId('initiator');
+        $initiator->setName('First User');
+        $users = new StaticEntityRepository([new UserCollection([$initiator])]);
+        $presenter = new WorkflowInstancePresenter(
+            new WorkflowUserLookup($users),
+            StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class, []),
+            StaticEntityRepository::of(WorkflowNodeExecutionCollection::class, []),
+            new EventDispatcher(),
+            StaticEntityRepository::of(WorkflowLogCollection::class, []),
+        );
+        $first = $this->instance();
+        $second = $this->instance();
+        $second->id = 'second-instance';
+
+        $summaries = $presenter->presentMany([$first, $second], Context::createDefaultContext());
+
+        static::assertCount(1, $users->searchedCriteria);
+        static::assertSame(['instance', 'second-instance'], array_column($summaries, 'id'));
+        static::assertSame([['id' => 'initiator', 'name' => 'First User'], ['id' => 'initiator', 'name' => 'First User']], array_column($summaries, 'initiator'));
+    }
+
+    public function testEmptyPageDoesNotQueryUsersOrExecutionDetails(): void
+    {
+        $users = StaticEntityRepository::of(UserCollection::class, []);
+        $presenter = new WorkflowInstancePresenter(
+            new WorkflowUserLookup($users),
+            StaticEntityRepository::of(WorkflowExecutionDefinitionCollection::class, []),
+            StaticEntityRepository::of(WorkflowNodeExecutionCollection::class, []),
+            new EventDispatcher(),
+            StaticEntityRepository::of(WorkflowLogCollection::class, []),
+        );
+
+        static::assertSame([], $presenter->presentMany([], Context::createDefaultContext()));
+        static::assertSame([], $users->searchedCriteria);
     }
 
     private function instance(): WorkflowInstanceEntity

@@ -1,10 +1,11 @@
 /** @sw-package framework */
+import { WORKFLOW_NODE_TYPES } from 'src/core/workflow/workflow-node.constants';
 import type { WorkflowFieldProvider } from 'src/core/workflow/workflow-studio.types';
 import { workflowFormFields } from '../../util/workflow-form.util';
 
 /** A request schema belongs to its workflow, independently of the task types it contains. @private */
 const workflowRequestFieldProvider: WorkflowFieldProvider = (document) => {
-    const start = document.nodes.find((node) => node.type === 'core:start' && node.typeVersion === 1);
+    const start = document.nodes.find((node) => node.type === WORKFLOW_NODE_TYPES.START && node.typeVersion === 1);
 
     if (!start || !('formFields' in start.config)) {
         return [];

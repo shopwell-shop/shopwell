@@ -27,11 +27,22 @@ function createEntry(id: string, factory: ServiceContainer['repositoryFactory'])
             entry.status.value = 'loading';
             try {
                 const user = await repository.get(id as Entity<'user'>['id']);
-                if (current !== entry.request) return;
+
+                if (current !== entry.request) {
+                    return;
+                }
+
                 entry.user.value = user;
-                entry.status.value = user ? (user.active ? 'ready' : 'inactive') : 'missing';
+
+                if (user) {
+                    entry.status.value = user.active ? 'ready' : 'inactive';
+                } else {
+                    entry.status.value = 'missing';
+                }
             } catch {
-                if (current === entry.request) entry.status.value = 'error';
+                if (current === entry.request) {
+                    entry.status.value = 'error';
+                }
             }
         },
     };
@@ -42,12 +53,18 @@ function createEntry(id: string, factory: ServiceContainer['repositoryFactory'])
 export default function useWorkflowUser(userId: Ref<string | null>) {
     const factory = inject<ServiceContainer['repositoryFactory']>('repositoryFactory');
     const acl = inject<ServiceContainer['acl']>('acl');
-    if (!factory || !acl) throw new Error('Workflow user resolution requires repositoryFactory and acl.');
+
+    if (!factory || !acl) {
+        throw new Error('Workflow user resolution requires repositoryFactory and acl.');
+    }
+
     let entries = entriesByFactory.get(factory);
+
     if (!entries) {
         entries = new Map();
         entriesByFactory.set(factory, entries);
     }
+
     const accounts = entries;
     const canRead = computed(() => acl.can('user:read'));
     const current = shallowRef<UserEntry | null>(null);
@@ -55,10 +72,12 @@ export default function useWorkflowUser(userId: Ref<string | null>) {
     let currentId: string | null = null;
     function release(): void {
         const entry = current.value;
+
         if (entry && --entry.consumers === 0 && currentId) {
             entry.request += 1;
             accounts.delete(currentId);
         }
+
         current.value = null;
         currentId = null;
     }
@@ -66,28 +85,37 @@ export default function useWorkflowUser(userId: Ref<string | null>) {
         [userId, canRead],
         ([id, allowed]) => {
             release();
+
             if (!id) {
                 idleStatus.value = 'empty';
                 return;
             }
+
             if (!allowed) {
                 idleStatus.value = 'forbidden';
                 return;
             }
+
             if (!/^[a-f0-9]{32}$/i.test(id)) {
                 idleStatus.value = 'missing';
                 return;
             }
+
             let entry = accounts.get(id);
             const isNew = !entry;
+
             if (!entry) {
                 entry = createEntry(id, factory);
                 accounts.set(id, entry);
             }
+
             entry.consumers += 1;
             currentId = id;
             current.value = entry;
-            if (isNew) void entry.retry();
+
+            if (isNew) {
+                void entry.retry();
+            }
         },
         { immediate: true },
     );
@@ -96,7 +124,9 @@ export default function useWorkflowUser(userId: Ref<string | null>) {
     const status = computed(() => current.value?.status.value ?? idleStatus.value);
     const name = computed(() => user.value?.name || user.value?.username || '');
     async function retry(): Promise<void> {
-        if (canRead.value) await current.value?.retry();
+        if (canRead.value) {
+            await current.value?.retry();
+        }
     }
     return { user, status, name, canRead, retry };
 }

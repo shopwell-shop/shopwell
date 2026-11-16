@@ -9,12 +9,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Condition\ExprNormalizer;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 
 /**
- * 表达式归一化与求值。
- *
- * 重点不是"能算对 1 > 0"，而是三件**会静默出错**的事：
- * 1. 变量引用写错形式时是否报错（而不是当成字符串常量比较）；
- * 2. 变量不在表单里是否报错（否则运行期取到 null，条件恒假）；
- * 3. 不同类型比较的语义（`"5000" == 5000` 必须为真，表单可能把数字传成字符串）。
+ * Cover invalid references, unknown form fields and numeric string comparison semantics.
  *
  * @internal
  */
@@ -62,7 +57,7 @@ class ExprNormalizerTest extends TestCase
 
     public function testBareVariableNameIsRejected(): void
     {
-        // `amount > 5000` 能跑，但设计器渲染不出条件标签，用户看不到自己配了什么
+        // Bare field references cannot be rendered by the designer and must be rejected.
         $this->expectException(WorkflowExecutionException::class);
 
         $this->normalizer->assertValid('amount > 5000', ['amount']);

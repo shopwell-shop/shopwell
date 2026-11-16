@@ -31,11 +31,16 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         select(id: string | null, user?: Entity<'user'>): void {
             // The shared selector also emits null when an account disappears. Only explicit clear may discard an ID.
-            if (!this.allowEdit || !this.canRead || !id || !user?.active || user.id !== id) return;
+            if (!this.allowEdit || !this.canRead || !id || !user?.active || user.id !== id) {
+                return;
+            }
+
             this.$emit('update-config', { ...this.config, userId: id });
         },
         clear(): void {
-            if (this.allowEdit && this.canRead) this.$emit('update-config', { ...this.config, userId: null });
+            if (this.allowEdit && this.canRead) {
+                this.$emit('update-config', { ...this.config, userId: null });
+            }
         },
     },
 });

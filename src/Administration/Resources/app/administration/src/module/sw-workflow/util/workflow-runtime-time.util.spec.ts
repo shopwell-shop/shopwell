@@ -9,4 +9,14 @@ describe('workflow runtime time labels', () => {
         expect(relativeTime(null)).toBe('');
         expect(initialOf(' Alice')).toBe('A');
     });
+
+    it.each([
+        ['2026-11-13T10:59:00Z', '1 minute ago'],
+        ['2026-11-13T12:00:00Z', 'in 1 hour'],
+        ['2026-11-12T11:00:00Z', 'yesterday'],
+    ])('selects the relative unit for %s', (timestamp, expected) => {
+        Shopwell.Store.get('session').currentLocale = 'en-GB';
+
+        expect(relativeTime(timestamp, Date.parse('2026-11-13T11:00:00Z'))).toBe(expected);
+    });
 });

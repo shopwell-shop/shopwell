@@ -1,15 +1,13 @@
 /** @sw-package framework */
 import { VueFlow } from '@vue-flow/core';
-import type { Dimensions, Edge, Node, VueFlowStore } from '@vue-flow/core';
+import type { Edge, Node } from '@vue-flow/core';
 import { NodeToolbar } from '@vue-flow/node-toolbar';
-import { markRaw, watch } from 'vue';
 import type { PropType } from 'vue';
+import useCanvasViewport from 'src/app/composables/use-canvas-viewport';
 import template from './sw-canvas-editor.html.twig';
 import './sw-canvas-editor.scss';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
-
-type Viewport = Pick<VueFlowStore, 'fitView' | 'zoomIn' | 'zoomOut'>;
 
 /** A Shopwell editor shell using native Vue Flow renderers, slots and events. @public */
 export default Shopwell.Component.wrapComponentConfig({
@@ -31,22 +29,18 @@ export default Shopwell.Component.wrapComponentConfig({
 
     emits: ['node-sizes-change'],
 
+    setup(_, { emit }) {
+        return useCanvasViewport({ onSizesChange: (sizes) => emit('node-sizes-change', sizes) });
+    },
+
     data(): {
         canvasId: string;
-        viewport: Viewport | null;
-        stopMeasurements: (() => void) | null;
-        hasFitted: boolean;
-        nodeSizes: Record<string, Dimensions>;
         hoveredNodeId: string | null;
         focusedNodeId: string | null;
         hideNodeToolsTimer: ReturnType<typeof setTimeout> | null;
     } {
         return {
             canvasId: Shopwell.Utils.createId(),
-            viewport: null,
-            stopMeasurements: null,
-            hasFitted: false,
-            nodeSizes: {},
             hoveredNodeId: null,
             focusedNodeId: null,
             hideNodeToolsTimer: null,
@@ -60,7 +54,6 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     beforeUnmount() {
-        this.stopMeasurements?.();
         this.clearNodeToolsTimer();
     },
 
@@ -120,59 +113,6 @@ export default Shopwell.Component.wrapComponentConfig({
 
         onFocusOut(event: FocusEvent): void {
             this.focusedNodeId = this.nodeOwner(event.relatedTarget);
-        },
-
-        onInit(flow: VueFlowStore): void {
-            this.stopMeasurements?.();
-            this.hasFitted = false;
-            this.viewport = markRaw({ fitView: flow.fitView, zoomIn: flow.zoomIn, zoomOut: flow.zoomOut });
-            this.stopMeasurements = watch(
-                () => ({
-                    nodes: flow.getNodes.value.map(
-                        (node) => [node.id, node.dimensions.width, node.dimensions.height] as const,
-                    ),
-                    width: flow.dimensions.value.width,
-                    height: flow.dimensions.value.height,
-                }),
-                ({ nodes, width, height }) => {
-                    const sizes: Record<string, Dimensions> = {};
-
-                    for (const [id, nodeWidth, nodeHeight] of nodes) {
-                        if (nodeWidth > 0 && nodeHeight > 0) {
-                            sizes[id] = { width: nodeWidth, height: nodeHeight };
-                        }
-                    }
-
-                    if (JSON.stringify(sizes) !== JSON.stringify(this.nodeSizes)) {
-                        this.nodeSizes = sizes;
-                        this.$emit('node-sizes-change', sizes);
-                    }
-
-                    if (
-                        !this.hasFitted &&
-                        width > 0 &&
-                        height > 0 &&
-                        nodes.length > 0 &&
-                        Object.keys(sizes).length === nodes.length
-                    ) {
-                        void this.$nextTick(() => this.fit());
-                    }
-                },
-                { immediate: true, flush: 'post' },
-            );
-        },
-
-        fit(): void {
-            this.hasFitted = true;
-            void this.viewport?.fitView({ padding: 0.3, maxZoom: 1 });
-        },
-
-        zoomIn(): void {
-            void this.viewport?.zoomIn();
-        },
-
-        zoomOut(): void {
-            void this.viewport?.zoomOut();
         },
     },
 });

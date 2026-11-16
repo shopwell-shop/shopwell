@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntime;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeException;
@@ -31,12 +32,13 @@ final class ApprovalWorkflowRuntime implements WorkflowRuntime
         private readonly WorkflowTransactionRunner $transactions,
         private readonly WorkflowEventQueue $events,
         private readonly Connection $connection,
+        private readonly WorkflowService $workflows,
     ) {
     }
 
     public function name(): string
     {
-        return 'core:approval';
+        return ApprovalWorkflowPublisher::NAME;
     }
 
     public function transactional(\Closure $operation): mixed
@@ -60,17 +62,17 @@ final class ApprovalWorkflowRuntime implements WorkflowRuntime
         $this->assertTransactionOwnership();
         $this->assertRelease($release);
 
-        return $this->flows->start($release->getId(), $data, $title, $context);
+        return $this->workflows->start($release->getId(), $data, $title, $context);
     }
 
     public function status(WorkflowReleaseEntity $release, string $instanceId, Context $context): WorkflowRuntimeStatus
     {
         $instance = $this->instance($release, $instanceId, $context);
         $status = match ($instance->state()) {
-            WorkflowInstanceStates::RUNNING => 'pending',
-            WorkflowInstanceStates::AGREED => 'approved',
-            WorkflowInstanceStates::REJECTED => 'rejected',
-            WorkflowInstanceStates::CANCELED => 'canceled',
+            WorkflowInstanceStates::RUNNING => WorkflowRuntimeStatus::PENDING,
+            WorkflowInstanceStates::AGREED => WorkflowRuntimeStatus::APPROVED,
+            WorkflowInstanceStates::REJECTED => WorkflowRuntimeStatus::REJECTED,
+            WorkflowInstanceStates::CANCELED => WorkflowRuntimeStatus::CANCELED,
             default => throw WorkflowRuntimeException::invalidReference(),
         };
         $source = $context->getSource();
@@ -90,7 +92,7 @@ final class ApprovalWorkflowRuntime implements WorkflowRuntime
         return new WorkflowRuntimeStatus(
             $status,
             $detailRoute,
-            $status === 'pending' && $actorId === $instance->initiatorId,
+            $status === WorkflowRuntimeStatus::PENDING && $actorId === $instance->initiatorId,
         );
     }
 
@@ -104,7 +106,7 @@ final class ApprovalWorkflowRuntime implements WorkflowRuntime
     private function instance(WorkflowReleaseEntity $release, string $instanceId, Context $context): WorkflowInstanceEntity
     {
         $this->assertRelease($release);
-        $instance = $this->flows->loadInstance($instanceId, $context);
+        $instance = $this->workflows->loadInstance($instanceId, $context);
         if ($instance->definitionId !== $release->getId()) {
             throw WorkflowRuntimeException::invalidReference();
         }

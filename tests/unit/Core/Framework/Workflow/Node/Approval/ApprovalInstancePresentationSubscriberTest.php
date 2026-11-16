@@ -46,6 +46,17 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
         static::assertSame(['id' => 'generic'], $event->getData());
     }
 
+    public function testGenericTaskDoesNotActivateApprovalProjection(): void
+    {
+        $instance = new WorkflowInstanceEntity();
+        $instance->graphSnapshot = ['nodes' => [['id' => 'task', 'type' => 'snaker:task']], 'edges' => []];
+        $event = new WorkflowInstancePresentationEvent($instance, Context::createDefaultContext(), ['id' => 'generic'], withDetail: true);
+
+        $this->subscriber()->present($event);
+
+        static::assertSame(['id' => 'generic'], $event->getData());
+    }
+
     public function testSummaryDoesNotInspectTheGraphOrLoadApprovalData(): void
     {
         $event = new WorkflowInstancePresentationEvent(new WorkflowInstanceEntity(), Context::createDefaultContext(), ['id' => 'summary'], withDetail: false);

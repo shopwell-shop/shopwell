@@ -5,17 +5,9 @@ namespace Shopwell\Core\Framework\Workflow\Execution\Graph;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
+ * An immutable contract edge; conditions belong to edges and remain unchanged until evaluation.
+ *
  * @internal
- *
- * 契约里的一条连线。
- *
- * 条件**只存在于连线上**（`properties.expr`），不在节点上——这是与后端引擎
- * 约定的硬规则：一个审批节点后面有几条出边，就有几种走法，条件属于"走法"
- * 而不是"节点"。
- *
- * 表达式原样保留（`${form.amount} > 5000`），归一化交给
- * {@see \Shopwell\Core\Framework\Workflow\Execution\Condition\ComparisonConditionEvaluator} 做。
- * 理由：DTO 是纯数据，不注入任何服务；否则图对象会拖着一个求值器到处跑。
  */
 #[Package('framework')]
 final class GraphEdge
@@ -32,10 +24,7 @@ final class GraphEdge
     }
 
     /**
-     * 条件表达式；无条件连线返回 null（代表默认分支）。
-     *
-     * 只 trim 成空串的也算默认分支：设计器里删掉条件后可能留下 `"expr": "  "`，
-     * 若当成"有条件但恒假"处理，这条边永远走不到，流程会莫名断在这里。
+     * Return the condition expression, or null for an absent or whitespace-only default branch.
      */
     public function expr(): ?string
     {

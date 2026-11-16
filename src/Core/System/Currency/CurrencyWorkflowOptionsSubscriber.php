@@ -6,7 +6,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Workflow\Publication\Approval\WorkflowFormOptionsEvent;
+use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowFormOptionsEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**

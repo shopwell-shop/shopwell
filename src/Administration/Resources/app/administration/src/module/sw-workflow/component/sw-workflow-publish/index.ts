@@ -4,9 +4,16 @@ import type { WorkflowPublisher, WorkflowRelease } from 'src/core/service/api/wo
 import template from './sw-workflow-publish.html.twig';
 
 function publicationError(error: unknown): string {
-    if (!axios.isAxiosError<{ errors?: { meta?: { parameters?: { reason?: string } } }[] }>(error)) return 'failed';
-    if (error.response?.status === 409) return 'conflict';
+    if (!axios.isAxiosError<{ errors?: { meta?: { parameters?: { reason?: string } } }[] }>(error)) {
+        return 'failed';
+    }
+
+    if (error.response?.status === 409) {
+        return 'conflict';
+    }
+
     const reason = error.response?.data.errors?.[0]?.meta?.parameters?.reason;
+
     if (
         error.response?.status === 422 &&
         reason &&
@@ -16,8 +23,10 @@ function publicationError(error: unknown): string {
             'approval_assignee_unavailable',
             'approval_assignee_forbidden',
         ].includes(reason)
-    )
+    ) {
         return reason;
+    }
+
     return 'failed';
 }
 
@@ -90,7 +99,10 @@ export default Shopwell.Component.wrapComponentConfig({
     },
     methods: {
         async open(): Promise<void> {
-            if (!this.canPublish || this.isLoading) return;
+            if (!this.canPublish || this.isLoading) {
+                return;
+            }
+
             const requestRevision = ++this.requestRevision;
             this.showModal = true;
             this.error = null;
@@ -99,31 +111,51 @@ export default Shopwell.Component.wrapComponentConfig({
             this.publisher = '';
             try {
                 const publishers = await this.workflowService.getPublishers();
-                if (requestRevision !== this.requestRevision) return;
+
+                if (requestRevision !== this.requestRevision) {
+                    return;
+                }
+
                 this.publishers = publishers;
                 this.publisher = this.publisherOptions[0]?.value ?? '';
             } catch {
-                if (requestRevision === this.requestRevision) this.error = 'providersFailed';
+                if (requestRevision === this.requestRevision) {
+                    this.error = 'providersFailed';
+                }
             } finally {
-                if (requestRevision === this.requestRevision) this.isLoading = false;
+                if (requestRevision === this.requestRevision) {
+                    this.isLoading = false;
+                }
             }
         },
         async publish(): Promise<void> {
-            if (!this.canConfirm) return;
+            if (!this.canConfirm) {
+                return;
+            }
+
             this.isSubmitting = true;
             this.error = null;
             const draftId = this.draftId;
             const requestRevision = ++this.requestRevision;
             try {
                 const release = await this.workflowService.publishDraft(draftId, this.revision, this.publisher);
-                if (requestRevision !== this.requestRevision) return;
+
+                if (requestRevision !== this.requestRevision) {
+                    return;
+                }
+
                 this.release = release;
                 this.showModal = false;
             } catch (error) {
-                if (requestRevision !== this.requestRevision) return;
+                if (requestRevision !== this.requestRevision) {
+                    return;
+                }
+
                 this.error = publicationError(error);
             } finally {
-                if (requestRevision === this.requestRevision) this.isSubmitting = false;
+                if (requestRevision === this.requestRevision) {
+                    this.isSubmitting = false;
+                }
             }
         },
     },

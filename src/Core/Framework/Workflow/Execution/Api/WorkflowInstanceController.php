@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceCollection;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
@@ -20,13 +21,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
+ * Instance endpoints; register /mine before the parameter route so it is not matched as an instance ID.
+ *
  * @internal
- *
- * 审批实例接口：发起、详情、我发起的、撤销。
- *
- * `GET /{instanceId}` 与 `GET /mine` 的顺序不能反：`/mine` 必须注册在参数路由**之前**，
- * 否则 `mine` 会被当成 `{instanceId}` 匹配掉，报"实例不存在"。
- * 这里把 `mine` 写在前面，路由按注册顺序匹配。
  */
 #[Package('framework')]
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
@@ -39,6 +36,7 @@ class WorkflowInstanceController extends AbstractController
         private readonly ApprovalWorkflowService $flows,
         private readonly WorkflowInstancePresenter $presenter,
         private readonly EntityRepository $instanceRepository,
+        private readonly WorkflowService $workflows,
     ) {
     }
 
@@ -56,15 +54,13 @@ class WorkflowInstanceController extends AbstractController
         $formData = \is_array($body['formData'] ?? null) ? $body['formData'] : [];
         $title = \is_string($body['title'] ?? null) ? $body['title'] : '';
 
-        $instanceId = $this->flows->start($definitionId, $formData, $title, $context);
+        $instanceId = $this->workflows->start($definitionId, $formData, $title, $context);
 
         return new JsonResponse(['data' => ['id' => $instanceId]], Response::HTTP_CREATED);
     }
 
     /**
-     * 我发起的。
-     *
-     * 只返回当前用户发起的，**不信任任何前端传的 initiatorId**。
+     * Return instances started by the current user; ignore client-supplied initiator IDs.
      */
     #[Route(
         path: '/api/_action/workflow/instance/mine',
@@ -76,7 +72,7 @@ class WorkflowInstanceController extends AbstractController
     {
         $criteria = new Criteria();
         $criteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
-        $criteria->addFilter(new EqualsFilter('initiatorId', $this->flows->actorId($context)));
+        $criteria->addFilter(new EqualsFilter('initiatorId', $this->workflows->actorId($context)));
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
         $criteria->setLimit(max(1, min(100, $request->query->getInt('limit', 25))));
         $criteria->setOffset(max(0, $request->query->getInt('offset', 0)));
@@ -84,8 +80,7 @@ class WorkflowInstanceController extends AbstractController
         $status = $request->query->get('status');
 
         if (\is_string($status) && $status !== '') {
-            // 前端传的是契约值（RUNNING/AGREE/...），库里存的是小写状态名，
-            // 必须映射一次。直接拿契约值去过滤会永远查不到数据。
+            // Map contract statuses to stored state names before filtering.
             $byContract = array_flip(WorkflowInstanceStates::CONTRACT_STATUS);
 
             if (isset($byContract[$status])) {
@@ -95,11 +90,7 @@ class WorkflowInstanceController extends AbstractController
 
         $criteria->addAssociation('stateMachineState');
         $result = $this->instanceRepository->search($criteria, $context);
-        $data = [];
-
-        foreach ($result->getEntities() as $instance) {
-            $data[] = $this->presenter->present($instance, $context, false);
-        }
+        $data = $this->presenter->presentMany($result->getEntities(), $context);
 
         return new JsonResponse(['data' => $data, 'meta' => ['total' => $result->getTotal()]]);
     }
@@ -112,7 +103,7 @@ class WorkflowInstanceController extends AbstractController
     )]
     public function detail(Context $context, string $instanceId): JsonResponse
     {
-        $instance = $this->flows->instanceDetail($instanceId, $context, $this->flows->actorId($context));
+        $instance = $this->flows->instanceDetail($instanceId, $context, $this->workflows->actorId($context));
 
         return new JsonResponse(['data' => $this->presenter->present($instance, $context, true)]);
     }

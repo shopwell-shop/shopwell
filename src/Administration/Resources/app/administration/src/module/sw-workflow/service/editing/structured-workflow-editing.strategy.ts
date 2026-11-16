@@ -1,4 +1,5 @@
 /** @sw-package framework */
+import { WORKFLOW_NODE_TYPES, WORKFLOW_NODE_KINDS, WORKFLOW_NODE_PORTS } from 'src/core/workflow/workflow-node.constants';
 import type { WorkflowDocument, WorkflowNodeTypeSpecification } from 'src/core/workflow/workflow.types';
 
 import type { WorkflowNodeEditingStrategy } from 'src/core/workflow/workflow-studio.types';
@@ -10,7 +11,7 @@ export type { WorkflowNodeEditingStrategy } from 'src/core/workflow/workflow-stu
 export default class StructuredWorkflowEditingStrategy implements WorkflowNodeEditingStrategy {
     canInsert(document: WorkflowDocument, type: WorkflowNodeTypeSpecification, connectionId: string): boolean {
         return (
-            type.kind === 'activity' &&
+            type.kind === WORKFLOW_NODE_KINDS.ACTIVITY &&
             type.inputPorts.length === 1 &&
             type.outputPorts.length > 0 &&
             document.connections.some((edge) => edge.id === connectionId)
@@ -24,12 +25,19 @@ export default class StructuredWorkflowEditingStrategy implements WorkflowNodeEd
     ): WorkflowDocument {
         const next = JSON.parse(JSON.stringify(document)) as WorkflowDocument;
         const connection = next.connections.find((item) => item.id === connectionId);
-        if (!connection || type.kind !== 'activity' || type.inputPorts.length !== 1 || type.outputPorts.length === 0) {
+
+        if (
+            !connection ||
+            type.kind !== WORKFLOW_NODE_KINDS.ACTIVITY ||
+            type.inputPorts.length !== 1 ||
+            type.outputPorts.length === 0
+        ) {
             throw new Error('The node cannot be inserted on this connection.');
         }
 
         const nodeIds = [id, ...type.outputPorts.slice(1).map((_, index) => `${id}-end-${index + 1}`)];
         const edgeIds = type.outputPorts.map((_, index) => `${id}-out-${index}`);
+
         if (
             next.nodes.some((node) => nodeIds.includes(node.id)) ||
             next.connections.some((edge) => edgeIds.includes(edge.id))
@@ -44,15 +52,17 @@ export default class StructuredWorkflowEditingStrategy implements WorkflowNodeEd
         next.nodes.push({ id, type: type.name, typeVersion: type.version, config: {} });
         type.outputPorts.forEach((port, index) => {
             const endId = index === 0 ? target : `${id}-end-${index}`;
+
             if (index > 0) {
-                next.nodes.push({ id: endId, type: 'core:end', typeVersion: 1, config: {} });
+                next.nodes.push({ id: endId, type: WORKFLOW_NODE_TYPES.END, typeVersion: 1, config: {} });
             }
+
             next.connections.push({
                 id: `${id}-out-${index}`,
                 source: id,
                 sourcePort: port,
                 target: endId,
-                targetPort: index === 0 ? targetPort : 'in',
+                targetPort: index === 0 ? targetPort : WORKFLOW_NODE_PORTS.IN,
             });
         });
         return next;
@@ -69,12 +79,15 @@ export default class StructuredWorkflowEditingStrategy implements WorkflowNodeEd
         if (!this.canRemove(document, id)) {
             return document;
         }
+
         const next = JSON.parse(JSON.stringify(document)) as WorkflowDocument;
         const incoming = next.connections.find((edge) => edge.target === id);
         const outgoing = next.connections.find((edge) => edge.source === id);
+
         if (!incoming || !outgoing) {
             return document;
         }
+
         incoming.target = outgoing.target;
         incoming.targetPort = outgoing.targetPort;
         next.connections = next.connections.filter((edge) => edge.id !== outgoing.id);

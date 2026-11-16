@@ -14,14 +14,9 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\System\User\UserCollection;
 
 /**
+ * Require all configured users to exist and be active; preserve input order for sequential approval.
+ *
  * @internal
- *
- * 指定用户：`properties.assigneeValue` 就是用户 id 数组。
- *
- * 指定名单中的账号必须全部存在且启用，避免静默缩小会签人数。
- *
- * **保留输入顺序**：顺序会签按这个顺序审。用 `search()` 返回的顺序是数据库顺序，
- * 所以最后按输入 id 的位置重排一次。
  */
 #[Package('framework')]
 final class UserAssigneeResolver implements AssigneeResolverInterface
@@ -65,8 +60,8 @@ final class UserAssigneeResolver implements AssigneeResolverInterface
     }
 
     /**
-     * @param list<string> $order 期望顺序
-     * @param list<string> $values 实际存在的 id
+     * @param list<string> $order
+     * @param list<string> $values
      *
      * @return list<string>
      */

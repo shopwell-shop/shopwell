@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
@@ -22,7 +23,7 @@ final readonly class StartWorkflowNodeCompiler implements WorkflowNodeCompiler
 
     public function getNodeType(): string
     {
-        return 'core:start';
+        return DocumentNodeTypes::START;
     }
 
     public function getNodeVersion(): int

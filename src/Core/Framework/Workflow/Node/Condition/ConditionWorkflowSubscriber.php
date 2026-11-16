@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\Workflow\Node\Condition;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Event\WorkflowNodePortsEvent;
 use Shopwell\Core\Framework\Workflow\Event\WorkflowValidationEvent;
@@ -22,7 +23,7 @@ final class ConditionWorkflowSubscriber implements EventSubscriberInterface
 
     public function resolvePorts(WorkflowNodePortsEvent $event): void
     {
-        if ($event->node->type !== 'core:condition' || $event->node->typeVersion !== 1) {
+        if ($event->node->type !== DocumentNodeTypes::CONDITION || $event->node->typeVersion !== 1) {
             return;
         }
         $ports = [];
@@ -37,7 +38,7 @@ final class ConditionWorkflowSubscriber implements EventSubscriberInterface
     public function validate(WorkflowValidationEvent $event): void
     {
         foreach ($event->document->nodes as $index => $node) {
-            if ($node->type !== 'core:condition' || $node->typeVersion !== 1) {
+            if ($node->type !== DocumentNodeTypes::CONDITION || $node->typeVersion !== 1) {
                 continue;
             }
             $path = '/nodes/' . $index . '/config/branches';

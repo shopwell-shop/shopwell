@@ -3,19 +3,12 @@
 namespace Shopwell\Core\Framework\Workflow\Execution\Event;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Symfony\Contracts\EventDispatcher\Event;
 
 /**
+ * Dispatched after commit; listeners can read the new instance and should reuse inner services rather than public transaction boundaries.
+ *
  * @internal
- *
- * 流程发起成功。
- *
- * 事件在**事务提交后**才派发（见 {@see \Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue}），
- * 所以监听器里读库能读到刚写的实例；同时它发短信、推企微也不会因为回滚而"发出去了但单子没建"。
- *
- * 监听器里**不要**再调 WorkflowService 的公共方法（会打乱事件队列边界、再开一层事务），
- * 需要复用逻辑请调更内层的方法。
  */
 #[Package('framework')]
 final class WorkflowStartedEvent extends Event

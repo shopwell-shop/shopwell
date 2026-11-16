@@ -1,17 +1,17 @@
-import type { WorkflowFormField } from '../../util/workflow-runtime-form.util';
-import type { RuntimeInstance, RuntimeGraph, RuntimeTask } from 'src/core/workflow/workflow-runtime.types';
 /** @sw-package framework */
+import {
+    WORKFLOW_INSTANCE_STATUSES,
+    WORKFLOW_TASK_STATES,
+    WORKFLOW_TASK_DECISIONS,
+} from 'src/core/workflow/workflow-runtime.constants';
+import type { WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
+import type { RuntimeInstance, RuntimeGraph, RuntimeTask } from 'src/core/workflow/workflow-runtime.types';
 import { absoluteTime, relativeTime } from '../../util/workflow-runtime-time.util';
 import { formatFormValue } from '../../util/workflow-runtime-form.util';
 import template from './sw-workflow-instance.html.twig';
 import './sw-workflow-instance.scss';
 
-/**
- * 实例详情：左边看单子与流程图，右边看流转历史并做决定。
- *
- * 表单标签来自已授权的实例响应，参与者无需读取流程定义。
- *
- */
+/** Authorized instance responses include the form snapshot without requiring definition access. */
 /** @private */
 export default Shopwell.Component.wrapComponentConfig({
     name: 'sw-workflow-instance',
@@ -55,11 +55,11 @@ export default Shopwell.Component.wrapComponentConfig({
     computed: {
         statusVariant(): string {
             const variants: Record<string, string> = {
-                RUNNING: 'info',
-                COMPLETED: 'positive',
-                AGREE: 'positive',
-                REJECT: 'critical',
-                CANCEL: 'neutral',
+                [WORKFLOW_INSTANCE_STATUSES.RUNNING]: 'info',
+                [WORKFLOW_INSTANCE_STATUSES.COMPLETED]: 'positive',
+                [WORKFLOW_INSTANCE_STATUSES.AGREED]: 'positive',
+                [WORKFLOW_INSTANCE_STATUSES.REJECTED]: 'critical',
+                [WORKFLOW_INSTANCE_STATUSES.CANCELED]: 'neutral',
             };
             return variants[this.status] ?? 'neutral';
         },
@@ -69,22 +69,22 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         status() {
-            return this.instance?.status ?? 'RUNNING';
+            return this.instance?.status ?? WORKFLOW_INSTANCE_STATUSES.RUNNING;
         },
 
         statusLabel() {
             const map: Record<string, string> = {
-                RUNNING: this.$t('sw-workflow.runtime.status.running'),
-                COMPLETED: this.$t('sw-workflow.runtime.status.completed'),
-                AGREE: this.$t('sw-workflow.runtime.status.approved'),
-                REJECT: this.$t('sw-workflow.runtime.status.rejected'),
-                CANCEL: this.$t('sw-workflow.runtime.status.canceled'),
+                [WORKFLOW_INSTANCE_STATUSES.RUNNING]: this.$t('sw-workflow.runtime.status.running'),
+                [WORKFLOW_INSTANCE_STATUSES.COMPLETED]: this.$t('sw-workflow.runtime.status.completed'),
+                [WORKFLOW_INSTANCE_STATUSES.AGREED]: this.$t('sw-workflow.runtime.status.approved'),
+                [WORKFLOW_INSTANCE_STATUSES.REJECTED]: this.$t('sw-workflow.runtime.status.rejected'),
+                [WORKFLOW_INSTANCE_STATUSES.CANCELED]: this.$t('sw-workflow.runtime.status.canceled'),
             };
 
             return map[this.status] ?? this.status;
         },
 
-        /** 表单快照按模板顺序展示；模板字段之外的数据（如后端补的字段）接在后面 */
+        /** Preserve published field order, then include additional response fields. */
         formFields() {
             const data = this.instance?.formData ?? {};
             const schema = Array.isArray(this.instance?.formSchema) ? this.instance.formSchema : [];
@@ -117,23 +117,25 @@ export default Shopwell.Component.wrapComponentConfig({
             return states;
         },
 
-        /** 图上每个节点的状态：办过的按决定着色，当前节点标"处理中" */
         nodeStates() {
             const states: Record<string, string> = {};
             const selected = new Set(this.instance?.selectedPath?.nodeIds ?? []);
             const planned = this.graphPath?.nodeIds;
             (this.instance?.graph?.nodes ?? []).forEach((node) => {
-                if (planned && !planned.includes(node.id)) states[node.id] = 'SKIPPED';
-                else if (selected.has(node.id)) states[node.id] = 'VISITED';
+                if (planned && !planned.includes(node.id)) {
+                    states[node.id] = 'SKIPPED';
+                } else if (selected.has(node.id)) {
+                    states[node.id] = 'VISITED';
+                }
             });
 
             Object.assign(states, this.executionNodeStates);
 
             (this.instance?.history ?? []).forEach((row) => {
-                states[row.nodeId] = row.decision === 'reject' ? 'REJECTED' : 'AGREED';
+                states[row.nodeId] = row.decision === WORKFLOW_TASK_DECISIONS.REJECT ? 'REJECTED' : 'AGREED';
             });
 
-            if (this.status === 'RUNNING' && this.instance?.currentNodeId) {
+            if (this.status === WORKFLOW_INSTANCE_STATUSES.RUNNING && this.instance?.currentNodeId) {
                 states[this.instance.currentNodeId] = 'TODO';
             }
 
@@ -145,14 +147,20 @@ export default Shopwell.Component.wrapComponentConfig({
                     skipped: 'SKIPPED',
                 };
                 delete states[stage.nodeId];
-                if (outcomes[stage.status]) states[stage.nodeId] = outcomes[stage.status];
+
+                if (outcomes[stage.status]) {
+                    states[stage.nodeId] = outcomes[stage.status];
+                }
             });
 
             return states;
         },
 
         graphPath() {
-            const path = this.status === 'RUNNING' ? this.instance?.plannedPath : this.instance?.selectedPath;
+            const path =
+                this.status === WORKFLOW_INSTANCE_STATUSES.RUNNING
+                    ? this.instance?.plannedPath
+                    : this.instance?.selectedPath;
             return path?.nodeIds?.length ? path : null;
         },
 
@@ -178,11 +186,10 @@ export default Shopwell.Component.wrapComponentConfig({
             };
         },
 
-        /** 需要我处理的那条任务：优先路由里指定的 taskId，否则取第一条待办 */
         activeTask(): RuntimeTask | null {
             const userId = Shopwell.Store.get('session').currentUser?.id;
             const tasks = (this.instance?.tasks ?? []).filter(
-                (task) => task.actionable && task.state === 'todo' && task.assignee?.id === userId,
+                (task) => task.actionable && task.state === WORKFLOW_TASK_STATES.TODO && task.assignee?.id === userId,
             );
             const requested = this.$route.query.taskId;
 
@@ -204,7 +211,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 !this.loadError &&
                 this.acl.can('workflow_participant.approver') &&
                 this.activeTask !== null &&
-                this.status === 'RUNNING'
+                this.status === WORKFLOW_INSTANCE_STATUSES.RUNNING
             );
         },
 
@@ -241,10 +248,12 @@ export default Shopwell.Component.wrapComponentConfig({
                 this.isActing = false;
                 this.showCancel = false;
                 this.cancelReason = '';
+
                 if (!id) {
                     this.isLoading = false;
                     return;
                 }
+
                 void this.loadInstance();
             },
         },
@@ -257,23 +266,37 @@ export default Shopwell.Component.wrapComponentConfig({
 
     methods: {
         async cancelInstance(): Promise<void> {
-            if (!this.canCancel || !this.instanceId || !this.cancelReason.trim()) return;
+            if (!this.canCancel || !this.instanceId || !this.cancelReason.trim()) {
+                return;
+            }
+
             const revision = this.viewRevision;
             this.isActing = true;
             try {
                 await this.workflowRuntimeApiService.cancelInstance(this.instanceId, this.cancelReason.trim());
-                if (revision !== this.viewRevision) return;
+
+                if (revision !== this.viewRevision) {
+                    return;
+                }
+
                 this.showCancel = false;
                 this.createNotificationSuccess({ message: this.$t('sw-workflow.runtime.instance.cancelDone') });
                 await this.loadInstance();
             } catch (error) {
-                if (revision === this.viewRevision) this.createNotificationError({ message: this.errorMessage(error) });
+                if (revision === this.viewRevision) {
+                    this.createNotificationError({ message: this.errorMessage(error) });
+                }
             } finally {
-                if (revision === this.viewRevision) this.isActing = false;
+                if (revision === this.viewRevision) {
+                    this.isActing = false;
+                }
             }
         },
         loadInstance(): Promise<void> {
-            if (!this.instanceId) return Promise.resolve();
+            if (!this.instanceId) {
+                return Promise.resolve();
+            }
+
             const loadRevision = ++this.loadRevision;
             this.isLoading = true;
             this.loadError = '';
@@ -281,15 +304,22 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.workflowRuntimeApiService
                 .getInstance(this.instanceId)
                 .then((instance) => {
-                    if (loadRevision !== this.loadRevision) return;
+                    if (loadRevision !== this.loadRevision) {
+                        return;
+                    }
+
                     this.instance = instance;
                     this.graph = instance.graph ?? { nodes: [], edges: [] };
                 })
                 .catch((error) => {
-                    if (loadRevision === this.loadRevision) this.loadError = this.errorMessage(error);
+                    if (loadRevision === this.loadRevision) {
+                        this.loadError = this.errorMessage(error);
+                    }
                 })
                 .finally(() => {
-                    if (loadRevision === this.loadRevision) this.isLoading = false;
+                    if (loadRevision === this.loadRevision) {
+                        this.isLoading = false;
+                    }
                 });
         },
 
@@ -311,22 +341,29 @@ export default Shopwell.Component.wrapComponentConfig({
 
             return this.workflowRuntimeApiService[method](this.activeTask.id, comment)
                 .then(() => {
-                    if (viewRevision !== this.viewRevision) return;
+                    if (viewRevision !== this.viewRevision) {
+                        return;
+                    }
+
                     this.createNotificationSuccess({
                         message: this.$t('sw-workflow.runtime.instance.actionDone'),
                     });
 
-                    // 重新拉一次实例，而不是本地改状态：会签的下一票、节点推进、
-                    // 分支选择都在后端算，前端猜不出来
+                    // Reload server-calculated voting results, node advancement and branch selection.
                     return this.loadInstance();
                 })
                 .catch((error) => {
-                    if (viewRevision !== this.viewRevision) return;
+                    if (viewRevision !== this.viewRevision) {
+                        return;
+                    }
+
                     this.createNotificationError({ message: this.errorMessage(error) });
                     return this.loadInstance();
                 })
                 .finally(() => {
-                    if (viewRevision === this.viewRevision) this.isActing = false;
+                    if (viewRevision === this.viewRevision) {
+                        this.isActing = false;
+                    }
                 });
         },
 
@@ -337,7 +374,10 @@ export default Shopwell.Component.wrapComponentConfig({
                     value,
                     Shopwell.Store.get('session').currentLocale || 'en',
                 );
-                if (formatted !== null) return formatted;
+
+                if (formatted !== null) {
+                    return formatted;
+                }
             }
 
             if (value === null || value === undefined || value === '') {
@@ -356,7 +396,6 @@ export default Shopwell.Component.wrapComponentConfig({
                 return this.$t(value ? 'global.default.yes' : 'global.default.no');
             }
 
-            // 对象型字段（附件、地址）直接摊开比显示 [object Object] 有用
             if (typeof value === 'object') {
                 return JSON.stringify(value);
             }

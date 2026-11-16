@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Shopwell\Core\Framework\Workflow\Publication\Approval;
+namespace Shopwell\Core\Framework\Workflow\Definition\Input;
 
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;

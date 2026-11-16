@@ -9,6 +9,31 @@ describe('ranked workflow layout', () => {
         const positions = rankedWorkflowLayout(document, []);
         expect(positions.start.y).toBeLessThan(positions.end.y);
     });
+
+    it('keeps disconnected and cyclic draft nodes visible and ignores dangling references', () => {
+        const document = createStructuredWorkflowDraft();
+        document.nodes.push(
+            { id: 'first-cycle', type: 'extension:activity', typeVersion: 1, config: {} },
+            { id: 'second-cycle', type: 'extension:activity', typeVersion: 1, config: {} },
+        );
+        document.connections.push(
+            { id: 'cycle-forward', source: 'first-cycle', target: 'second-cycle', sourcePort: 'out', targetPort: 'in' },
+            { id: 'cycle-back', source: 'second-cycle', target: 'first-cycle', sourcePort: 'out', targetPort: 'in' },
+            { id: 'dangling', source: 'missing', target: 'end', sourcePort: 'out', targetPort: 'in' },
+        );
+
+        const positions = rankedWorkflowLayout(document, []);
+
+        expect(Object.keys(positions).sort()).toEqual([
+            'end',
+            'first-cycle',
+            'second-cycle',
+            'start',
+        ]);
+        expect(positions['first-cycle'].y).toBe(0);
+        expect(positions['second-cycle'].y).toBe(0);
+        expect(positions.end.y).toBeGreaterThan(positions.start.y);
+    });
 });
 
 describe('workflow extension scenarios', () => {

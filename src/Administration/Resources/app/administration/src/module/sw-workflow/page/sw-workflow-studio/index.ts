@@ -111,10 +111,16 @@ export default Shopwell.Component.wrapComponentConfig({
         void this.load();
     },
     beforeUnmount() {
-        if (this.unloadHandler) window.removeEventListener('beforeunload', this.unloadHandler);
+        if (this.unloadHandler) {
+            window.removeEventListener('beforeunload', this.unloadHandler);
+        }
+
         this.loadRevision += 1;
         this.diagnosticRevision += 1;
-        if (this.diagnosticTimer) clearTimeout(this.diagnosticTimer);
+
+        if (this.diagnosticTimer) {
+            clearTimeout(this.diagnosticTimer);
+        }
     },
     methods: {
         beforeUnload(event: BeforeUnloadEvent): void {
@@ -128,6 +134,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 next(false);
                 return;
             }
+
             if (this.hasChanges && !this.allowNavigation) {
                 next(false);
                 this.pendingNavigation = () => {
@@ -138,6 +145,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 };
                 return;
             }
+
             next();
         },
         confirmLeave(): void {
@@ -146,7 +154,10 @@ export default Shopwell.Component.wrapComponentConfig({
             proceed?.();
         },
         reload(): void {
-            if (this.isSaving) return;
+            if (this.isSaving) {
+                return;
+            }
+
             this.pendingNavigation = () => void this.load(true);
         },
         applyDraft(draft: WorkflowDraft): void {
@@ -160,16 +171,29 @@ export default Shopwell.Component.wrapComponentConfig({
         async load(force = false): Promise<void> {
             const loadRevision = ++this.loadRevision;
             this.diagnosticRevision += 1;
-            if (this.diagnosticTimer) clearTimeout(this.diagnosticTimer);
+
+            if (this.diagnosticTimer) {
+                clearTimeout(this.diagnosticTimer);
+            }
+
             this.isLoading = true;
             this.hasError = false;
             try {
                 const nodeTypes = await this.workflowService.getNodeTypes();
-                if (loadRevision !== this.loadRevision) return;
+
+                if (loadRevision !== this.loadRevision) {
+                    return;
+                }
+
                 this.nodeTypes = nodeTypes;
+
                 if (this.workflowId || force) {
                     const draft = await this.workflowService.getDraft(this.draftId);
-                    if (loadRevision !== this.loadRevision) return;
+
+                    if (loadRevision !== this.loadRevision) {
+                        return;
+                    }
+
                     this.applyDraft(draft);
                 } else if (!this.isInitialized) {
                     const preset = this.workflowTemplateService.get('core:basic');
@@ -178,24 +202,34 @@ export default Shopwell.Component.wrapComponentConfig({
                         throw new Error('The basic workflow template is not registered.');
                     }
 
-                    this.document = preset.create(this.nodeTypes);
+                    this.document = preset.create(this.nodeTypes, { translate: (key) => this.$t(key) });
                     this.name = this.$t('sw-workflow.persistence.defaultName');
                     this.revision = 0;
                     this.savedSnapshot = null;
                 }
+
                 this.isInitialized = true;
                 this.saveError = null;
                 void this.diagnose(this.document);
-                if (force && !this.workflowId)
+
+                if (force && !this.workflowId) {
                     void this.$router.replace({ name: 'sw.workflow.detail', params: { id: this.draftId } });
+                }
             } catch {
-                if (loadRevision === this.loadRevision) this.hasError = true;
+                if (loadRevision === this.loadRevision) {
+                    this.hasError = true;
+                }
             } finally {
-                if (loadRevision === this.loadRevision) this.isLoading = false;
+                if (loadRevision === this.loadRevision) {
+                    this.isLoading = false;
+                }
             }
         },
         async save(): Promise<void> {
-            if (!this.canSave) return;
+            if (!this.canSave) {
+                return;
+            }
+
             this.isSaving = true;
             this.saveError = null;
             const name = this.name.trim();
@@ -210,8 +244,10 @@ export default Shopwell.Component.wrapComponentConfig({
             } finally {
                 this.isSaving = false;
             }
-            if (!this.saveError && !this.workflowId)
+
+            if (!this.saveError && !this.workflowId) {
                 void this.$router.replace({ name: 'sw.workflow.detail', params: { id: this.draftId } });
+            }
         },
         onDocumentChange(document: WorkflowDocument): void {
             this.document = document;
@@ -220,25 +256,37 @@ export default Shopwell.Component.wrapComponentConfig({
             this.violations = [];
             this.diagnosticError = false;
             this.isDiagnosing = true;
-            if (this.diagnosticTimer) clearTimeout(this.diagnosticTimer);
+
+            if (this.diagnosticTimer) {
+                clearTimeout(this.diagnosticTimer);
+            }
+
             this.diagnosticTimer = setTimeout(() => void this.diagnose(this.document), 500);
         },
         async diagnose(document: WorkflowDocument): Promise<void> {
-            if (this.diagnosticTimer) clearTimeout(this.diagnosticTimer);
+            if (this.diagnosticTimer) {
+                clearTimeout(this.diagnosticTimer);
+            }
+
             this.diagnosticTimer = null;
             const revision = ++this.diagnosticRevision;
             this.isDiagnosing = true;
             this.diagnosticError = false;
             try {
                 const violations = await this.workflowService.diagnose(document);
+
                 if (revision === this.diagnosticRevision) {
                     this.violations = violations;
                     this.hasDiagnosed = true;
                 }
             } catch {
-                if (revision === this.diagnosticRevision) this.diagnosticError = true;
+                if (revision === this.diagnosticRevision) {
+                    this.diagnosticError = true;
+                }
             } finally {
-                if (revision === this.diagnosticRevision) this.isDiagnosing = false;
+                if (revision === this.diagnosticRevision) {
+                    this.isDiagnosing = false;
+                }
             }
         },
     },

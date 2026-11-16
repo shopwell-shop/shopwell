@@ -12,16 +12,9 @@ use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskHistoryCollection;
 
 /**
+ * Write task history and action logs together to preserve a consistent audit trail.
+ *
  * @internal
- *
- * 归档与日志的唯一写入口。
- *
- * 抽出来的原因：归档（`workflow_task_history`）与日志（`workflow_log`）是**两张必须同时写**的表。
- * 散在引擎、服务、监听器里各写一次，迟早出现"有归档没日志"或"日志说同意了、
- * 归档里没有这条"的裂痕，而这两张表正是审计时唯一能看的证据。
- *
- * 将来加退回、加签、转办时，只在这里加方法（`recordReturn()` 等），
- * 不改调用方的结构。
  */
 #[Package('framework')]
 final class WorkflowRecorder
@@ -38,10 +31,7 @@ final class WorkflowRecorder
     }
 
     /**
-     * 任务完成：归档一条 + 日志一条。
-     *
-     * `decision` 用动作名（agree/reject），不是任务状态（agreed/rejected）：
-     * 归档回答的是"他做了什么"，任务状态回答的是"现在是什么"。
+     * Archive task completion and log its decision using action names, not task state names.
      */
     public function recordTaskCompletion(WorkflowTaskEntity $task, bool $agreed, ?string $comment, Context $context): void
     {
@@ -57,8 +47,7 @@ final class WorkflowRecorder
                 'assigneeId' => $task->assigneeId,
                 'countersignType' => $task->countersignType,
                 'decision' => $decision,
-                // 拒绝必须写意见：校验在 ApprovalWorkflowService，这里再做一次兜底会掩盖调用方的疏漏，
-                // 所以只在为空时存 null，不抛异常
+                // ApprovalWorkflowService validates rejection comments; store an absent comment as null.
                 'comment' => $comment,
                 'completedAt' => $this->clock->now(),
             ],
@@ -68,7 +57,7 @@ final class WorkflowRecorder
     }
 
     /**
-     * 普通日志（发起、撤销、抄送等）。
+     * Record an action such as starting, canceling or copying.
      *
      * @param array<string, mixed> $payload
      */

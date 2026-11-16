@@ -1,4 +1,11 @@
 /** @sw-package framework */
+import {
+    WORKFLOW_NODE_TYPES,
+    WORKFLOW_NODE_PORTS,
+    WORKFLOW_ASSIGNEE_SOURCES,
+    WORKFLOW_APPROVAL_MODES,
+    WORKFLOW_INPUT_TYPES,
+} from 'src/core/workflow/workflow-node.constants';
 import type { WorkflowDocument, WorkflowNode, WorkflowNodeTypeSpecification } from 'src/core/workflow/workflow.types';
 
 type TransferLabels = {
@@ -16,19 +23,19 @@ type TransferLabels = {
 
 /** @private */
 export function transferWorkflowAvailable(types: WorkflowNodeTypeSpecification[]): boolean {
-    return ['core:approval', 'core:condition'].every((name) =>
+    return [WORKFLOW_NODE_TYPES.APPROVAL, WORKFLOW_NODE_TYPES.CONDITION].every((name) =>
         types.some((type) => type.name === name && type.version === 1),
     );
 }
 
 const approval = (id: string, label: string): WorkflowNode => ({
     id,
-    type: 'core:approval',
+    type: WORKFLOW_NODE_TYPES.APPROVAL,
     typeVersion: 1,
     config: {
         label,
-        assignee: { source: 'core:user', config: { userId: null } },
-        approval: { mode: 'core:single', config: {} },
+        assignee: { source: WORKFLOW_ASSIGNEE_SOURCES.USER, config: { userId: null } },
+        approval: { mode: WORKFLOW_APPROVAL_MODES.SINGLE, config: {} },
     },
 });
 const edge = (source: string, sourcePort: string, target: string) => ({
@@ -36,7 +43,7 @@ const edge = (source: string, sourcePort: string, target: string) => ({
     source,
     sourcePort,
     target,
-    targetPort: 'in',
+    targetPort: WORKFLOW_NODE_PORTS.IN,
 });
 
 /** Business templates register through the designer service without changing its editing strategies. @private */
@@ -47,10 +54,10 @@ export function createTransferWorkflow(labels: TransferLabels): WorkflowDocument
         nodes: [
             {
                 id: 'start',
-                type: 'core:start',
+                type: WORKFLOW_NODE_TYPES.START,
                 typeVersion: 1,
                 config: {
-                    inputType: 'core:approval-request',
+                    inputType: WORKFLOW_INPUT_TYPES.APPROVAL_REQUEST,
                     requestAction: 'payment:transfer',
                     formFields: [
                         { key: 'amount', label: labels.amount, type: 'number', required: true },
@@ -70,7 +77,7 @@ export function createTransferWorkflow(labels: TransferLabels): WorkflowDocument
             approval('finance', labels.finance),
             {
                 id: 'review-policy',
-                type: 'core:condition',
+                type: WORKFLOW_NODE_TYPES.CONDITION,
                 typeVersion: 1,
                 config: {
                     // Foreign currencies always receive another review; no implicit exchange rate is applied.
@@ -103,19 +110,19 @@ export function createTransferWorkflow(labels: TransferLabels): WorkflowDocument
                 'amount-approved',
                 'amount-rejected',
                 'standard-approved',
-            ].map((id) => ({ id, type: 'core:end', typeVersion: 1, config: {} })),
+            ].map((id) => ({ id, type: WORKFLOW_NODE_TYPES.END, typeVersion: 1, config: {} })),
         ],
         connections: [
-            edge('start', 'out', 'finance'),
-            edge('finance', 'approved', 'review-policy'),
-            edge('finance', 'rejected', 'finance-rejected'),
+            edge('start', WORKFLOW_NODE_PORTS.OUT, 'finance'),
+            edge('finance', WORKFLOW_NODE_PORTS.APPROVED, 'review-policy'),
+            edge('finance', WORKFLOW_NODE_PORTS.REJECTED, 'finance-rejected'),
             edge('review-policy', 'branch-foreign', 'foreign-review'),
             edge('review-policy', 'branch-large', 'amount-review'),
-            edge('review-policy', 'fallback', 'standard-approved'),
-            edge('foreign-review', 'approved', 'foreign-approved'),
-            edge('foreign-review', 'rejected', 'foreign-rejected'),
-            edge('amount-review', 'approved', 'amount-approved'),
-            edge('amount-review', 'rejected', 'amount-rejected'),
+            edge('review-policy', WORKFLOW_NODE_PORTS.FALLBACK, 'standard-approved'),
+            edge('foreign-review', WORKFLOW_NODE_PORTS.APPROVED, 'foreign-approved'),
+            edge('foreign-review', WORKFLOW_NODE_PORTS.REJECTED, 'foreign-rejected'),
+            edge('amount-review', WORKFLOW_NODE_PORTS.APPROVED, 'amount-approved'),
+            edge('amount-review', WORKFLOW_NODE_PORTS.REJECTED, 'amount-rejected'),
         ],
     };
 }

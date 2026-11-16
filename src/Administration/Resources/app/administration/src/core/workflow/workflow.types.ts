@@ -1,4 +1,5 @@
 /** @sw-package framework */
+import type { WORKFLOW_NODE_KINDS } from 'src/core/workflow/workflow-node.constants';
 import type { CanvasConnection, CanvasDocument, CanvasNode } from '../canvas-editor/canvas-document.types';
 
 /** @public */
@@ -23,10 +24,13 @@ export interface WorkflowDocument extends CanvasDocument {
 }
 
 /** @public */
+export type WorkflowNodeKind = (typeof WORKFLOW_NODE_KINDS)[keyof typeof WORKFLOW_NODE_KINDS];
+
+/** @public */
 export interface WorkflowNodeTypeSpecification {
     name: string;
     version: number;
-    kind: 'start' | 'activity' | 'end';
+    kind: WorkflowNodeKind;
     inputPorts: string[];
     outputPorts: string[];
 }

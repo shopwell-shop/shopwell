@@ -11,7 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionCollection;
-use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\PlatformRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -31,7 +31,7 @@ class WorkflowExecutionDefinitionController extends AbstractController
      * @param EntityRepository<WorkflowExecutionDefinitionCollection> $definitionRepository
      */
     public function __construct(
-        private readonly ApprovalWorkflowService $flows,
+        private readonly WorkflowService $flows,
         private readonly WorkflowExecutionDefinitionPresenter $presenter,
         private readonly EntityRepository $definitionRepository,
     ) {
@@ -71,7 +71,7 @@ class WorkflowExecutionDefinitionController extends AbstractController
         $data = [];
 
         foreach ($definitions as $definition) {
-            // 列表不带图：一张图几十 KB，列表页只需要名称与状态
+            // Omit graph data from lists that only need definition names and statuses.
             $data[] = $this->presenter->present($definition, $context, false);
         }
 

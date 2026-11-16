@@ -32,7 +32,7 @@ final class ConditionExecutor implements NodeExecutorInterface
         WorkflowSignal $signal,
         WorkflowExecutionContext $context,
     ): NodeOutcome {
-        // 条件节点不产生任务；路由始终由引擎按出边顺序执行。
+        // Condition nodes create no tasks; the engine routes through outgoing edges in order.
         return NodeOutcome::proceed();
     }
 }

@@ -43,6 +43,37 @@ final readonly class WorkflowInstancePresenter
     public function present(WorkflowInstanceEntity $instance, Context $context, bool $withDetail = false): array
     {
         $names = $this->users->names([$instance->initiatorId], $context);
+
+        return $this->presentWithNames($instance, $context, $names, $withDetail);
+    }
+
+    /**
+     * @param iterable<WorkflowInstanceEntity> $instances
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function presentMany(iterable $instances, Context $context): array
+    {
+        $rows = [];
+        $initiatorIds = [];
+
+        foreach ($instances as $instance) {
+            $rows[] = $instance;
+            $initiatorIds[] = $instance->initiatorId;
+        }
+
+        $names = $this->users->names($initiatorIds, $context);
+
+        return array_map(fn (WorkflowInstanceEntity $instance): array => $this->presentWithNames($instance, $context, $names, withDetail: false), $rows);
+    }
+
+    /**
+     * @param array<string, string> $names
+     *
+     * @return array<string, mixed>
+     */
+    private function presentWithNames(WorkflowInstanceEntity $instance, Context $context, array $names, bool $withDetail): array
+    {
         $payload = [
             'id' => $instance->id,
             'number' => $instance->number,

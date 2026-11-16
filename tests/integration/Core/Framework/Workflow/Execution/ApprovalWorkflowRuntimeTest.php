@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowRuntime;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowStartedEvent;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeException;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeRegistry;
@@ -37,6 +38,8 @@ class ApprovalWorkflowRuntimeTest extends TestCase
     private ApprovalWorkflowRuntime $runtime;
 
     private ApprovalWorkflowService $flows;
+
+    private WorkflowService $workflows;
 
     private WorkflowTaskFinder $tasks;
 
@@ -61,9 +64,10 @@ class ApprovalWorkflowRuntimeTest extends TestCase
         $this->connection = $connection;
         $this->runtime = $runtime;
         $this->flows = $flows;
+        $this->workflows = static::getContainer()->get(WorkflowService::class);
         $this->tasks = $tasks;
         $this->events = $events;
-        $this->fixture = new RuntimeFixture($this->connection, $this->flows);
+        $this->fixture = new RuntimeFixture($this->connection, $this->workflows);
         $this->bindingId = Uuid::randomHex();
     }
 
@@ -187,7 +191,7 @@ class ApprovalWorkflowRuntimeTest extends TestCase
     public function testCancellationCannotImpersonateTheInitiator(): void
     {
         $id = $this->start();
-        $this->expectExceptionObject(WorkflowExecutionException::forbidden('只有发起人可以撤销'));
+        $this->expectExceptionObject(WorkflowExecutionException::forbidden('Only the initiator can cancel this instance.'));
 
         $this->runtime->cancel($this->fixture->release, $id, 'Stop', new Context(new AdminApiSource(Uuid::randomHex())));
     }
@@ -202,20 +206,20 @@ class ApprovalWorkflowRuntimeTest extends TestCase
         try {
             $this->runtime->transactional(function () use ($id, $task): void {
                 // Simulate finance having already read its business record in this transaction.
-                static::assertTrue($this->flows->loadInstance($id, $this->fixture->context)->isRunning());
+                static::assertTrue($this->workflows->loadInstance($id, $this->fixture->context)->isRunning());
                 $this->approveInAnotherProcess($task->id);
-                static::assertTrue($this->flows->loadInstance($id, $this->fixture->context)->isRunning());
+                static::assertTrue($this->workflows->loadInstance($id, $this->fixture->context)->isRunning());
                 $this->flows->cancel($id, 'Withdraw transfer', $this->fixture->context);
             });
         } finally {
-            static::assertSame('agreed', $this->flows->loadInstance($id, $this->fixture->context)->state());
+            static::assertSame('agreed', $this->workflows->loadInstance($id, $this->fixture->context)->state());
             static::assertSame('agreed', $this->tasks->forInstance($id, $this->fixture->context)->first()?->state());
         }
     }
 
     public function testStaleBusinessSnapshotCancelsNewStageWithoutRewritingTheApprovedTask(): void
     {
-        $graph = $this->flows->loadDefinition($this->fixture->release->getId(), $this->fixture->context)->graph();
+        $graph = $this->workflows->loadDefinition($this->fixture->release->getId(), $this->fixture->context)->graph();
         $graph['nodes'][] = ['id' => 'next', 'type' => 'snaker:task', 'properties' => ['name' => 'Next approval', 'assigneeType' => 'user', 'assigneeValue' => [$this->fixture->userId], 'countersignType' => 'single']];
         foreach ($graph['edges'] as &$edge) {
             if ($edge['sourceNodeId'] === 'approval') {
@@ -224,7 +228,7 @@ class ApprovalWorkflowRuntimeTest extends TestCase
         }
         unset($edge);
         $graph['edges'][] = ['id' => 'next-end', 'sourceNodeId' => 'next', 'targetNodeId' => 'end'];
-        $this->flows->saveDefinition($this->fixture->release->getId(), $graph, null, Context::createDefaultContext());
+        $this->workflows->saveDefinition($this->fixture->release->getId(), $graph, null, Context::createDefaultContext());
         $id = $this->start();
         $task = $this->tasks->forInstance($id, $this->fixture->context)->first();
         static::assertNotNull($task);
@@ -236,7 +240,7 @@ class ApprovalWorkflowRuntimeTest extends TestCase
             $this->flows->cancel($id, 'Withdraw transfer', $this->fixture->context);
         });
 
-        static::assertSame('canceled', $this->flows->loadInstance($id, $this->fixture->context)->state());
+        static::assertSame('canceled', $this->workflows->loadInstance($id, $this->fixture->context)->state());
         $tasks = $this->tasks->forInstance($id, $this->fixture->context);
         static::assertCount(2, $tasks);
         static::assertSame(1, $tasks->countByState('agreed'));
@@ -258,7 +262,7 @@ class ApprovalWorkflowRuntimeTest extends TestCase
                 throw $failure;
             });
         } finally {
-            $instance = $this->flows->loadInstance($id, $this->fixture->context);
+            $instance = $this->workflows->loadInstance($id, $this->fixture->context);
             $task = $this->tasks->forInstance($id, $this->fixture->context)->first();
             static::assertNotNull($task);
             static::assertSame('running', $instance->state());

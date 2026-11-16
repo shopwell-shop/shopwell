@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\CounterSignResult;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowTaskCreatedEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\NodeOutcome;
@@ -22,27 +23,9 @@ use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStateHandler;
 
 /**
+ * Resolve and snapshot assignees on entry; create sequential tasks one at a time and fail if no assignee resolves.
+ *
  * @internal
- *
- * 审批节点：解析审批人、建任务、顺序会签逐条推进。
- *
- * ## 为什么审批人在 `enter` 里解析一次就快照
- *
- * 顺序会签要"轮到谁建谁"。如果每次推进都重新解析审批人，期间组织架构一变
- * （有人调部门、角色成员被改），就会出现漏人、多出人、或者同一个人审两次。
- * 所以进入节点时解析一次，把**完整名单**写进第一条任务的 `ext.assignees`，
- * 后续只读这份快照。
- *
- * ## 为什么顺序会签只建第一条任务
- *
- * 一次建完的话，3 个审批人会同时在待办列表里看到单子，谁都能先审——
- * 那就不是"顺序"会签了。正确做法是：只建当前这个人的，他同意后由
- * {@see resume()} 建下一条。
- *
- * ## 审批人解析为空必须抛异常
- *
- * 例如"部门负责人"节点但发起人所在部门没设负责人。此时如果静默跳过，
- * 流程会继续往下走，而界面上看不出少了一审——这是审批系统最严重的一类 bug。
  */
 #[Package('framework')]
 final class TaskExecutor implements NodeExecutorInterface
@@ -79,10 +62,10 @@ final class TaskExecutor implements NodeExecutorInterface
         }
 
         if ($countersignType === WorkflowCountersignTypes::ORDER_SIGN) {
-            // 只建第一条，其余等 resume。快照写在任务行的 ext.assignees 上
+            // Create the first task now; resume creates subsequent tasks from ext.assignees.
             $this->createTask($instance, $node, $assignees[0], $countersignType, $context, 1, $assignees);
 
-            return NodeOutcome::wait('core:task-completed');
+            return NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
         }
 
         $sequence = 1;
@@ -91,7 +74,7 @@ final class TaskExecutor implements NodeExecutorInterface
             $this->createTask($instance, $node, $assigneeId, $countersignType, $context, $sequence++, null);
         }
 
-        return NodeOutcome::wait('core:task-completed');
+        return NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
     }
 
     public function resume(
@@ -103,7 +86,7 @@ final class TaskExecutor implements NodeExecutorInterface
         $taskId = $signal->payload['taskId'] ?? null;
         $result = $signal->payload['result'] ?? null;
 
-        if ($signal->name !== 'core:task-completed' || !\is_string($taskId) || !\in_array($result, ['agreed', 'rejected', 'pending'], true)) {
+        if ($signal->name !== WorkflowSignal::TASK_COMPLETED || !\is_string($taskId) || !\in_array($result, [CounterSignResult::AGREED, CounterSignResult::REJECTED, CounterSignResult::PENDING], true)) {
             throw WorkflowExecutionException::invalidSignal($signal->name);
         }
 
@@ -114,11 +97,11 @@ final class TaskExecutor implements NodeExecutorInterface
             throw WorkflowExecutionException::taskAlreadyHandled($taskId);
         }
 
-        if ($result === 'rejected') {
+        if ($result === CounterSignResult::REJECTED) {
             return NodeOutcome::complete('rejected');
         }
 
-        if ($completedTask->countersignType === WorkflowCountersignTypes::ORDER_SIGN && $result === 'pending') {
+        if ($completedTask->countersignType === WorkflowCountersignTypes::ORDER_SIGN && $result === CounterSignResult::PENDING) {
             $next = $this->nextAssignee($completedTask);
 
             if ($next !== null) {
@@ -132,15 +115,14 @@ final class TaskExecutor implements NodeExecutorInterface
                     $completedTask->assigneeSnapshot()
                 );
 
-                return NodeOutcome::wait('core:task-completed');
+                return NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
             }
 
-            // 快照里还有"没轮到的人"，但按当前这条推算不出下一位：
-            // 说明快照被改过，或审批人重复了。宁可报错，也不要跳过后面的人。
+            // Fail when the assignee snapshot cannot identify the next person rather than silently skipping them.
             throw WorkflowExecutionException::noAssignee($node->id, $completedTask->assigneeType);
         }
 
-        return $result === 'agreed' ? NodeOutcome::proceed() : NodeOutcome::wait('core:task-completed');
+        return $result === CounterSignResult::AGREED ? NodeOutcome::proceed() : NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
     }
 
     /**
@@ -154,9 +136,7 @@ final class TaskExecutor implements NodeExecutorInterface
     ): array {
         $resolved = $this->resolvers->for($assigneeType)->resolve($instance, $node, $context);
 
-        // 去重且保持原顺序：会签里同一个人出现两次会变成两条任务，
-        // 分母变 2、他一个人点两次就通过，等于把会签变成了单人审批。
-        // array_unique 保留首次出现的位置，正好是我们要的语义。
+        // Deduplicate assignees without changing their configured order.
         return array_values(array_unique(array_filter(
             $resolved,
             static fn (string $userId): bool => $userId !== ''
@@ -164,11 +144,7 @@ final class TaskExecutor implements NodeExecutorInterface
     }
 
     /**
-     * 顺序会签的下一位：快照里排在当前审批人后面的那个。
-     *
-     * 用"当前人在快照里的位置 + 1"而不是 `sequence` 索引：
-     * `sequence` 是建任务的序号，历史数据里可能因为重试出现跳号，
-     * 而快照是进入节点时的原始顺序，永远稳定。
+     * Find the next assignee by snapshot position; sequence numbers may contain gaps after retries.
      */
     private function nextAssignee(WorkflowTaskEntity $completedTask): ?string
     {
@@ -183,7 +159,7 @@ final class TaskExecutor implements NodeExecutorInterface
     }
 
     /**
-     * @param list<string>|null $assigneeSnapshot 仅顺序会签传，其余为 null
+     * @param list<string>|null $assigneeSnapshot
      */
     private function createTask(
         WorkflowInstanceEntity $instance,
@@ -216,8 +192,7 @@ final class TaskExecutor implements NodeExecutorInterface
 
         $this->taskRepository->create([$payload], $context->context());
 
-        // 通知挂在"任务创建"上而不是"进入节点"：会签要按人发，
-        // 顺序会签的后续任务是逐条建的，只有这样每个轮到的人才会收到通知
+        // Notify on task creation so each sequential assignee receives a notification when their turn starts.
         $this->events->push(new WorkflowTaskCreatedEvent(
             $taskId,
             $instance->id,

@@ -1,9 +1,12 @@
 /** @sw-package framework */
 /** @public */
+export type WorkflowFormFieldType = 'text' | 'amount' | 'number' | 'date' | 'select';
+
+/** @public */
 export interface WorkflowFormField {
     key: string;
     label: string;
-    type: 'text' | 'amount' | 'number' | 'date' | 'select';
+    type: WorkflowFormFieldType;
     required: boolean;
     dataSource?: string;
     options?: { value: string; label: string }[];
@@ -22,8 +25,6 @@ export type RuntimeParticipant = { id: string; name?: string; unitName?: string 
 export type RuntimeTask = {
     id: string;
     instanceId?: string;
-    title?: string;
-    number?: string;
     nodeId: string;
     nodeName: string;
     round: number;
@@ -31,11 +32,10 @@ export type RuntimeTask = {
     state: string;
     actionable?: boolean;
     assignee: RuntimeParticipant;
-    initiator?: RuntimeParticipant;
     decision?: string;
     comment?: string;
-    createdAt?: string;
-    completedAt?: string;
+    createdAt?: string | null;
+    completedAt?: string | null;
 };
 /** @public */
 export type RuntimeStage = {
@@ -63,13 +63,43 @@ export type RuntimeNodeExecution = {
 };
 
 /** @public */
-export type RuntimeInstance = {
+export type RuntimeInstanceListItem = {
     id: string;
     title: string;
     number?: string;
     status: string;
-    startedAt?: string;
+    startedAt?: string | null;
     initiator?: RuntimeParticipant;
+};
+
+/** Instance summaries are absent when the associated instance is unavailable. @public */
+export type RuntimeTaskInstanceSummary = Partial<Pick<RuntimeInstanceListItem, 'title' | 'number' | 'initiator'>>;
+
+/** Pending task endpoint projection. @public */
+export type RuntimeTodoTask = RuntimeTask & RuntimeTaskInstanceSummary & { instanceId: string };
+
+/** Decision history as presented in instance details, independent of current task state. @public */
+export type RuntimeTaskHistory = {
+    id: string;
+    taskId: string;
+    nodeId: string;
+    nodeName: string;
+    assignee: RuntimeParticipant;
+    countersignType: string;
+    decision: string;
+    comment: string | null;
+    completedAt: string | null;
+};
+
+/** Completed decisions have their own history identity and no current task state. @public */
+export type RuntimeDoneTask = Pick<
+    RuntimeTaskHistory,
+    'id' | 'taskId' | 'nodeId' | 'nodeName' | 'decision' | 'comment' | 'completedAt'
+> &
+    RuntimeTaskInstanceSummary & { instanceId: string };
+
+/** Instance detail presenter, including optional extension contributions. @public */
+export type RuntimeInstance = RuntimeInstanceListItem & {
     graph?: RuntimeGraph;
     formData?: Record<string, unknown>;
     formSchema?: WorkflowFormField[];
@@ -77,7 +107,7 @@ export type RuntimeInstance = {
     result?: string | null;
     tasks?: RuntimeTask[];
     approvalTasks?: RuntimeTask[];
-    history?: RuntimeTask[];
+    history?: RuntimeTaskHistory[];
     logs?: Array<{
         id: string;
         action: string;
@@ -87,8 +117,8 @@ export type RuntimeInstance = {
     }>;
     approvalStages?: RuntimeStage[];
     selectedPath?: RuntimePath;
-    plannedPath?: RuntimePath;
-    currentNodeId?: string;
+    plannedPath?: RuntimePath | null;
+    currentNodeId?: string | null;
     currentNode?: { id: string; name: string; enteredAt: string | null };
     canCancel?: boolean;
 };

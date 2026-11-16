@@ -8,7 +8,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
-use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
 use Symfony\Component\Validator\Validation;
@@ -26,7 +26,7 @@ final class RuntimeFixture
 
     private readonly string $avatarId;
 
-    public function __construct(private readonly Connection $connection, ApprovalWorkflowService $flows)
+    public function __construct(private readonly Connection $connection, WorkflowService $flows)
     {
         $user = TestUser::createNewTestUser($connection);
         $this->userId = $user->getUserId();

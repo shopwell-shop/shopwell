@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
-use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
@@ -63,7 +63,7 @@ class ConcurrentApprovalExecutionTest extends TestCase
             $source = new AdminApiSource($userIds[0]);
             $source->setIsAdmin(true);
             $actorContext = new Context($source);
-            $service = static::getContainer()->get(ApprovalWorkflowService::class);
+            $service = static::getContainer()->get(WorkflowService::class);
             $schema = [['key' => 'amount', 'label' => 'Amount', 'type' => 'amount', 'required' => true]];
             $condition = (new ApprovalCondition())->encode(['field' => 'request.amount', 'fieldType' => 'amount', 'operator' => 'greaterThan', 'value' => '5000'], $schema);
             $definitionId = $service->createDefinition([
@@ -71,8 +71,8 @@ class ConcurrentApprovalExecutionTest extends TestCase
                     'nodes' => [
                         ['id' => 'start', 'type' => 'snaker:start', 'properties' => ['inputSchema' => $schema]],
                         ['id' => 'threshold', 'type' => 'snaker:condition', 'properties' => []],
-                        ['id' => 'approval', 'type' => 'snaker:task', 'properties' => ['name' => 'Approval', 'assigneeType' => 'user', 'assigneeValue' => $userIds, 'countersignType' => $mode]],
-                        ['id' => 'next', 'type' => 'snaker:task', 'properties' => ['name' => 'Next approval', 'assigneeType' => 'user', 'assigneeValue' => [$userIds[0]], 'countersignType' => 'single']],
+                        ['id' => 'approval', 'type' => 'snaker:task', 'properties' => ['name' => 'Approval', 'approvalStage' => true, 'assigneeType' => 'user', 'assigneeValue' => $userIds, 'countersignType' => $mode]],
+                        ['id' => 'next', 'type' => 'snaker:task', 'properties' => ['name' => 'Next approval', 'approvalStage' => true, 'assigneeType' => 'user', 'assigneeValue' => [$userIds[0]], 'countersignType' => 'single']],
                         ['id' => 'end', 'type' => 'snaker:end', 'properties' => []],
                     ],
                     'edges' => [

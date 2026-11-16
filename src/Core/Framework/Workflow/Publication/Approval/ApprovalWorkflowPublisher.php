@@ -23,6 +23,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 #[Package('framework')]
 final readonly class ApprovalWorkflowPublisher implements WorkflowPublisher, EventSubscriberInterface
 {
+    public const NAME = 'core:approval';
+
     /**
      * @param EntityRepository<WorkflowExecutionDefinitionCollection> $definitions
      * @param EntityRepository<UserCollection> $users
@@ -37,7 +39,7 @@ final readonly class ApprovalWorkflowPublisher implements WorkflowPublisher, Eve
 
     public function name(): string
     {
-        return 'core:approval';
+        return self::NAME;
     }
 
     public function labelKey(): string

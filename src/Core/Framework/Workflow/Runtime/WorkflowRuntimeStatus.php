@@ -10,6 +10,11 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 final readonly class WorkflowRuntimeStatus
 {
+    public const PENDING = 'pending';
+    public const APPROVED = 'approved';
+    public const REJECTED = 'rejected';
+    public const CANCELED = 'canceled';
+
     /**
      * @param 'pending'|'approved'|'rejected'|'canceled' $status
      * @param array{name: string, params: array<string, string>}|null $detailRoute

@@ -1,17 +1,9 @@
 /** @sw-package framework */
-import type { WorkflowDocument, WorkflowNodeTypeSpecification } from 'src/core/workflow/workflow.types';
-import zh from '../snippet/zh.json';
+import type { WorkflowTemplate } from 'src/core/workflow/workflow-studio.types';
 import { createTransferWorkflow, transferWorkflowAvailable } from './payment-transfer-workflow.template';
 
 type TemplateRegistry = {
-    register(template: {
-        name: string;
-        titleKey: string;
-        descriptionKey: string;
-        icon: string;
-        available: (types: WorkflowNodeTypeSpecification[]) => boolean;
-        create: () => WorkflowDocument;
-    }): void;
+    register(template: WorkflowTemplate): () => void;
 };
 
 Shopwell.Application.addServiceProviderDecorator('workflowTemplateService', (service: TemplateRegistry) => {
@@ -21,7 +13,21 @@ Shopwell.Application.addServiceProviderDecorator('workflowTemplateService', (ser
         descriptionKey: 'sw-finance.transfer.workflowTemplate.description',
         icon: 'regular-money-bill',
         available: transferWorkflowAvailable,
-        create: () => createTransferWorkflow(zh['sw-finance'].transfer.workflowTemplate),
+        create: (_types, { translate }) => {
+            const label = (key: string) => translate(`sw-finance.transfer.workflowTemplate.${key}`);
+            return createTransferWorkflow({
+                finance: label('finance'),
+                manager: label('manager'),
+                foreignReview: label('foreignReview'),
+                foreignCurrency: label('foreignCurrency'),
+                threshold: label('threshold'),
+                amount: label('amount'),
+                currency: label('currency'),
+                reason: label('reason'),
+                recipient: label('recipient'),
+                paymentAccount: label('paymentAccount'),
+            });
+        },
     });
     return service;
 });

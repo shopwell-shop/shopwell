@@ -12,13 +12,9 @@ use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
 
 /**
+ * Shared task representation for lists, instance details and decision panels.
+ *
  * @internal
- *
- * 待办/已办/详情里的任务输出。
- *
- * 三个前端页面（待办列表、实例详情、审批面板）用的是同一份结构，
- * 字段一旦分叉，同一个任务在不同页面会显示不同的审批人名字——这类 bug
- * 用户一眼就能看到，但排查时很难相信是"两个接口各写了一份"。
  */
 #[Package('framework')]
 final class WorkflowTaskPresenter
@@ -33,7 +29,7 @@ final class WorkflowTaskPresenter
     }
 
     /**
-     * 批量输出（列表用）：一次查完所有姓名。
+     * Present a task list with one batched user-name lookup.
      *
      * @param iterable<WorkflowTaskEntity> $tasks
      *
@@ -93,7 +89,7 @@ final class WorkflowTaskPresenter
     }
 
     /**
-     * @param array<string, string>|null $names 已知的姓名表，缺省时自己查（单条场景）
+     * @param array<string, string>|null $names
      *
      * @return array<string, mixed>
      */
@@ -113,7 +109,7 @@ final class WorkflowTaskPresenter
                 'name' => $names[$task->assigneeId] ?? $task->assigneeId,
             ],
             'state' => $task->state(),
-            // 契约里给前端的布尔量：待办列表靠它决定是否显示"同意/拒绝"按钮
+            // Whether the frontend may display decision actions.
             'actionable' => $task->state() === WorkflowTaskStates::TODO,
             'round' => $task->round,
             'sequence' => $task->sequence,

@@ -96,9 +96,13 @@ export default class WorkflowStudioService {
     diagnose(document: WorkflowDocument, types: WorkflowNodeTypeSpecification[]): WorkflowViolation[] {
         const violations: WorkflowViolation[] = [];
 
+        const serializedDocument = JSON.stringify(document);
+        const serializedTypes = JSON.stringify(types);
+
         for (const diagnostic of this.diagnostics.values()) {
-            const documentSnapshot = JSON.parse(JSON.stringify(document)) as WorkflowDocument;
-            const typeSnapshot = JSON.parse(JSON.stringify(types)) as WorkflowNodeTypeSpecification[];
+            // Each extension receives its own snapshot, so one check cannot change the next check's inputs.
+            const documentSnapshot = JSON.parse(serializedDocument) as WorkflowDocument;
+            const typeSnapshot = JSON.parse(serializedTypes) as WorkflowNodeTypeSpecification[];
             violations.push(...diagnostic.check(documentSnapshot, typeSnapshot));
         }
 

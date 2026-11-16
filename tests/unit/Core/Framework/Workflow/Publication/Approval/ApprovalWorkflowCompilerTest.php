@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
 use Shopwell\Core\Framework\Workflow\Definition\Connection\WorkflowConnection;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
 use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
+use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
@@ -219,6 +220,105 @@ class ApprovalWorkflowCompilerTest extends TestCase
         yield 'invalid comparison value' => ['invalid-value'];
         yield 'compatible changed types require explicit rebind' => ['changed-compatible-type'];
         yield 'unbound field type cannot publish' => ['missing-field-type'];
+    }
+
+    #[DataProvider('runtimeIdentifierLengths')]
+    public function testChecksEveryRuntimeIdentifierAtPublication(int $length, bool $accepted, bool $nodeIdentifier, string $character): void
+    {
+        $document = self::document();
+        $identifier = str_repeat($character, $length);
+        $nodes = $document->nodes;
+        $connections = $document->connections;
+        if ($nodeIdentifier) {
+            $nodes[1] = new WorkflowNode($identifier, 'core:approval', 1, $nodes[1]->config);
+            $connections = array_map(static fn (WorkflowConnection $connection): WorkflowConnection => new WorkflowConnection(
+                $connection->id,
+                $connection->source === 'approval' ? $identifier : $connection->source,
+                $connection->sourcePort,
+                $connection->target === 'approval' ? $identifier : $connection->target,
+                $connection->targetPort,
+            ), $connections);
+        } else {
+            // The rejected connection is not emitted at runtime, but still belongs to the published document.
+            $connections[2] = new WorkflowConnection($identifier, 'approval', 'rejected', 'rejected', 'in');
+        }
+        if (!$accepted) {
+            $this->expectExceptionObject(WorkflowException::publicationRejected('unsupported_approval_workflow'));
+        }
+        $graph = (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(array_values($nodes), array_values($connections)));
+        static::assertSame($nodeIdentifier ? $identifier : 'approval', $graph['nodes'][1]['id']);
+    }
+
+    /**
+     * @return iterable<string, array{int, bool, bool, string}>
+     */
+    public static function runtimeIdentifierLengths(): iterable
+    {
+        foreach ([64 => true, 65 => false, 128 => false, 129 => false] as $length => $accepted) {
+            yield 'node length ' . $length => [$length, $accepted, true, 'a'];
+            yield 'connection length ' . $length => [$length, $accepted, false, 'a'];
+        }
+        yield 'runtime node storage counts unicode characters' => [64, true, true, '节'];
+        yield 'runtime node storage rejects too many unicode characters' => [65, false, true, '节'];
+        yield 'runtime connection storage counts unicode characters' => [64, true, false, '边'];
+        yield 'runtime connection storage rejects too many unicode characters' => [65, false, false, '边'];
+    }
+
+    public function testReportsTheInvalidApprovalConfigurationLocation(): void
+    {
+        $document = self::document();
+        $nodes = $document->nodes;
+        $nodes[1] = new WorkflowNode('approval', 'core:approval', 1, [
+            'assignee' => ['source' => 'core:user', 'config' => ['userId' => 'not-a-user']],
+            'approval' => ['mode' => 'core:single', 'config' => []],
+        ]);
+        try {
+            (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(array_values($nodes), $document->connections));
+            static::fail('Invalid reviewer must reject publication.');
+        } catch (WorkflowException $exception) {
+            $violations = $exception->getParameters()['violations'];
+            static::assertIsArray($violations);
+            static::assertInstanceOf(WorkflowViolation::class, $violations[0]);
+            static::assertSame('/nodes/1/config/assignee/config/userId', $violations[0]->path);
+            static::assertSame('approval', $violations[0]->nodeId);
+        }
+    }
+
+    public function testReportsTheInputFieldWithinTheStartConfiguration(): void
+    {
+        $document = self::document();
+        $nodes = $document->nodes;
+        $nodes[0] = new WorkflowNode('start', 'core:start', 1, ['formFields' => [
+            ['key' => 'amount', 'label' => 'Amount', 'type' => 'amount'],
+            ['key' => 'amount', 'label' => 'Duplicate', 'type' => 'number'],
+        ]]);
+        try {
+            (new ApprovalWorkflowCompiler())->compile(new WorkflowDocument(array_values($nodes), $document->connections));
+            static::fail('Duplicate fields must reject publication.');
+        } catch (WorkflowException $exception) {
+            $violations = $exception->getParameters()['violations'];
+            static::assertIsArray($violations);
+            static::assertInstanceOf(WorkflowViolation::class, $violations[0]);
+            static::assertSame('/nodes/0/config/formFields/1/key', $violations[0]->path);
+            static::assertSame('start', $violations[0]->nodeId);
+        }
+    }
+
+    public function testReportsTheInvalidConditionBranchLocation(): void
+    {
+        $raw = json_decode((string) file_get_contents(__DIR__ . '/_fixtures/expense-approval-request.json'), true, flags: \JSON_THROW_ON_ERROR);
+        $raw['nodes'][2]['config']['branches'][0]['value'] = 'not-a-number';
+        $document = (new WorkflowDocumentCodec(Validation::createValidator()))->decode(json_encode($raw, \JSON_THROW_ON_ERROR));
+        try {
+            (new ApprovalWorkflowCompiler())->compile($document);
+            static::fail('Invalid conditions must reject publication.');
+        } catch (WorkflowException $exception) {
+            $violations = $exception->getParameters()['violations'];
+            static::assertIsArray($violations);
+            static::assertInstanceOf(WorkflowViolation::class, $violations[0]);
+            static::assertSame('/nodes/2/config/branches/0', $violations[0]->path);
+            static::assertSame('threshold', $violations[0]->nodeId);
+        }
     }
 
     private static function document(): WorkflowDocument

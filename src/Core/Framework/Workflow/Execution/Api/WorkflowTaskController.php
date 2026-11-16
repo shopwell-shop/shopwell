@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskHistoryEntity;
 use Shopwell\Core\PlatformRequest;
@@ -16,17 +17,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
+ * Task list and decision endpoints; derive the actor from Context and enforce task ownership as well as ACL permissions.
+ *
  * @internal
- *
- * 待办 / 已办 / 同意 / 拒绝。
- *
- * ## 安全要点
- *
- * - `todo` / `done` 的用户 id **只从 Context 取**，不接受查询参数里传人；
- * - `approve` / `reject` 的归属校验在 {@see ApprovalWorkflowService::approve()} 里做
- *   （别人的任务返回 404，不暴露存在性）；
- * - 权限用 `workflow_task:decide`，但那只说明"这个人能审批"，
- *   不说明"这条任务是他的"——两层校验缺一不可。
  */
 #[Package('framework')]
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [ApiRouteScope::ID]])]
@@ -35,6 +28,7 @@ class WorkflowTaskController extends AbstractController
     public function __construct(
         private readonly ApprovalWorkflowService $flows,
         private readonly WorkflowTaskPresenter $presenter,
+        private readonly WorkflowService $workflows,
     ) {
     }
 
@@ -51,7 +45,7 @@ class WorkflowTaskController extends AbstractController
         $criteria->setLimit(max(1, min(100, $request->query->getInt('limit', 25))));
         $criteria->setOffset(max(0, $request->query->getInt('offset', 0)));
 
-        $result = $this->flows->todo($this->flows->actorId($context), $criteria, $context);
+        $result = $this->flows->todo($this->workflows->actorId($context), $criteria, $context);
 
         $tasks = array_values($result->getEntities()->getElements());
 
@@ -74,7 +68,7 @@ class WorkflowTaskController extends AbstractController
         $criteria->setLimit(max(1, min(100, $request->query->getInt('limit', 25))));
         $criteria->setOffset(max(0, $request->query->getInt('offset', 0)));
 
-        $result = $this->flows->done($this->flows->actorId($context), $criteria, $context);
+        $result = $this->flows->done($this->workflows->actorId($context), $criteria, $context);
 
         $tasks = array_values($result->getEntities()->getElements());
         $summaries = $this->presenter->instanceSummaries(array_map(static fn (WorkflowTaskHistoryEntity $task): string => $task->instanceId, $tasks), $context);
@@ -122,7 +116,7 @@ class WorkflowTaskController extends AbstractController
     {
         $comment = $request->getPayload()->all()['comment'] ?? null;
 
-        // 意见必填的校验在 ApprovalWorkflowService（门面统一做），这里只负责把原值传下去
+        // Pass the comment unchanged; ApprovalWorkflowService validates required comments.
         $this->flows->reject($taskId, \is_string($comment) ? $comment : null, $context);
 
         return new Response(null, Response::HTTP_NO_CONTENT);

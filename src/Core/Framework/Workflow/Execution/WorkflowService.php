@@ -57,10 +57,7 @@ final readonly class WorkflowService
 
         $id = Uuid::randomHex();
 
-        // 建记录要写 `status`，而它是 `#[Protection(write: SYSTEM_SCOPE)]`
-        // （见 {@see WorkflowExecutionDefinitionEntity}）。用户作用域直接写会被 DAL 拒掉，
-        // 报错是一句"这个字段受写保护"——看起来像权限配置问题，其实是漏了提权。
-        // 入参归一化已经做完，提权范围仅仅是这一次写库。
+        // Only this protected write needs system scope; inputs have already been normalized.
         $context->scope(Context::SYSTEM_SCOPE, function (Context $scoped) use ($id, $data, $graphData, $formSchema): void {
             $this->definitionRepository->create([
                 [
@@ -152,7 +149,7 @@ final readonly class WorkflowService
                             'title' => $title !== '' ? $title : $definition->name,
                             'initiatorId' => $actorId,
                             'formData' => $formData,
-                            // 快照只存契约字段（GraphData 已经做过白名单解析）
+                            // GraphData has already removed fields outside the snapshot contract.
                             'graphSnapshot' => $graph->toArray(),
                             'stateId' => $this->instanceStates->initialStateId($scoped),
                             'round' => 1,
@@ -228,8 +225,8 @@ final readonly class WorkflowService
     {
         return [
             'nodes' => [
-                ['id' => 'n_start', 'type' => 'snaker:start', 'x' => 0, 'y' => 0, 'properties' => ['name' => '发起人']],
-                ['id' => 'n_end', 'type' => 'snaker:end', 'x' => 0, 'y' => 64, 'properties' => ['name' => '结束']],
+                ['id' => 'n_start', 'type' => WorkflowNodeTypes::START, 'x' => 0, 'y' => 0, 'properties' => ['name' => '发起人']],
+                ['id' => 'n_end', 'type' => WorkflowNodeTypes::END, 'x' => 0, 'y' => 64, 'properties' => ['name' => '结束']],
             ],
             'edges' => [
                 ['id' => 'e_start_end', 'sourceNodeId' => 'n_start', 'targetNodeId' => 'n_end', 'properties' => []],
@@ -239,7 +236,7 @@ final readonly class WorkflowService
 
     public function signal(string $instanceId, string $executionId, WorkflowSignal $signal, Context $context): void
     {
-        if ($signal->name === 'core:task-completed') {
+        if ($signal->name === WorkflowSignal::TASK_COMPLETED) {
             throw WorkflowExecutionException::forbidden('Approval tasks must be completed through approval actions.');
         }
 
@@ -292,7 +289,7 @@ final readonly class WorkflowService
     private function normalizeGraph(mixed $graphData): array
     {
         if (!\is_array($graphData)) {
-            throw WorkflowExecutionException::invalidGraph('graphData 缺失');
+            throw WorkflowExecutionException::invalidGraph('graphData is required.');
         }
 
         return $graphData;
@@ -308,7 +305,7 @@ final readonly class WorkflowService
         }
 
         if (!\is_array($formSchema)) {
-            throw WorkflowExecutionException::invalidGraph('formSchema 必须是数组');
+            throw WorkflowExecutionException::invalidGraph('formSchema must be an array.');
         }
 
         return array_values(array_filter($formSchema, 'is_array'));
@@ -361,7 +358,7 @@ final readonly class WorkflowService
         }
 
         if ($missing !== []) {
-            throw WorkflowExecutionException::invalidGraph('请填写：' . implode('、', $missing));
+            throw WorkflowExecutionException::invalidGraph('Required fields: ' . implode(', ', $missing));
         }
     }
 }

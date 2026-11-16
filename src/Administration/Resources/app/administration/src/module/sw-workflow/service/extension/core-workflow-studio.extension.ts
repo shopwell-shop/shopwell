@@ -1,4 +1,5 @@
 /** @sw-package framework */
+import { WORKFLOW_NODE_TYPES } from 'src/core/workflow/workflow-node.constants';
 import type { WorkflowStudioExtension } from 'src/core/workflow/workflow-studio.types';
 import { createStructuredWorkflowDraft } from '../../util/workflow-template.util';
 import { structuredWorkflowLayout } from '../../util/structured-workflow-layout.util';
@@ -9,11 +10,11 @@ const coreWorkflowStudioExtension: WorkflowStudioExtension = {
     name: 'core:studio',
     nodes: [
         {
-            type: 'core:start',
+            type: WORKFLOW_NODE_TYPES.START,
             version: 1,
             presentation: { icon: 'regular-play', tone: 'neutral', settingsComponent: 'sw-workflow-start-settings' },
         },
-        { type: 'core:end', version: 1, presentation: { icon: 'regular-checkmark', tone: 'neutral' } },
+        { type: WORKFLOW_NODE_TYPES.END, version: 1, presentation: { icon: 'regular-checkmark', tone: 'neutral' } },
         {
             type: 'core:action',
             version: 1,

@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyEntity;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
@@ -55,7 +56,10 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
 
         $instance = $event->instance;
         $graph = GraphData::fromArray($instance->snapshot());
-        $approvalNodes = $graph->nodesOfType(WorkflowNodeTypes::TASK);
+        $approvalNodes = array_values(array_filter(
+            $graph->nodesOfType(WorkflowNodeTypes::TASK),
+            static fn (GraphNode $node): bool => $node->property('approvalStage') === true
+        ));
 
         if ($approvalNodes === []) {
             return;
@@ -87,19 +91,18 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
      */
     private function presentStages(WorkflowInstanceEntity $instance, array $approvalNodes, array $tasks, array $plannedNodes, Context $context): array
     {
-        $nodes = array_filter($approvalNodes, static fn (GraphNode $node): bool => $node->property('approvalStage') === true);
         $participantIds = [];
 
-        foreach ($nodes as $node) {
+        foreach ($approvalNodes as $node) {
             $participantIds = [...$participantIds, ...$node->property('assigneeValue', [])];
         }
 
         $names = $this->users->names(array_values(array_unique($participantIds)), $context);
         $stages = [];
 
-        foreach ($nodes as $node) {
+        foreach ($approvalNodes as $node) {
             $stageTasks = array_values(array_filter($tasks, static fn (array $task): bool => $task['nodeId'] === $node->id));
-            $countersignType = $node->property('countersignType', 'single');
+            $countersignType = $node->property('countersignType', WorkflowCountersignTypes::SINGLE);
             $stages[] = [
                 'nodeId' => $node->id,
                 'nodeName' => $node->property('name', $node->id),
@@ -134,7 +137,7 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
         $hasPending = \in_array(WorkflowTaskStates::TODO, $states, true);
         $allAgreed = array_unique($states) === [WorkflowTaskStates::AGREED];
 
-        if ($hasAgreed && !$hasPending && ($countersignType !== 'countersign' || $allAgreed)) {
+        if ($hasAgreed && !$hasPending && ($countersignType !== WorkflowCountersignTypes::COUNTERSIGN || $allAgreed)) {
             return 'approved';
         }
 

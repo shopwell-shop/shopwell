@@ -34,9 +34,9 @@ describe('approval extensions', () => {
         service.registerSource(source);
         service.registerMode(mode);
         expect(service.sources()).toEqual([source]);
-        expect(service.getSource(source.name)).toBe(source);
+        expect(service.getSource(source.name)).toEqual(source);
         expect(service.modes()).toEqual([mode]);
-        expect(service.getMode(mode.name)).toBe(mode);
+        expect(service.getMode(mode.name)).toEqual(mode);
     });
     it('connects the default source and mode to approval presentation extensions', () => {
         const service = Shopwell.Service('workflowApprovalService');
@@ -46,5 +46,71 @@ describe('approval extensions', () => {
             settingsComponent: 'sw-workflow-approval-settings',
             nodeComponent: 'sw-workflow-approval-node',
         });
+    });
+});
+
+describe('approval registration lifecycle', () => {
+    it('registerSource rejects collisions and supports cleanup, reinstall and stale disposers', () => {
+        const service = new WorkflowApprovalService();
+        const contribution = {
+            name: 'example:source',
+            labelKey: 'example.source',
+            settingsComponent: 'example-settings',
+            summaryComponent: 'example-summary',
+        };
+        const dispose = service.registerSource(contribution);
+        expect(() => service.registerSource({ ...contribution })).toThrow(/Duplicate/);
+        expect(service.sources()).toEqual([contribution]);
+        dispose();
+        expect(service.sources()).toEqual([]);
+        const disposeAgain = service.registerSource(contribution);
+        dispose();
+        expect(service.sources()).toEqual([contribution]);
+        disposeAgain();
+        expect(service.sources()).toEqual([]);
+    });
+
+    it('registerMode rejects collisions and supports cleanup, reinstall and stale disposers', () => {
+        const service = new WorkflowApprovalService();
+        const contribution = { name: 'example:source', labelKey: 'example.source', descriptionKey: 'example.description' };
+        const dispose = service.registerMode(contribution);
+        expect(() => service.registerMode({ ...contribution })).toThrow(/Duplicate/);
+        expect(service.modes()).toEqual([contribution]);
+        dispose();
+        expect(service.modes()).toEqual([]);
+        const disposeAgain = service.registerMode(contribution);
+        dispose();
+        expect(service.modes()).toEqual([contribution]);
+        disposeAgain();
+        expect(service.modes()).toEqual([]);
+    });
+
+    it('owns mode opt-ins through cleanup and prevents mutation of registered source definitions', () => {
+        const service = new WorkflowApprovalService();
+        const source = {
+            name: 'example:source',
+            labelKey: 'example.source',
+            settingsComponent: 'settings',
+            summaryComponent: 'summary',
+            supportedModes: ['core:single'],
+        };
+        const mode = { name: 'example:quorum', labelKey: 'example.quorum', descriptionKey: 'example.description' };
+        const removeSource = service.registerSource(source);
+        const removeMode = service.registerMode(mode);
+        const removeSupport = service.registerSupportedMode(source.name, mode.name);
+        expect(() => service.registerSupportedMode(source.name, mode.name)).toThrow(/Duplicate/);
+        source.supportedModes.push('example:leaked');
+        service.getSource(source.name)!.supportedModes!.push('example:mutated');
+        expect(service.getSource(source.name)!.supportedModes).toEqual(['core:single', 'example:quorum']);
+        removeMode();
+        service.registerMode(mode);
+        expect(service.getSource(source.name)!.supportedModes).toEqual(['core:single']);
+        const removeNewSupport = service.registerSupportedMode(source.name, mode.name);
+        removeSupport();
+        expect(service.getSource(source.name)!.supportedModes).toEqual(['core:single', 'example:quorum']);
+        removeSource();
+        service.registerSource({ ...source, supportedModes: ['core:single'] });
+        expect(service.getSource(source.name)!.supportedModes).toEqual(['core:single']);
+        removeNewSupport();
     });
 });

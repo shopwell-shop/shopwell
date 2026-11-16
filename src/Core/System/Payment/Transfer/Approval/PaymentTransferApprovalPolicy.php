@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\Payment\Transfer\Approval;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
@@ -25,7 +26,7 @@ final class PaymentTransferApprovalPolicy
         $starts = [];
         foreach ($document->nodes as $node) {
             $nodes[$node->id] = $node;
-            if ($node->type === 'core:start') {
+            if ($node->type === DocumentNodeTypes::START) {
                 $starts[] = $node;
             }
         }
@@ -56,10 +57,10 @@ final class PaymentTransferApprovalPolicy
         while ($pending !== []) {
             $id = array_pop($pending);
             $node = $nodes[$id] ?? null;
-            if ($node === null || $node->type === 'core:end') {
+            if ($node === null || $node->type === DocumentNodeTypes::END) {
                 throw PaymentTransferApprovalException::blocked('approval_bypass');
             }
-            if ($node->type === 'core:approval' || isset($visited[$id])) {
+            if ($node->type === DocumentNodeTypes::APPROVAL || isset($visited[$id])) {
                 continue;
             }
             $visited[$id] = true;

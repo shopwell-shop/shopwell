@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\Workflow;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 
 /**
@@ -14,6 +15,16 @@ use Shopwell\Core\Framework\Workflow\WorkflowException;
 #[CoversClass(WorkflowException::class)]
 class WorkflowExceptionTest extends TestCase
 {
+    public function testPublicationFailurePreservesNodeAndFieldDiagnostics(): void
+    {
+        $violations = [new WorkflowViolation('approval_invalid_configuration', '/nodes/2/config/assignee', 'review')];
+        $exception = WorkflowException::publicationRejected('unsupported_approval_workflow', $violations);
+
+        static::assertSame(422, $exception->getStatusCode());
+        static::assertSame('unsupported_approval_workflow', $exception->getParameter('reason'));
+        static::assertSame($violations, $exception->getParameter('violations'));
+    }
+
     public function testInvalidDocumentIncludesFieldPath(): void
     {
         $exception = WorkflowException::invalidDocument('/nodes/0/type', 'Expected a namespaced type.');

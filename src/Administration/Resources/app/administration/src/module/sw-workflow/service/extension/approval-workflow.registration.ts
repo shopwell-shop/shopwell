@@ -1,4 +1,5 @@
 /** @sw-package framework */
+import { WORKFLOW_ASSIGNEE_SOURCES, WORKFLOW_APPROVAL_MODES } from 'src/core/workflow/workflow-node.constants';
 import '../index';
 import WorkflowApprovalService from '../workflow-approval.service';
 import approvalWorkflowStudioExtension from './approval-workflow-studio.extension';
@@ -7,31 +8,31 @@ import approvalWorkflowStudioExtension from './approval-workflow-studio.extensio
 Shopwell.Service().register('workflowApprovalService', () => {
     const service = new WorkflowApprovalService();
     service.registerSource({
-        name: 'core:user',
+        name: WORKFLOW_ASSIGNEE_SOURCES.USER,
         labelKey: 'sw-workflow.approval.namedUser',
         settingsComponent: 'sw-workflow-user-assignee-select',
         summaryComponent: 'sw-workflow-user-assignee-summary',
-        supportedModes: ['core:single'],
+        supportedModes: [WORKFLOW_APPROVAL_MODES.SINGLE],
     });
     service.registerSource({
-        name: 'core:users',
+        name: WORKFLOW_ASSIGNEE_SOURCES.USERS,
         labelKey: 'sw-workflow.approval.namedUsers',
         settingsComponent: 'sw-workflow-users-assignee-select',
         summaryComponent: 'sw-workflow-users-assignee-summary',
-        supportedModes: ['core:all', 'core:any'],
+        supportedModes: [WORKFLOW_APPROVAL_MODES.ALL, WORKFLOW_APPROVAL_MODES.ANY],
     });
     service.registerMode({
-        name: 'core:all',
+        name: WORKFLOW_APPROVAL_MODES.ALL,
         labelKey: 'sw-workflow.approval.all',
         descriptionKey: 'sw-workflow.approval.allHint',
     });
     service.registerMode({
-        name: 'core:any',
+        name: WORKFLOW_APPROVAL_MODES.ANY,
         labelKey: 'sw-workflow.approval.any',
         descriptionKey: 'sw-workflow.approval.anyHint',
     });
     service.registerMode({
-        name: 'core:single',
+        name: WORKFLOW_APPROVAL_MODES.SINGLE,
         labelKey: 'sw-workflow.approval.single',
         descriptionKey: 'sw-workflow.approval.singleHint',
     });

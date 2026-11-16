@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\Framework\Workflow\Publication;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -16,6 +17,7 @@ use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Diagnostics\Policy\StructuredWorkflowGraphPolicy;
 use Shopwell\Core\Framework\Workflow\Diagnostics\Policy\WorkflowGraphPolicyRegistry;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowGraphDiagnostics;
+use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\StartExecutor;
@@ -87,6 +89,48 @@ class WorkflowCompilerTest extends TestCase
 
         $this->expectExceptionObject(WorkflowException::publicationRejected('workflow_execution_unavailable'));
         $this->compiler([$compiler])->compile($document, Context::createDefaultContext());
+    }
+
+    #[DataProvider('runtimeIdentityLengths')]
+    public function testChecksRuntimeIdentitiesBeforePublication(string $subject, int $length): void
+    {
+        $startId = $subject === 'node' ? str_repeat('n', $length) : 'start';
+        $edgeId = $subject === 'connection' ? str_repeat('e', $length) : 'begin';
+        $document = new WorkflowDocument(
+            [new WorkflowNode($startId, 'core:start', 1), new WorkflowNode('end', 'core:end', 1)],
+            [new WorkflowConnection($edgeId, $startId, 'out', 'end', 'in')],
+        );
+
+        if ($length <= 64) {
+            static::assertSame($startId, $this->compiler()->compile($document, Context::createDefaultContext())->singleStartNode()->id);
+
+            return;
+        }
+
+        try {
+            $this->compiler()->compile($document, Context::createDefaultContext());
+            static::fail('An oversized runtime identity was published');
+        } catch (WorkflowException $exception) {
+            $violation = $exception->getParameters()['violations'][0];
+            static::assertInstanceOf(WorkflowViolation::class, $violation);
+            static::assertSame('runtime_identifier_too_long', $violation->code);
+            static::assertSame($subject === 'node' ? '/nodes/0/id' : '/connections/0/id', $violation->path);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function runtimeIdentityLengths(): iterable
+    {
+        yield 'node at storage limit' => ['node', 64];
+        yield 'node over storage limit' => ['node', 65];
+        yield 'node at editor limit' => ['node', 128];
+        yield 'node beyond editor limit' => ['node', 129];
+        yield 'connection at storage limit' => ['connection', 64];
+        yield 'connection over storage limit' => ['connection', 65];
+        yield 'connection at editor limit' => ['connection', 128];
+        yield 'connection beyond editor limit' => ['connection', 129];
     }
 
     /**

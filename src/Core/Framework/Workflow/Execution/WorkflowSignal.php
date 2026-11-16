@@ -12,6 +12,8 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 final readonly class WorkflowSignal
 {
+    public const TASK_COMPLETED = 'core:task-completed';
+
     /**
      * @param array<string, mixed> $payload
      */

@@ -25,7 +25,7 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.templates.find((preset) => preset.name === this.selectedName) ?? null;
         },
         preview() {
-            return this.selected?.create(this.nodeTypes) ?? null;
+            return this.selected?.create(this.nodeTypes, { translate: (key) => this.$t(key) }) ?? null;
         },
     },
 });

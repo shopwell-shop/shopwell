@@ -152,6 +152,7 @@
         "symfony/error-handler": "~7.4.0",
         "symfony/event-dispatcher": "~7.4.0",
         "symfony/event-dispatcher-contracts": "~3.6.0",
+        "symfony/expression-language": "~7.4.0",
         "symfony/filesystem": "~7.4.0",
         "symfony/finder": "~7.4.0",
         "symfony/framework-bundle": "~7.4.0",

@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefin
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionStatus;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimePreviewEvent;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -35,7 +36,7 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
 
     public function preview(WorkflowRuntimePreviewEvent $event): void
     {
-        if ($event->release->getPublisher() !== 'core:approval') {
+        if ($event->release->getPublisher() !== ApprovalWorkflowPublisher::NAME) {
             return;
         }
         $definition = $this->definitions->search(new Criteria([$event->release->getId()]), $event->context)->getEntities()->first();

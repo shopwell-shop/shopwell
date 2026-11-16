@@ -26,7 +26,7 @@
     {% endblock %}
     {% block sw_workflow_studio_node_summary %}
     <p
-        v-if="data.kind === 'activity'"
+        v-if="isActivity"
         class="sw-workflow-studio-node__summary"
     >
         {{ summary }}

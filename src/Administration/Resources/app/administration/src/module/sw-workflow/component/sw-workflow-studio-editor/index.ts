@@ -180,6 +180,7 @@ export default Shopwell.Component.wrapComponentConfig({
                         editing: this.workflowNodeEditingService,
                         templates: this.workflowTemplateService,
                         nodeTypes: () => this.nodeTypes,
+                        templateContext: { translate: (key) => this.$t(key) },
                     }),
                 ],
             );
@@ -199,6 +200,7 @@ export default Shopwell.Component.wrapComponentConfig({
 
                 this.requestInteraction(() => {
                     this.closeEditor();
+
                     if (value.connectionId) {
                         this.selectConnection(value.connectionId);
                     } else {
@@ -321,6 +323,7 @@ export default Shopwell.Component.wrapComponentConfig({
             }
 
             const anchor = event.target instanceof Element ? event.target.closest('.vue-flow__node, .vue-flow__edge') : null;
+
             if (!anchor) {
                 return;
             }
@@ -328,11 +331,13 @@ export default Shopwell.Component.wrapComponentConfig({
             this.requestInteraction(() => {
                 this.closeEditor();
                 this.closePicker();
+
                 if (target.nodeId) {
                     this.session?.selectNode(target.nodeId);
                 } else if (target.connectionId) {
                     this.session?.selectConnection(target.connectionId);
                 }
+
                 this.menuAnchor = markRaw(anchor);
                 this.menu = this.session?.actions(position, target).length ? { position, target } : null;
             });
@@ -353,6 +358,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         insert(type: WorkflowNodeTypeSpecification): void {
             const id = Shopwell.Utils.createId();
+
             if (
                 this.session?.execute('core:insert-node', {
                     type: type.name,
@@ -366,27 +372,34 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         stageSettings(patch: Record<string, unknown>): void {
             const node = this.draftNode;
+
             if (!this.allowEdit || !node || !this.nodeDraft) {
                 return;
             }
+
             const strategy = this.workflowNodeEditingService.get(node.type, node.typeVersion);
+
             if (strategy.updateConfig) {
                 this.nodeDraft = strategy.updateConfig(this.nodeDraft, node.id, patch);
             } else {
                 const document = JSON.parse(JSON.stringify(this.nodeDraft)) as WorkflowDocument;
                 const draft = document.nodes.find((item) => item.id === node.id);
+
                 if (!draft) {
                     return;
                 }
+
                 draft.config = { ...(Array.isArray(draft.config) ? {} : draft.config), ...patch };
                 this.nodeDraft = document;
             }
+
             this.pendingPatch = { ...this.pendingPatch, ...patch };
         },
         saveSettings(): boolean {
             if (!this.allowEdit) {
                 return false;
             }
+
             this.applyingSettings = true;
             try {
                 if (

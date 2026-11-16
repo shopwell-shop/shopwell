@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\Workflow;
 
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -22,9 +23,17 @@ class WorkflowException extends HttpException
         return new self(Response::HTTP_BAD_REQUEST, 'FRAMEWORK__WORKFLOW_UNKNOWN_DEFAULT_ROLE', 'Unknown default workflow role "{{ role }}".', ['role' => $role]);
     }
 
-    public static function publicationRejected(string $reason): self
+    /**
+     * @param list<WorkflowViolation> $violations
+     */
+    public static function publicationRejected(string $reason, array $violations = []): self
     {
-        return new self(Response::HTTP_UNPROCESSABLE_ENTITY, 'FRAMEWORK__WORKFLOW_PUBLICATION_REJECTED', 'Workflow cannot be published: {{ reason }}.', ['reason' => $reason]);
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            'FRAMEWORK__WORKFLOW_PUBLICATION_REJECTED',
+            'Workflow cannot be published: {{ reason }}.',
+            ['reason' => $reason, 'violations' => $violations]
+        );
     }
 
     public static function publisherUnavailable(string $name): self

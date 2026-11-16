@@ -35,7 +35,11 @@ export default Shopwell.Component.wrapComponentConfig({
         collection(): EntityCollection<'user'> {
             const members = this.userIds.map((id, index) => {
                 const user = this.users.find((item) => item.id.toLowerCase() === id.toLowerCase());
-                if (user) return user;
+
+                if (user) {
+                    return user;
+                }
+
                 const placeholder = this.repository.create(Shopwell.Context.api, id as Entity<'user'>['id']);
                 placeholder.name = this.$t(
                     'sw-workflow.approval.multiple.' + (this.status === 'ready' ? 'missingMember' : 'unverifiedMember'),
@@ -63,15 +67,28 @@ export default Shopwell.Component.wrapComponentConfig({
                 : name;
         },
         change(users: Entity<'user'>[]): void {
-            if (!this.allowEdit || !this.canRead || !Array.isArray(users)) return;
+            if (!this.allowEdit || !this.canRead || !Array.isArray(users)) {
+                return;
+            }
+
             const existing = new Set(this.userIds.map((id) => id.toLowerCase()));
             const ids: string[] = [];
             const seen = new Set<string>();
             for (const user of users) {
-                if (!user || typeof user.id !== 'string') return;
+                if (!user || typeof user.id !== 'string') {
+                    return;
+                }
+
                 const id = user.id.toLowerCase();
-                if (!existing.has(id) && (!/^[a-f0-9]{32}$/.test(id) || !user.active)) return;
-                if (!seen.has(id)) ids.push(user.id);
+
+                if (!existing.has(id) && (!/^[a-f0-9]{32}$/.test(id) || !user.active)) {
+                    return;
+                }
+
+                if (!seen.has(id)) {
+                    ids.push(user.id);
+                }
+
                 seen.add(id);
             }
             this.$emit('update-config', { ...this.config, userIds: ids });

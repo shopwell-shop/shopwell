@@ -1,13 +1,17 @@
 /** @sw-package framework */
+import {
+    WORKFLOW_RUNTIME_NODE_TYPES,
+    WORKFLOW_TASK_STATES,
+    WORKFLOW_COUNTERSIGN_TYPES,
+} from 'src/core/workflow/workflow-runtime.constants';
 import { BaseEdge, EdgeLabelRenderer, VueFlow, Handle, Position, MarkerType } from '@vue-flow/core';
-import type { Node, Edge, EdgeProps, VueFlowStore } from '@vue-flow/core';
-import { markRaw, watch } from 'vue';
+import type { Node, Edge, EdgeProps } from '@vue-flow/core';
 import type { PropType } from 'vue';
+import useCanvasViewport from 'src/app/composables/use-canvas-viewport';
 import type { RuntimeGraph, RuntimePath, RuntimeStage, RuntimeTask } from 'src/core/workflow/workflow-runtime.types';
-import { layout } from '../../util/workflow-runtime-layout.util';
+import { layoutRuntimeGraph } from './runtime-graph-layout';
 import { routeWorkflowConnection } from '../../util/workflow-connection-route.util';
-import type { WorkflowNodeSize } from '../../util/workflow-layout-geometry.util';
-import type { WorkflowBranchLane } from '../../util/workflow-connection-route.util';
+import type { WorkflowBranchLane } from 'src/core/workflow/workflow-studio.types';
 
 import template from './sw-workflow-runtime-viewer.html.twig';
 import './sw-workflow-runtime-viewer.scss';
@@ -46,6 +50,9 @@ function approvalDetails(nodeId: string, stages: RuntimeStage[], allTasks: Runti
 export default Shopwell.Component.wrapComponentConfig({
     template,
     components: { VueFlow, Handle, BaseEdge, EdgeLabelRenderer },
+    setup() {
+        return useCanvasViewport({ padding: 0.18 });
+    },
     props: {
         graph: { type: Object as PropType<RuntimeGraph>, required: true },
         selectedPath: { type: Object as PropType<RuntimePath | null>, default: null },
@@ -58,25 +65,17 @@ export default Shopwell.Component.wrapComponentConfig({
     data(): {
         instanceId: string;
         position: typeof Position;
-        flow: Pick<VueFlowStore, 'fitView' | 'zoomIn' | 'zoomOut'> | null;
-        stopSizeWatch: (() => void) | null;
-        stopResizeWatch: (() => void) | null;
-        nodeSizes: Record<string, WorkflowNodeSize>;
         expanded: boolean;
     } {
         return {
             instanceId: `workflow-runtime-${Shopwell.Utils.createId()}`,
             position: Position,
-            flow: null,
-            stopSizeWatch: null,
-            stopResizeWatch: null,
-            nodeSizes: {},
             expanded: false,
         };
     },
     computed: {
         flowNodes(): Node[] {
-            return layout(this.graph, { nodeSizes: this.nodeSizes }).nodes.map((node) => {
+            return layoutRuntimeGraph(this.graph, { nodeSizes: this.nodeSizes }).nodes.map((node) => {
                 const approval = approvalDetails(node.id, this.stages, this.tasks);
                 return {
                     id: node.id,
@@ -86,7 +85,9 @@ export default Shopwell.Component.wrapComponentConfig({
                         label: node.properties?.name || this.typeLabel(node.type),
                         state: this.nodeStates[node.id] || approval.state,
                         type: node.type,
-                        terminal: ['snaker:start', 'snaker:end'].includes(node.type),
+                        terminal:
+                            node.type === WORKFLOW_RUNTIME_NODE_TYPES.START || node.type === WORKFLOW_RUNTIME_NODE_TYPES.END,
+                        condition: node.type === WORKFLOW_RUNTIME_NODE_TYPES.CONDITION,
                         icon: this.typeIcon(node.type),
                         mode: approval.mode,
                         description: approval.description || node.properties?.description || '',
@@ -126,48 +127,17 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.plannedPath?.edgeIds.some((id) => !this.selectedPath?.edgeIds.includes(id)) ?? false;
         },
     },
-    beforeUnmount() {
-        this.stopSizeWatch?.();
-        this.stopResizeWatch?.();
-    },
     methods: {
         edgeState(id: string): string {
-            if (this.selectedPath?.edgeIds.includes(id)) return 'is--visited';
-            if (this.plannedPath?.edgeIds.includes(id)) return 'is--planned';
+            if (this.selectedPath?.edgeIds.includes(id)) {
+                return 'is--visited';
+            }
+
+            if (this.plannedPath?.edgeIds.includes(id)) {
+                return 'is--planned';
+            }
+
             return this.plannedPath ? 'is--skipped' : '';
-        },
-        onInit(flow: VueFlowStore): void {
-            this.flow = markRaw({ fitView: flow.fitView, zoomIn: flow.zoomIn, zoomOut: flow.zoomOut });
-            this.stopSizeWatch?.();
-            this.stopResizeWatch?.();
-            this.stopSizeWatch = watch(
-                () => flow.getNodes.value.map((node) => [node.id, node.dimensions.width, node.dimensions.height] as const),
-                (nodes) => {
-                    const sizes = Object.fromEntries(
-                        nodes
-                            .filter(([, width, height]) => width > 0 && height > 0)
-                            .map(([id, width, height]) => [id, { width, height }]),
-                    );
-                    if (JSON.stringify(sizes) === JSON.stringify(this.nodeSizes)) return;
-                    this.nodeSizes = sizes;
-                    void this.$nextTick(() => this.fit());
-                },
-                { flush: 'post', immediate: true },
-            );
-            this.stopResizeWatch = watch(
-                () => [flow.dimensions.value.width, flow.dimensions.value.height],
-                () => this.fit(),
-                { flush: 'post', immediate: true },
-            );
-        },
-        fit(): void {
-            void this.flow?.fitView({ padding: 0.18, maxZoom: 1 });
-        },
-        zoomIn(): void {
-            void this.flow?.zoomIn();
-        },
-        zoomOut(): void {
-            void this.flow?.zoomOut();
         },
         edgeRoute(edge: EdgeProps<RuntimeEdgeData>) {
             return routeWorkflowConnection(
@@ -178,21 +148,21 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         typeLabel(type: string): string {
             const labels: Record<string, string> = {
-                'snaker:start': 'start',
-                'snaker:end': 'end',
-                'snaker:condition': 'condition',
-                'snaker:task': 'approval',
-                'snaker:copy': 'copy',
+                [WORKFLOW_RUNTIME_NODE_TYPES.START]: 'start',
+                [WORKFLOW_RUNTIME_NODE_TYPES.END]: 'end',
+                [WORKFLOW_RUNTIME_NODE_TYPES.CONDITION]: 'condition',
+                [WORKFLOW_RUNTIME_NODE_TYPES.TASK]: 'approval',
+                [WORKFLOW_RUNTIME_NODE_TYPES.COPY]: 'copy',
             };
             return labels[type] ? this.$t(`sw-workflow.runtime.viewer.types.${labels[type]}`) : type;
         },
         typeIcon(type: string): string {
             const icons: Record<string, string> = {
-                'snaker:start': 'regular-play',
-                'snaker:end': 'regular-checkmark',
-                'snaker:condition': 'regular-sitemap',
-                'snaker:task': 'regular-users',
-                'snaker:copy': 'regular-envelope',
+                [WORKFLOW_RUNTIME_NODE_TYPES.START]: 'regular-play',
+                [WORKFLOW_RUNTIME_NODE_TYPES.END]: 'regular-checkmark',
+                [WORKFLOW_RUNTIME_NODE_TYPES.CONDITION]: 'regular-sitemap',
+                [WORKFLOW_RUNTIME_NODE_TYPES.TASK]: 'regular-users',
+                [WORKFLOW_RUNTIME_NODE_TYPES.COPY]: 'regular-envelope',
             };
             return icons[type] ?? 'regular-cog';
         },
@@ -211,10 +181,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         participantState(state: string): string {
             return [
-                'todo',
-                'agreed',
-                'rejected',
-                'canceled',
+                ...Object.values(WORKFLOW_TASK_STATES),
                 'pending',
                 'active',
                 'approved',
@@ -225,12 +192,12 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         modeLabel(mode: string): string {
             return [
-                'single',
-                'orSign',
-                'countersign',
-                'orderSign',
-                'firstDecision',
-            ].includes(mode)
+                WORKFLOW_COUNTERSIGN_TYPES.SINGLE,
+                WORKFLOW_COUNTERSIGN_TYPES.OR_SIGN,
+                WORKFLOW_COUNTERSIGN_TYPES.COUNTERSIGN,
+                WORKFLOW_COUNTERSIGN_TYPES.ORDER_SIGN,
+                WORKFLOW_COUNTERSIGN_TYPES.FIRST_DECISION,
+            ].some((knownMode) => knownMode === mode)
                 ? this.$t(`sw-workflow.runtime.countersign.${mode}`)
                 : mode;
         },

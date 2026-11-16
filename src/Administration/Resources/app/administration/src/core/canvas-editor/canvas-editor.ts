@@ -94,18 +94,22 @@ export class CanvasEditor<TDocument extends CanvasDocument> {
 
     undo(): void {
         const previous = this.past.pop();
+
         if (!previous) {
             return;
         }
+
         this.future.push(this.current);
         this.current = previous;
     }
 
     redo(): void {
         const next = this.future.pop();
+
         if (!next) {
             return;
         }
+
         this.past.push(this.current);
         this.current = next;
     }
@@ -116,6 +120,7 @@ export class CanvasEditor<TDocument extends CanvasDocument> {
         if (JSON.stringify(next) === JSON.stringify(this.current)) {
             return;
         }
+
         // Current and history snapshots stay private; commands only receive a copy.
         this.past.push(this.current);
         this.past = this.past.slice(-50);

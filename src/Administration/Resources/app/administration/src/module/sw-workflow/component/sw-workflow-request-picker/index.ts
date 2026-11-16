@@ -46,13 +46,21 @@ export default Shopwell.Component.wrapComponentConfig({
                     limit: this.limit,
                     offset: (this.page - 1) * this.limit,
                 });
-                if (revision !== this.requestRevision) return;
+
+                if (revision !== this.requestRevision) {
+                    return;
+                }
+
                 this.releases = result.data;
                 this.total = result.total;
             } catch {
-                if (revision === this.requestRevision) this.hasError = true;
+                if (revision === this.requestRevision) {
+                    this.hasError = true;
+                }
             } finally {
-                if (revision === this.requestRevision) this.isLoading = false;
+                if (revision === this.requestRevision) {
+                    this.isLoading = false;
+                }
             }
         },
         changePage({ page, limit }: { page: number; limit: number }): void {

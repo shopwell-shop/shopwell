@@ -7,13 +7,14 @@ import type { WorkflowDocument, WorkflowNode, WorkflowNodeTypeSpecification } fr
 import { toCanvasGraph } from './workflow-canvas.adapter';
 import type { WorkflowCanvasEdgeData } from './workflow-canvas.adapter';
 import type { WorkflowConnectionRoute } from 'src/core/workflow/workflow-studio.types';
-import type { WorkflowNodeSize } from '../../util/workflow-layout-geometry.util';
+import type { WorkflowNodeSize } from 'src/core/workflow/workflow-studio.types';
 import template from './sw-workflow-studio-canvas.html.twig';
 import './sw-workflow-studio-canvas.scss';
 
 // Return the smallest translation that keeps a node inside the visible canvas.
 function visibilityOffset(start: number, end: number, extent: number): number {
     const padding = 24;
+
     if (end - start > extent - 2 * padding || start < padding) {
         return padding - start;
     }
@@ -175,6 +176,7 @@ export default Shopwell.Component.wrapComponentConfig({
         keepSelectedNodeVisible(flow: VueFlowStore): void {
             const node = this.selectedNodeId ? flow.findNode(this.selectedNodeId) : undefined;
             const { width, height } = flow.dimensions.value;
+
             if (!node || !width || !height || !node.dimensions.width || !node.dimensions.height) {
                 return;
             }
@@ -184,6 +186,7 @@ export default Shopwell.Component.wrapComponentConfig({
             const top = node.computedPosition.y * zoom + y;
             const offsetX = visibilityOffset(left, left + node.dimensions.width * zoom, width);
             const offsetY = visibilityOffset(top, top + node.dimensions.height * zoom, height);
+
             if (offsetX !== 0 || offsetY !== 0) {
                 void flow.setViewport({ x: x + offsetX, y: y + offsetY, zoom });
             }

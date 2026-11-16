@@ -1,4 +1,5 @@
 /** @sw-package framework */
+import type { WorkflowTemplateContext } from 'src/core/workflow/workflow-studio.types';
 import type { WorkflowExtension } from 'src/core/workflow/workflow-extension.types';
 import type { WorkflowDocument, WorkflowNodeTypeSpecification } from 'src/core/workflow/workflow.types';
 import type WorkflowNodeEditingService from '../workflow-node-editing.service';
@@ -8,6 +9,7 @@ type EditingOptions = {
     editing: WorkflowNodeEditingService;
     templates: WorkflowTemplateService;
     nodeTypes: () => WorkflowNodeTypeSpecification[];
+    templateContext: WorkflowTemplateContext;
 };
 
 function record(payload: unknown): Record<string, unknown> {
@@ -43,9 +45,11 @@ export default function createWorkflowEditingExtension(options: EditingOptions):
                 },
                 execute(document, payload) {
                     const type = typeFor(options.nodeTypes(), payload);
+
                     if (!type) {
                         throw new Error('Unknown workflow node type');
                     }
+
                     const { connectionId, id } = record(payload);
                     return options.editing
                         .get(type.name, type.version)
@@ -61,14 +65,18 @@ export default function createWorkflowEditingExtension(options: EditingOptions):
                     !Array.isArray(record(payload).patch),
                 execute(document, payload) {
                     const node = nodeFor(document, payload);
+
                     if (!node) {
                         throw new Error('Unknown workflow node');
                     }
+
                     const patch = record(payload).patch as Record<string, unknown>;
                     const strategy = options.editing.get(node.type, node.typeVersion);
+
                     if (strategy.updateConfig) {
                         return strategy.updateConfig(document, node.id, patch);
                     }
+
                     node.config = { ...(Array.isArray(node.config) ? {} : node.config), ...patch };
                     return document;
                 },
@@ -81,9 +89,11 @@ export default function createWorkflowEditingExtension(options: EditingOptions):
                 },
                 execute(document, payload) {
                     const node = nodeFor(document, payload);
+
                     if (!node) {
                         throw new Error('Unknown workflow node');
                     }
+
                     return options.editing.get(node.type, node.typeVersion).remove(document, node.id);
                 },
             });
@@ -93,10 +103,12 @@ export default function createWorkflowEditingExtension(options: EditingOptions):
                     options.templates.get(String(record(payload).name))?.available(options.nodeTypes()) ?? false,
                 execute(_document, payload) {
                     const preset = options.templates.get(String(record(payload).name));
+
                     if (!preset) {
                         throw new Error('Unknown workflow template');
                     }
-                    return preset.create(options.nodeTypes());
+
+                    return preset.create(options.nodeTypes(), options.templateContext);
                 },
             });
         },

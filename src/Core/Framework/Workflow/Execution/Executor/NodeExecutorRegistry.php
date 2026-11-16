@@ -6,12 +6,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 
 /**
+ * Find tagged executors by node type; keep the cache on the service instance.
+ *
  * @internal
- *
- * 按节点 type 找执行器。
- *
- * 用 `tagged_iterator` 装配（见 services.php），所以新增执行器**不需要改这里**。
- * 结果缓存在实例属性里（不是静态属性）：容器按请求重建，静态缓存在长驻进程里会串租户。
  */
 #[Package('framework')]
 final class NodeExecutorRegistry
@@ -52,8 +49,7 @@ final class NodeExecutorRegistry
         foreach ($this->executors as $executor) {
             $type = $executor->getNodeType();
 
-            // 同一个 type 注册两个实现时，后一个会静默覆盖——流程走错执行器极难排查，
-            // 所以在装配阶段就炸掉
+            // Reject duplicate registrations before one executor can silently replace another.
             if (isset($map[$type])) {
                 throw WorkflowExecutionException::duplicateRegistration('runtime provider', $type);
             }

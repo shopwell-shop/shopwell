@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowUserLookup;
 use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyCollection;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceCollection;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeStatus;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeStatusesEvent;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskCollection;
@@ -44,7 +45,7 @@ final readonly class ApprovalWorkflowSummarySubscriber implements EventSubscribe
 
     public function load(WorkflowRuntimeStatusesEvent $event): void
     {
-        $references = array_filter($event->references, static fn (array $reference): bool => $reference['publisher'] === 'core:approval');
+        $references = array_filter($event->references, static fn (array $reference): bool => $reference['publisher'] === ApprovalWorkflowPublisher::NAME);
         if ($references === []) {
             return;
         }
@@ -82,10 +83,10 @@ final readonly class ApprovalWorkflowSummarySubscriber implements EventSubscribe
         $names = $this->users->names(array_values(array_unique(array_merge([], ...array_values($current)))), $event->context);
         foreach ($instances as $instance) {
             $status = match ($instance->state()) {
-                WorkflowInstanceStates::RUNNING => 'pending',
-                WorkflowInstanceStates::AGREED => 'approved',
-                WorkflowInstanceStates::REJECTED => 'rejected',
-                WorkflowInstanceStates::CANCELED => 'canceled',
+                WorkflowInstanceStates::RUNNING => WorkflowRuntimeStatus::PENDING,
+                WorkflowInstanceStates::AGREED => WorkflowRuntimeStatus::APPROVED,
+                WorkflowInstanceStates::REJECTED => WorkflowRuntimeStatus::REJECTED,
+                WorkflowInstanceStates::CANCELED => WorkflowRuntimeStatus::CANCELED,
                 default => null,
             };
             if ($status === null) {

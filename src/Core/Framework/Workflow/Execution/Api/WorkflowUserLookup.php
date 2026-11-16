@@ -10,15 +10,9 @@ use Shopwell\Core\System\User\UserCollection;
 use Shopwell\Core\System\User\UserEntity;
 
 /**
+ * Load user display names in a single query, falling back to the username when the name is empty.
+ *
  * @internal
- *
- * 批量把用户 id 补成姓名。
- *
- * 存在的理由只有一个：**不要在处理列表时逐条查用户**。20 条待办 = 20 次
- * 用户查询，再加上每条的用户角色，列表接口会在 1 秒以上。这里一次 `Criteria($ids)` 查完。
- *
- * 姓名取 `name`，没有时退回 `username`：
- * 后台账号可能只填了用户名，显示空白会让人以为数据丢了。
  */
 #[Package('framework')]
 final class WorkflowUserLookup
@@ -33,7 +27,7 @@ final class WorkflowUserLookup
     /**
      * @param list<string> $userIds
      *
-     * @return array<string, string> id => 显示名
+     * @return array<string, string> User ID to display name
      */
     public function names(array $userIds, Context $context): array
     {

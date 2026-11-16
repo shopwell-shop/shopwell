@@ -1,9 +1,6 @@
 /** @sw-package framework */
 import type { WorkflowPoint, WorkflowBranchLane, WorkflowConnectionRoute } from 'src/core/workflow/workflow-studio.types';
 
-/** @public */
-export type { WorkflowPoint, WorkflowBranchLane, WorkflowConnectionRoute } from 'src/core/workflow/workflow-studio.types';
-
 function roundedPath(points: WorkflowPoint[]): string {
     let path = `M${points[0].x},${points[0].y}`;
     points.slice(1, -1).forEach((corner, index) => {

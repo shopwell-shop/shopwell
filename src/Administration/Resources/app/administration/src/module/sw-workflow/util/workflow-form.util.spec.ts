@@ -3,8 +3,8 @@ import { reactive } from 'vue';
 import { workflowFormFields } from './workflow-form.util';
 
 describe('workflow form fields', () => {
-    it('only supplies the reason default when the schema is absent', () => {
-        expect(workflowFormFields({})).toEqual([{ key: 'reason', label: '申请事由', type: 'text', required: false }]);
+    it('reads only explicit authored fields', () => {
+        expect(workflowFormFields({})).toEqual([]);
         expect(workflowFormFields({ formFields: [] })).toEqual([]);
     });
     it('clones reactive form definitions and choices without mutating the draft', () => {
@@ -24,5 +24,12 @@ describe('workflow form fields', () => {
         fields[0].options![0].label = 'Edited';
         expect(config.formFields[0].label).toBe('Category');
         expect(config.formFields[0].options[0].label).toBe('Travel');
+    });
+});
+
+describe('authored form labels', () => {
+    it('preserves authored labels and choices after the interface language changes', () => {
+        const config = { formFields: [{ key: 'reason', label: 'Edited reason', type: 'text', required: false }] };
+        expect(workflowFormFields(config)[0].label).toBe('Edited reason');
     });
 });

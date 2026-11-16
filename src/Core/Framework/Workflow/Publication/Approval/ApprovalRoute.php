@@ -32,7 +32,7 @@ final readonly class ApprovalRoute
         $edges = [];
         while (true) {
             if (\in_array($node->id, $nodes, true)) {
-                throw WorkflowExecutionException::invalidGraph('审批路径包含循环');
+                throw WorkflowExecutionException::invalidGraph('The approval path contains a cycle.');
             }
             $nodes[] = $node->id;
             if ($node->id === $stopAt || $node->type === WorkflowNodeTypes::END) {

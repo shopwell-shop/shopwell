@@ -1,6 +1,6 @@
 /** @sw-package framework */
 import '../service';
-import { conditionBranches, emptyConditionBranch } from './workflow-condition.util';
+import { conditionBranches } from './workflow-condition.util';
 import type { WorkflowNode } from 'src/core/workflow/workflow.types';
 
 describe('condition draft configuration', () => {
@@ -33,18 +33,45 @@ describe('condition draft configuration', () => {
         expect(JSON.stringify(node)).toBe(original);
     });
 
-    it('does not treat shared or configured terminal paths as disposable', () => {
-        const document = {
-            schemaVersion: 1 as const,
-            policy: 'core:structured',
-            nodes: [{ id: 'end', type: 'core:end', typeVersion: 1, config: { label: '', description: '' } }],
-            connections: [{ id: 'a', source: 'condition', sourcePort: 'branch-a', target: 'end', targetPort: 'in' }],
+    it('normalizes incomplete draft fields while retaining the first branch and extension data', () => {
+        const node: WorkflowNode = {
+            id: 'condition',
+            type: 'core:condition',
+            typeVersion: 1,
+            config: {
+                branches: [
+                    null,
+                    'branch-a',
+                    { id: 'branch-a', label: 12, field: null, operator: false, value: 0, extension: { source: 'plugin' } },
+                    { id: 'branch-a', label: 'Duplicate must not replace the first entry' },
+                    { id: 'branch-b', operator: 'plugin:compare', value: 'kept' },
+                ],
+            },
         };
-        expect(emptyConditionBranch(document, 'condition', 'branch-a')).toBe(true);
-        document.nodes[0].config.label = 'Custom ending';
-        expect(emptyConditionBranch(document, 'condition', 'branch-a')).toBe(false);
-        document.nodes[0].config.label = '';
-        document.connections.push({ ...document.connections[0], id: 'b', source: 'other' });
-        expect(emptyConditionBranch(document, 'condition', 'branch-a')).toBe(false);
+        const original = JSON.stringify(node);
+        expect(conditionBranches(node)).toEqual([
+            {
+                id: 'branch-a',
+                label: '',
+                field: '',
+                fieldType: '',
+                operator: 'equals',
+                value: '',
+                extension: { source: 'plugin' },
+            },
+            { id: 'branch-b', label: '', field: '', fieldType: '', operator: 'plugin:compare', value: 'kept' },
+        ]);
+        expect(JSON.stringify(node)).toBe(original);
+    });
+
+    it.each([
+        null,
+        {},
+        'branches',
+        [],
+    ])('tolerates a missing draft branch list: %s', (branches) => {
+        expect(conditionBranches({ id: 'condition', type: 'core:condition', typeVersion: 1, config: { branches } })).toEqual(
+            [],
+        );
     });
 });

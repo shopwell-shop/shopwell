@@ -1,9 +1,34 @@
-import type { RuntimeTask, RuntimeInstance } from 'src/core/workflow/workflow-runtime.types';
-type QueueRow = Partial<RuntimeTask & RuntimeInstance> & { id: string };
 /** @sw-package framework */
+import {
+    WORKFLOW_INSTANCE_STATUSES,
+    WORKFLOW_TASK_DECISIONS,
+    WORKFLOW_COUNTERSIGN_TYPES,
+} from 'src/core/workflow/workflow-runtime.constants';
+import type {
+    RuntimeTodoTask,
+    RuntimeDoneTask,
+    RuntimeInstanceListItem,
+    RuntimePage,
+} from 'src/core/workflow/workflow-runtime.types';
+
+type QueueRow =
+    | (RuntimeTodoTask & { queue: 'todo' })
+    | (RuntimeDoneTask & { queue: 'done' })
+    | (RuntimeInstanceListItem & { queue: 'mine' });
 import { absoluteTime, relativeTime } from '../../util/workflow-runtime-time.util';
 import template from './sw-workflow-tasks.html.twig';
 import './sw-workflow-tasks.scss';
+
+function queueStartedAt(row: QueueRow): string | null | undefined {
+    switch (row.queue) {
+        case 'mine':
+            return row.startedAt;
+        case 'todo':
+            return row.createdAt;
+        default:
+            return null;
+    }
+}
 
 /** @private */
 export default Shopwell.Component.wrapComponentConfig({
@@ -69,6 +94,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     { property: 'startedAt', sortable: false, label: this.$t('sw-workflow.runtime.todo.columnStarted') },
                 ];
             }
+
             if (this.isTodo) {
                 return [
                     {
@@ -113,7 +139,9 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     activated() {
-        if (!this.isLoading) void this.loadRows();
+        if (!this.isLoading) {
+            void this.loadRows();
+        }
     },
 
     beforeUnmount() {
@@ -121,12 +149,19 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     methods: {
+        statusVariant(status: string): string {
+            const variants: Record<string, string> = {
+                [WORKFLOW_INSTANCE_STATUSES.REJECTED]: 'critical',
+                [WORKFLOW_INSTANCE_STATUSES.AGREED]: 'positive',
+            };
+            return variants[status] ?? 'neutral';
+        },
         statusLabel(status: string): string {
             const labels: Record<string, string> = {
-                RUNNING: 'running',
-                AGREE: 'approved',
-                REJECT: 'rejected',
-                CANCEL: 'canceled',
+                [WORKFLOW_INSTANCE_STATUSES.RUNNING]: 'running',
+                [WORKFLOW_INSTANCE_STATUSES.AGREED]: 'approved',
+                [WORKFLOW_INSTANCE_STATUSES.REJECTED]: 'rejected',
+                [WORKFLOW_INSTANCE_STATUSES.CANCELED]: 'canceled',
             };
             return labels[status] ? this.$t(`sw-workflow.runtime.status.${labels[status]}`) : status;
         },
@@ -137,28 +172,49 @@ export default Shopwell.Component.wrapComponentConfig({
             this.rows = [];
 
             const params = { limit: this.limit, offset: (this.page - 1) * this.limit };
-            const request = this.isTodo
-                ? this.workflowRuntimeApiService.listTodo(params)
-                : this.activeTab === 'mine'
-                  ? this.workflowRuntimeApiService.listInitiated(params)
-                  : this.workflowRuntimeApiService.listDone(params);
+            const request = this.requestRows(params);
 
             return request
                 .then((response) => {
-                    if (revision !== this.loadRevision) return;
+                    if (revision !== this.loadRevision) {
+                        return;
+                    }
+
                     this.rows = response.data ?? [];
                     this.total = response.meta?.total ?? this.rows.length;
                 })
                 .catch((error: unknown) => {
-                    if (revision !== this.loadRevision) return;
+                    if (revision !== this.loadRevision) {
+                        return;
+                    }
+
                     this.hasError = true;
                     this.createNotificationError({ message: this.errorMessage(error) });
                     this.rows = [];
                     this.total = 0;
                 })
                 .finally(() => {
-                    if (revision === this.loadRevision) this.isLoading = false;
+                    if (revision === this.loadRevision) {
+                        this.isLoading = false;
+                    }
                 });
+        },
+
+        async requestRows(params: { limit: number; offset: number }): Promise<RuntimePage<QueueRow>> {
+            switch (this.activeTab) {
+                case 'todo': {
+                    const response = await this.workflowRuntimeApiService.listTodo(params);
+                    return { ...response, data: response.data.map((row) => ({ ...row, queue: 'todo' })) };
+                }
+                case 'mine': {
+                    const response = await this.workflowRuntimeApiService.listInitiated(params);
+                    return { ...response, data: response.data.map((row) => ({ ...row, queue: 'mine' })) };
+                }
+                default: {
+                    const response = await this.workflowRuntimeApiService.listDone(params);
+                    return { ...response, data: response.data.map((row) => ({ ...row, queue: 'done' })) };
+                }
+            }
         },
 
         onTabChange(key: string) {
@@ -180,34 +236,36 @@ export default Shopwell.Component.wrapComponentConfig({
         onOpen(row: QueueRow) {
             void this.$router.push({
                 name: 'sw.workflow.instance',
-                params: { id: this.activeTab === 'mine' ? row.id : row.instanceId },
-                query: this.isTodo ? { taskId: row.id } : {},
+                params: { id: row.queue === 'mine' ? row.id : row.instanceId },
+                query: row.queue === 'todo' ? { taskId: row.id } : {},
             });
         },
 
         waitingLabel(row: QueueRow) {
-            return row.createdAt || row.startedAt ? relativeTime(row.createdAt || row.startedAt) : '—';
+            const startedAt = queueStartedAt(row);
+            return startedAt ? relativeTime(startedAt) : '—';
         },
 
         waitingTitle(row: QueueRow) {
-            return row.createdAt || row.startedAt ? absoluteTime(row.createdAt || row.startedAt) : '';
+            const startedAt = queueStartedAt(row);
+            return startedAt ? absoluteTime(startedAt) : '';
         },
 
         completedLabel(row: QueueRow) {
-            return row.completedAt ? relativeTime(row.completedAt) : '—';
+            return row.queue === 'done' && row.completedAt ? relativeTime(row.completedAt) : '—';
         },
 
         completedTitle(row: QueueRow) {
-            return row.completedAt ? absoluteTime(row.completedAt) : '';
+            return row.queue === 'done' && row.completedAt ? absoluteTime(row.completedAt) : '';
         },
 
         countersignLabel(type: string) {
             const map: Record<string, string> = {
-                single: this.$t('sw-workflow.runtime.countersign.single'),
-                firstDecision: this.$t('sw-workflow.runtime.countersign.firstDecision'),
-                orSign: this.$t('sw-workflow.runtime.countersign.orSign'),
-                countersign: this.$t('sw-workflow.runtime.countersign.countersign'),
-                orderSign: this.$t('sw-workflow.runtime.countersign.orderSign'),
+                [WORKFLOW_COUNTERSIGN_TYPES.SINGLE]: this.$t('sw-workflow.runtime.countersign.single'),
+                [WORKFLOW_COUNTERSIGN_TYPES.FIRST_DECISION]: this.$t('sw-workflow.runtime.countersign.firstDecision'),
+                [WORKFLOW_COUNTERSIGN_TYPES.OR_SIGN]: this.$t('sw-workflow.runtime.countersign.orSign'),
+                [WORKFLOW_COUNTERSIGN_TYPES.COUNTERSIGN]: this.$t('sw-workflow.runtime.countersign.countersign'),
+                [WORKFLOW_COUNTERSIGN_TYPES.ORDER_SIGN]: this.$t('sw-workflow.runtime.countersign.orderSign'),
             };
 
             return map[type] ?? type;
@@ -215,7 +273,9 @@ export default Shopwell.Component.wrapComponentConfig({
 
         decisionLabel(decision: string) {
             return this.$t(
-                decision === 'reject' ? 'sw-workflow.runtime.timeline.rejected' : 'sw-workflow.runtime.timeline.agreed',
+                decision === WORKFLOW_TASK_DECISIONS.REJECT
+                    ? 'sw-workflow.runtime.timeline.rejected'
+                    : 'sw-workflow.runtime.timeline.agreed',
             );
         },
 

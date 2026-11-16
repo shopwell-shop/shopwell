@@ -111,4 +111,22 @@ describe('workflow read-only graph', () => {
         expect(wrapper.get('[data-editable]').attributes('data-editable')).toBe('false');
         wrapper.unmount();
     });
+    it('keeps unknown extension nodes visible with their type name and generic icon', async () => {
+        const wrapper = shallowMount(await wrapTestComponent('sw-workflow-runtime-viewer', { sync: true }), {
+            props: { graph: { nodes: [{ id: 'custom', type: 'plugin:review' }], edges: [] } },
+            global: {
+                stubs: {
+                    'vue-flow': {
+                        props: ['nodes'],
+                        template:
+                            '<section><div v-for="node in nodes" :key="node.id" :data-icon="node.data.icon" :data-terminal="node.data.terminal">{{ node.data.label }}</div></section>',
+                    },
+                },
+            },
+        });
+        expect(wrapper.get('[data-icon]').attributes('data-icon')).toBe('regular-cog');
+        expect(wrapper.get('[data-terminal]').attributes('data-terminal')).toBe('false');
+        expect(wrapper.text()).toContain('plugin:review');
+        wrapper.unmount();
+    });
 });

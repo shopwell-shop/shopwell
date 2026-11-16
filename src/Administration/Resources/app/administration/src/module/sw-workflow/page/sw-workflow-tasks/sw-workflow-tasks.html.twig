@@ -112,7 +112,7 @@
 
                         {% block sw_workflow_tasks_grid_decision %}
                         <template #column-status="{ item }">
-                            <mt-badge :variant="item.status === 'REJECT' ? 'critical' : item.status === 'AGREE' ? 'positive' : 'neutral'">
+                            <mt-badge :variant="statusVariant(item.status)">
                                 {{ statusLabel(item.status) }}
                             </mt-badge>
                         </template>

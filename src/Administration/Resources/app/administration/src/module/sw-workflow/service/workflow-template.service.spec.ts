@@ -15,6 +15,6 @@ describe('workflow template extensions', () => {
         });
         const template = service.get('example:retry');
         expect(service.all()).toHaveLength(1);
-        expect(template?.create([]).policy).toBe('example:retry');
+        expect(template?.create([], { translate: (key) => key }).policy).toBe('example:retry');
     });
 });

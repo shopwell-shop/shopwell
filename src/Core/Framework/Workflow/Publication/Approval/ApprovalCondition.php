@@ -35,7 +35,7 @@ final readonly class ApprovalCondition
             }
         }
         if ($field === null || ($branch['fieldType'] ?? null) !== $field['type']) {
-            throw WorkflowExecutionException::invalidGraph('条件字段不存在或类型已改变，请重新选择字段');
+            throw WorkflowExecutionException::invalidGraph('The condition field is missing or its type has changed. Select the field again.');
         }
         $condition = ['field' => $field, 'operator' => $branch['operator'] ?? null, 'value' => $branch['value'] ?? null];
         $encoded = self::PREFIX . json_encode($condition, \JSON_THROW_ON_ERROR);
@@ -52,15 +52,15 @@ final readonly class ApprovalCondition
         try {
             $condition = json_decode(substr($expression, \strlen(self::PREFIX)), true, 16, \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
-            throw WorkflowExecutionException::invalidGraph('条件配置不合法');
+            throw WorkflowExecutionException::invalidGraph('Invalid condition configuration.');
         }
         if (!\is_array($condition) || !\in_array($condition['operator'] ?? null, self::OPERATORS, true) || !\is_string($condition['value'] ?? null)) {
-            throw WorkflowExecutionException::invalidGraph('条件配置不合法');
+            throw WorkflowExecutionException::invalidGraph('Invalid condition configuration.');
         }
         $field = $this->forms->normalize([$condition['field'] ?? null])[0];
         $operator = $condition['operator'];
         if (!\in_array($operator, ['equals', 'notEquals', 'isEmpty', 'isNotEmpty'], true) && !\in_array($field['type'], ['amount', 'number', 'date'], true)) {
-            throw WorkflowExecutionException::invalidGraph('该字段类型不支持大小比较');
+            throw WorkflowExecutionException::invalidGraph('This field type does not support ordered comparisons.');
         }
         $value = \in_array($operator, ['isEmpty', 'isNotEmpty'], true) ? '' : $this->forms->normalizeValue($field, $condition['value']);
 

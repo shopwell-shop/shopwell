@@ -23,12 +23,14 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.userIds.map((id, index) => {
                 const user = users.get(id);
                 const name = user?.name || user?.username;
+
                 if (!user || !name) {
                     return {
                         label: this.$t('sw-workflow.approval.multiple.missingMember', { position: index + 1 }),
                         unavailable: true,
                     };
                 }
+
                 return {
                     label: user.active ? name : this.$t('sw-workflow.approval.multiple.inactiveMember', { name }),
                     unavailable: !user.active,
@@ -41,15 +43,26 @@ export default Shopwell.Component.wrapComponentConfig({
                 : undefined;
         },
         summary(): string {
-            if (this.status !== 'ready') return this.$t(`sw-workflow.approval.multiple.status.${this.status}`);
+            if (this.status !== 'ready') {
+                return this.$t(`sw-workflow.approval.multiple.status.${this.status}`);
+            }
+
             const separator = this.$t('sw-workflow.approval.multiple.separator');
             const names = this.members
                 .slice(0, 2)
                 .map((member) => member.label)
                 .join(separator);
-            if (this.members.length <= 2) return names;
+
+            if (this.members.length <= 2) {
+                return names;
+            }
+
             const summary = this.$t('sw-workflow.approval.multiple.more', { names, count: this.members.length });
-            if (!this.members.slice(2).some((member) => member.unavailable)) return summary;
+
+            if (!this.members.slice(2).some((member) => member.unavailable)) {
+                return summary;
+            }
+
             return [
                 summary,
                 this.$t('sw-workflow.approval.multiple.unavailableMembers', {

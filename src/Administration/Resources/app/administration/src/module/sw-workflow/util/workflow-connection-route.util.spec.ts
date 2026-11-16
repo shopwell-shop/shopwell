@@ -1,6 +1,6 @@
 /** @sw-package framework */
 import { routeWorkflowConnection } from './workflow-connection-route.util';
-import type { WorkflowPoint } from './workflow-connection-route.util';
+import type { WorkflowPoint } from 'src/core/workflow/workflow-studio.types';
 
 function horizontalSegments(points: WorkflowPoint[]) {
     return points

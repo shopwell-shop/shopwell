@@ -1,4 +1,5 @@
 /** @sw-package framework */
+import type { RuntimeInstance } from 'src/core/workflow/workflow-runtime.types';
 import { createWrapper, task, instance } from './create-wrapper';
 describe('snapshot rendering', () => {
     it('passes configured stages and uses stage outcomes instead of partial approval history', async () => {
@@ -28,7 +29,19 @@ describe('snapshot rendering', () => {
             tasks: [],
             approvalTasks: [],
             approvalStages,
-            history: [{ ...task, nodeId: 'review', decision: 'agree' }],
+            history: [
+                {
+                    id: 'decision',
+                    taskId: task.id,
+                    nodeId: 'review',
+                    nodeName: task.nodeName,
+                    assignee: task.assignee,
+                    countersignType: task.countersignType,
+                    decision: 'agree',
+                    comment: null,
+                    completedAt: null,
+                },
+            ],
         });
         expect(wrapper.findComponent({ name: 'sw-workflow-runtime-viewer' }).props('stages')).toEqual(approvalStages);
         expect(wrapper.findComponent({ name: 'sw-workflow-runtime-viewer' }).props('nodeStates')).toEqual({
@@ -164,17 +177,22 @@ describe('snapshot rendering', () => {
         wrapper.unmount();
     });
 
-    it('leaves generic runtime graph undecorated when route arrays are empty', async () => {
-        const wrapper = await createWrapper({
-            ...instance,
-            selectedPath: { nodeIds: [], edgeIds: [] },
-            plannedPath: { nodeIds: [], edgeIds: [] },
-            graph: { nodes: [{ id: 'legacy', type: 'snaker:task', properties: {} }], edges: [] },
-        });
-        expect(wrapper.findComponent({ name: 'sw-workflow-runtime-viewer' }).props('plannedPath')).toBeNull();
-        expect(wrapper.findComponent({ name: 'sw-workflow-runtime-viewer' }).props('nodeStates')).toEqual({});
-        wrapper.unmount();
-    });
+    it.each([null, { nodeIds: [], edgeIds: [] }])(
+        'leaves generic runtime graph undecorated for planned path %s',
+        async (plannedPath) => {
+            const snapshot = {
+                ...instance,
+                currentNodeId: null,
+                selectedPath: { nodeIds: [], edgeIds: [] },
+                plannedPath,
+                graph: { nodes: [{ id: 'legacy', type: 'snaker:task', properties: {} }], edges: [] },
+            } satisfies RuntimeInstance;
+            const wrapper = await createWrapper(snapshot);
+            expect(wrapper.findComponent({ name: 'sw-workflow-runtime-viewer' }).props('plannedPath')).toBeNull();
+            expect(wrapper.findComponent({ name: 'sw-workflow-runtime-viewer' }).props('nodeStates')).toEqual({});
+            wrapper.unmount();
+        },
+    );
 
     it.each(['REJECT', 'CANCEL'])('does not highlight future path after %s', async (status) => {
         const selectedPath = { nodeIds: ['start', 'review'], edgeIds: ['first'] };

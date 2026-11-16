@@ -1,6 +1,5 @@
 /** @sw-package framework */
 import workflowRequestFieldProvider from './workflow-request-field.provider';
-import approvalWorkflowFieldProvider from './approval-workflow-field.provider';
 import { createStructuredWorkflowDraft } from '../../util/workflow-template.util';
 import { createApprovalWorkflow } from '../../util/approval-workflow-template.util';
 
@@ -9,16 +8,19 @@ const condition = { id: 'condition', type: 'core:condition', typeVersion: 1, con
 describe('workflow request inputs', () => {
     it('only supplies approval inputs when the template declares that input contract', () => {
         expect(workflowRequestFieldProvider(createStructuredWorkflowDraft(), condition)).toEqual([]);
-        const document = createApprovalWorkflow([
-            {
-                name: 'core:approval',
-                version: 1,
-                kind: 'activity',
-                inputPorts: ['in'],
-                outputPorts: ['approved', 'rejected'],
-            },
-        ]);
-        const fields = approvalWorkflowFieldProvider(document, condition);
+        const document = createApprovalWorkflow(
+            [
+                {
+                    name: 'core:approval',
+                    version: 1,
+                    kind: 'activity',
+                    inputPorts: ['in'],
+                    outputPorts: ['approved', 'rejected'],
+                },
+            ],
+            { translate: () => 'Reason' },
+        );
+        const fields = workflowRequestFieldProvider(document, condition);
         expect(fields.map((field) => field.path)).toEqual(['request.reason']);
         document.nodes[0].config = {
             inputType: 'core:approval-request',
@@ -39,7 +41,7 @@ describe('workflow request inputs', () => {
         ]);
         document.nodes[0].config = { inputType: 'core:approval-request', formFields: [] };
         expect(workflowRequestFieldProvider(document, condition)).toEqual([]);
-        expect(workflowRequestFieldProvider(createApprovalWorkflow([]), condition)).toEqual([]);
+        expect(workflowRequestFieldProvider(createApprovalWorkflow([], { translate: (key) => key }), condition)).toEqual([]);
     });
     it('does not infer inputs from an approval node or unsupported start node versions', () => {
         const document = createStructuredWorkflowDraft();

@@ -1,8 +1,7 @@
 /**
  * @sw-package framework
  *
- * The two calls of the finance pages that are not plain entity crud: the options of the create modal
- * and the two money movements - the approval and the rejection.
+ * Transfer options, booking, financial execution and workflow approval endpoints.
  */
 import type { HttpClient } from 'src/core/factory/http-client.types';
 import type { LoginService } from 'src/core/service/login.service';

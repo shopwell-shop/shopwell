@@ -76,18 +76,24 @@ export default Shopwell.Component.wrapComponentConfig({
     },
     watch: {
         '$route.name'() {
-            if (!this.isHistory) void this.load();
+            if (!this.isHistory) {
+                void this.load();
+            }
         },
     },
     created() {
-        if (!this.isHistory) void this.load();
+        if (!this.isHistory) {
+            void this.load();
+        }
     },
     beforeUnmount() {
         this.requestRevision += 1;
     },
     methods: {
         onCreateWorkflow(): void {
-            if (this.allowCreate) void this.$router.push({ name: 'sw.workflow.create' });
+            if (this.allowCreate) {
+                void this.$router.push({ name: 'sw.workflow.create' });
+            }
         },
         formatDate(value: string | null): string {
             return value ? Shopwell.Filter.getByName('date')(value) : '';
@@ -100,22 +106,36 @@ export default Shopwell.Component.wrapComponentConfig({
             criteria.addFields('id', 'name', 'revision', 'createdAt', 'updatedAt');
             criteria.setTotalCountMode(1);
             criteria.addSorting(Shopwell.Data.Criteria.sort('createdAt', 'DESC'));
-            if (this.term) criteria.setTerm(this.term);
+
+            if (this.term) {
+                criteria.setTerm(this.term);
+            }
+
             try {
                 const drafts = await this.repository.search(criteria, Shopwell.Context.api);
-                if (revision !== this.requestRevision) return;
+
+                if (revision !== this.requestRevision) {
+                    return;
+                }
+
                 const lastPage = Math.max(1, Math.ceil((drafts.total ?? 0) / this.limit));
+
                 if (this.page > lastPage) {
                     this.page = lastPage;
                     await this.load();
                     return;
                 }
+
                 this.drafts = drafts;
                 this.total = drafts.total ?? 0;
             } catch {
-                if (revision === this.requestRevision) this.error = 'loadFailed';
+                if (revision === this.requestRevision) {
+                    this.error = 'loadFailed';
+                }
             } finally {
-                if (revision === this.requestRevision) this.isLoading = false;
+                if (revision === this.requestRevision) {
+                    this.isLoading = false;
+                }
             }
         },
         search(term: string): void {
@@ -129,13 +149,20 @@ export default Shopwell.Component.wrapComponentConfig({
             void this.load();
         },
         async remove(): Promise<void> {
-            if (!this.deletion || this.isDeleting || !this.acl.can('workflow.deleter')) return;
+            if (!this.deletion || this.isDeleting || !this.acl.can('workflow.deleter')) {
+                return;
+            }
+
             this.isDeleting = true;
             this.error = null;
             try {
                 await this.workflowService.deleteDraft(this.deletion.id, this.deletion.revision ?? 0);
                 this.deletion = null;
-                if (this.drafts?.length === 1 && this.page > 1) this.page -= 1;
+
+                if (this.drafts?.length === 1 && this.page > 1) {
+                    this.page -= 1;
+                }
+
                 await this.load();
             } catch (error) {
                 this.error = axios.isAxiosError(error) && error.response?.status === 409 ? 'deleteConflict' : 'deleteFailed';

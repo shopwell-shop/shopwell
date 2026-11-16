@@ -15,15 +15,18 @@ const type: WorkflowNodeTypeSpecification = {
     outputPorts: ['branch-1', 'fallback'],
 };
 async function createWrapper(allowEdit = true) {
-    const draft = createApprovalWorkflow([
-        {
-            name: 'core:approval',
-            version: 1,
-            kind: 'activity',
-            inputPorts: ['in'],
-            outputPorts: ['approved', 'rejected'],
-        },
-    ]);
+    const draft = createApprovalWorkflow(
+        [
+            {
+                name: 'core:approval',
+                version: 1,
+                kind: 'activity',
+                inputPorts: ['in'],
+                outputPorts: ['approved', 'rejected'],
+            },
+        ],
+        { translate: (key) => key },
+    );
     draft.nodes[0].config = {
         inputType: 'core:approval-request',
         formFields: [

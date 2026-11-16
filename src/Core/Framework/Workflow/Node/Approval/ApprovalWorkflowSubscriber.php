@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\Workflow\Node\Approval;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Event\WorkflowValidationEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -22,7 +23,7 @@ final class ApprovalWorkflowSubscriber implements EventSubscriberInterface
     public function validate(WorkflowValidationEvent $event): void
     {
         foreach ($event->document->nodes as $index => $node) {
-            if ($node->type !== 'core:approval' || $node->typeVersion !== 1) {
+            if ($node->type !== DocumentNodeTypes::APPROVAL || $node->typeVersion !== 1) {
                 continue;
             }
 

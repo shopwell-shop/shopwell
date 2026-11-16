@@ -60,8 +60,7 @@ final class WorkflowExecutionContext
     }
 
     /**
-     * 换实例（引擎在同一请求里可能重新读一次实例以保证拿到最新状态）。
-     * 其它字段不变，返回新对象而不是原地改——上下文是不可变的。
+     * Return a new context with the refreshed instance and unchanged execution data.
      */
     public function withInstance(WorkflowInstanceEntity $instance): self
     {

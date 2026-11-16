@@ -122,7 +122,7 @@ describe('approval settings', () => {
         service.registerSource(source);
         service.registerMode({ name: 'example:quorum', labelKey: 'example.quorum', descriptionKey: 'example.description' });
         service.registerMode(Shopwell.Service('workflowApprovalService').getMode('core:all')!);
-        service.registerSource({ ...source, supportedModes: [...source.supportedModes!, 'example:quorum'] });
+        const disposeSupport = service.registerSupportedMode(source.name, 'example:quorum');
         const wrapper = await createWrapper(true, service);
         const config = {
             assignee: { source: 'core:users', config: { userIds: ['11111111111111111111111111111111'] } },
@@ -137,5 +137,9 @@ describe('approval settings', () => {
         const people = wrapper.findComponent({ name: 'sw-workflow-users-assignee-select' }) as VueWrapper;
         people.vm.$emit('update-config', { userIds: ['22222222222222222222222222222222'] });
         expect(wrapper.emitted('update-config')![0][0]).toMatchObject({ approval: config.approval });
+        disposeSupport();
+        await flushPromises();
+        expect(wrapper.find('.sw-workflow-approval-settings__unavailable').exists()).toBe(true);
+        expect(wrapper.emitted('update-config')).toHaveLength(1);
     });
 });

@@ -1,25 +1,21 @@
 /** @sw-package framework */
+import { WORKFLOW_NODE_TYPES, WORKFLOW_INPUT_TYPES } from 'src/core/workflow/workflow-node.constants';
 import type { WorkflowFieldProvider } from 'src/core/workflow/workflow-studio.types';
-import { workflowFormFields } from '../../util/workflow-form.util';
 
 /** Only the approval extension supplies its implicit default explanation field. @private */
 const approvalWorkflowFieldProvider: WorkflowFieldProvider = (document) => {
-    const start = document.nodes.find((node) => node.type === 'core:start' && node.typeVersion === 1);
+    const start = document.nodes.find((node) => node.type === WORKFLOW_NODE_TYPES.START && node.typeVersion === 1);
 
     if (
         !start ||
         'formFields' in start.config ||
         !('inputType' in start.config) ||
-        start.config.inputType !== 'core:approval-request'
+        start.config.inputType !== WORKFLOW_INPUT_TYPES.APPROVAL_REQUEST
     ) {
         return [];
     }
 
-    return workflowFormFields(start.config).map((field) => ({
-        path: `request.${field.key}`,
-        label: field.label,
-        type: 'text',
-    }));
+    return [{ path: 'request.reason', label: { snippet: 'sw-workflow.inputs.reason' }, type: 'text' }];
 };
 
 /** @private */

@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\Workflow\Node\Approval;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowCompletingEvent;
+use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
@@ -27,7 +28,12 @@ final readonly class ApprovalCompletionSubscriber implements EventSubscriberInte
 
     public function complete(WorkflowCompletingEvent $event): void
     {
-        if ($event->context->graph()->nodesOfType(WorkflowNodeTypes::TASK) === []) {
+        $approvalStages = array_filter(
+            $event->context->graph()->nodesOfType(WorkflowNodeTypes::TASK),
+            static fn (GraphNode $node): bool => $node->property('approvalStage') === true
+        );
+
+        if ($approvalStages === []) {
             return;
         }
 

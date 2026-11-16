@@ -10,8 +10,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
-use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
 use Shopwell\Tests\Integration\Core\Framework\Workflow\Execution\_fixtures\RuntimeFixture;
@@ -28,13 +28,13 @@ class WorkflowRuntimeWriteProtectionTest extends TestCase
 
     private string $instanceId;
 
-    private ApprovalWorkflowService $flows;
+    private WorkflowService $flows;
 
     protected function setUp(): void
     {
-        $flows = static::getContainer()->get(ApprovalWorkflowService::class);
+        $flows = static::getContainer()->get(WorkflowService::class);
         $connection = static::getContainer()->get(Connection::class);
-        static::assertInstanceOf(ApprovalWorkflowService::class, $flows);
+        static::assertInstanceOf(WorkflowService::class, $flows);
         static::assertInstanceOf(Connection::class, $connection);
         $this->flows = $flows;
         $this->fixture = new RuntimeFixture($connection, $flows);

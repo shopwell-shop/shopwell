@@ -9,19 +9,9 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\Violation;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 
 /**
+ * Check reachability from the start and to the end using breadth-first traversal.
+ *
  * @internal
- *
- * 可达性，两个方向都要查：
- *
- * 1. **从开始节点出发能不能到这个节点** —— 到不了就是孤立节点（画在画布上但没连进来）；
- * 2. **这个节点能不能走到结束节点** —— 走不到就是死路（典型：加了审批节点忘了连到结束）。
- *
- * 只查一个方向是不够的：只查正向时，"审批节点 → 悬空"能通过（节点可达），
- * 但发起到那一步会抛 deadEnd；只查反向时，孤立节点能通过。
- *
- * 有向图的"能否到达"用 BFS，别用 DFS 递归——图深了会爆栈。
- *
- * 错误码 `WORKFLOW_EXECUTION_005`。
  */
 #[Package('framework')]
 final class ReachabilityRule implements GraphRuleInterface
@@ -31,7 +21,7 @@ final class ReachabilityRule implements GraphRuleInterface
         $starts = $graph->nodesOfType(WorkflowNodeTypes::START);
         $ends = $graph->nodesOfType(WorkflowNodeTypes::END);
 
-        // 数量不对由 002/003 报，缺了也没法算可达性
+        // Start and end counts are reported by their dedicated rules.
         if (\count($starts) !== 1 || \count($ends) !== 1) {
             return [];
         }
@@ -48,7 +38,7 @@ final class ReachabilityRule implements GraphRuleInterface
             if (!isset($forward[$node->id])) {
                 $violations[] = Violation::error(
                     'WORKFLOW_EXECUTION_005',
-                    '这个节点从开始节点走不到（孤立节点），请连上或用删除',
+                    'This node is unreachable from the start. Connect or delete it.',
                     $node->id
                 );
 
@@ -58,7 +48,7 @@ final class ReachabilityRule implements GraphRuleInterface
             if (!isset($backward[$node->id])) {
                 $violations[] = Violation::error(
                     'WORKFLOW_EXECUTION_005',
-                    '这个节点走不到结束节点（死路），流程会在这一步断掉',
+                    'This node cannot reach the end; execution would stop here.',
                     $node->id
                 );
             }
@@ -77,7 +67,7 @@ final class ReachabilityRule implements GraphRuleInterface
         $incoming = [];
 
         if ($reverse) {
-            // 反向图：把每条边倒过来，才能"从结束节点往回走"
+            // Reverse each edge to traverse back from the end.
             foreach ($graph->edges() as $edge) {
                 $incoming[$edge->targetNodeId][] = $edge->sourceNodeId;
             }

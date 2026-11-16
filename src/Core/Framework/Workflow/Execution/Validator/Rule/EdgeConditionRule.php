@@ -11,18 +11,9 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 
 /**
+ * Validate edge expression syntax and references against the form schema.
+ *
  * @internal
- *
- * 连线条件：语法合法、变量都在表单里。
- *
- * 表达式是唯一一处"用户能写进流程引擎的代码"，所以保存时就要把它钉死：
- * 语法不对、引用了不存在的字段，一律拦住。运行期再发现，
- * 用户看到的是一句"流程无法继续"，无从下手。
- *
- * 变量白名单来自模板的 `formSchema`；没有表单字段的模板，
- * 任何条件表达式都会报错——这是对的，没有字段就没有可判断的东西。
- *
- * 错误码 `WORKFLOW_EXECUTION_007`。
  */
 #[Package('framework')]
 final class EdgeConditionRule implements GraphRuleInterface
@@ -39,7 +30,7 @@ final class EdgeConditionRule implements GraphRuleInterface
             $expr = $edge->expr();
 
             if ($expr === null) {
-                continue;   // 无条件连线 = 默认分支，合法
+                continue;   // An unconditional edge is a valid default branch.
             }
 
             try {
@@ -47,7 +38,7 @@ final class EdgeConditionRule implements GraphRuleInterface
                     $condition = $this->conditions->decode($expr);
                     $field = $condition['field'];
                     if (!$context->hasFormKey($field['key']) || ($context->formTypes[$field['key']] ?? null) !== $field['type']) {
-                        throw WorkflowExecutionException::invalidGraph('条件字段与表单不一致');
+                        throw WorkflowExecutionException::invalidGraph('The condition field does not match the form schema.');
                     }
                 } else {
                     $this->normalizer->assertValid($expr, $context->formKeys);
@@ -55,7 +46,7 @@ final class EdgeConditionRule implements GraphRuleInterface
             } catch (WorkflowExecutionException $exception) {
                 $violations[] = Violation::error(
                     'WORKFLOW_EXECUTION_007',
-                    \sprintf('连线条件不合法：%s', $exception->getMessage()),
+                    \sprintf('Invalid edge condition: %s', $exception->getMessage()),
                     $edge->sourceNodeId,
                     $edge->id
                 );

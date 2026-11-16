@@ -51,13 +51,21 @@ export default Shopwell.Component.wrapComponentConfig({
                 const draftId = typeof this.$route?.query.draftId === 'string' ? this.$route.query.draftId : undefined;
                 const params = { limit: this.limit, offset: (this.page - 1) * this.limit };
                 const result = await this.workflowService.getReleases({ ...params, draftId });
-                if (revision !== this.requestRevision) return;
+
+                if (revision !== this.requestRevision) {
+                    return;
+                }
+
                 this.releases = result.data;
                 this.total = result.total;
             } catch {
-                if (revision === this.requestRevision) this.hasError = true;
+                if (revision === this.requestRevision) {
+                    this.hasError = true;
+                }
             } finally {
-                if (revision === this.requestRevision) this.isLoading = false;
+                if (revision === this.requestRevision) {
+                    this.isLoading = false;
+                }
             }
         },
         changePage({ page, limit }: { page: number; limit: number }): void {

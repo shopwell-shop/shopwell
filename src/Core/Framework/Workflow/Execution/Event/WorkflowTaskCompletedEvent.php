@@ -6,12 +6,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Symfony\Contracts\EventDispatcher\Event;
 
 /**
+ * A single task was approved or rejected; this does not imply that the node or instance is complete.
+ *
  * @internal
- *
- * 一条任务完成（同意/拒绝）。
- *
- * 注意这是**单条任务**的完成，不是节点的完成：会签 3 人时它触发 3 次。
- * "整个节点通过了"要看 {@see WorkflowInstanceEndedEvent}，或者监听器自己查聚合结果。
  */
 #[Package('framework')]
 final class WorkflowTaskCompletedEvent extends Event

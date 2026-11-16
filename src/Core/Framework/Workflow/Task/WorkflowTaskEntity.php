@@ -16,21 +16,9 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
 /**
+ * One task represents one assignee's decision in a node and round; sequential approval uses the immutable ext.assignees snapshot.
+ *
  * @internal
- *
- * 一条待办 = 一个审批人的一次表态机会。
- *
- * 任务不是"节点的属性"，而是一等公民：会签 = 同一节点 N 条任务；
- * 顺序会签 = 同一节点按 `sequence` 逐条创建。这样"谁在什么时候同意了哪一步"
- * 天然可查，不需要回头解析日志，也不会因为模板改版而丢失历史。
- *
- * `round` 与实例上的同名。当前同步为 1；退回后同节点进入第 2 轮，
- * 旧任务保持第 1 轮不动，会签分母按 `(instance, node, round)` 分组才不会串轮。
- *
- * **ext 里有个约定键**：`ext.assignees` 存顺序会签的完整审批人列表快照
- * （`list<string>`，按审批顺序）。顺序会签每次只建一条任务，轮到下一个人时
- * 从这份快照里取——如果每次都重新解析审批人，期间组织架构一变就会漏人或多出人。
- * 解析一次、快照一次、后续只读。
  */
 #[Package('framework')]
 #[Entity('workflow_task', since: '6.7.15.0', collectionClass: WorkflowTaskCollection::class)]
@@ -39,7 +27,7 @@ class WorkflowTaskEntity extends EntityStruct
     public const ENTITY_NAME = 'workflow_task';
 
     /**
-     * ext 里的审批人快照键，见类注释
+     * The ext key containing the assignee snapshot.
      */
     public const EXT_ASSIGNEES = 'assignees';
 
@@ -58,14 +46,14 @@ class WorkflowTaskEntity extends EntityStruct
     public string $instanceId;
 
     /**
-     * 模板里的节点 id，与图里的 node.id 一致
+     * The definition node ID, matching node.id in the graph.
      */
     #[Required]
     #[Field(type: FieldType::STRING, api: true, maxLength: 64)]
     public string $nodeId;
 
     /**
-     * 节点名快照：模板改名后历史待办仍显示当时的名字
+     * Node name at creation, preserved when the definition is renamed.
      */
     #[Field(type: FieldType::STRING, api: true, maxLength: 255)]
     public string $nodeName;
@@ -79,7 +67,7 @@ class WorkflowTaskEntity extends EntityStruct
     public int $round = 1;
 
     /**
-     * 顺序会签的序号（从 1 开始）；其它类型恒为 1
+     * Sequential approval position starting at one; other modes use one.
      */
     #[Field(type: FieldType::INT, api: true)]
     public int $sequence = 1;
@@ -89,7 +77,7 @@ class WorkflowTaskEntity extends EntityStruct
     public string $assigneeId;
 
     /**
-     * 审批人来源类型，用于详情页显示"部门负责人"这类说明，也便于排查解析问题
+     * The assignee source type for presentation and diagnostics.
      */
     #[Required]
     #[Field(type: FieldType::STRING, api: true, maxLength: 32)]
@@ -99,8 +87,7 @@ class WorkflowTaskEntity extends EntityStruct
     public ?\DateTimeInterface $completedAt = null;
 
     /**
-     * 预留：加签来源任务 id、转办人、代理人、超时策略。
-     * 约定键 `assignees` 见类注释。
+     * Reserved transfer and delegation metadata; assignees is the ordered snapshot key.
      *
      * @var array<string, mixed>|null
      */
@@ -119,7 +106,7 @@ class WorkflowTaskEntity extends EntityStruct
     }
 
     /**
-     * 顺序会签的审批人快照。
+     * Return the sequential approval assignee snapshot.
      *
      * @return list<string>
      */

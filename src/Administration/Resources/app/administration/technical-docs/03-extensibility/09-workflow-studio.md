@@ -54,6 +54,22 @@ Registration fails on collisions and rolls back contributions already installed 
 Approval is registered separately from the basic Workflow and condition capabilities.
 These are Workflow capabilities, not requirements imposed on the shared canvas.
 
+## Register approval and request capabilities
+
+`workflowApprovalService.registerSource()`, `registerMode()` and `registerSupportedMode(sourceName, modeName)`, `workflowRequestFormService.registerDataSource()` and `workflowReleaseActionService.register()` reject duplicate names and return disposers.
+Registrations update open views when removed, while existing authored configuration remains intact and unavailable capabilities are displayed as unavailable.
+Register a custom mode before opting a source with explicit `supportedModes` into it.
+Removing either source or mode removes its compatibility opt-ins; reinstalling requires explicitly registering those opt-ins again.
+A failed registration leaves the existing contribution intact, and a stale disposer cannot remove a newer registration.
+These individual registrations are independently owned; an extension that installs several must dispose its completed registrations if a later one fails.
+
+Template `create(types, { translate })` callbacks receive a translation function for the current interface language.
+Resolve default node labels and form field labels when creating a new document, and retain persisted authored text when reopening it or switching the interface language.
+
+Server-side input option subscribers use `Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowFormOptionsEvent` for both approval and other workflow inputs.
+Runtime node and connection identifiers are limited to 64 characters; draft identifiers may contain up to 128 characters, and publication rejects longer runtime identifiers before creating a release.
+Invalid runtime identifiers and approval configuration return structured `code`, `path` and `nodeId` diagnostics in `errors[].meta.parameters.violations` so extensions can locate invalid configuration without parsing error messages.
+
 ## Register an editor extension
 
 Register definitions during Administration initialization, before an editor is opened.
@@ -138,6 +154,26 @@ A dialog contribution can provide `titleKey` and is opened with `context.ui.open
 Session subscriptions run in descending priority order and return an early-unsubscribe disposer; extension teardown always removes the subscription.
 Raw node, edge and pane interactions use Vue Flow listeners and hooks directly.
 State notifications include `selection.changed`, `document.changed`, `command.executed`, `session.changed` and `session.destroyed`.
+
+## Execution condition expressions
+
+Generic execution edge conditions use explicit form references, for example `${form.amount} > 5000 && ${form.currency} == "CNY"`.
+Only declared form fields, scalar literals, the six comparison operators, `&&`, `||` and parentheses grouping complete conditions are allowed.
+Bare identifiers, function or method calls, arithmetic and arbitrary property access are rejected.
+Text inside quoted literals is preserved, including text that resembles a form reference.
+String escapes are limited to backslashes and quote characters.
+
+The backend requires `symfony/expression-language` from the Symfony 7.4 series for tokenization and syntax parsing.
+The Workflow adapter normalizes explicit field references, restricts the library tokens and AST to the supported contract, and emits the same instructions for validation and execution.
+The comparison evaluator retains Workflow's null, boolean and numeric-string behavior; it does not delegate business comparisons to the library's native evaluator.
+Missing runtime values resolve to null, while references to undeclared fields fail validation even in an unselected logical branch.
+Approval designer branches use a separate typed condition format and Brick Math decimal comparison for amounts and numbers.
+
+Parentheses may nest at most 64 levels.
+Expressions are also subject to ExpressionLanguage's native parsing and AST depth limits, currently 256 levels in the required 7.4 component.
+This is a tree/parsing depth limit, not a count of conditions: sufficiently long flat logical chains can exceed it.
+Validation rejects these expressions before execution.
+Extensions should keep branch conditions focused rather than relying on unbounded logical chains.
 
 ## Architecture references
 

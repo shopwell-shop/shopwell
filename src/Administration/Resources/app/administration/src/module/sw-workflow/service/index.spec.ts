@@ -5,10 +5,13 @@ import './index';
 describe('request form extension service', () => {
     it('exposes configured fields and the default form to business modules', () => {
         const service = Shopwell.Service('workflowRequestFormService');
-        expect(service.getFields({}).map((field) => field.key)).toEqual(['reason']);
-        expect(service.getFields({ formFields: [] })).toEqual([]);
+        expect(service.getFields({}, 'Reason').map((field) => field.key)).toEqual(['reason']);
+        expect(service.getFields({ formFields: [] }, 'Reason')).toEqual([]);
         expect(
-            service.getFields({ formFields: [{ key: 'amount', label: 'Amount', type: 'amount', required: true }] }),
+            service.getFields(
+                { formFields: [{ key: 'amount', label: 'Amount', type: 'amount', required: true }] },
+                'Reason',
+            ),
         ).toEqual([{ key: 'amount', label: 'Amount', type: 'amount', required: true }]);
     });
 });

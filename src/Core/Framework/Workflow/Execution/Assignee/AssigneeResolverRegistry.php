@@ -6,11 +6,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 
 /**
+ * Find tagged assignee resolvers by type.
+ *
  * @internal
- *
- * 按 `assigneeType` 找解析器。
- *
- * `tagged_iterator` 装配，新增一种审批人只需加一个类，不改这里。
  */
 #[Package('framework')]
 final class AssigneeResolverRegistry

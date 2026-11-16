@@ -8,6 +8,8 @@ describe('structured workflow draft', () => {
         const start = first.nodes.find((node) => node.type === 'core:start');
         const end = first.nodes.find((node) => node.type === 'core:end');
 
+        expect(first.nodes.map((node) => node.type)).toEqual(['core:start', 'core:end']);
+        expect(first.connections[0]).toMatchObject({ sourcePort: 'out', targetPort: 'in' });
         expect(start).toBeDefined();
         expect(end).toBeDefined();
         expect(

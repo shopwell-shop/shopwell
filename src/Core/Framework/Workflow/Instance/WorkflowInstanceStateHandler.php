@@ -11,16 +11,9 @@ use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
 
 /**
+ * Transition instances and write endedAt together through the state machine to preserve history and terminal-state constraints.
+ *
  * @internal
- *
- * 实例状态的唯一出口。
- *
- * 全项目只有这里能写 `workflow_instance.state_id`：引擎、服务、控制器、监听器
- * 一律调本类方法。理由不是洁癖——状态机迁移会顺手写 `state_machine_history`，
- * 绕过它直接改列，审计链就断了，而且"终态不可再变"这条约束也失效。
- *
- * `endedAt` 与终态在同一个方法里写：两处分开写会出现"已结束但没有结束时间"
- * 的行，报表按 endedAt 统计耗时时会漏掉这些单。
  */
 #[Package('framework')]
 final class WorkflowInstanceStateHandler
@@ -63,12 +56,11 @@ final class WorkflowInstanceStateHandler
     }
 
     /**
-     * 只允许从 running 出发；重复同意会撞非法迁移并抛 StateMachineException。
-     * 这个异常**不要**在业务代码里吞掉——它就是并发闸门在工作。
+     * Transitions are allowed only from running; do not swallow StateMachineException for duplicate decisions.
      */
     private function transition(string $instanceId, string $action, Context $context): void
     {
-        // 状态机内部会切 system scope，与调用方当前 scope 无关
+        // The state machine selects system scope internally.
         $this->stateMachineRegistry->transition(
             new Transition(WorkflowInstanceEntity::ENTITY_NAME, $instanceId, $action, 'stateId'),
             $context

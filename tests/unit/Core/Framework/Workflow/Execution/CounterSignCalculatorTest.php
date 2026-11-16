@@ -15,14 +15,7 @@ use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
 /**
- * 会签判定表。
- *
- * 这些用例是**规格**，不是"补覆盖率"：四种审批方式的行为差异全在这里，
- * 改 {@see CounterSignCalculator} 之前先看它们是否还成立。
- *
- * 特别注意 orSign 的两条：任一同意 → 通过；**全部**拒绝 → 拒绝。
- * 写成"任一拒绝即拒绝"是最常见的实现错误，而且测试里只要不覆盖"部分拒绝"
- * 就发现不了。
+ * Specify approval-mode differences, including the requirement that every assignee reject an or-sign node.
  *
  * @internal
  */
@@ -123,10 +116,7 @@ class CounterSignCalculatorTest extends TestCase
     }
 
     /**
-     * 顺序会签：分母必须来自快照，而不是"现有任务数"。
-     *
-     * 这条用例防的是最隐蔽的一个 bug：任务逐条创建，第一人同意时
-     * 现有任务数 = 1、已同意 = 1，若拿现有任务数当分母就会立刻通过。
+     * Sequential approval uses the full snapshot size because later tasks do not exist yet.
      */
     public function testOrderSignWaitsForEveryoneInTheSnapshot(): void
     {
@@ -163,8 +153,7 @@ class CounterSignCalculatorTest extends TestCase
     }
 
     /**
-     * 取消的任务不能算进分母：否则 3 人会签里有 1 人被撤回后，
-     * 剩下 2 人全部同意也凑不齐 3 票，流程永久卡死。
+     * Canceled tasks must not contribute to the approval denominator.
      */
     public function testCanceledTasksAreNotCountedInTheDenominator(): void
     {
@@ -212,7 +201,7 @@ class CounterSignCalculatorTest extends TestCase
         $task->stateMachineState->setId($task->stateId);
         $task->stateMachineState->setTechnicalName($state);
 
-        // EntityCollection 构造时按 unique identifier 建索引，不设会抛
+        // EntityCollection requires a unique identifier when indexing entities.
         // "must not be accessed before initialization"
         $task->setUniqueIdentifier($task->id);
 

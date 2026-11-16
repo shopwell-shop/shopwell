@@ -1,9 +1,10 @@
 /** @sw-package framework */
+import WorkflowRequestFormService from '../../service/workflow-request-form.service';
 import { mount } from '@vue/test-utils';
 import type { ComponentPublicInstance } from 'vue';
 import type { VueWrapper } from '@vue/test-utils';
 import type { WorkflowNode } from 'src/core/workflow/workflow.types';
-import type { WorkflowFormField } from '../../util/workflow-form.util';
+import type { WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
 
 async function createWrapper(allowEdit = true) {
     let node: WorkflowNode = {
@@ -12,13 +13,13 @@ async function createWrapper(allowEdit = true) {
         typeVersion: 1,
         config: { inputType: 'core:approval-request' },
     };
+    const service = new WorkflowRequestFormService();
+    service.registerDataSource({ name: 'core:currency', labelKey: 'sw-workflow.form.currencySource' });
     const wrapper: VueWrapper = mount(await wrapTestComponent('sw-workflow-start-settings', { sync: true }), {
         props: { node, allowEdit },
         global: {
             provide: {
-                workflowRequestFormService: {
-                    getDataSources: () => [{ name: 'core:currency', labelKey: 'sw-workflow.form.currencySource' }],
-                },
+                workflowRequestFormService: service,
             },
         },
     });

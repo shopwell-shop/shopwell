@@ -68,6 +68,11 @@ export interface WorkflowNodeEditingStrategy {
     remove(document: WorkflowDocument, id: string): WorkflowDocument;
 }
 
+/** Translation is resolved when authoring a new document, never while reading saved labels. @public */
+export interface WorkflowTemplateContext {
+    translate: (key: string) => string;
+}
+
 /** @public */
 export interface WorkflowTemplate {
     name: string;
@@ -75,7 +80,7 @@ export interface WorkflowTemplate {
     descriptionKey: string;
     icon: string;
     available: (types: WorkflowNodeTypeSpecification[]) => boolean;
-    create: (types: WorkflowNodeTypeSpecification[]) => WorkflowDocument;
+    create: (types: WorkflowNodeTypeSpecification[], context: WorkflowTemplateContext) => WorkflowDocument;
 }
 
 /** A business label may be authored text or a translated snippet. @public */

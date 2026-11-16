@@ -30,7 +30,10 @@ The revision-checked draft API at `/api/_action/workflow/draft` requires the cor
 Updates and deletes require `expectedRevision` and return HTTP 409 on conflicting edits.
 Approval nodes support a single named user or multiple users with all-must-approve and first-decision rules, and display current approver names.
 `workflowApprovalService.registerSource()` and `registerMode()` provide independent settings components for business extensions; sources also provide their node summary component and optional `supportedModes` to constrain compatible rules.
-When a source declares `supportedModes`, extensions opt in their custom rules by registering that source again with an expanded list.
+When a source declares `supportedModes`, extensions opt in custom rules through `workflowApprovalService.registerSupportedMode(sourceName, modeName)`.
+Approval source, mode and compatibility registrations, request form data sources and release actions reject duplicate names and return disposers.
+Removing a source or mode also removes its compatibility registrations; reinstalling requires explicitly opting in again.
+Template `create(types, { translate })` receives the current interface translation context; authored labels and form fields are translated only when creating the document.
 Workflow viewers require `user:read` to resolve approvers; no user write privileges are granted.
 Saved draft revisions can be published through `POST /api/_action/workflow/draft/{id}/publish` with `expectedRevision` and `publisher`.
 Publication requires `workflow:publish` plus the target privileges, preserves the original document in an immutable snapshot, and deduplicates repeat publication of the same revision and target.
@@ -43,13 +46,17 @@ Unavailable configured reviewers block publication or stage entry instead of sil
 Unsupported nodes and modes are rejected at publication.
 Request forms are configured on the start node with `formFields` and support text, amount, number, date and single-select fields, required checks and published schema snapshots.
 Text fields can declare a `dataSource`; `core:currency` provides configured currency names and ISO codes through a standard selection control and validates submitted membership on the server.
-Extensions supply read-only options through `WorkflowFormOptionsEvent` and can register request action components using the start node's `requestAction` identifier.
+Extensions supply read-only options through `Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowFormOptionsEvent` and can register request action components using the start node's `requestAction` identifier.
+Published node and connection identifiers are limited to 64 characters so they can be recorded by the runtime; editable drafts retain their 128-character limit.
+Invalid runtime identifiers and approval configuration expose structured diagnostics with code, document path and node identifier in `errors[].meta.parameters.violations`.
 `GET /api/_action/workflow/request-catalogue` requires workflow read and request start permissions; `GET /api/_action/workflow/form-options/{source}` exposes only source options to workflow readers.
 
 Conditions reference `request.<field key>` with a bound `fieldType`, evaluate in configured order and use the default branch when no condition matches; amount comparisons use decimal arithmetic.
+Generic execution conditions retain `${form.<field key>}` references, explicit comparisons and `&&`/`||` grouping, with at most 64 nested parentheses and Symfony ExpressionLanguage's native parsing and AST depth limits.
+Very long flat logical chains can exceed the library's depth limit and are rejected during validation.
 Changing a referenced field type requires explicitly rebinding the condition before publication.
 Invalid values, unavailable fields and unsupported operator/type combinations are rejected before execution; unselected branches create no approval tasks.
-The Administration exposes `workflowRequestFormService.getFields(config)` for release consumers to read request field definitions without importing designer internals.
+The Administration exposes `workflowRequestFormService.getFields(config, defaultReasonLabel)` for release consumers to read request field definitions without importing designer internals.
 Core workflow instance details expose ordered `approvalStages` with immutable stage names, descriptions, rules and participants from the published snapshot, stage outcomes and actual tasks.
 Future stages remain visible without creating tasks or todos before entry; rejection and unselected branches mark remaining stages as skipped.
 Instance details expose `plannedPath` for the route selected by frozen request values and `selectedPath` for the visited prefix, with node and edge identifiers matching the instance graph.

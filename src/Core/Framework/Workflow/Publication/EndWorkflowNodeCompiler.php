@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\Workflow\Publication;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
@@ -18,7 +19,7 @@ final class EndWorkflowNodeCompiler implements WorkflowNodeCompiler
 {
     public function getNodeType(): string
     {
-        return 'core:end';
+        return DocumentNodeTypes::END;
     }
 
     public function getNodeVersion(): int

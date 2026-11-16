@@ -1,21 +1,38 @@
 /** @sw-package framework */
 import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
+import type { RuntimeInstance } from 'src/core/workflow/workflow-runtime.types';
 
 describe('workflow approval history', () => {
     it('orders completed decisions chronologically and hides pending after completion', async () => {
+        const history = [
+            {
+                id: '2',
+                taskId: 'task-2',
+                nodeId: 'review',
+                nodeName: 'Review',
+                countersignType: 'single',
+                completedAt: '2026-11-13T11:00:00Z',
+                assignee: { id: 'bob', name: 'Bob' },
+                decision: 'reject',
+                comment: 'Incorrect',
+            },
+            {
+                id: '1',
+                taskId: 'task-1',
+                nodeId: 'review',
+                nodeName: 'Review',
+                countersignType: 'single',
+                completedAt: '2026-11-13T10:00:00Z',
+                assignee: { id: 'alice', name: 'Alice' },
+                decision: 'approve',
+                comment: null,
+            },
+        ];
+        const instance: Pick<RuntimeInstance, 'history'> = { history };
         const wrapper: VueWrapper = shallowMount(await wrapTestComponent('sw-workflow-approval-timeline', { sync: true }), {
             props: {
-                history: [
-                    {
-                        id: '2',
-                        completedAt: '2026-11-13T11:00:00Z',
-                        assignee: { name: 'Bob' },
-                        decision: 'reject',
-                        comment: 'Incorrect',
-                    },
-                    { id: '1', completedAt: '2026-11-13T10:00:00Z', assignee: { name: 'Alice' }, decision: 'approve' },
-                ],
+                history: instance.history,
                 currentNode: { id: 'review', name: 'Review', enteredAt: null },
             },
         });

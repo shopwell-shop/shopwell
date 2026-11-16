@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowPublisherRegistry;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseStore;
@@ -86,7 +87,7 @@ final readonly class WorkflowPublicationController
         $data = [];
         foreach ($result['releases'] as $release) {
             $document = json_decode($release->getDocument(), true, flags: \JSON_THROW_ON_ERROR);
-            $start = array_values(array_filter($document['nodes'], static fn (array $node): bool => $node['type'] === 'core:start'))[0] ?? [];
+            $start = array_values(array_filter($document['nodes'], static fn (array $node): bool => $node['type'] === DocumentNodeTypes::START))[0] ?? [];
             $data[] = [...$this->present($release), 'requestAction' => $start['config']['requestAction'] ?? $release->getPublisher()];
         }
 

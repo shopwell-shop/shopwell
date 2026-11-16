@@ -40,12 +40,11 @@
             :min-zoom="0.2"
             :max-zoom="1.5"
             @init="onInit"
-            @nodes-initialized="fit"
         >
             <template #node-runtime="{ data }">
                 <div
                     class="sw-workflow-runtime-viewer__node"
-                    :class="[{ 'is--terminal': data.terminal, 'is--condition': data.type === 'snaker:condition' }, `is--${data.state.toLowerCase()}`]"
+                    :class="[{ 'is--terminal': data.terminal, 'is--condition': data.condition }, `is--${data.state.toLowerCase()}`]"
                     :data-state="data.state"
                     :aria-current="data.state === 'TODO' ? 'step' : undefined"
                 >

@@ -1,10 +1,12 @@
 /** @sw-package framework */
+import { shallowReactive } from 'vue';
+import { registerWorkflowContribution } from './workflow-registration';
 /** @public */
 export default class WorkflowReleaseActionService {
-    private readonly components = new Map<string, string>();
+    private readonly components = shallowReactive(new Map<string, string>());
 
-    register(publisher: string, component: string): void {
-        this.components.set(publisher, component);
+    register(publisher: string, component: string): () => void {
+        return registerWorkflowContribution(this.components, publisher, component);
     }
 
     get(publisher: string): string | null {

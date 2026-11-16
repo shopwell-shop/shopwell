@@ -32,13 +32,13 @@ class WorkflowInstanceEntity extends EntityStruct
     public string $id;
 
     /**
-     * 只有状态机能写；CRUD 接口进来会被拒
+     * Only the state machine may write this field; CRUD writes are rejected.
      */
     #[State(machine: WorkflowInstanceStates::STATE_MACHINE, api: true)]
     public string $stateId;
 
     /**
-     * 可读关联，复用 state_id 列
+     * Readable association using the existing state_id column.
      */
     #[ManyToOne(entity: 'state_machine_state', api: true, column: 'state_id')]
     public ?StateMachineStateEntity $stateMachineState = null;
@@ -58,7 +58,7 @@ class WorkflowInstanceEntity extends EntityStruct
     public string $definitionId;
 
     /**
-     * 发起时模板的版本号，配合 graphSnapshot 解释历史
+     * Definition version at start, interpreted alongside graphSnapshot.
      */
     #[Field(type: FieldType::INT, api: true)]
     public int $definitionVersion;
@@ -72,7 +72,7 @@ class WorkflowInstanceEntity extends EntityStruct
     public string $initiatorId;
 
     /**
-     * 表单变量快照，条件表达式与详情页都读它。
+     * Form data snapshot used by expressions and instance details.
      *
      * @var array<string, mixed>|null
      */
@@ -80,7 +80,7 @@ class WorkflowInstanceEntity extends EntityStruct
     public ?array $formData = null;
 
     /**
-     * 图快照（契约 `{nodes,edges}`），发起后不再变。
+     * Immutable graph snapshot in the nodes/edges contract shape.
      *
      * @var array<string, mixed>|null
      */
@@ -88,7 +88,7 @@ class WorkflowInstanceEntity extends EntityStruct
     public ?array $graphSnapshot = null;
 
     /**
-     * 当前停留的节点；实例结束时保留最后一个节点，便于详情页高亮终点
+     * Current node; retained at completion so the detail view can highlight the endpoint.
      */
     #[Field(type: FieldType::STRING, api: true, maxLength: 64)]
     public ?string $currentNodeId = null;

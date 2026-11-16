@@ -160,3 +160,71 @@ describe('runtime task presenter contract', () => {
         wrapper.unmount();
     });
 });
+
+describe('queue endpoint projections', () => {
+    it.each([
+        [
+            'todo',
+            {
+                id: 'task',
+                instanceId: 'instance',
+                nodeId: 'review',
+                nodeName: 'Review',
+                round: 1,
+                countersignType: 'single',
+                state: 'todo',
+                assignee: { id: 'me' },
+                createdAt: null,
+            },
+            { taskId: 'task' },
+        ],
+        [
+            'done',
+            {
+                id: 'history',
+                taskId: 'task',
+                instanceId: 'instance',
+                nodeId: 'review',
+                nodeName: 'Review',
+                decision: 'agree',
+                comment: null,
+                completedAt: null,
+            },
+            {},
+        ],
+    ])('renders the %s endpoint projection without an optional instance summary', async (queue, row, query) => {
+        repository.listTodo.mockResolvedValue({ data: queue === 'todo' ? [row] : [], meta: { total: 1 } });
+        repository.listDone.mockResolvedValue({ data: [row], meta: { total: 1 } });
+        const push = jest.fn();
+        const wrapper = shallowMount(await wrapTestComponent('sw-workflow-tasks', { sync: true }), {
+            global: {
+                provide: { workflowRuntimeApiService: repository, acl: { can: () => true } },
+                mocks: { $router: { push } },
+                stubs: {
+                    'sw-page': { template: '<div><slot name="content" /></div>' },
+                    'mt-tabs': {
+                        props: ['items'],
+                        template:
+                            '<div><button v-for="item in items" :key="item.name" role="tab" @click="item.onClick()">{{ item.label }}</button></div>',
+                    },
+                    'sw-data-grid': {
+                        props: ['dataSource'],
+                        template:
+                            '<div><section v-for="item in dataSource" :key="item.id"><slot name="column-title" :item="item" /><span class="initiator"><slot name="column-initiator" :item="item" /></span><span class="time"><slot name="column-startedAt" :item="item" /></span></section></div>',
+                    },
+                },
+            },
+        });
+        await flushPromises();
+        if (queue === 'done') {
+            await wrapper.findAll('[role="tab"]')[1].trigger('click');
+            await flushPromises();
+        }
+        expect(wrapper.get('.initiator').text()).toBe('—');
+        expect(wrapper.get('.time').text()).toBe('—');
+        expect(wrapper.get('.sw-workflow-tasks__link').text()).toBe('instance');
+        await wrapper.get('.sw-workflow-tasks__link').trigger('click');
+        expect(push).toHaveBeenCalledWith({ name: 'sw.workflow.instance', params: { id: 'instance' }, query });
+        wrapper.unmount();
+    });
+});

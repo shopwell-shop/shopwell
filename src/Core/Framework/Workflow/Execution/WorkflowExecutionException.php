@@ -7,15 +7,9 @@ use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
+ * Workflow exceptions expose stable codes and standard HTTP error responses.
+ *
  * @internal
- *
- * 审批域异常。
- *
- * 全部用静态构造器：错误码在代码里只出现一次，前端和日志按码匹配，
- * 不按异常文案匹配（文案随时会改）。
- *
- * 用 {@see WorkflowException} 而不是裸 `\RuntimeException`：控制器里不写 try/catch，
- * 异常直接变成带 HTTP 状态的标准错误响应，与主系统其它域一致。
  */
 #[Package('framework')]
 class WorkflowExecutionException extends WorkflowException
@@ -39,14 +33,25 @@ class WorkflowExecutionException extends WorkflowException
     public const TASK_ALREADY_HANDLED = 'FRAMEWORK__WORKFLOW_EXECUTION_TASK_ALREADY_HANDLED';
     public const COMMENT_REQUIRED = 'FRAMEWORK__WORKFLOW_EXECUTION_COMMENT_REQUIRED';
     public const FORBIDDEN = 'FRAMEWORK__WORKFLOW_EXECUTION_FORBIDDEN';
+    public const VALIDATION_FAILED = 'FRAMEWORK__WORKFLOW_EXECUTION_VALIDATION_FAILED';
 
-    public static function invalidGraph(string $reason): self
+    public static function validationFailed(\Throwable $previous): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::VALIDATION_FAILED,
+            'Workflow validation failed.',
+            previous: $previous,
+        );
+    }
+
+    public static function invalidGraph(string $reason, ?string $path = null): self
     {
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::INVALID_GRAPH,
-            '流程图数据不合法：{{ reason }}',
-            ['reason' => $reason]
+            'Invalid workflow graph: {{ reason }}',
+            $path === null ? ['reason' => $reason] : ['reason' => $reason, 'path' => $path]
         );
     }
 
@@ -55,7 +60,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::UNKNOWN_NODE,
-            '流程图里不存在节点 "{{ nodeId }}"',
+            'Node "{{ nodeId }}" does not exist in the workflow graph.',
             ['nodeId' => $nodeId]
         );
     }
@@ -65,7 +70,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::DEAD_END,
-            '节点 "{{ nodeId }}" 没有可走的出边，流程无法继续',
+            'Node "{{ nodeId }}" has no eligible outgoing edge; the workflow cannot continue.',
             ['nodeId' => $nodeId]
         );
     }
@@ -75,7 +80,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::UNSUPPORTED_NODE_TYPE,
-            '不支持的节点类型 "{{ type }}"',
+            'Unsupported node type "{{ type }}".',
             ['type' => $type]
         );
     }
@@ -85,7 +90,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::UNSUPPORTED_COUNTERSIGN_TYPE,
-            '不支持的多人审批方式 "{{ type }}"',
+            'Unsupported approval mode "{{ type }}".',
             ['type' => $type]
         );
     }
@@ -95,23 +100,20 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::UNSUPPORTED_ASSIGNEE_TYPE,
-            '不支持的审批人类型 "{{ type }}"',
+            'Unsupported assignee type "{{ type }}".',
             ['type' => $type]
         );
     }
 
     /**
-     * 审批人解析为空。
-     *
-     * 必须立刻失败：默默跳过这个节点等于审批被绕过，而绕过在界面上看不出来
-     * （流程照常往下走，只是没有人审）。
+     * Fail immediately when no assignee resolves so an approval stage cannot be silently bypassed.
      */
     public static function noAssignee(string $nodeId, string $assigneeType): self
     {
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::NO_ASSIGNEE,
-            '节点 "{{ nodeId }}" 解析不到审批人（类型 {{ assigneeType }}）',
+            'No assignee could be resolved for node "{{ nodeId }}" (type {{ assigneeType }}).',
             ['nodeId' => $nodeId, 'assigneeType' => $assigneeType]
         );
     }
@@ -124,9 +126,9 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::GRAPH_INVALID,
-            '流程图校验未通过：{{ message }}',
+            'Workflow graph validation failed: {{ message }}',
             [
-                'message' => implode('；', array_map(
+                'message' => implode('; ', array_map(
                     static fn (array $v): string => $v['message'],
                     $violations
                 )),
@@ -140,7 +142,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_NOT_FOUND,
             self::DEFINITION_NOT_FOUND,
-            '流程模板 "{{ definitionId }}" 不存在',
+            'Workflow definition "{{ definitionId }}" does not exist.',
             ['definitionId' => $definitionId]
         );
     }
@@ -150,7 +152,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_CONFLICT,
             self::DEFINITION_NOT_PUBLISHED,
-            '流程模板 "{{ definitionId }}" 尚未发布，不能发起',
+            'Workflow definition "{{ definitionId }}" must be published before it can be started.',
             ['definitionId' => $definitionId]
         );
     }
@@ -160,7 +162,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_NOT_FOUND,
             self::INSTANCE_NOT_FOUND,
-            '审批实例 "{{ instanceId }}" 不存在',
+            'Workflow instance "{{ instanceId }}" does not exist.',
             ['instanceId' => $instanceId]
         );
     }
@@ -170,21 +172,20 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_NOT_FOUND,
             self::TASK_NOT_FOUND,
-            '审批任务 "{{ taskId }}" 不存在',
+            'Workflow task "{{ taskId }}" does not exist.',
             ['taskId' => $taskId]
         );
     }
 
     /**
-     * 别人的任务一律回 404 而不是 403：403 会告诉调用方"这条任务存在"，
-     * 配合 id 枚举就能数出别的部门有多少单。
+     * Return 404 for another user's task to avoid exposing its existence.
      */
     public static function taskNotYours(string $taskId): self
     {
         return new self(
             Response::HTTP_NOT_FOUND,
             self::TASK_NOT_YOURS,
-            '审批任务 "{{ taskId }}" 不存在或不属于当前用户',
+            'Workflow task "{{ taskId }}" does not exist or does not belong to the current user.',
             ['taskId' => $taskId]
         );
     }
@@ -194,7 +195,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_CONFLICT,
             self::INSTANCE_NOT_RUNNING,
-            '审批实例 "{{ instanceId }}" 已结束，不能再操作',
+            'Workflow instance "{{ instanceId }}" has ended and cannot be modified.',
             ['instanceId' => $instanceId]
         );
     }
@@ -204,7 +205,7 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::CONDITION_INVALID,
-            '条件表达式 "{{ expr }}" 不合法：{{ reason }}',
+            'Invalid condition expression "{{ expr }}": {{ reason }}',
             ['expr' => $expr, 'reason' => $reason]
         );
     }
@@ -214,49 +215,46 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_UNAUTHORIZED,
             self::ACTOR_REQUIRED,
-            '当前请求没有操作人，无法执行审批动作',
+            'The current request has no actor and cannot perform an approval action.',
             []
         );
     }
 
     /**
-     * 任务已经被处理过（重复点击、或两个人同时抢同一条待办）。
-     *
-     * 比让状态机抛裸异常好在：前端能拿到稳定的错误码，据此提示"这条已处理"，
-     * 而不是显示一句数据库层面的迁移失败。
+     * Expose a stable error code for duplicate or concurrent task decisions.
      */
     public static function taskAlreadyHandled(string $taskId): self
     {
         return new self(
             Response::HTTP_CONFLICT,
             self::TASK_ALREADY_HANDLED,
-            '审批任务 "{{ taskId }}" 已被处理',
+            'Workflow task "{{ taskId }}" has already been processed.',
             ['taskId' => $taskId]
         );
     }
 
     /**
-     * 拒绝必须写意见：不写理由的拒绝，发起人无法知道要改什么
+     * Rejection requires a comment explaining what the initiator needs to change.
      */
     public static function commentRequired(): self
     {
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::COMMENT_REQUIRED,
-            '请填写审批意见',
+            'An approval comment is required.',
             []
         );
     }
 
     /**
-     * 无权查看/操作这条单据（不是"不存在"，但对外也不该暴露存在性时用它）
+     * The actor cannot view or act on this record.
      */
     public static function forbidden(string $reason): self
     {
         return new self(
             Response::HTTP_FORBIDDEN,
             self::FORBIDDEN,
-            '无权操作：{{ reason }}',
+            'Operation forbidden: {{ reason }}',
             ['reason' => $reason]
         );
     }

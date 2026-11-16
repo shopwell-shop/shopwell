@@ -7,38 +7,28 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 
 /**
+ * Immutable contract graph with whitelisted parsing, ordered adjacency indexes and structural queries.
+ * Parsing preserves duplicate node IDs and dangling edges for the validator to report.
+ * nodeList retains every node in input order; node lookup uses the first occurrence of each ID.
+ * Outgoing edges retain their JSON order because routing evaluates them in that order.
+ *
  * @internal
- *
- * 契约图：`{nodes: [], edges: []}`。
- *
- * 三件职责，多一件都不要加：
- *   1. `fromArray()` 白名单解析（丢掉 UI 字段）；
- *   2. 邻接索引（`outgoing`），路由时不再线性扫全部边；
- *   3. 少量结构查询（单一起点、节点查找）。
- *
- * **不可变**：解析完就是只读的。运行期要记录"跑到哪"，写在实例行
- * （`current_node_id` / `round`）里，不要往图里塞状态——图是模板的快照，
- * 一份图被 N 个实例共享。
- *
- * 解析刻意**容忍**重复 id、悬空边这些结构问题，把它们留给校验器报成
- * 用户能看懂的 violation；`fromArray()` 只拒绝"根本不是一张图"的输入。
- * 如果这里就抛异常，保存接口只能返回 500，用户看不到问题在哪。
  */
 #[Package('framework')]
 final class GraphData
 {
     /**
-     * @var list<GraphNode> 保留原始顺序，含重复 id（供校验器报错）
+     * @var list<GraphNode>
      */
     private readonly array $nodeList;
 
     /**
-     * @var array<string, GraphNode> 重复 id 时取第一个
+     * @var array<string, GraphNode>
      */
     private array $nodes = [];
 
     /**
-     * @var array<string, list<GraphEdge>> 保持 JSON 里的顺序，路由靠它
+     * @var array<string, list<GraphEdge>>
      */
     private array $outgoing = [];
 
@@ -74,32 +64,32 @@ final class GraphData
         $rawEdges = $raw['edges'] ?? null;
 
         if (!\is_array($rawNodes) || !\is_array($rawEdges)) {
-            throw WorkflowExecutionException::invalidGraph('graphData 必须包含 nodes 与 edges 两个数组');
+            throw WorkflowExecutionException::invalidGraph('graphData must contain nodes and edges arrays.');
         }
 
         $nodes = [];
 
         foreach ($rawNodes as $index => $rawNode) {
             if (!\is_array($rawNode)) {
-                throw WorkflowExecutionException::invalidGraph(\sprintf('nodes[%s] 不是对象', (string) $index));
+                throw WorkflowExecutionException::invalidGraph(\sprintf('nodes[%s] must be an object.', (string) $index));
             }
 
             $id = $rawNode['id'] ?? null;
 
             if (!\is_string($id) || $id === '') {
-                throw WorkflowExecutionException::invalidGraph(\sprintf('nodes[%s].id 为空', (string) $index));
+                throw WorkflowExecutionException::invalidGraph(\sprintf('nodes[%s].id must not be empty.', (string) $index));
             }
 
             $type = $rawNode['type'] ?? null;
 
             if (!\is_string($type) || $type === '') {
-                throw WorkflowExecutionException::invalidGraph(\sprintf('节点 %s 缺少 type', $id));
+                throw WorkflowExecutionException::invalidGraph(\sprintf('Node %s is missing type.', $id));
             }
 
             $properties = $rawNode['properties'] ?? [];
 
             if (!\is_array($properties)) {
-                throw WorkflowExecutionException::invalidGraph(\sprintf('节点 %s 的 properties 不是对象', $id));
+                throw WorkflowExecutionException::invalidGraph(\sprintf('Node %s properties must be an object.', $id));
             }
 
             $nodes[] = new GraphNode(
@@ -115,7 +105,7 @@ final class GraphData
 
         foreach ($rawEdges as $index => $rawEdge) {
             if (!\is_array($rawEdge)) {
-                throw WorkflowExecutionException::invalidGraph(\sprintf('edges[%s] 不是对象', (string) $index));
+                throw WorkflowExecutionException::invalidGraph(\sprintf('edges[%s] must be an object.', (string) $index));
             }
 
             $id = $rawEdge['id'] ?? null;
@@ -123,13 +113,13 @@ final class GraphData
             $target = $rawEdge['targetNodeId'] ?? null;
 
             if (!\is_string($id) || $id === '' || !\is_string($source) || $source === '' || !\is_string($target) || $target === '') {
-                throw WorkflowExecutionException::invalidGraph(\sprintf('edges[%s] 缺少 id / sourceNodeId / targetNodeId', (string) $index));
+                throw WorkflowExecutionException::invalidGraph(\sprintf('edges[%s] is missing id / sourceNodeId / targetNodeId.', (string) $index));
             }
 
             $properties = $rawEdge['properties'] ?? [];
 
             if (!\is_array($properties)) {
-                throw WorkflowExecutionException::invalidGraph(\sprintf('连线 %s 的 properties 不是对象', $id));
+                throw WorkflowExecutionException::invalidGraph(\sprintf('Edge %s properties must be an object.', $id));
             }
 
             $edges[] = new GraphEdge($id, $source, $target, $properties);
@@ -173,7 +163,7 @@ final class GraphData
     }
 
     /**
-     * @return list<string> 出现超过一次的节点 id
+     * @return list<string>
      */
     public function duplicateNodeIds(): array
     {
@@ -205,24 +195,21 @@ final class GraphData
     }
 
     /**
-     * 唯一的开始节点。
-     *
-     * 数量不对时直接抛：调用方（引擎）已经跑过校验，走到这里说明数据被改坏了，
-     * 此时"随便挑一个开始"会让流程从错误的入口跑起来，比报错更糟。
+     * Return the unique start node; an invalid count indicates corrupted or unvalidated data.
      */
     public function singleStartNode(): GraphNode
     {
         $starts = $this->nodesOfType(WorkflowNodeTypes::START);
 
         if (\count($starts) !== 1) {
-            throw WorkflowExecutionException::invalidGraph(\sprintf('开始节点必须有且仅有一个，当前 %d 个', \count($starts)));
+            throw WorkflowExecutionException::invalidGraph(\sprintf('Exactly one start node is required; found %d.', \count($starts)));
         }
 
         return $starts[0];
     }
 
     /**
-     * 回到契约形状，用于快照落库与 JSON 查看器。
+     * Serialize the contract shape for snapshots and JSON output.
      *
      * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}
      */

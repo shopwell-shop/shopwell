@@ -6,22 +6,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
+ * Queue request-scoped events until commit; defer dispatch when WorkflowService shares a business transaction.
+ *
  * @internal
- *
- * 事务内收集事件，事务提交后再派发。
- *
- * 没有这一层时最典型的故障是：审批通过 → 发短信通知发起人 → 数据库提交失败回滚。
- * 用户收到"已通过"的短信，单子却还在待办里。
- *
- * 用法固定为：
- *
- * ```php
- * $this->transactions->run(fn () => $this->engine->completeTask(...));   // 只写库，事件进队列
- * $this->events->flush();                                                // 提交后才 dispatch
- * ```
- *
- * 队列是**请求级**的：`flush()` 之后清空。业务事务必须通过 `defer()` 延迟派发，
- * 才能在同一事务里调用 `WorkflowService` 并保存业务关联。
  */
 #[Package('framework')]
 final class WorkflowEventQueue
@@ -83,8 +70,7 @@ final class WorkflowEventQueue
     }
 
     /**
-     * 派发并清空。事件名用类上的 `EVENT_NAME` 常量：
-     * 监听器按同一个常量订阅，改名时编译期就能发现两处不一致。
+     * Dispatch and clear queued events using each event's EVENT_NAME constant.
      */
     public function flush(): void
     {
@@ -92,8 +78,7 @@ final class WorkflowEventQueue
             return;
         }
 
-        // 先取走再清空：监听器里如果又 push 了事件（比如"通过后自动发起下一单"），
-        // 不应该在本次 flush 里被无限派发下去
+        // Clear the batch before dispatch so events added by listeners wait for the next flush.
         $events = $this->events;
         $this->events = [];
 
@@ -109,7 +94,7 @@ final class WorkflowEventQueue
     }
 
     /**
-     * 只在测试里用：断言"没有残留事件"。
+     * Expose queued events for test assertions.
      *
      * @return list<object>
      */

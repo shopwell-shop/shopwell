@@ -1,5 +1,7 @@
 /** @sw-package framework */
-import type { WorkflowDocument, WorkflowNode } from 'src/core/workflow/workflow.types';
+import type { WorkflowNode } from 'src/core/workflow/workflow.types';
+
+const BRANCH_ID_PATTERN = /^branch-[a-zA-Z0-9-]+$/;
 
 /** @private */
 export interface WorkflowConditionBranch {
@@ -11,51 +13,48 @@ export interface WorkflowConditionBranch {
     value: string;
 }
 
-/** @private */
+/** Read incomplete draft rules without discarding extension fields or unknown operators. @private */
 export function conditionBranches(node: WorkflowNode): WorkflowConditionBranch[] {
-    const branches: unknown = 'branches' in node.config ? node.config.branches : [];
-    if (!Array.isArray(branches)) return [];
-    const ids = new Set<string>();
-    return branches.flatMap((value: unknown): WorkflowConditionBranch[] => {
-        if (
-            typeof value !== 'object' ||
-            value === null ||
-            !('id' in value) ||
-            typeof value.id !== 'string' ||
-            !/^branch-[a-zA-Z0-9-]+$/.test(value.id) ||
-            ids.has(value.id)
-        )
-            return [];
-        ids.add(value.id);
-        const branch = value as Record<string, unknown>;
-        const operator = branch.operator;
-        return [
-            {
-                ...branch,
-                id: value.id,
-                label: typeof branch.label === 'string' ? branch.label : '',
-                field: typeof branch.field === 'string' ? branch.field : '',
-                fieldType: typeof branch.fieldType === 'string' ? branch.fieldType : '',
-                operator: typeof operator === 'string' ? operator : 'equals',
-                value: typeof branch.value === 'string' ? branch.value : '',
-            },
-        ];
-    });
+    const rawBranches: unknown = 'branches' in node.config ? node.config.branches : [];
+
+    if (!Array.isArray(rawBranches)) {
+        return [];
+    }
+
+    const branches: WorkflowConditionBranch[] = [];
+    const seenIds = new Set<string>();
+
+    for (const raw of rawBranches) {
+        const branch = normalizeDraftBranch(raw);
+
+        if (!branch || seenIds.has(branch.id)) {
+            continue;
+        }
+
+        seenIds.add(branch.id);
+        branches.push(branch);
+    }
+
+    return branches;
 }
 
-/** Only untouched terminal paths may be removed without discarding user work. @private */
-export function emptyConditionBranch(document: WorkflowDocument, nodeId: string, port: string): boolean {
-    const edges = document.connections.filter((edge) => edge.source === nodeId && edge.sourcePort === port);
-    if (edges.length !== 1) {
-        return false
+function normalizeDraftBranch(raw: unknown): WorkflowConditionBranch | null {
+    if (typeof raw !== 'object' || raw === null) {
+        return null;
+    }
+
+    if (!('id' in raw) || typeof raw.id !== 'string' || !BRANCH_ID_PATTERN.test(raw.id)) {
+        return null;
+    }
+
+    const branch = raw as Record<string, unknown>;
+    return {
+        ...branch,
+        id: raw.id,
+        label: typeof branch.label === 'string' ? branch.label : '',
+        field: typeof branch.field === 'string' ? branch.field : '',
+        fieldType: typeof branch.fieldType === 'string' ? branch.fieldType : '',
+        operator: typeof branch.operator === 'string' ? branch.operator : 'equals',
+        value: typeof branch.value === 'string' ? branch.value : '',
     };
-    const end = document.nodes.find((node) => node.id === edges[0].target);
-    return (
-        !!end &&
-        end.type === 'core:end' &&
-        end.typeVersion === 1 &&
-        Object.entries(end.config).every(([key, value]) => ['label', 'description'].includes(key) && value === '') &&
-        document.connections.filter((edge) => edge.target === end.id).length === 1 &&
-        !document.connections.some((edge) => edge.source === end.id)
-    );
 }

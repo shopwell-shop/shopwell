@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Type\Loader\WorkflowNodeTypeLoader;
 use Shopwell\Core\Framework\Workflow\Definition\Type\Specification\WorkflowNodeKind;
 use Shopwell\Core\Framework\Workflow\Definition\Type\Specification\WorkflowNodeTypeSpecification;
+use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 
 /**
  * @internal
@@ -15,6 +16,6 @@ final class ConditionWorkflowNodeLoader implements WorkflowNodeTypeLoader
 {
     public function load(): iterable
     {
-        yield new WorkflowNodeTypeSpecification('core:condition', 1, WorkflowNodeKind::ACTIVITY, ['in'], ['branch-1', 'fallback']);
+        yield new WorkflowNodeTypeSpecification(DocumentNodeTypes::CONDITION, 1, WorkflowNodeKind::ACTIVITY, ['in'], ['branch-1', 'fallback']);
     }
 }

@@ -12,17 +12,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowLogCollection;
 
 /**
+ * Shared Criteria queries for tasks, history and logs; centralize node and round filters used by aggregation and presentation.
+ *
  * @internal
- *
- * 任务/归档/日志的查询集中地。
- *
- * 为什么不是 Repository 类：主系统全仓只有两个自定义 `EntityRepository`（都是测试桩），
- * 业务查询一律用 `Criteria` + 按 id 注入的 `*.repository`。这个类就是那层"查询对象"，
- * 存在的价值是把**容易写错的条件**（尤其是 `round`）只写一次。
- *
- * `forNode()` 是三处调用的共同入口：会签聚合、顺序会签推进、详情页展示。
- * 三处各写一份 Criteria 时，最可能的分歧就是有人忘了带 `round`——
- * 那会让退回后的会签永远差一个人。
  */
 #[Package('framework')]
 final class WorkflowTaskFinder
@@ -40,10 +32,7 @@ final class WorkflowTaskFinder
     }
 
     /**
-     * 某实例、某节点、某一轮的全部任务。
-     *
-     * **必须带 round**：这是会签分母正确性的唯一保证。退回后同节点会有第 1 轮
-     * 和第 2 轮两组任务，混在一起算会签，分母永远多一个人。
+     * Return tasks for exactly one instance, node and round so aggregation cannot mix rounds.
      */
     public function forNode(string $instanceId, string $nodeId, int $round, Context $context): WorkflowTaskCollection
     {
@@ -72,10 +61,7 @@ final class WorkflowTaskFinder
     }
 
     /**
-     * 某人的待办。
-     *
-     * `$criteria` 由 Presenter 组装（分页、搜索、筛选都在那里），这里只补
-     * "必须是 todo + 必须是我的"这两条安全条件——**任何调用方都不能省**。
+     * Apply mandatory current-user and todo filters to presenter-supplied pagination and search criteria.
      *
      * @return EntitySearchResult<WorkflowTaskCollection>
      */
@@ -94,7 +80,7 @@ final class WorkflowTaskFinder
     }
 
     /**
-     * 某人已处理的单（从归档表读，不是从任务表读：归档才不会被退回重开改掉）。
+     * Read completed decisions from immutable history rather than mutable tasks.
      *
      * @return EntitySearchResult<WorkflowTaskHistoryCollection>
      */
@@ -134,7 +120,7 @@ final class WorkflowTaskFinder
     }
 
     /**
-     * 待办数量（导航角标用）。只取 total，不 hydration。
+     * Return the pending count without hydrating entities.
      */
     public function todoCount(string $userId, Context $context): int
     {

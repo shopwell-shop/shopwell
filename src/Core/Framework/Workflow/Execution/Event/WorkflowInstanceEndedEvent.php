@@ -6,14 +6,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Symfony\Contracts\EventDispatcher\Event;
 
 /**
+ * An instance finished; use this event for final business updates, notifications and cleanup.
+ *
  * @internal
- *
- * 实例结束（通过或拒绝）。
- *
- * 这是**唯一**能确定"这张单走完了"的事件。所有收尾动作挂这里：
- * 回写业务单据状态、通知发起人、清理未处理完的待办。
- *
- * 将来的超时、代理不需要新事件，监听这个 + 查实例即可。
  */
 #[Package('framework')]
 final class WorkflowInstanceEndedEvent extends Event

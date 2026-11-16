@@ -1,11 +1,13 @@
 /** @sw-package framework */
+import { WORKFLOW_NODE_TYPES } from 'src/core/workflow/workflow-node.constants';
 import type { PropType } from 'vue';
-import { serializeForm, validateFormValue, type WorkflowFormField } from '../../util/workflow-runtime-form.util';
+import type { WorkflowRelease } from 'src/core/service/api/workflow.api.service';
+import type { WorkflowDocument } from 'src/core/workflow/workflow.types';
+import type { WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
+import { serializeForm, validateFormValue } from '../../util/workflow-runtime-form.util';
 import template from './sw-workflow-start.html.twig';
 
-type WorkflowDocument = { nodes: { type: string; config: Record<string, unknown> }[] };
-
-type Release = { id: string; name: string; document?: WorkflowDocument };
+type Release = Pick<WorkflowRelease, 'id' | 'name'> & { document?: WorkflowDocument };
 
 /** @private */
 export default Shopwell.Component.wrapComponentConfig({
@@ -64,7 +66,10 @@ export default Shopwell.Component.wrapComponentConfig({
     },
     methods: {
         async open(): Promise<void> {
-            if (!this.canStart) return;
+            if (!this.canStart) {
+                return;
+            }
+
             this.title = this.release.name;
             this.values = {};
             this.fields = [];
@@ -79,34 +84,58 @@ export default Shopwell.Component.wrapComponentConfig({
                 const release = this.release.document
                     ? this.release
                     : await this.workflowService.getRelease(this.release.id);
-                if (requestRevision !== this.requestRevision) return;
-                const start = release.document?.nodes.find((node) => node.type === 'core:start');
-                if (!start) throw new Error(this.$t('sw-workflow.request.loadFailed'));
+
+                if (requestRevision !== this.requestRevision) {
+                    return;
+                }
+
+                const start = release.document?.nodes.find((node) => node.type === WORKFLOW_NODE_TYPES.START);
+
+                if (!start) {
+                    throw new Error(this.$t('sw-workflow.request.loadFailed'));
+                }
+
                 const fields = await Promise.all(
                     this.workflowRequestFormService
-                        .getFields(start.config)
+                        .getFields(start.config, this.$t('sw-workflow.inputs.reason'))
                         .map(async (field) =>
                             field.dataSource
                                 ? { ...field, options: await this.workflowService.getFormOptions(field.dataSource) }
                                 : field,
                         ),
                 );
-                if (requestRevision !== this.requestRevision) return;
+
+                if (requestRevision !== this.requestRevision) {
+                    return;
+                }
+
                 this.fields = fields;
                 this.values = serializeForm(this.fields, {});
                 this.isReady = true;
             } catch (error) {
-                if (requestRevision !== this.requestRevision) return;
+                if (requestRevision !== this.requestRevision) {
+                    return;
+                }
+
                 this.hasError = true;
                 this.errorDetail = this.errorMessage(error);
             } finally {
-                if (requestRevision === this.requestRevision) this.isLoading = false;
+                if (requestRevision === this.requestRevision) {
+                    this.isLoading = false;
+                }
             }
         },
         async start(): Promise<void> {
-            if (!this.canStart || !this.title.trim() || this.title.length > 255) return;
+            if (!this.canStart || !this.title.trim() || this.title.length > 255) {
+                return;
+            }
+
             this.showValidation = true;
-            if (!this.isReady || Object.keys(this.fieldErrors).length) return;
+
+            if (!this.isReady || Object.keys(this.fieldErrors).length) {
+                return;
+            }
+
             this.isSubmitting = true;
             this.hasError = false;
             this.errorDetail = '';
@@ -117,8 +146,15 @@ export default Shopwell.Component.wrapComponentConfig({
                     title: this.title.trim(),
                     formData: serializeForm(this.fields, this.values),
                 });
-                if (requestRevision !== this.requestRevision) return;
-                if (!response.data.id) throw new Error(this.$t('sw-workflow.request.failed'));
+
+                if (requestRevision !== this.requestRevision) {
+                    return;
+                }
+
+                if (!response.data.id) {
+                    throw new Error(this.$t('sw-workflow.request.failed'));
+                }
+
                 this.showModal = false;
                 void this.$router.push({
                     name: 'sw.workflow.instance',
@@ -130,7 +166,9 @@ export default Shopwell.Component.wrapComponentConfig({
                     this.errorDetail = this.errorMessage(error);
                 }
             } finally {
-                if (requestRevision === this.requestRevision) this.isSubmitting = false;
+                if (requestRevision === this.requestRevision) {
+                    this.isSubmitting = false;
+                }
             }
         },
         errorMessage(error: unknown): string {

@@ -7,9 +7,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowFormOptionsEvent;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
-use Shopwell\Core\Framework\Workflow\Publication\Approval\WorkflowFormOptionsEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -127,6 +127,39 @@ class WorkflowInputSchemaTest extends TestCase
         yield 'select options required' => [[['key' => 'a', 'label' => 'Field', 'type' => 'select']]];
         yield 'duplicate option values' => [[['key' => 'a', 'label' => 'Field', 'type' => 'select', 'options' => [['value' => 'a', 'label' => 'A'], ['value' => 'a', 'label' => 'B']]]]];
         yield 'empty label' => [[['key' => 'a', 'label' => ' ', 'type' => 'text']]];
+    }
+
+    public function testDuplicateFieldErrorIncludesTheKeyAndPath(): void
+    {
+        $this->expectExceptionObject(WorkflowExecutionException::invalidGraph('/fields/1/key [amount]: Input field keys must be unique'));
+        (new WorkflowInputSchema())->normalize([self::schema()[0], self::schema()[0]]);
+    }
+
+    public function testFieldErrorsExposeTheirStructuredPath(): void
+    {
+        try {
+            (new WorkflowInputSchema())->normalize([['key' => 'amount', 'label' => 'Amount', 'type' => 'unsupported']]);
+            static::fail('An unsupported input field must be rejected.');
+        } catch (WorkflowExecutionException $exception) {
+            static::assertSame('/fields/0/type', $exception->getParameters()['path']);
+        }
+    }
+
+    public function testInvalidOptionErrorIncludesTheFieldAndOptionPath(): void
+    {
+        $this->expectExceptionObject(WorkflowExecutionException::invalidGraph('/fields/0/options/1/value [category]: Option values must be unique nonblank strings with at most 255 characters'));
+        (new WorkflowInputSchema())->normalize([[
+            'key' => 'category', 'label' => 'Category', 'type' => 'select',
+            'options' => [['value' => 'travel', 'label' => 'Travel'], ['value' => 'travel', 'label' => 'Other']],
+        ]]);
+    }
+
+    public function testUnavailableSourceErrorIncludesTheSubmittedFieldLocation(): void
+    {
+        $this->expectExceptionObject(WorkflowExecutionException::invalidGraph('/data/currency [currency]: Input option source is unavailable: missing:source'));
+        (new WorkflowInputSchema())->normalizeData([[
+            'key' => 'currency', 'label' => 'Currency', 'type' => 'text', 'dataSource' => 'missing:source',
+        ]], ['currency' => 'CNY']);
     }
 
     /**

@@ -25,30 +25,24 @@ describe('Workflow navigation', () => {
         );
     });
 
-    it('groups workflow tools in an independent top-level domain', () => {
+    it('binds workflow routes to the centrally defined menu entries', () => {
         const navigation = Shopwell.Module.getModuleRegistry().get('sw-workflow')?.manifest.navigation ?? [];
-        const root = navigation.find((entry) => entry.id === 'sw-workflow');
 
-        expect(root).toBeDefined();
-        expect(root?.parent).toBeUndefined();
-        expect(root?.position).toBe(72);
-        expect(root?.path).toBeUndefined();
-        expect(navigation.filter((entry) => entry.parent === 'sw-workflow')).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    id: 'sw-workflow-tasks',
-                    path: 'sw.workflow.tasks',
-                    privilege: 'workflow_participant.viewer',
-                }),
-                expect.objectContaining({
-                    id: 'sw-workflow-design',
-                    path: 'sw.workflow.index',
-                    privilege: 'workflow.viewer',
-                }),
-            ]),
-        );
-        expect(navigation.filter((entry) => entry.parent === 'sw-workflow')).toHaveLength(2);
-        expect(navigation.some((entry) => entry.parent === 'sw-system')).toBe(false);
+        expect(navigation).toEqual([
+            {
+                id: 'sw-workflow-tasks',
+                path: 'sw.workflow.tasks',
+                privilege: 'workflow_participant.viewer',
+                moduleType: 'core',
+            },
+            { id: 'sw-workflow', moduleType: 'core' },
+            {
+                id: 'sw-workflow-design',
+                path: 'sw.workflow.index',
+                privilege: 'workflow.viewer',
+                moduleType: 'core',
+            },
+        ]);
     });
 });
 

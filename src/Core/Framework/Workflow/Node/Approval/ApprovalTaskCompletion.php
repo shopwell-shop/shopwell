@@ -60,7 +60,7 @@ final readonly class ApprovalTaskCompletion
             }
         }
 
-        $this->engine->resume($executionId, new WorkflowSignal('core:task-completed', [
+        $this->engine->resume($executionId, new WorkflowSignal(WorkflowSignal::TASK_COMPLETED, [
             'taskId' => $task->id,
             'result' => $result->status(),
         ]), $context);

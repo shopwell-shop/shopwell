@@ -27,6 +27,40 @@ class ApprovalWorkflowPublicationTest extends TestCase
 {
     use AdminFunctionalTestBehaviour;
 
+    public function testPublishedConnectionIdentifierIsStoredWithoutTruncation(): void
+    {
+        $browser = $this->getBrowser(permissions: $this->permissions());
+        $connectionId = str_repeat('e', 64);
+        $draftId = $this->draft($browser, $this->actorId(), firstConnectionId: $connectionId);
+        $browser->jsonRequest('POST', '/api/_action/workflow/draft/' . $draftId . '/publish', ['expectedRevision' => 1, 'publisher' => 'core:approval']);
+        static::assertSame(201, $browser->getResponse()->getStatusCode(), $this->errorSummary($browser));
+        $releaseId = $this->response($browser)['id'];
+
+        $instanceId = $this->start($browser, $releaseId);
+        $storedConnectionId = static::getContainer()->get(Connection::class)->fetchOne(
+            'SELECT source_connection_id FROM workflow_node_execution WHERE instance_id = :id AND node_id = :node',
+            ['id' => Uuid::fromHexToBytes($instanceId), 'node' => 'approval'],
+        );
+
+        static::assertSame($connectionId, $storedConnectionId);
+    }
+
+    public function testPublicationRejectsAnOversizedRuntimeIdentifierBeforeCreatingARelease(): void
+    {
+        $browser = $this->getBrowser(permissions: $this->permissions());
+        $draftId = $this->draft($browser, $this->actorId(), firstConnectionId: str_repeat('e', 65));
+        $browser->jsonRequest('POST', '/api/_action/workflow/draft/' . $draftId . '/publish', ['expectedRevision' => 1, 'publisher' => 'core:approval']);
+
+        static::assertSame(422, $browser->getResponse()->getStatusCode(), $this->errorSummary($browser));
+        $violation = $this->response($browser)['errors'][0]['meta']['parameters']['violations'][0];
+        static::assertSame('/connections/0/id', $violation['path']);
+        static::assertSame('runtime_identifier_too_long', $violation['code']);
+        static::assertSame(0, (int) static::getContainer()->get(Connection::class)->fetchOne(
+            'SELECT COUNT(*) FROM workflow_release WHERE draft_id = :id',
+            ['id' => Uuid::fromHexToBytes($draftId)],
+        ));
+    }
+
     public function testPublishedWorkflowStartsAndApprovesWithActionPermissionsOnly(): void
     {
         $browser = $this->getBrowser(permissions: $this->permissions());
@@ -328,7 +362,7 @@ class ApprovalWorkflowPublicationTest extends TestCase
         return $this->response($browser)['id'];
     }
 
-    private function draft(TestBrowser $browser, string $assigneeId): string
+    private function draft(TestBrowser $browser, string $assigneeId, string $firstConnectionId = 'start-approval'): string
     {
         $id = Uuid::randomHex();
         $browser->jsonRequest('POST', '/api/_action/workflow/draft', ['id' => $id, 'name' => 'Expense approval', 'document' => [
@@ -341,7 +375,7 @@ class ApprovalWorkflowPublicationTest extends TestCase
                 ['id' => 'end', 'type' => 'core:end', 'typeVersion' => 1, 'config' => []],
                 ['id' => 'rejected-end', 'type' => 'core:end', 'typeVersion' => 1, 'config' => []],
             ], 'connections' => [
-                ['id' => 'start-approval', 'source' => 'start', 'sourcePort' => 'out', 'target' => 'approval', 'targetPort' => 'in'],
+                ['id' => $firstConnectionId, 'source' => 'start', 'sourcePort' => 'out', 'target' => 'approval', 'targetPort' => 'in'],
                 ['id' => 'approved', 'source' => 'approval', 'sourcePort' => 'approved', 'target' => 'end', 'targetPort' => 'in'],
                 ['id' => 'rejected', 'source' => 'approval', 'sourcePort' => 'rejected', 'target' => 'rejected-end', 'targetPort' => 'in'],
             ],

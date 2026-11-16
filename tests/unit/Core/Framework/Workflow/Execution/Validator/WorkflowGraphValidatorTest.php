@@ -3,13 +3,18 @@
 namespace Shopwell\Tests\Unit\Core\Framework\Workflow\Execution\Validator;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\EventListener\ErrorResponseFactory;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ExprNormalizer;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\BranchMergeRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\CycleRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\EdgeConditionRule;
+use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\GraphRuleInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\NodePropertiesRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\ReachabilityRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\ShapeRule;
@@ -18,12 +23,10 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\SingleStartRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\ValidationContext;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Violation;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\WorkflowGraphValidator;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 
 /**
- * 校验链。
- *
- * 断言的是**错误码**而不是文案：前端按码定位节点，文案随时会改，
- * 码一改就是破坏性变更（前后端要同时发版）。
+ * Assert stable validation codes used by the editor to locate graph problems.
  *
  * @internal
  */
@@ -35,8 +38,7 @@ class WorkflowGraphValidatorTest extends TestCase
 
     protected function setUp(): void
     {
-        // 顺序必须与 services.php 里的注册顺序一致，
-        // 否则同一个图两端报出来的第一条问题不同
+        // Keep rule order consistent with services.php so both validators report problems in the same order.
         $normalizer = new ExprNormalizer();
 
         $this->validator = new WorkflowGraphValidator([
@@ -45,7 +47,12 @@ class WorkflowGraphValidatorTest extends TestCase
             new SingleEndRule(),
             new CycleRule(),
             new ReachabilityRule(),
-            new NodePropertiesRule(),
+            new NodePropertiesRule(new AssigneeResolverRegistry(array_map(function (string $type): AssigneeResolverInterface {
+                $resolver = $this->createStub(AssigneeResolverInterface::class);
+                $resolver->method('getAssigneeType')->willReturn($type);
+
+                return $resolver;
+            }, ['user', 'role', 'initiator']))),
             new EdgeConditionRule($normalizer),
             new BranchMergeRule(),
         ]);
@@ -59,6 +66,51 @@ class WorkflowGraphValidatorTest extends TestCase
         );
 
         static::assertSame([], $violations);
+    }
+
+    #[DataProvider('unexpectedRuleFailures')]
+    public function testUnexpectedRuleFailureHasSafeResponseAndPreservesItsCause(\Throwable $failure): void
+    {
+        $rule = static::createStub(GraphRuleInterface::class);
+        $rule->method('validate')->willThrowException($failure);
+        $validator = new WorkflowGraphValidator([$rule]);
+        $thrown = null;
+
+        try {
+            $validator->validate(GraphData::fromArray($this->happyPath()), new ValidationContext());
+        } catch (\Throwable $exception) {
+            $thrown = $exception;
+        }
+
+        static::assertNotNull($thrown);
+        $response = (new ErrorResponseFactory())->getResponseFromException($thrown, debug: false);
+        static::assertSame(500, $response->getStatusCode());
+        static::assertStringNotContainsString('internal connection details', (string) $response->getContent());
+        static::assertInstanceOf(WorkflowExecutionException::class, $thrown);
+        static::assertSame('FRAMEWORK__WORKFLOW_EXECUTION_VALIDATION_FAILED', $thrown->getErrorCode());
+        static::assertSame('Workflow validation failed.', $thrown->getMessage());
+        static::assertSame($failure, $thrown->getPrevious());
+    }
+
+    /**
+     * @return iterable<string, array{\Throwable}>
+     */
+    public static function unexpectedRuleFailures(): iterable
+    {
+        yield 'infrastructure exception' => [new \RuntimeException('internal connection details')];
+        yield 'programming error' => [new \Error('internal connection details')];
+    }
+
+    public function testBusinessViolationsFromAllRulesAreAggregated(): void
+    {
+        $first = Violation::error('FIRST', 'First user correction');
+        $second = Violation::error('SECOND', 'Second user correction');
+        $firstRule = static::createStub(GraphRuleInterface::class);
+        $firstRule->method('validate')->willReturn([$first]);
+        $secondRule = static::createStub(GraphRuleInterface::class);
+        $secondRule->method('validate')->willReturn([$second]);
+
+        static::assertSame([$first, $second], (new WorkflowGraphValidator([$firstRule, $secondRule]))->validate(GraphData::fromArray($this->happyPath()), new ValidationContext()));
     }
 
     public function testMissingEndNodeIsReported(): void
@@ -75,7 +127,7 @@ class WorkflowGraphValidatorTest extends TestCase
     public function testCycleIsReported(): void
     {
         $graph = $this->happyPath();
-        // 追加一条审批 → 审批 的回边，制造环
+        // Add a back edge between approval nodes to create a cycle.
         $graph['edges'][] = $this->edge('e-cycle', 'task-1', 'task-1');
 
         static::assertContains('WORKFLOW_EXECUTION_004', $this->codes(GraphData::fromArray($graph)));
@@ -110,7 +162,7 @@ class WorkflowGraphValidatorTest extends TestCase
     }
 
     /**
-     * 两条分支各自走到结束：只汇合在结束节点上不算汇聚，给一条警告。
+     * Branches that only meet at the end produce a warning.
      */
     public function testBranchWithoutMergeIsOnlyAWarning(): void
     {
@@ -148,7 +200,7 @@ class WorkflowGraphValidatorTest extends TestCase
         $codes = array_map(static fn (Violation $v): string => $v->code, $violations);
         static::assertContains('WORKFLOW_EXECUTION_101', $codes);
 
-        // 警告不拦截保存
+        // Warnings do not prevent saving.
         static::assertFalse($this->validator->hasErrors($violations));
     }
 
@@ -164,10 +216,7 @@ class WorkflowGraphValidatorTest extends TestCase
     }
 
     /**
-     * 开始 → 主管审批 → 财务审批 → 结束（单线，无条件分支）。
-     *
-     * 单线是刻意选的：分支不汇聚会触发 `WORKFLOW_EXECUTION_101` 警告，
-     * 让"正常图零违规"这条断言变得含糊。分支行为由专门用例覆盖。
+     * A linear graph avoids branch-merge warnings; dedicated cases cover branching.
      *
      * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}
      */

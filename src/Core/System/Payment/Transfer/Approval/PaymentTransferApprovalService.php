@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Workflow\Publication\WorkflowRequestCatalogueEvent;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeException;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimePreviewEvent;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeRegistry;
+use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeStatus;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeStatusesEvent;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Shopwell\Core\System\Currency\CurrencyAmountConverter;
@@ -22,6 +23,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -76,7 +78,7 @@ class PaymentTransferApprovalService
         $context = Context::createDefaultContext();
         $release = $this->releases->get($approval->releaseId, $context);
         $status = $this->runtimes->get($release->getPublisher())->status($release, $approval->instanceId, $context);
-        if ($status->status !== 'approved') {
+        if ($status->status !== WorkflowRuntimeStatus::APPROVED) {
             throw PaymentTransferApprovalException::blocked($status->status);
         }
 
@@ -112,8 +114,8 @@ class PaymentTransferApprovalService
             $source = $context->getSource();
             $result['canReapply'] = $source instanceof AdminApiSource && $source->getUserId() === $approval->initiatorId
                 && $context->isAllowed('payment_transfer:create') && $transfer->submitAttempts === 0
-                && \in_array($transfer->statusMachineState?->getTechnicalName(), ['created', 'canceled'], true)
-                && \in_array($status->status, ['rejected', 'canceled'], true);
+                && \in_array($transfer->statusMachineState?->getTechnicalName(), [PaymentTransferStates::STATE_CREATED, PaymentTransferStates::STATE_CANCELED], true)
+                && \in_array($status->status, [WorkflowRuntimeStatus::REJECTED, WorkflowRuntimeStatus::CANCELED], true);
             $result['canCancel'] = $transfer->submitAttempts === 0 && $status->canCancel && $context->isAllowed('payment_transfer:create');
         } catch (\Throwable) {
             $result['status'] = 'unavailable';
@@ -383,7 +385,7 @@ class PaymentTransferApprovalService
         $transfer = $this->transfers->getById($transferId);
         $release = $this->releases->get($approval->releaseId, $context);
         $status = $this->runtimes->get($release->getPublisher())->status($release, $approval->instanceId, $context);
-        if ($transfer->submitAttempts !== 0 || !\in_array($transfer->statusMachineState?->getTechnicalName(), ['created', 'canceled'], true) || !\in_array($status->status, ['rejected', 'canceled'], true)) {
+        if ($transfer->submitAttempts !== 0 || !\in_array($transfer->statusMachineState?->getTechnicalName(), [PaymentTransferStates::STATE_CREATED, PaymentTransferStates::STATE_CANCELED], true) || !\in_array($status->status, [WorkflowRuntimeStatus::REJECTED, WorkflowRuntimeStatus::CANCELED], true)) {
             throw PaymentTransferApprovalException::blocked('reapplication_unavailable');
         }
 

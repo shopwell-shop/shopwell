@@ -2,7 +2,13 @@
 import type { HttpClient } from 'src/core/factory/http-client.types';
 import type { LoginService } from '../login.service';
 import ApiService from '../api.service';
-import type { RuntimeInstance, RuntimePage, RuntimeTask } from 'src/core/workflow/workflow-runtime.types';
+import type {
+    RuntimeInstance,
+    RuntimeInstanceListItem,
+    RuntimePage,
+    RuntimeTodoTask,
+    RuntimeDoneTask,
+} from 'src/core/workflow/workflow-runtime.types';
 
 const base = '/_action/workflow';
 type PageQuery = { limit?: number; offset?: number };
@@ -28,19 +34,19 @@ export default class WorkflowRuntimeApiService extends ApiService {
             .get<{ data: RuntimeInstance }>(`${base}/instance/${id}`, { headers: this.getBasicHeaders() })
             .then((response) => response.data.data);
     }
-    listTodo(params: PageQuery = {}): Promise<RuntimePage<RuntimeTask>> {
+    listTodo(params: PageQuery = {}): Promise<RuntimePage<RuntimeTodoTask>> {
         return this.httpClient
-            .get<RuntimePage<RuntimeTask>>(`${base}/task/todo`, { headers: this.getBasicHeaders(), params })
+            .get<RuntimePage<RuntimeTodoTask>>(`${base}/task/todo`, { headers: this.getBasicHeaders(), params })
             .then((response) => response.data);
     }
-    listDone(params: PageQuery = {}): Promise<RuntimePage<RuntimeTask>> {
+    listDone(params: PageQuery = {}): Promise<RuntimePage<RuntimeDoneTask>> {
         return this.httpClient
-            .get<RuntimePage<RuntimeTask>>(`${base}/task/done`, { headers: this.getBasicHeaders(), params })
+            .get<RuntimePage<RuntimeDoneTask>>(`${base}/task/done`, { headers: this.getBasicHeaders(), params })
             .then((response) => response.data);
     }
-    listInitiated(params: PageQuery = {}): Promise<RuntimePage<RuntimeInstance>> {
+    listInitiated(params: PageQuery = {}): Promise<RuntimePage<RuntimeInstanceListItem>> {
         return this.httpClient
-            .get<RuntimePage<RuntimeInstance>>(`${base}/instance/mine`, { headers: this.getBasicHeaders(), params })
+            .get<RuntimePage<RuntimeInstanceListItem>>(`${base}/instance/mine`, { headers: this.getBasicHeaders(), params })
             .then((response) => response.data);
     }
     approveTask(id: string, comment: string): Promise<void> {

@@ -28,18 +28,27 @@ function createEntry(ids: string[], factory: ServiceContainer['repositoryFactory
             const users: Entity<'user'>[] = [];
             try {
                 for (let offset = 0; offset < ids.length; offset += 100) {
-                    if (request !== entry.request) return;
+                    if (request !== entry.request) {
+                        return;
+                    }
+
                     const criteria = new Shopwell.Data.Criteria(1, 100);
                     criteria.setIds(ids.slice(offset, offset + 100));
                     criteria.setTotalCountMode(0);
                     const result = await repository.search(criteria, Shopwell.Context.api);
-                    if (request !== entry.request) return;
+
+                    if (request !== entry.request) {
+                        return;
+                    }
+
                     users.push(...result);
                 }
                 entry.users.value = users;
                 entry.status.value = 'ready';
             } catch {
-                if (request === entry.request) entry.status.value = 'error';
+                if (request === entry.request) {
+                    entry.status.value = 'error';
+                }
             }
         },
     };
@@ -50,12 +59,18 @@ function createEntry(ids: string[], factory: ServiceContainer['repositoryFactory
 export default function useWorkflowUsers(userIds: Ref<string[]>) {
     const factory = inject<ServiceContainer['repositoryFactory']>('repositoryFactory');
     const acl = inject<ServiceContainer['acl']>('acl');
-    if (!factory || !acl) throw new Error('Workflow users resolution requires repositoryFactory and acl.');
+
+    if (!factory || !acl) {
+        throw new Error('Workflow users resolution requires repositoryFactory and acl.');
+    }
+
     let entries = entriesByFactory.get(factory);
+
     if (!entries) {
         entries = new Map();
         entriesByFactory.set(factory, entries);
     }
+
     const accounts = entries;
     const canRead = computed(() => acl.can('user:read'));
     const requestedIds = computed(() => [...new Set(userIds.value.map((id) => id.toLowerCase()))]);
@@ -70,10 +85,12 @@ export default function useWorkflowUsers(userIds: Ref<string[]>) {
 
     function release(): void {
         const entry = current.value;
+
         if (entry && --entry.consumers === 0 && currentKey) {
             entry.request += 1;
             accounts.delete(currentKey);
         }
+
         current.value = null;
         currentKey = null;
     }
@@ -82,29 +99,47 @@ export default function useWorkflowUsers(userIds: Ref<string[]>) {
         [key, canRead],
         ([idsKey, allowed]) => {
             release();
-            if (!idsKey || !allowed) return;
+
+            if (!idsKey || !allowed) {
+                return;
+            }
+
             let entry = accounts.get(idsKey);
             const isNew = !entry;
+
             if (!entry) {
                 entry = createEntry(idsKey.split(','), factory);
                 accounts.set(idsKey, entry);
             }
+
             entry.consumers += 1;
             currentKey = idsKey;
             current.value = entry;
-            if (isNew) void entry.retry();
+
+            if (isNew) {
+                void entry.retry();
+            }
         },
         { immediate: true },
     );
     onScopeDispose(release);
 
     const status = computed<UsersStatus>(() => {
-        if (!requestedIds.value.length) return 'empty';
-        if (!canRead.value) return 'forbidden';
+        if (!requestedIds.value.length) {
+            return 'empty';
+        }
+
+        if (!canRead.value) {
+            return 'forbidden';
+        }
+
         return current.value?.status.value ?? 'ready';
     });
     const users = computed<Entity<'user'>[]>(() => {
-        if (!canRead.value) return [];
+        if (!canRead.value) {
+            return [];
+        }
+
         const found = new Map(current.value?.users.value.map((user) => [user.id.toLowerCase(), user]));
         return requestedIds.value.flatMap((id) => {
             const user = found.get(id);
@@ -112,7 +147,9 @@ export default function useWorkflowUsers(userIds: Ref<string[]>) {
         });
     });
     async function retry(): Promise<void> {
-        if (canRead.value) await current.value?.retry();
+        if (canRead.value) {
+            await current.value?.retry();
+        }
     }
     return { users, status, canRead, retry };
 }
