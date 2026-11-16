@@ -13,7 +13,7 @@
         display: flex;
         gap: 8px;
 
-        // 两个按钮等宽：拒绝不应该比同意更小或更难按，两者都是正常决策
+        // Give approval and rejection equal target sizes.
         > * {
             flex: 1;
         }

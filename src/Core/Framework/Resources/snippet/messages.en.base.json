@@ -100,5 +100,27 @@
         "sortByPriceAscending": "Price, ascending",
         "sortByPriceDescending": "Price, descending",
         "sortByScore": "Top results"
+    },
+    "workflow": {
+        "nodes": {
+            "start": "Initiator",
+            "end": "End",
+            "approval": "Approval",
+            "condition": "Condition",
+            "fallback": "Otherwise"
+        },
+        "inputs": {
+            "reason": "Reason for request"
+        },
+        "roles": {
+            "manager": {
+                "name": "Workflow manager",
+                "description": "Manage workflow definitions, review drafts and publish workflows."
+            },
+            "participant": {
+                "name": "Workflow participant",
+                "description": "Start workflows, handle assigned approval tasks and view participation history."
+            }
+        }
     }
 }

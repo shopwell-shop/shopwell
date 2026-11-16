@@ -36,7 +36,12 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->import('workflow_execution.php');
     $services = $containerConfigurator->services();
-    $services->set(WorkflowDefaultRoleInstaller::class)->args([service('acl_role.repository'), service('event_dispatcher'), service('admin_menu_item.repository')]);
+    $services->set(WorkflowDefaultRoleInstaller::class)->args([
+        service('acl_role.repository'),
+        service('event_dispatcher'),
+        service('admin_menu_item.repository'),
+        service('translator'),
+    ]);
     $services->set(WorkflowDefaultRolesInstallCommand::class)->args([service(WorkflowDefaultRoleInstaller::class), service(CoreMenuSynchronizer::class)])->tag('console.command');
     $services->set(WorkflowDefaultRolesSubscriber::class)->args([service(WorkflowDefaultRoleInstaller::class)])->tag('kernel.event_subscriber');
     $services->set(WorkflowReleaseDefinition::class)->tag('shopwell.entity.definition', ['entity' => 'workflow_release']);

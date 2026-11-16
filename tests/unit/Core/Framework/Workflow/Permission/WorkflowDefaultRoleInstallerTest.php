@@ -31,6 +31,7 @@ use Shopwell\Core\System\AdminMenu\MenuDefinitionCollector;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuRowsBuilder;
 use Shopwell\Core\System\AdminMenu\Service\VisibleMenuTreeBuilder;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -59,10 +60,22 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
             ->getMock();
     }
 
+    public function testRoleDefaultsUseTheSelectedLanguage(): void
+    {
+        $repository = new StaticEntityRepository([new AclRoleCollection(), new AclRoleCollection()]);
+        $installer = new WorkflowDefaultRoleInstaller($repository, new EventDispatcher(), $this->menuRepository, ApprovalRegistryFixture::translator('en'));
+        $installer->install(Context::createDefaultContext());
+        $roles = $repository->getPayloads(StaticEntityRepository::CREATE);
+
+        static::assertSame('Workflow manager', $roles[0]['name']);
+        static::assertSame('Manage workflow definitions, review drafts and publish workflows.', $roles[0]['description']);
+        static::assertSame('Workflow participant', $roles[1]['name']);
+    }
+
     public function testCreatesDefaultRolesWithStableIdsAndNoUserAssignments(): void
     {
         $repository = new StaticEntityRepository([new AclRoleCollection(), new AclRoleCollection()]);
-        $installer = new WorkflowDefaultRoleInstaller($repository, new EventDispatcher(), $this->menuRepository);
+        $installer = new WorkflowDefaultRoleInstaller($repository, new EventDispatcher(), $this->menuRepository, ApprovalRegistryFixture::translator('zh'));
 
         static::assertSame(2, $installer->install(Context::createDefaultContext()));
 
@@ -103,7 +116,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
             new AclRoleCollection([$manager]), new AclRoleCollection([$participant]),
         ]);
         $dispatcher = new EventDispatcher();
-        $installer = new WorkflowDefaultRoleInstaller($repository, $dispatcher, $this->menuRepository);
+        $installer = new WorkflowDefaultRoleInstaller($repository, $dispatcher, $this->menuRepository, ApprovalRegistryFixture::translator('zh'));
 
         static::assertSame(2, $installer->install(Context::createDefaultContext()));
         $dispatcher->addListener(WorkflowDefaultRolesEvent::class, static function (WorkflowDefaultRolesEvent $event): void {
@@ -128,7 +141,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
         $dispatcher->addListener(WorkflowDefaultRolesEvent::class, static function (WorkflowDefaultRolesEvent $event): void {
             $event->addPrivileges(WorkflowDefaultRolesEvent::PARTICIPANT, ['example:participate']);
         });
-        $installer = new WorkflowDefaultRoleInstaller($repository, $dispatcher, $this->menuRepository);
+        $installer = new WorkflowDefaultRoleInstaller($repository, $dispatcher, $this->menuRepository, ApprovalRegistryFixture::translator('zh'));
 
         static::assertSame(1, $installer->install(Context::createDefaultContext()));
 
@@ -147,7 +160,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
         ];
         $exception = new UniqueConstraintViolationException(static::createStub(DriverException::class), null);
         $this->failingRepository->expects($this->once())->method('create')->willThrowException($exception);
-        $installer = new WorkflowDefaultRoleInstaller($this->failingRepository, new EventDispatcher(), $this->menuRepository);
+        $installer = new WorkflowDefaultRoleInstaller($this->failingRepository, new EventDispatcher(), $this->menuRepository, ApprovalRegistryFixture::translator('zh'));
 
         static::assertSame(0, $installer->install(Context::createDefaultContext()));
         static::assertSame([$managerId], $this->failingRepository->searchedCriteria[1]->getIds());
@@ -160,7 +173,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
         $this->failingRepository->searches = [[], []];
         $exception = new WriteTypeIntendException(new AclRoleDefinition(), InsertCommand::class, UpdateCommand::class);
         $this->failingRepository->expects($this->once())->method('create')->willThrowException($exception);
-        $installer = new WorkflowDefaultRoleInstaller($this->failingRepository, new EventDispatcher(), $this->menuRepository);
+        $installer = new WorkflowDefaultRoleInstaller($this->failingRepository, new EventDispatcher(), $this->menuRepository, ApprovalRegistryFixture::translator('zh'));
 
         $this->expectExceptionObject($exception);
 
@@ -182,7 +195,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
         $tasksId = $rowsBuilder->idFor('sw-workflow-tasks');
         $this->menuRepository->searches = [[$designId], [$tasksId]];
         $repository = new StaticEntityRepository([new AclRoleCollection(), new AclRoleCollection()]);
-        $installer = new WorkflowDefaultRoleInstaller($repository, new EventDispatcher(), $this->menuRepository);
+        $installer = new WorkflowDefaultRoleInstaller($repository, new EventDispatcher(), $this->menuRepository, ApprovalRegistryFixture::translator('zh'));
 
         static::assertSame(2, $installer->install(Context::createDefaultContext()));
 
@@ -229,7 +242,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
         $dispatcher->addListener(WorkflowDefaultRolesEvent::class, static function (WorkflowDefaultRolesEvent $event): void {
             $event->addMenuKeys(WorkflowDefaultRolesEvent::PARTICIPANT, ['example-inbox', 'example-uninstalled-menu']);
         });
-        $installer = new WorkflowDefaultRoleInstaller($repository, $dispatcher, $this->menuRepository);
+        $installer = new WorkflowDefaultRoleInstaller($repository, $dispatcher, $this->menuRepository, ApprovalRegistryFixture::translator('zh'));
 
         static::assertSame(1, $installer->install(Context::createDefaultContext()));
 

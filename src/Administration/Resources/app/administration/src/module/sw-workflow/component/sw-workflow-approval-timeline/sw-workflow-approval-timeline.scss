@@ -18,7 +18,7 @@
         position: relative;
         padding: 0 0 20px 24px;
 
-        // 竖线画在条目上而不是列表上：最后一条不画，否则时间线会拖出一截空白
+        // Draw connectors per item so the last entry has no trailing line.
         &::before {
             position: absolute;
             top: 10px;
@@ -111,7 +111,7 @@
         font-size: var(--font-size-xs);
     }
 
-    // 三种状态只改圆点与数字颜色，不整行染色：整行染色会盖掉意见文字的对比度
+    // Limit state colors to indicators to preserve comment contrast.
     &__item.is--agreed &__dot {
         background: var(--color-background-positive-default);
     }
@@ -124,7 +124,7 @@
         color: var(--color-text-critical-default);
     }
 
-    // 当前节点：品牌色 + 外圈淡色，表示"正在这里等"
+    // Highlight the pending node with the brand color and an outer ring.
     &__item.is--pending &__dot {
         background: var(--color-background-brand-default);
         box-shadow: 0 0 0 4px var(--color-background-secondary-default);

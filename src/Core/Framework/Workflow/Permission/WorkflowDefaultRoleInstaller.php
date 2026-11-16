@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * @internal
@@ -22,12 +23,12 @@ class WorkflowDefaultRoleInstaller
 {
     private const ROLES = [
         WorkflowDefaultRolesEvent::MANAGER => [
-            'name' => '流程管理员',
-            'description' => '管理流程定义、查看草稿并发布流程。',
+            'nameKey' => 'workflow.roles.manager.name',
+            'descriptionKey' => 'workflow.roles.manager.description',
         ],
         WorkflowDefaultRolesEvent::PARTICIPANT => [
-            'name' => '流程参与者',
-            'description' => '发起流程、处理分配给自己的审批任务并查看参与记录。',
+            'nameKey' => 'workflow.roles.participant.name',
+            'descriptionKey' => 'workflow.roles.participant.description',
         ],
     ];
 
@@ -39,6 +40,7 @@ class WorkflowDefaultRoleInstaller
         private readonly EntityRepository $roleRepository,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly EntityRepository $menuRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -57,7 +59,8 @@ class WorkflowDefaultRoleInstaller
             try {
                 $context->scope(Context::SYSTEM_SCOPE, fn () => $this->roleRepository->create([[
                     'id' => $id,
-                    ...$role,
+                    'name' => $this->translator->trans($role['nameKey']),
+                    'description' => $this->translator->trans($role['descriptionKey']),
                     'privileges' => $event->getPrivileges($key),
                     'adminMenuItems' => $this->menuSelection($event->getMenuKeys($key), $context),
                 ]], $context));

@@ -2,30 +2,32 @@
 
 namespace Shopwell\Core\Framework\Workflow\Publication\Approval;
 
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Connection\WorkflowConnection;
-use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
-use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
-use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
-use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Extension\CompileApprovalNodeExtension;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompilationContext;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompilerRegistry;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeRole;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\CompiledApprovalNode;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 
 /**
  * @internal
  *
- * @phpstan-type Stage array{type: string, properties: array<string, mixed>, ports: array<string, array<string, mixed>>, expectedPorts: list<string>}
+ * @phpstan-type Stage array{node: CompiledApprovalNode, role: ApprovalNodeRole, compiler: array{type: string, version: int}}
  */
 #[Package('framework')]
 final class ApprovalWorkflowCompiler
 {
     public function __construct(
-        private readonly ApprovalConfigurationCompiler $approvals,
-        private readonly WorkflowInputSchema $forms = new WorkflowInputSchema(),
-        private readonly ApprovalCondition $conditions = new ApprovalCondition(),
+        private readonly ApprovalNodeCompilerRegistry $compilers,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -39,12 +41,12 @@ final class ApprovalWorkflowCompiler
         }
 
         $nodes = $this->indexNodes($document);
-        $start = $this->findStart($nodes);
-        $stages = $this->parseConfigurations($document, $start);
+        $stages = $this->compileNodes($document);
+        $startId = $this->findStart($stages);
         $outputs = $this->validateConnections($document, $nodes, $stages);
-        [$orderedIds, $endId] = $this->orderReachableStages($nodes, $stages, $outputs, $start->id);
+        [$orderedIds, $endId] = $this->orderReachableStages($nodes, $stages, $outputs, $startId);
 
-        return $this->generateExecutionGraph($nodes, $stages, $outputs, $orderedIds, $endId);
+        return $this->generateExecutionGraph($stages, $outputs, $orderedIds, $endId);
     }
 
     /**
@@ -61,12 +63,11 @@ final class ApprovalWorkflowCompiler
                 throw $this->rejected('runtime_identifier_too_long', $path . '/id', $node->id);
             }
 
-            if ($node->typeVersion !== 1) {
-                throw $this->rejected('unsupported_node_version', $path . '/typeVersion', $node->id);
-            }
+            if ($this->compilers->find($node->type, $node->typeVersion) === null) {
+                $code = $this->compilers->hasType($node->type) ? 'unsupported_node_version' : 'unsupported_node_type';
+                $field = $this->compilers->hasType($node->type) ? '/typeVersion' : '/type';
 
-            if (!\in_array($node->type, [DocumentNodeTypes::START, DocumentNodeTypes::APPROVAL, DocumentNodeTypes::CONDITION, DocumentNodeTypes::END], true)) {
-                throw $this->rejected('unsupported_node_type', $path . '/type', $node->id);
+                throw $this->rejected($code, $path . $field, $node->id);
             }
 
             if (isset($nodes[$node->id])) {
@@ -80,17 +81,17 @@ final class ApprovalWorkflowCompiler
     }
 
     /**
-     * @param array<string, WorkflowNode> $nodes
+     * @param array<string, Stage> $stages
      */
-    private function findStart(array $nodes): WorkflowNode
+    private function findStart(array $stages): string
     {
-        $starts = array_values(array_filter($nodes, static fn (WorkflowNode $node): bool => $node->type === DocumentNodeTypes::START));
+        $starts = array_keys(array_filter($stages, static fn (array $stage): bool => $stage['role'] === ApprovalNodeRole::START));
 
         if (\count($starts) !== 1) {
             throw $this->rejected('single_start_required', '/nodes');
         }
 
-        if (array_filter($nodes, static fn (WorkflowNode $node): bool => $node->type === DocumentNodeTypes::APPROVAL) === []) {
+        if (array_filter($stages, static fn (array $stage): bool => $stage['role'] === ApprovalNodeRole::APPROVAL) === []) {
             throw $this->rejected('approval_required', '/nodes');
         }
 
@@ -100,83 +101,137 @@ final class ApprovalWorkflowCompiler
     /**
      * @return array<string, Stage>
      */
-    private function parseConfigurations(WorkflowDocument $document, WorkflowNode $start): array
+    private function compileNodes(WorkflowDocument $document): array
     {
-        $startIndex = array_search($start, $document->nodes, true);
-        $startPath = '/nodes/' . $startIndex . '/config';
-        $config = $this->configuration($start->config, ['inputType', 'formFields', 'label', 'description', 'requestAction'], $startPath, $start->id);
-
-        if (\array_key_exists('inputType', $config) && $config['inputType'] !== 'core:approval-request') {
-            throw $this->rejected('unsupported_input_type', $startPath . '/inputType', $start->id);
-        }
-
-        if (isset($config['requestAction'])
-            && (!\is_string($config['requestAction']) || preg_match('/^[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$/D', $config['requestAction']) !== 1)) {
-            throw $this->rejected('invalid_request_action', $startPath . '/requestAction', $start->id);
-        }
-
-        try {
-            $schema = $this->forms->normalize(
-                \array_key_exists('formFields', $config)
-                    ? $config['formFields']
-                    : [['key' => 'reason', 'label' => '申请事由', 'type' => 'text']]
-            );
-        } catch (WorkflowExecutionException $exception) {
-            // Input diagnostics use /fields; locate that field within the designer's start configuration.
-            $fieldPath = $exception->getParameters()['path'];
-            throw $this->rejected('invalid_input_schema', $startPath . '/formFields' . substr($fieldPath, \strlen('/fields')), $start->id);
-        }
-
         $stages = [];
+        $schema = [];
+        $pending = [];
 
+        // Compile the start first so every other compiler receives the normalized input schema.
         foreach ($document->nodes as $index => $node) {
-            $path = '/nodes/' . $index . '/config';
+            $compiler = $this->compilers->find($node->type, $node->typeVersion);
 
-            if ($node->type === DocumentNodeTypes::START) {
-                $stages[$node->id] = [
-                    'type' => WorkflowNodeTypes::START,
-                    'properties' => ['inputSchema' => $schema],
-                    'ports' => ['out' => []],
-                    'expectedPorts' => ['out'],
-                ];
-            } elseif ($node->type === DocumentNodeTypes::APPROVAL) {
-                $config = $this->configuration($node->config, ['assignee', 'approval', 'label', 'description'], $path, $node->id);
-                $properties = $this->approvalConfiguration($config, $path, $node->id);
-                $stages[$node->id] = [
-                    'type' => WorkflowNodeTypes::TASK,
-                    'properties' => [
-                        'approvalStage' => true,
-                        'name' => \is_string($config['label'] ?? null) && trim($config['label']) !== '' ? $config['label'] : '审批',
-                        'description' => $config['description'] ?? '',
-                        ...$properties,
-                    ],
-                    'ports' => ['approved' => []],
-                    'expectedPorts' => ['approved', 'rejected'],
-                ];
-            } elseif ($node->type === DocumentNodeTypes::CONDITION) {
-                $config = $this->configuration($node->config, ['branches', 'label', 'description'], $path, $node->id);
-                $ports = $this->conditionPorts($config, $schema, $path, $node->id);
-                $stages[$node->id] = [
-                    'type' => WorkflowNodeTypes::CONDITION,
-                    'properties' => ['name' => $config['label'] ?? '条件分支'],
-                    'ports' => $ports,
-                    'expectedPorts' => array_keys($ports),
-                ];
-            } else {
-                if ($this->map($node->config) !== []) {
-                    throw $this->rejected('unsupported_end_configuration', $path, $node->id);
-                }
-
-                $stages[$node->id] = [
-                    'type' => WorkflowNodeTypes::END,
-                    'properties' => [],
-                    'ports' => [],
-                    'expectedPorts' => [],
-                ];
+            if ($compiler === null) {
+                throw $this->rejected('unsupported_node_type', '/nodes/' . $index . '/type', $node->id);
             }
+
+            if ($compiler->getRole() !== ApprovalNodeRole::START) {
+                $pending[] = [$index, $node, $compiler];
+                continue;
+            }
+
+            if ($stages !== []) {
+                throw $this->rejected('single_start_required', '/nodes');
+            }
+
+            $stage = $this->compileNode($compiler, $node, $index, []);
+            $schema = $this->inputSchema($stage['node'], $node->id);
+            $stages[$node->id] = $stage;
+        }
+
+        if ($stages === []) {
+            throw $this->rejected('single_start_required', '/nodes');
+        }
+
+        foreach ($pending as [$index, $node, $compiler]) {
+            $stages[$node->id] = $this->compileNode($compiler, $node, $index, $schema);
         }
 
         return $stages;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function inputSchema(CompiledApprovalNode $node, string $nodeId): array
+    {
+        $schema = $node->properties['inputSchema'] ?? null;
+
+        if (!\is_array($schema) || !array_is_list($schema)) {
+            throw $this->rejected('invalid_input_schema', '/nodes', $nodeId);
+        }
+
+        foreach ($schema as $field) {
+            if (!\is_array($field) || array_filter(array_keys($field), \is_int(...)) !== []) {
+                throw $this->rejected('invalid_input_schema', '/nodes', $nodeId);
+            }
+        }
+
+        return $schema;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $schema
+     *
+     * @return Stage
+     */
+    private function compileNode(ApprovalNodeCompiler $compiler, WorkflowNode $node, int $index, array $schema): array
+    {
+        $context = new ApprovalNodeCompilationContext($node->id, $node->config, '/nodes/' . $index . '/config', $schema);
+        $extension = new CompileApprovalNodeExtension($compiler, $context);
+        $expectedRole = $compiler->getRole();
+        $usedCompiler = null;
+        $compilerResult = null;
+        $compiled = $this->extensions->publish(
+            CompileApprovalNodeExtension::NAME,
+            $extension,
+            function (ApprovalNodeCompiler $compiler, ApprovalNodeCompilationContext $context) use (&$usedCompiler, &$compilerResult, $expectedRole): CompiledApprovalNode {
+                $this->validateCompilerSelection($compiler, $context, $expectedRole);
+                $usedCompiler = $compiler;
+
+                $compilerResult = $compiler->compile($context);
+
+                return $compilerResult;
+            },
+        );
+        $selected = $extension->compiler;
+
+        $this->validateCompilerSelection($selected, $context, $expectedRole);
+
+        if ($usedCompiler !== $selected || $compiled !== $compilerResult) {
+            throw $context->reject('invalid_node_compiler_override');
+        }
+
+        $role = $selected->getRole();
+
+        $this->validateCompilation($role, $compiled, $context);
+
+        return [
+            'node' => $compiled,
+            'role' => $role,
+            'compiler' => ['type' => $selected->getNodeType(), 'version' => $selected->getNodeVersion()],
+        ];
+    }
+
+    private function validateCompilerSelection(ApprovalNodeCompiler $compiler, ApprovalNodeCompilationContext $context, ApprovalNodeRole $expectedRole): void
+    {
+        if ($this->compilers->find($compiler->getNodeType(), $compiler->getNodeVersion()) !== $compiler
+            || $compiler->getRole() !== $expectedRole) {
+            throw $context->reject('invalid_node_compiler_override');
+        }
+    }
+
+    private function validateCompilation(ApprovalNodeRole $role, CompiledApprovalNode $compiled, ApprovalNodeCompilationContext $context): void
+    {
+        if ($role === ApprovalNodeRole::START) {
+            if ($compiled->type !== WorkflowNodeTypes::START || $compiled->inputPorts !== [] || $compiled->terminalPorts !== []) {
+                throw $context->reject('invalid_node_compilation');
+            }
+
+            return;
+        }
+
+        if ($role === ApprovalNodeRole::END) {
+            if ($compiled->type !== WorkflowNodeTypes::END || $compiled->outputPorts !== [] || $compiled->terminalPorts !== []) {
+                throw $context->reject('invalid_node_compilation');
+            }
+
+            return;
+        }
+
+        if (\in_array($compiled->type, [WorkflowNodeTypes::START, WorkflowNodeTypes::END], true)) {
+            throw $context->reject('invalid_node_compilation');
+        }
     }
 
     /**
@@ -210,21 +265,22 @@ final class ApprovalWorkflowCompiler
                 throw $this->rejected('unknown_target', $path . '/target', $connection->source);
             }
 
-            if ($connection->targetPort !== 'in') {
+            if (!\in_array($connection->targetPort, $stages[$connection->target]['node']->inputPorts, true)) {
                 throw $this->rejected('unknown_input_port', $path . '/targetPort', $connection->target);
             }
 
             if (isset($outputs[$connection->source][$connection->sourcePort])
-                || !\in_array($connection->sourcePort, $stages[$connection->source]['expectedPorts'], true)) {
+                || (!\array_key_exists($connection->sourcePort, $stages[$connection->source]['node']->outputPorts)
+                    && !\in_array($connection->sourcePort, $stages[$connection->source]['node']->terminalPorts, true))) {
                 throw $this->rejected('invalid_output_port', $path . '/sourcePort', $connection->source);
             }
 
-            if ($nodes[$connection->target]->type === DocumentNodeTypes::START
-                || (isset($incoming[$connection->target]) && $nodes[$connection->target]->type !== DocumentNodeTypes::END)) {
+            if ($stages[$connection->target]['role'] === ApprovalNodeRole::START
+                || (isset($incoming[$connection->target]) && $stages[$connection->target]['role'] !== ApprovalNodeRole::END)) {
                 throw $this->rejected('invalid_incoming_connection', $path . '/target', $connection->target);
             }
 
-            if ($connection->sourcePort === 'rejected' && $nodes[$connection->target]->type !== DocumentNodeTypes::END) {
+            if (\in_array($connection->sourcePort, $stages[$connection->source]['node']->terminalPorts, true) && $stages[$connection->target]['role'] !== ApprovalNodeRole::END) {
                 throw $this->rejected('rejection_must_terminate', $path . '/target', $connection->source);
             }
 
@@ -234,7 +290,10 @@ final class ApprovalWorkflowCompiler
         }
 
         foreach ($document->nodes as $index => $node) {
-            if (\count($outputs[$node->id] ?? []) !== \count($stages[$node->id]['expectedPorts'])) {
+            $compiled = $stages[$node->id]['node'];
+            $expectedOutputs = \count($compiled->outputPorts) + \count($compiled->terminalPorts);
+
+            if (\count($outputs[$node->id] ?? []) !== $expectedOutputs) {
                 throw $this->rejected('missing_output_connection', '/nodes/' . $index, $node->id);
             }
         }
@@ -258,10 +317,10 @@ final class ApprovalWorkflowCompiler
 
         while ($queue !== []) {
             $id = array_shift($queue);
-            $current = $nodes[$id];
+            $stage = $stages[$id];
 
             if (isset($visited[$id])) {
-                if ($current->type === DocumentNodeTypes::END) {
+                if ($stage['role'] === ApprovalNodeRole::END) {
                     continue;
                 }
 
@@ -270,21 +329,21 @@ final class ApprovalWorkflowCompiler
 
             $visited[$id] = true;
 
-            if ($current->type === DocumentNodeTypes::END) {
+            if ($stage['role'] === ApprovalNodeRole::END) {
                 $endId ??= $id;
                 continue;
             }
 
             $orderedIds[] = $id;
 
-            if ($current->type === DocumentNodeTypes::APPROVAL) {
-                $visited[$outputs[$id]['rejected']->target] = true;
+            foreach ($stage['node']->terminalPorts as $port) {
+                $visited[$outputs[$id][$port]->target] = true;
             }
 
-            foreach ($stages[$id]['ports'] as $port => $properties) {
+            foreach ($stage['node']->outputPorts as $port => $properties) {
                 $target = $outputs[$id][$port]->target;
 
-                if ($nodes[$target]->type === DocumentNodeTypes::END) {
+                if ($stages[$target]['role'] === ApprovalNodeRole::END) {
                     $endId ??= $target;
                 }
 
@@ -306,14 +365,13 @@ final class ApprovalWorkflowCompiler
     }
 
     /**
-     * @param array<string, WorkflowNode> $nodes
      * @param array<string, Stage> $stages
      * @param array<string, array<string, WorkflowConnection>> $outputs
      * @param list<string> $orderedIds
      *
      * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}
      */
-    private function generateExecutionGraph(array $nodes, array $stages, array $outputs, array $orderedIds, string $endId): array
+    private function generateExecutionGraph(array $stages, array $outputs, array $orderedIds, string $endId): array
     {
         $compiled = [];
         $edges = [];
@@ -322,19 +380,21 @@ final class ApprovalWorkflowCompiler
             $stage = $stages[$id];
             $compiled[] = [
                 'id' => $id,
-                'type' => $stage['type'],
-                'properties' => $stage['properties'],
+                'type' => $stage['node']->type,
+                'properties' => [...$stage['node']->properties, 'approvalNodeCompiler' => $stage['compiler']],
             ];
 
-            // Runtime rejection terminates the instance; only approval and condition edges advance it.
-            foreach ($stage['ports'] as $port => $properties) {
+            // Terminal design ports are completed by their executor rather than routed at runtime.
+            foreach ($stage['node']->outputPorts as $port => $properties) {
                 $connection = $outputs[$id][$port];
                 $targetId = $connection->target;
 
-                if ($nodes[$targetId]->type === DocumentNodeTypes::END) {
+                if ($stages[$targetId]['role'] === ApprovalNodeRole::END) {
                     $properties['workflowTargetNodeId'] = $targetId;
                     $targetId = $endId;
                 }
+
+                $properties['sourcePort'] = $port;
 
                 $edge = [
                     'id' => $connection->id,
@@ -342,129 +402,32 @@ final class ApprovalWorkflowCompiler
                     'targetNodeId' => $targetId,
                 ];
 
-                if ($properties !== []) {
-                    $edge['properties'] = $properties;
-                }
+                $edge['properties'] = $properties;
 
                 $edges[] = $edge;
             }
         }
 
-        $compiled[] = ['id' => $endId, 'type' => WorkflowNodeTypes::END];
+        $end = $stages[$endId];
+
+        foreach ($stages as $id => $stage) {
+            if ($stage['role'] === ApprovalNodeRole::END
+                && ($stage['node']->properties !== $end['node']->properties || $stage['compiler'] !== $end['compiler'])) {
+                throw $this->rejected('incompatible_end_nodes', '/nodes', $id);
+            }
+        }
+
+        $compiled[] = [
+            'id' => $endId,
+            'type' => $end['node']->type,
+            'properties' => [...$end['node']->properties, 'approvalNodeCompiler' => $end['compiler']],
+        ];
 
         return ['nodes' => $compiled, 'edges' => $edges];
-    }
-
-    /**
-     * @param array<array-key, mixed> $config
-     * @param list<array<string, mixed>> $schema
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private function conditionPorts(array $config, array $schema, string $path, string $nodeId): array
-    {
-        $branches = $config['branches'] ?? null;
-
-        if (!\is_array($branches) || !array_is_list($branches) || $branches === [] || \count($branches) > 50) {
-            throw $this->rejected('invalid_branches', $path . '/branches', $nodeId);
-        }
-
-        $ports = [];
-
-        foreach ($branches as $index => $raw) {
-            $branchPath = $path . '/branches/' . $index;
-            $branch = $this->map($raw);
-
-            if ($branch === null || array_diff(array_keys($branch), ['id', 'label', 'field', 'fieldType', 'operator', 'value']) !== []) {
-                throw $this->rejected('invalid_branch_configuration', $branchPath, $nodeId);
-            }
-
-            if (!\is_string($branch['id'] ?? null) || preg_match('/^branch-[a-zA-Z0-9-]+$/D', $branch['id']) !== 1 || isset($ports[$branch['id']])) {
-                throw $this->rejected('invalid_branch_id', $branchPath . '/id', $nodeId);
-            }
-
-            if (!\is_string($branch['label'] ?? null) || trim($branch['label']) === '' || mb_strlen($branch['label']) > 255) {
-                throw $this->rejected('invalid_branch_label', $branchPath . '/label', $nodeId);
-            }
-
-            try {
-                $expression = $this->conditions->encode($branch, $schema);
-            } catch (WorkflowExecutionException) {
-                throw $this->rejected('invalid_branch_condition', $branchPath, $nodeId);
-            }
-
-            $ports[$branch['id']] = ['expr' => $expression, 'name' => $branch['label']];
-        }
-
-        $ports['fallback'] = ['name' => '默认分支'];
-
-        return $ports;
-    }
-
-    /**
-     * @param list<string> $allowedKeys
-     *
-     * @return array<array-key, mixed>
-     */
-    private function configuration(mixed $raw, array $allowedKeys, string $path, string $nodeId): array
-    {
-        $config = $this->map($raw);
-
-        if ($config === null) {
-            throw $this->rejected('invalid_configuration', $path, $nodeId);
-        }
-
-        $unknown = array_diff(array_keys($config), $allowedKeys);
-
-        if ($unknown !== []) {
-            throw $this->rejected('unknown_configuration', $path . '/' . reset($unknown), $nodeId);
-        }
-
-        if (\array_key_exists('label', $config) && (!\is_string($config['label']) || mb_strlen($config['label']) > 255)) {
-            throw $this->rejected('invalid_label', $path . '/label', $nodeId);
-        }
-
-        if (\array_key_exists('description', $config) && !\is_string($config['description'])) {
-            throw $this->rejected('invalid_description', $path . '/description', $nodeId);
-        }
-
-        return $config;
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     *
-     * @return array<string, mixed>
-     */
-    private function approvalConfiguration(array $config, string $path, string $nodeId): array
-    {
-        $compiled = $this->approvals->compile($config, $path, $nodeId);
-
-        return [
-            'assigneeType' => $compiled->assignment->type,
-            'assigneeValue' => $compiled->assignment->values,
-            'assigneeConfig' => $compiled->assignment->configuration,
-            'assigneeUserIds' => $compiled->assignment->knownUserIds,
-            'countersignType' => $compiled->mode->getType(),
-            'approvalModeVersion' => $compiled->mode->getVersion(),
-            'approvalModeConfig' => $compiled->configuration,
-        ];
     }
 
     private function rejected(string $code, string $path, ?string $nodeId = null): WorkflowException
     {
         return WorkflowException::publicationRejected('unsupported_approval_workflow', [new WorkflowViolation($code, $path, $nodeId)]);
-    }
-
-    /**
-     * @return array<array-key, mixed>|null
-     */
-    private function map(mixed $value): ?array
-    {
-        if ($value instanceof \stdClass) {
-            return get_object_vars($value);
-        }
-
-        return \is_array($value) && ($value === [] || !array_is_list($value)) ? $value : null;
     }
 }

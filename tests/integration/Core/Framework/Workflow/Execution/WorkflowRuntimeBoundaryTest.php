@@ -24,14 +24,17 @@ use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowInstancePresenter;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\UserAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\CounterSignCalculator;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\EndExecutor;
+use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\StartExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\TaskExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowRecorder;
 use Shopwell\Core\Framework\Workflow\Execution\Node\WorkflowNodeExecutionStore;
+use Shopwell\Core\Framework\Workflow\Execution\NodeOutcome;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\CycleRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\NodePropertiesRule;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\ReachabilityRule;
@@ -47,6 +50,7 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNumberGenerator;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowRoute;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowSignal;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowTransactionRunner;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
@@ -57,9 +61,13 @@ use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeRegi
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssignment;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
-use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompilationContext;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeRole;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\CompiledApprovalNode;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
+use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseCheckEvent;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStateHandler;
 use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
@@ -147,6 +155,68 @@ class WorkflowRuntimeBoundaryTest extends TestCase
         static::assertCount(1, static::getContainer()->get(WorkflowTaskFinder::class)->forInstance($instanceId, $this->context));
     }
 
+    public function testPluginNodePublishesAndExecutesItsSelectedPortFromTheSnapshot(): void
+    {
+        $container = static::getContainer();
+        $container->get('user.repository')->update([['id' => $this->userId, 'admin' => true]], Context::createDefaultContext());
+        $runtime = $this->runtime(new AssigneeResolverRegistry([new UserAssigneeResolver($container->get('user.repository'))]), additionalExecutors: [new BoundaryRouteExecutor()]);
+        $codec = new WorkflowDocumentCodec(Validation::createValidator());
+        $release = new WorkflowReleaseEntity();
+        $release->assign([
+            'id' => Uuid::randomHex(), 'revision' => 1, 'name' => 'Plugin routing node',
+            'publisher' => ApprovalWorkflowPublisher::NAME,
+            'document' => $codec->encode(new WorkflowDocument([
+                new WorkflowNode('start', 'core:start', 1),
+                new WorkflowNode('route', 'example:route', 2, ['selectedPort' => 'review']),
+                new WorkflowNode('review', 'core:approval', 1, [
+                    'assignee' => ['source' => 'core:user', 'config' => ['userId' => $this->userId]],
+                    'approval' => ['mode' => 'core:single', 'config' => []],
+                ]),
+                new WorkflowNode('end', 'core:end', 1),
+            ], [
+                new WorkflowConnection('enter', 'start', 'out', 'route', 'request'),
+                new WorkflowConnection('skip', 'route', 'skip', 'end', 'in'),
+                new WorkflowConnection('review', 'route', 'review', 'review', 'in'),
+                new WorkflowConnection('accept', 'review', 'approved', 'end', 'in'),
+                new WorkflowConnection('reject', 'review', 'rejected', 'end', 'in'),
+            ])),
+        ]);
+        $publisher = new ApprovalWorkflowPublisher(
+            $codec,
+            ApprovalRegistryFixture::compiler([new BoundaryRouteCompiler()]),
+            $container->get('workflow_execution_definition.repository'),
+            $container->get('user.repository'),
+            $runtime['validator'],
+        );
+        $publisher->publish($release, $this->context);
+
+        // Reading a published release does not require its publication compiler to remain installed.
+        $withoutCompiler = new ApprovalWorkflowPublisher(
+            $codec,
+            ApprovalRegistryFixture::compiler(),
+            $container->get('workflow_execution_definition.repository'),
+            $container->get('user.repository'),
+            $runtime['validator'],
+        );
+        $withoutCompiler->check(new WorkflowReleaseCheckEvent($release, $this->context));
+        $instanceId = $runtime['workflows']->start($release->getId(), [], '', $this->context);
+        $tasks = $container->get(WorkflowTaskFinder::class)->forInstance($instanceId, $this->context);
+        static::assertCount(1, $tasks);
+        $task = $tasks->first();
+        static::assertNotNull($task);
+        static::assertSame('review', $task->nodeId);
+        $instance = $runtime['workflows']->loadInstance($instanceId, $this->context);
+        static::assertSame(['type' => 'example:route', 'version' => 2], $instance->snapshot()['nodes'][1]['properties']['approvalNodeCompiler']);
+        static::assertSame('review', $instance->snapshot()['nodes'][1]['properties']['selectedPort']);
+
+        $runtime['approvals']->approve($task->id, 'Approved through plugin route', $this->context);
+        static::assertSame('agreed', $runtime['workflows']->loadInstance($instanceId, $this->context)->state());
+
+        $withoutExecutor = $this->runtime(new AssigneeResolverRegistry([new UserAssigneeResolver($container->get('user.repository'))]));
+        $this->expectException(WorkflowExecutionException::class);
+        $withoutExecutor['workflows']->start($release->getId(), [], '', $this->context);
+    }
+
     public function testPluginSourceAndVersionedModeRunFromPublicationThroughFinalDecision(): void
     {
         $container = static::getContainer();
@@ -160,7 +230,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
         ), Context::createDefaultContext());
         $modes = ApprovalRegistryFixture::modes([new QuorumApprovalMode()]);
         $runtime = $this->runtime(new AssigneeResolverRegistry([new BoundaryTeamResolver()]), $modes);
-        $compiler = new ApprovalWorkflowCompiler(new ApprovalConfigurationCompiler(
+        $compiler = ApprovalRegistryFixture::compiler(approvals: new ApprovalConfigurationCompiler(
             new ApprovalAssigneeRegistry([new BoundaryTeamSource()]),
             $modes,
             new ExtensionDispatcher(new EventDispatcher()),
@@ -238,9 +308,11 @@ class WorkflowRuntimeBoundaryTest extends TestCase
     }
 
     /**
+     * @param list<NodeExecutorInterface> $additionalExecutors
+     *
      * @return array{workflows: WorkflowService, approvals: ApprovalWorkflowService, validator: WorkflowGraphValidator}
      */
-    private function runtime(AssigneeResolverRegistry $resolvers, ?ApprovalModeRegistry $modes = null): array
+    private function runtime(AssigneeResolverRegistry $resolvers, ?ApprovalModeRegistry $modes = null, array $additionalExecutors = []): array
     {
         $modes ??= ApprovalRegistryFixture::modes();
         $container = static::getContainer();
@@ -250,6 +322,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
         $executors = new NodeExecutorRegistry([
             new StartExecutor(),
             new EndExecutor(),
+            ...$additionalExecutors,
             new TaskExecutor($resolvers, $container->get('workflow_task.repository'), $events, $container->get(WorkflowTaskStateHandler::class), $modes),
         ]);
         $engine = new WorkflowEngine(
@@ -282,6 +355,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             $states,
             $container->get(WorkflowInputSchema::class),
             $clock,
+            $container->get('translator'),
         );
         $approvals = new ApprovalWorkflowService(
             $workflows,
@@ -378,5 +452,57 @@ final class BoundaryTeamResolver implements AssigneeResolverInterface
     public function resolve(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context): array
     {
         return $node->property('assigneeConfig')['userIds'];
+    }
+}
+
+/**
+ * @internal
+ */
+final class BoundaryRouteCompiler implements ApprovalNodeCompiler
+{
+    public function getNodeType(): string
+    {
+        return 'example:route';
+    }
+
+    public function getNodeVersion(): int
+    {
+        return 2;
+    }
+
+    public function getRole(): ApprovalNodeRole
+    {
+        return ApprovalNodeRole::ACTIVITY;
+    }
+
+    public function compile(ApprovalNodeCompilationContext $context): CompiledApprovalNode
+    {
+        return new CompiledApprovalNode(
+            'example:route',
+            $context->configuration(['selectedPort']),
+            inputPorts: ['request'],
+            outputPorts: ['skip' => [], 'review' => []],
+        );
+    }
+}
+
+/**
+ * @internal
+ */
+final class BoundaryRouteExecutor implements NodeExecutorInterface
+{
+    public function getNodeType(): string
+    {
+        return 'example:route';
+    }
+
+    public function enter(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context): NodeOutcome
+    {
+        return NodeOutcome::proceed($node->property('selectedPort'));
+    }
+
+    public function resume(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowSignal $signal, WorkflowExecutionContext $context): NodeOutcome
+    {
+        return NodeOutcome::proceed($node->property('selectedPort'));
     }
 }

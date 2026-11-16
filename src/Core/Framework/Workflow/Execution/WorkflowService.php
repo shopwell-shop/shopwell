@@ -21,6 +21,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\WorkflowGraphValidator;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceCollection;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * @internal Generic instance lifecycle; node behavior is registered independently.
@@ -44,6 +45,7 @@ final readonly class WorkflowService
         private WorkflowInstanceStateHandler $instanceStates,
         private WorkflowInputSchema $inputs,
         private ClockInterface $clock,
+        private TranslatorInterface $translator,
     ) {
     }
 
@@ -52,7 +54,7 @@ final readonly class WorkflowService
      */
     public function createDefinition(array $data, Context $context): string
     {
-        $graphData = $this->normalizeGraph($data['graphData'] ?? self::initialGraph());
+        $graphData = $this->normalizeGraph($data['graphData'] ?? self::initialGraph($this->translator));
         $formSchema = $this->normalizeFormSchema($data['formSchema'] ?? null);
 
         $id = Uuid::randomHex();
@@ -221,12 +223,12 @@ final readonly class WorkflowService
     /**
      * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}
      */
-    public static function initialGraph(): array
+    public static function initialGraph(TranslatorInterface $translator): array
     {
         return [
             'nodes' => [
-                ['id' => 'n_start', 'type' => WorkflowNodeTypes::START, 'x' => 0, 'y' => 0, 'properties' => ['name' => '发起人']],
-                ['id' => 'n_end', 'type' => WorkflowNodeTypes::END, 'x' => 0, 'y' => 64, 'properties' => ['name' => '结束']],
+                ['id' => 'n_start', 'type' => WorkflowNodeTypes::START, 'x' => 0, 'y' => 0, 'properties' => ['name' => $translator->trans('workflow.nodes.start')]],
+                ['id' => 'n_end', 'type' => WorkflowNodeTypes::END, 'x' => 0, 'y' => 64, 'properties' => ['name' => $translator->trans('workflow.nodes.end')]],
             ],
             'edges' => [
                 ['id' => 'e_start_end', 'sourceNodeId' => 'n_start', 'targetNodeId' => 'n_end', 'properties' => []],

@@ -83,6 +83,12 @@ use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompilerRegistry;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ConditionApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\EndApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\StartApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\TaskApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\EndWorkflowNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\StartWorkflowNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowCompiler;
@@ -107,6 +113,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->instanceof(NodeExecutorInterface::class)->tag('shopwell.workflow.execution.node_executor');
     $services->instanceof(AssigneeResolverInterface::class)->tag('shopwell.workflow.execution.assignee_resolver');
 
+    $services->instanceof(ApprovalNodeCompiler::class)->tag('shopwell.workflow.approval.node_compiler');
     $services->instanceof(ApprovalMode::class)->tag('shopwell.workflow.approval.mode');
     $services->instanceof(ApprovalAssigneeSource::class)->tag('shopwell.workflow.approval.assignee_source');
 
@@ -125,10 +132,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         service(ApprovalModeRegistry::class),
         service(ExtensionDispatcher::class),
     ]);
+    $services->set(StartApprovalNodeCompiler::class)->args([service(WorkflowInputSchema::class), service('translator')]);
+    $services->set(TaskApprovalNodeCompiler::class)->args([service(ApprovalConfigurationCompiler::class), service('translator')]);
+    $services->set(ConditionApprovalNodeCompiler::class)->args([service(ApprovalCondition::class), service('translator')]);
+    $services->set(EndApprovalNodeCompiler::class);
+    $services->set(ApprovalNodeCompilerRegistry::class)->args([tagged_iterator('shopwell.workflow.approval.node_compiler')]);
     $services->set(ApprovalWorkflowCompiler::class)->args([
-        service(ApprovalConfigurationCompiler::class),
-        service(WorkflowInputSchema::class),
-        service(ApprovalCondition::class),
+        service(ApprovalNodeCompilerRegistry::class),
+        service(ExtensionDispatcher::class),
     ]);
     $services->set(ApprovalWorkflowRuntime::class)->args([
         service(ApprovalWorkflowService::class),
@@ -308,6 +319,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         service(WorkflowInstanceStateHandler::class),
         service(WorkflowInputSchema::class),
         service(ClockInterface::class),
+        service('translator'),
     ])->public();
     $services->set(ApprovalWorkflowService::class)->args([
         service(WorkflowService::class),

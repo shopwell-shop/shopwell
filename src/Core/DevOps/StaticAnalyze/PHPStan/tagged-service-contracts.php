@@ -70,6 +70,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\GraphRuleInterface;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalMode;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowPublisher;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntime;
@@ -97,6 +98,7 @@ return [
             'shopwell.workflow.node_compiler' => WorkflowNodeCompiler::class,
             'shopwell.workflow.publisher' => WorkflowPublisher::class,
             'shopwell.workflow.approval.mode' => ApprovalMode::class,
+            'shopwell.workflow.approval.node_compiler' => ApprovalNodeCompiler::class,
             'shopwell.workflow.approval.assignee_source' => ApprovalAssigneeSource::class,
             'shopwell.workflow.runtime' => WorkflowRuntime::class,
             'shopwell.workflow.execution.assignee_resolver' => AssigneeResolverInterface::class,

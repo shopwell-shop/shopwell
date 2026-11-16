@@ -257,7 +257,7 @@ class ApprovalWorkflowPublicationTest extends TestCase
         $participant->request('GET', '/api/_action/workflow/instance/' . $instanceId);
         static::assertSame(200, $participant->getResponse()->getStatusCode(), $this->errorSummary($participant));
         $instance = $this->response($participant)['data'];
-        static::assertEquals([['key' => 'reason', 'label' => '申请事由', 'type' => 'text', 'required' => false]], $instance['formSchema']);
+        static::assertEquals([['key' => 'reason', 'label' => 'Reason for request', 'type' => 'text', 'required' => false]], $instance['formSchema']);
         static::assertSame('Customer visit', $instance['formData']['reason']);
         static::assertSame('RUNNING', $instance['status']);
         static::assertSame('todo', $instance['tasks'][0]['state']);

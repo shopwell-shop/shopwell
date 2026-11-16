@@ -125,8 +125,10 @@ class WorkflowSkeletonExecutionTest extends TestCase
         static::assertNotNull($execution);
         $flows->cancel($instanceId, 'No longer needed', $this->context);
 
-        static::assertSame('canceled', $this->executions($instanceId)->get($execution->id)?->status);
-        static::assertNull($this->executions($instanceId)->get($execution->id)?->waitingFor);
+        $canceled = $this->executions($instanceId)->get($execution->id);
+        static::assertNotNull($canceled);
+        static::assertSame('canceled', $canceled->status);
+        static::assertNull($canceled->waitingFor);
         $this->expectExceptionObject(WorkflowExecutionException::instanceNotRunning($instanceId));
         $flows->signal($instanceId, $execution->id, new WorkflowSignal('test:response'), $this->context);
     }
@@ -171,6 +173,7 @@ class WorkflowSkeletonExecutionTest extends TestCase
             $states,
             new WorkflowInputSchema(),
             $clock,
+            $container->get('translator'),
         );
     }
 
@@ -202,10 +205,13 @@ class WorkflowSkeletonExecutionTest extends TestCase
 
     private function executions(string $instanceId): WorkflowNodeExecutionCollection
     {
-        return static::getContainer()->get('workflow_node_execution.repository')->search(
+        $executions = static::getContainer()->get('workflow_node_execution.repository')->search(
             (new Criteria())->addFilter(new EqualsFilter('instanceId', $instanceId))->addSorting(new FieldSorting('sequence')),
             $this->context,
         )->getEntities();
+        static::assertInstanceOf(WorkflowNodeExecutionCollection::class, $executions);
+
+        return $executions;
     }
 }
 

@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Workflow\Permission\WorkflowDefaultRolesInstallComma
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\AdminMenu\Service\CoreMenuSynchronizer;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -32,7 +33,7 @@ class WorkflowDefaultRolesInstallCommandTest extends TestCase
         $menuSynchronizer = $this->createMock(CoreMenuSynchronizer::class);
         $menuSynchronizer->expects($this->exactly(2))->method('synchronize')->willReturn(0);
         $command = new WorkflowDefaultRolesInstallCommand(
-            new WorkflowDefaultRoleInstaller($repository, new EventDispatcher(), StaticEntityRepository::of(AdminMenuItemCollection::class, [[], []])),
+            new WorkflowDefaultRoleInstaller($repository, new EventDispatcher(), StaticEntityRepository::of(AdminMenuItemCollection::class, [[], []]), ApprovalRegistryFixture::translator()),
             $menuSynchronizer,
         );
         $tester = new CommandTester($command);

@@ -50,6 +50,16 @@ Source compatibility entries use a mode name for version 1 or `name@version` for
 Backend strategies implement `ApprovalMode` and register the `shopwell.workflow.approval.mode` tag; participant configuration compilers implement `ApprovalAssigneeSource` with the `shopwell.workflow.approval.assignee_source` tag.
 `CompileApprovalConfigurationExtension` supports publication-time selection overrides; the resulting strategy type, version and configuration are pinned in the execution graph and instance snapshot.
 Keep referenced versions installed while published definitions or running instances use them.
+Approval publication node compilers implement `ApprovalNodeCompiler` and register `shopwell.workflow.approval.node_compiler` for an exact designer type and version.
+All built-in approval node types use this contract; compilers validate configuration and return runtime properties, input ports, ordered routed outputs and executor-completed terminal ports.
+`CompileApprovalNodeExtension` selects registered replacements of the same structural role; duplicate type/version registrations fail.
+Result substitution and short-circuiting are rejected so the recorded compiler always produced the published node.
+The actual compiler identity and version, runtime configuration and source-port mapping are saved in the published graph.
+Published definitions execute their snapshot without recompilation; keep their runtime executors and referenced approval strategies installed, and use a distinct runtime type when execution semantics change.
+Custom nodes must also register their designer presentation and runtime executor; business preview support is a separate extension.
+The structured approval publisher still requires an approval stage and supports sequential routing rather than parallel joins or subprocess scheduling.
+Default node names, request labels, fallback labels and newly installed workflow role text use the system translator with English and Chinese resources.
+Authored names and existing published snapshots are preserved.
 Personnel sources pair their compiled assignment type with the existing experimental `AssigneeResolverInterface`; its execution context and entity contracts remain experimental.
 Plugin resolvers receive the normalized request form during preview and execution, and unavailable dynamic participants prevent submission or stage entry.
 Instance details use actual node execution outcomes rather than inferring approval policy from individual task votes.

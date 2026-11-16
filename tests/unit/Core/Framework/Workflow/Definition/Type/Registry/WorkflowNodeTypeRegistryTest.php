@@ -24,6 +24,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * @internal
@@ -71,6 +72,7 @@ class WorkflowNodeTypeRegistryTest extends TestCase
         $loader = new PhpFileLoader($container, new FileLocator());
         $loader->load(\dirname(__DIR__, 8) . '/src/Core/Framework/DependencyInjection/workflow.php');
         $container->register('event_dispatcher', EventDispatcher::class);
+        $container->register('translator', TranslatorInterface::class)->setSynthetic(true);
         $container->register(ExtensionDispatcher::class)
             ->setArguments([new Reference('event_dispatcher')]);
         $container->register(Connection::class)->setSynthetic(true);
