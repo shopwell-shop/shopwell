@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Customer\Rule;
 
+use Shopwell\Core\Checkout\Cart\Rule\DeliveryRuleScope;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Framework\Log\Package;
@@ -35,10 +36,14 @@ class ShippingStreetRule extends Rule
             return false;
         }
 
-        $location = $scope->getSalesChannelContext()->getShippingLocation()->getAddress()
-            ?? $scope->getCustomer()?->getActiveShippingAddress();
+        if ($scope instanceof DeliveryRuleScope) {
+            $address = $scope->getDelivery()->getLocation()->getAddress();
+        } else {
+            $address = $scope->getSalesChannelContext()->getShippingLocation()->getAddress()
+                ?? $scope->getCustomer()?->getActiveShippingAddress();
+        }
 
-        if (!$location) {
+        if (!$address) {
             return RuleComparison::isNegativeOperator($this->operator);
         }
 
@@ -46,7 +51,7 @@ class ShippingStreetRule extends Rule
             throw CustomerException::unsupportedValue(\gettype($this->streetName), self::class);
         }
 
-        return RuleComparison::string($location->getStreet(), $this->streetName ?? '', $this->operator);
+        return RuleComparison::string($address->getStreet(), $this->streetName ?? '', $this->operator);
     }
 
     public function getConstraints(): array

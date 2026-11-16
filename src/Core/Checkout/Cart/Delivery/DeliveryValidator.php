@@ -6,6 +6,7 @@ use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\CartValidatorInterface;
 use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
 use Shopwell\Core\Checkout\Shipping\Cart\Error\ShippingMethodBlockedError;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 
@@ -18,7 +19,11 @@ class DeliveryValidator implements CartValidatorInterface
             $shippingMethod = $delivery->getShippingMethod();
             $ruleId = $shippingMethod->getAvailabilityRuleId();
 
-            $matches = \in_array($ruleId, $context->getRuleIds(), true) || $ruleId === null;
+            $ruleIds = !Feature::isActive('v6.8.0.0')
+                ? $context->getRuleIds()
+                : $delivery->getRuleIds() ?? $context->getRuleIds();
+
+            $matches = $ruleId === null || \in_array($ruleId, $ruleIds, true);
 
             if ($matches && $shippingMethod->getActive()) {
                 continue;

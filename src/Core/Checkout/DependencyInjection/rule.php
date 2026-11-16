@@ -14,6 +14,7 @@ use Shopwell\Core\Checkout\Cart\Rule\CartTaxDisplayRule;
 use Shopwell\Core\Checkout\Cart\Rule\CartTotalPurchasePriceRule;
 use Shopwell\Core\Checkout\Cart\Rule\CartVolumeRule;
 use Shopwell\Core\Checkout\Cart\Rule\CartWeightRule;
+use Shopwell\Core\Checkout\Cart\Rule\DeliveryContainerRule;
 use Shopwell\Core\Checkout\Cart\Rule\GoodsCountRule;
 use Shopwell\Core\Checkout\Cart\Rule\GoodsPriceRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemActualStockRule;
@@ -120,6 +121,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CartWeightRule::class)->tag('shopwell.rule.definition');
     $services->set(CartVolumeRule::class)->tag('shopwell.rule.definition');
     $services->set(CartHasDeliveryFreeItemRule::class)->tag('shopwell.rule.definition');
+    $services->set(DeliveryContainerRule::class)->tag('shopwell.rule.definition');
     $services->set(BillingCountryRule::class)->tag('shopwell.rule.definition');
     $services->set(BillingStreetRule::class)->tag('shopwell.rule.definition');
     $services->set(BillingZipCodeRule::class)->tag('shopwell.rule.definition');

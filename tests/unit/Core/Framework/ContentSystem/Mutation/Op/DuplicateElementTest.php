@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\ContentSystem\Mutation\Op;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Hydration\DataContext\ContextType;
 use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\AbstractContentDataLoaderConfig;
@@ -98,6 +99,20 @@ class DuplicateElementTest extends TestCase
         static::assertSame('Sw:Card', $clone->component);
         static::assertSame(['headline' => $headline], $clone->properties());
         static::assertSame([$clone->id], $duplicate->affected());
+    }
+
+    #[TestDox('carries a language-map property value over to the clone unchanged')]
+    public function testDuplicateCarriesLanguageMapUnchanged(): void
+    {
+        $german = Uuid::randomHex();
+        $translations = [Defaults::LANGUAGE_SYSTEM => 'Autumn sale', $german => 'Herbstschlussverkauf'];
+        $original = StoredElementBuilder::create('Sw:Card', 'original')->withProperty('text', $translations)->build();
+
+        $result = (new DuplicateElement('original'))->apply(new StoredTree([$original]));
+
+        $carried = $result->roots[1]->property('text');
+        static::assertNotNull($carried);
+        static::assertObjectEquals(StoredValue::fromDecoded($translations), $carried);
     }
 
     #[TestDox('carries key-based wiring, context definitions, and style over to the clone unchanged')]

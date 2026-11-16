@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Event\BusinessEventCollectorResponse;
 use Shopwell\Core\Framework\Event\BusinessEventDefinition;
+use Shopwell\Core\Framework\Event\EventData\EventDataCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\Hookable;
 use Shopwell\Core\Framework\Webhook\Hookable\CoreHookableEventDescriber;
@@ -117,6 +118,33 @@ class HookableEventCollectorTest extends TestCase
 
         static::assertCount(1, $result);
         static::assertSame('product:read', $result[0]);
+    }
+
+    public function testGetPrivilegesFromBusinessEventDefinitionSkipsEntitiesHiddenFromWebhooks(): void
+    {
+        $definitionRegistry = static::createStub(DefinitionInstanceRegistry::class);
+        $definitionRegistry->method('get')->willReturn($this->createProductDefinition());
+
+        $hookableEventCollector = new HookableEventCollector(
+            $this->businessEventCollector,
+            $definitionRegistry,
+            [],
+            []
+        );
+
+        $businessEventDefinition = new BusinessEventDefinition(
+            'test.event',
+            'TestEvent',
+            [
+                'product' => [
+                    'type' => 'entity',
+                    'entityClass' => ProductDefinition::class,
+                    EventDataCollection::HIDDEN_FROM_WEBHOOK => true,
+                ],
+            ]
+        );
+
+        static::assertSame([], $hookableEventCollector->getPrivilegesFromBusinessEventDefinition($businessEventDefinition));
     }
 
     public function testGetPrivilegesFromBusinessEventDefinitionWithNoEntityData(): void

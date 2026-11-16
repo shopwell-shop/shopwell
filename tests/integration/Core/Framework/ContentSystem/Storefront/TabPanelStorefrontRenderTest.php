@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Integration\Core\Framework\ContentSystem\Storefront;
 
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\AbstractContentSystemLayoutPresetRegistry;
 use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\ContentSystemLayoutPresetRegistry;
 use Shopwell\Core\Framework\Context;
@@ -273,7 +274,7 @@ class TabPanelStorefrontRenderTest extends TestCase
      */
     private function tab(string $key, string $title, array $extraProperties = []): array
     {
-        $properties = ['title' => $title] + $extraProperties;
+        $properties = ['title' => [Defaults::LANGUAGE_SYSTEM => $title]] + $extraProperties;
 
         return [
             'id' => $this->ids->get($key),
@@ -284,7 +285,7 @@ class TabPanelStorefrontRenderTest extends TestCase
                     'id' => $this->ids->get($key . '-text'),
                     'component' => 'Sw:Content:Text',
                     'properties' => [
-                        'text' => '<p>' . $title . ' content</p>',
+                        'text' => [Defaults::LANGUAGE_SYSTEM => '<p>' . $title . ' content</p>'],
                     ],
                 ]],
             ],

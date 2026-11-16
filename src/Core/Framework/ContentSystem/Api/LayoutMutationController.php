@@ -20,7 +20,9 @@ use Shopwell\Core\Framework\ContentSystem\Mutation\Op\InsertElement;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\MoveElement;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\RemoveElement;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\ReplaceElement;
+use Shopwell\Core\Framework\ContentSystem\Mutation\Op\TranslateElement;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\UnwrapElement;
+use Shopwell\Core\Framework\ContentSystem\Mutation\Op\UpdateElementProperties;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\WrapElements;
 use Shopwell\Core\Framework\ContentSystem\Mutation\PropertyMappingMutationFactory;
 use Shopwell\Core\Framework\Context;
@@ -172,6 +174,28 @@ class LayoutMutationController
         Context $context,
     ): Response {
         $mutation = new BindElement($this->bindingRegistry, $payload->bindingSpecificationId, $payload->elementId, $this->bindingApplicator);
+
+        return $this->respond($mutation, $payload->layout, $payload->rootSource, $context);
+    }
+
+    #[Route(path: '/api/_action/content-system/layout/update-element-properties', name: 'api.action.content_system.layout.update_element_properties', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['content_layout:read']], methods: [Request::METHOD_POST])]
+    public function updateProperties(
+        #[MapRequestPayload(serializationContext: [AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => false], validationFailedStatusCode: Response::HTTP_BAD_REQUEST)]
+        UpdateElementPropertiesRequest $payload,
+        Context $context,
+    ): Response {
+        $mutation = new UpdateElementProperties($this->registry, $payload->elementId, $payload->values, $payload->removeKeys);
+
+        return $this->respond($mutation, $payload->layout, $payload->rootSource, $context);
+    }
+
+    #[Route(path: '/api/_action/content-system/layout/translate-element', name: 'api.action.content_system.layout.translate_element', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['content_layout:read']], methods: [Request::METHOD_POST])]
+    public function translate(
+        #[MapRequestPayload(serializationContext: [AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => false], validationFailedStatusCode: Response::HTTP_BAD_REQUEST)]
+        TranslateElementRequest $payload,
+        Context $context,
+    ): Response {
+        $mutation = new TranslateElement($this->registry, $payload->elementId, $payload->values);
 
         return $this->respond($mutation, $payload->layout, $payload->rootSource, $context);
     }

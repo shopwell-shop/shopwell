@@ -26,27 +26,6 @@
 {% block base_main_inner %}
     {% set product = page.product ?? null %}
     <div class="container-main content-page"{% if product and not feature('JSON_LD_DATA') %} itemscope itemtype="https://schema.org/Product"{% endif %}>
-        {% block page_content_breadcrumb %}
-            {% if page is defined %}
-                <div class="content-breadcrumb container">
-                    {% if feature('BREADCRUMB_REWORK') %}
-                        {% sw_include '@Storefront/storefront/layout/breadcrumb.html.twig' with {
-                            context: context,
-                            themeIconConfig: themeIconConfig,
-                            breadcrumb: page.breadcrumb
-                        } only %}
-                    {% else %}
-                        {% sw_include '@Storefront/storefront/layout/breadcrumb.html.twig' with {
-                            context: context,
-                            themeIconConfig: themeIconConfig,
-                            category: page.product.seoCategory,
-                            categoryId: shopwell.navigation.id
-                        } only %}
-                    {% endif %}
-                </div>
-            {% endif %}
-        {% endblock %}
-
         {% if product and not feature('JSON_LD_DATA') %}
             {% block page_content_product_metadata %}
                 <meta itemprop="name" content="{{ product.translated.name }}">

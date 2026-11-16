@@ -8,6 +8,7 @@ use Psr\Log\NullLogger;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductMappingCandidateProvider;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Adapter\Kernel\KernelFactory;
 use Shopwell\Core\Framework\ContentSystem\Cache\RenderingCacheContext;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
@@ -19,6 +20,7 @@ use Shopwell\Core\Framework\ContentSystem\Layout\Element\Context\Distribution\Br
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\Context\Distribution\KeyedDistributionConfig;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredElement;
 use Shopwell\Core\Framework\ContentSystem\Layout\Entity\ContentLayoutEntity;
+use Shopwell\Core\Framework\ContentSystem\Layout\Scaffolding\StoredTreePreparer;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Loader\AbstractContentSystemElementTypeLoader;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Specification\ContentSystemElementTypeSpecification;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Specification\CopilotSpecification;
@@ -37,10 +39,12 @@ use Shopwell\Core\Framework\ContentSystem\Mapping\StoredMappingInspector;
 use Shopwell\Core\Framework\ContentSystem\Output\Index\LoaderValueIdentity;
 use Shopwell\Core\Framework\ContentSystem\Output\Index\ValueFingerprinter;
 use Shopwell\Core\Framework\ContentSystem\Output\Index\ValueOrigin;
+use Shopwell\Core\Framework\ContentSystem\PlaceholderValues;
 use Shopwell\Core\Framework\ContentSystem\Rendering\ContextDeliveryResolver;
 use Shopwell\Core\Framework\ContentSystem\Rendering\RenderedTreeFactory;
 use Shopwell\Core\Framework\ContentSystem\Rendering\ResolvedLoaderValue;
 use Shopwell\Core\Framework\ContentSystem\RenderingMode;
+use Shopwell\Core\Framework\ContentSystem\RenderingSpecification;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
@@ -50,12 +54,15 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Test\TestKernel;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\WriteConstraintViolationException;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\Test\Stub\ContentSystem\ContentSystemElementTypeSpecificationBuilder;
 use Shopwell\Core\Test\Stub\ContentSystem\StoredElementBuilder;
 use Shopwell\Core\Test\Stub\ContentSystem\TestElementTypeLoader;
+use Shopwell\Core\Test\TestDefaults;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -359,7 +366,7 @@ class MappingProviderExtensionTest extends TestCase
         $elements = [
             $this->element('mapped', $source),
             ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => [
-                'text' => '{{map:product.name}} / {{map:product.description}}',
+                'text' => [Defaults::LANGUAGE_SYSTEM => '{{map:product.name}} / {{map:product.description}}'],
             ]],
         ];
         $this->save($elements);
@@ -393,7 +400,7 @@ class MappingProviderExtensionTest extends TestCase
         $elements = [
             $this->element('mapped', $source),
             ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => [
-                'text' => '{{map:ParameterizedPlugin:recommendations.title}}',
+                'text' => [Defaults::LANGUAGE_SYSTEM => '{{map:ParameterizedPlugin:recommendations.title}}'],
             ]],
         ];
         $this->save($elements);
@@ -410,7 +417,7 @@ class MappingProviderExtensionTest extends TestCase
         static::getContainer()->set(ContentSystemMappingCandidateRegistry::class, $registry);
         $elements = [
             $this->element('whole-field', MappingSourceReference::root('product', 'name')),
-            ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => ['text' => '{{map:product.name}}']],
+            ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => ['text' => [Defaults::LANGUAGE_SYSTEM => '{{map:product.name}}']]],
         ];
         $this->save($elements);
 
@@ -426,7 +433,7 @@ class MappingProviderExtensionTest extends TestCase
 
         $unavailable = $this->render([
             $this->element('whole-field', MappingSourceReference::root('product', 'internalComment')),
-            ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => ['text' => 'Before {{map:product.internalComment}} after']],
+            ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => ['text' => [Defaults::LANGUAGE_SYSTEM => 'Before {{map:product.internalComment}} after']]],
         ]);
 
         static::assertArrayNotHasKey('text', $unavailable[0]);
@@ -442,7 +449,7 @@ class MappingProviderExtensionTest extends TestCase
         $elements = [
             $this->element('whole-field', $source),
             ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => [
-                'text' => '{{map:product.name}} / {{map:product.description}}',
+                'text' => [Defaults::LANGUAGE_SYSTEM => '{{map:product.name}} / {{map:product.description}}'],
             ]],
         ];
         $this->save($elements);
@@ -479,7 +486,7 @@ class MappingProviderExtensionTest extends TestCase
         $elements = [
             $this->element('whole-field', MappingSourceReference::root('product', 'name')),
             ['id' => 'inline', 'component' => 'Sw:Content:Text', 'properties' => [
-                'text' => 'Hi {{map:product.name}} / {{map:product.description}}',
+                'text' => [Defaults::LANGUAGE_SYSTEM => 'Hi {{map:product.name}} / {{map:product.description}}'],
             ]],
         ];
 
@@ -562,7 +569,14 @@ class MappingProviderExtensionTest extends TestCase
      */
     private function render(array $elements, ?RenderingCacheContext $cache = null): array
     {
-        $forest = array_map(static fn (array $element): StoredElement => static::getContainer()->get(StoredElementCodec::class)->decode($element), $elements);
+        $stored = array_map(static fn (array $element): StoredElement => static::getContainer()->get(StoredElementCodec::class)->decode($element), $elements);
+        $salesChannelContext = static::getContainer()->get(SalesChannelContextFactory::class)->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
+        $forest = static::getContainer()->get(StoredTreePreparer::class)->prepare(
+            $stored,
+            new RenderingSpecification([], PlaceholderValues::from([]), new Request()),
+            RenderingMode::FULL,
+            $salesChannelContext,
+        )->tree;
         $product = new SalesChannelProductEntity();
         $product->setTranslated(['name' => 'Shirt', 'description' => 'Description']);
         $ambient = ['product' => $product];

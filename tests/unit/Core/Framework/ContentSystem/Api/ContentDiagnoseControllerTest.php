@@ -45,6 +45,7 @@ use Shopwell\Core\Framework\ContentSystem\Schema\ContentSystemDataLoaderMap;
 use Shopwell\Core\Framework\ContentSystem\Validation\ViolationConstraintMapper;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Language\LanguageLoaderInterface;
 use Shopwell\Core\Test\Stub\ContentSystem\ContentSystemElementTypeSpecificationBuilder;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -361,6 +362,7 @@ class ContentDiagnoseControllerTest extends TestCase
             static::createStub(DataLoaderConfigSerializerProvider::class),
             static::createStub(AbstractContentSystemStyleOptionRegistry::class),
             new ContextPathResolver(),
+            static::createStub(LanguageLoaderInterface::class),
             new MappingConsumers(),
             $mappingInspector,
         );

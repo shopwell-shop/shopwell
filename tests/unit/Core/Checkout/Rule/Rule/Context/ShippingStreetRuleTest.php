@@ -6,12 +6,21 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\DeliveryRuleScope;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Checkout\Customer\Rule\ShippingStreetRule;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Exception\UnsupportedValueException;
@@ -218,6 +227,51 @@ class ShippingStreetRuleTest extends TestCase
         }
     }
 
+    public function testDeliveryScopeReadsTheStreetOfTheDeliveryAddress(): void
+    {
+        $rule = (new ShippingStreetRule())->assign(['streetName' => 'delivery street']);
+
+        $context = static::createStub(SalesChannelContext::class);
+        $context
+            ->method('getShippingLocation')
+            ->willReturn(ShippingLocation::createFromAddress($this->createAddress('context street')));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromAddress($this->createAddress('delivery street')));
+
+        static::assertTrue($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $context)));
+    }
+
+    public function testCartScopeStillReadsTheStreetOfTheContextAddress(): void
+    {
+        $rule = (new ShippingStreetRule())->assign(['streetName' => 'context street']);
+
+        $context = static::createStub(SalesChannelContext::class);
+        $context
+            ->method('getShippingLocation')
+            ->willReturn(ShippingLocation::createFromAddress($this->createAddress('context street')));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromAddress($this->createAddress('delivery street')));
+
+        static::assertTrue($rule->match(new CartRuleScope(new Cart('test'), $context)));
+        static::assertFalse($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $context)));
+    }
+
+    public function testDeliveryScopeDoesNotFallBackToTheCustomerAddress(): void
+    {
+        $rule = (new ShippingStreetRule())->assign(['streetName' => 'context street']);
+
+        $customer = new CustomerEntity();
+        $customer->setActiveShippingAddress($this->createAddress('context street'));
+        $context = static::createStub(SalesChannelContext::class);
+        $context->method('getCustomer')->willReturn($customer);
+        $context->method('getShippingLocation')->willReturn(ShippingLocation::createFromCountry(new CountryEntity()));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromCountry(new CountryEntity()));
+
+        static::assertTrue($rule->match(new CartRuleScope(new Cart('test'), $context)), 'The cart scope falls back to the customer address.');
+        static::assertFalse($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $context)), 'The delivery scope reads only the delivery location.');
+    }
+
     private function createAddress(string $street): CustomerAddressEntity
     {
         $address = new CustomerAddressEntity();
@@ -230,5 +284,16 @@ class ShippingStreetRuleTest extends TestCase
         $address->setCountryState($state);
 
         return $address;
+    }
+
+    private function createDelivery(ShippingLocation $location): Delivery
+    {
+        return new Delivery(
+            new DeliveryPositionCollection(),
+            new DeliveryDate(new \DateTimeImmutable(), new \DateTimeImmutable()),
+            new ShippingMethodEntity(),
+            $location,
+            new CalculatedPrice(0, 0, new CalculatedTaxCollection(), new TaxRuleCollection())
+        );
     }
 }

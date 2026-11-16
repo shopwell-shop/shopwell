@@ -6,10 +6,18 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\DeliveryRuleScope;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Checkout\Customer\Rule\ShippingCountryRule;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Exception\UnsupportedOperatorException;
 use Shopwell\Core\Framework\Rule\Rule;
@@ -316,6 +324,31 @@ class ShippingCountryRuleTest extends TestCase
         ];
     }
 
+    public function testDeliveryScopeReadsTheCountryOfTheDelivery(): void
+    {
+        $rule = (new ShippingCountryRule())->assign(['countryIds' => ['delivery-country'], 'operator' => ShippingCountryRule::OPERATOR_EQ]);
+
+        $context = static::createStub(SalesChannelContext::class);
+        $context->method('getShippingLocation')->willReturn(ShippingLocation::createFromCountry($this->createCountry('context-country')));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromCountry($this->createCountry('delivery-country')));
+
+        static::assertTrue($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $context)));
+    }
+
+    public function testCartScopeStillReadsTheCountryOfTheContext(): void
+    {
+        $rule = (new ShippingCountryRule())->assign(['countryIds' => ['context-country'], 'operator' => ShippingCountryRule::OPERATOR_EQ]);
+
+        $context = static::createStub(SalesChannelContext::class);
+        $context->method('getShippingLocation')->willReturn(ShippingLocation::createFromCountry($this->createCountry('context-country')));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromCountry($this->createCountry('delivery-country')));
+
+        static::assertTrue($rule->match(new CartRuleScope(new Cart('test'), $context)));
+        static::assertFalse($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $context)));
+    }
+
     private function validateConstraint(string $field, mixed $value): ConstraintViolationListInterface
     {
         return Validation::createValidator()->validate($value, (new ShippingCountryRule())->getConstraints()[$field]);
@@ -328,5 +361,24 @@ class ShippingCountryRuleTest extends TestCase
         foreach ($violations as $violation) {
             static::assertSame($expectedCode, $violation->getCode());
         }
+    }
+
+    private function createCountry(string $id): CountryEntity
+    {
+        $country = new CountryEntity();
+        $country->setId($id);
+
+        return $country;
+    }
+
+    private function createDelivery(ShippingLocation $location): Delivery
+    {
+        return new Delivery(
+            new DeliveryPositionCollection(),
+            new DeliveryDate(new \DateTimeImmutable(), new \DateTimeImmutable()),
+            new ShippingMethodEntity(),
+            $location,
+            new CalculatedPrice(0, 0, new CalculatedTaxCollection(), new TaxRuleCollection())
+        );
     }
 }

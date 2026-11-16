@@ -8,6 +8,8 @@ import {
     ADMINISTRATION_DEPRECATION_BASELINE_PATH,
     FEATURE_REGISTRY_PATH,
     detectMajorTestArms,
+    diffFromFiles,
+    isDiffTooLarge,
     hasAcceptanceTestChanges,
     hasMajorJsMarkers,
     hasMajorMarkers,
@@ -15,7 +17,6 @@ import {
     parseMajorFlags,
     shouldDetect,
 } from './auto-label-major-tests.ts';
-
 
 type TestContext = {
     eventName: string;
@@ -68,7 +69,10 @@ test('quoted major flag in an added line matches', () => {
 });
 
 test('quoted major flag in a removed line matches', () => {
-    const diff = diffFor('src/Core/Framework/Webhook/Service/WebhookManager.php', "-        Feature::withFeatureDisabled('WEBHOOKS_REWORK', fn () => null);");
+    const diff = diffFor(
+        'src/Core/Framework/Webhook/Service/WebhookManager.php',
+        "-        Feature::withFeatureDisabled('WEBHOOKS_REWORK', fn () => null);",
+    );
     assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), true);
 });
 
@@ -101,7 +105,10 @@ test('major markers in Storefront source and tests enable the major-js arm', () 
         'src/Storefront/Resources/app/storefront/src/helper/feature.helper.js',
         'src/Storefront/Resources/app/storefront/test/helper/feature.helper.test.js',
     ]) {
-        assert.equal(hasMajorJsMarkers(diffFor(path, "+ window.Feature.isActive('v6.8.0.0');"), parseMajorFlags(REGISTRY)), true);
+        assert.equal(
+            hasMajorJsMarkers(diffFor(path, "+ window.Feature.isActive('v6.8.0.0');"), parseMajorFlags(REGISTRY)),
+            true,
+        );
     }
 });
 
@@ -141,8 +148,17 @@ test('deprecation baseline edits enable the major-js arm', () => {
 
 test('labelsForMajorTestArms adds only missing relevant labels', () => {
     assert.deepEqual(labelsForMajorTestArms({ php: true, js: true, acceptance: false }), ['major-php', 'major-js']);
-    assert.deepEqual(labelsForMajorTestArms({ php: true, js: true, acceptance: true }, [{ name: 'major-php' }]), ['major-js', 'major-acceptance']);
-    assert.deepEqual(labelsForMajorTestArms({ php: false, js: true, acceptance: true }, [{ name: 'major-js' }, { name: 'major-acceptance' }]), []);
+    assert.deepEqual(labelsForMajorTestArms({ php: true, js: true, acceptance: true }, [{ name: 'major-php' }]), [
+        'major-js',
+        'major-acceptance',
+    ]);
+    assert.deepEqual(
+        labelsForMajorTestArms({ php: false, js: true, acceptance: true }, [
+            { name: 'major-js' },
+            { name: 'major-acceptance' },
+        ]),
+        [],
+    );
     assert.deepEqual(labelsForMajorTestArms({ php: false, js: false, acceptance: true }), ['major-acceptance']);
 });
 
@@ -173,7 +189,10 @@ test('non-major flag usage does not match', () => {
 });
 
 test('unrelated changes do not match', () => {
-    const diff = diffFor('src/Core/Content/Cms/SalesChannel/CmsRoute.php', '+        $cmsPage = $this->cmsPageLoader->load($request, $criteria, $context)->getEntities()->first();');
+    const diff = diffFor(
+        'src/Core/Content/Cms/SalesChannel/CmsRoute.php',
+        '+        $cmsPage = $this->cmsPageLoader->load($request, $criteria, $context)->getEntities()->first();',
+    );
     assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), false);
 });
 
@@ -182,22 +201,34 @@ test('empty diff does not match', () => {
 });
 
 test('flag usage in .github tooling does not match', () => {
-    const diff = diffFor('.github/bin/js/auto-label-major-php.test.ts', "+    const diff = \"Feature::isActive('v6.8.0.0')\";");
+    const diff = diffFor(
+        '.github/bin/js/auto-label-major-php.test.ts',
+        '+    const diff = "Feature::isActive(\'v6.8.0.0\')";',
+    );
     assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), false);
 });
 
 test('registry path mentioned inside a .github file does not match', () => {
-    const diff = diffFor('.github/bin/js/auto-label-major-php.ts', `+export const FEATURE_REGISTRY_PATH = '${FEATURE_REGISTRY_PATH}';`);
+    const diff = diffFor(
+        '.github/bin/js/auto-label-major-php.ts',
+        `+export const FEATURE_REGISTRY_PATH = '${FEATURE_REGISTRY_PATH}';`,
+    );
     assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), false);
 });
 
 test('mixed diff matches through the non-excluded file only', () => {
-    const diff = diffFor('.github/workflows/php.yml', "+  # v6.8.0.0 gate") + '\n' + diffFor('src/Core/CustomCartProcessor.php', "+        if (Feature::isActive('v6.8.0.0')) {");
+    const diff =
+        diffFor('.github/workflows/php.yml', '+  # v6.8.0.0 gate') +
+        '\n' +
+        diffFor('src/Core/CustomCartProcessor.php', "+        if (Feature::isActive('v6.8.0.0')) {");
     assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), true);
 });
 
 test('added BC-change attribute usage matches through its version string', () => {
-    const diff = diffFor('src/Core/Framework/Context.php', "+    #[ReturnTypeNarrowing(version: 'v6.8.0', newType: 'string')]");
+    const diff = diffFor(
+        'src/Core/Framework/Context.php',
+        "+    #[ReturnTypeNarrowing(version: 'v6.8.0', newType: 'string')]",
+    );
     assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), true);
 });
 
@@ -219,21 +250,35 @@ test('BC-change attribute in .github tooling does not match', () => {
 test('markdown never matches: release headings, upgrade notes and ADRs quote versions and flags', () => {
     const changelog = diffFor('CHANGELOG.md', '+## 6.6.10.21');
     const upgradeNotes = diffFor('UPGRADE-6.8.md', '+Tools return the MCP result format only behind the `v6.8.0.0` flag.');
-    const adr = diffFor('adr/2026-09-24-mcp-tool-result-envelope.md', "+3. **Spec format only (6.8.0).** Behind the 'v6.8.0.0' flag.");
+    const adr = diffFor(
+        'adr/2026-09-24-mcp-tool-result-envelope.md',
+        "+3. **Spec format only (6.8.0).** Behind the 'v6.8.0.0' flag.",
+    );
     const upperCase = diffFor('docs/README.MD', "+Feature::isActive('v6.8.0.0')");
 
-    for (const diff of [changelog, upgradeNotes, adr, upperCase]) {
+    for (const diff of [
+        changelog,
+        upgradeNotes,
+        adr,
+        upperCase,
+    ]) {
         assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), false);
     }
 });
 
 test('markdown next to a code change does not hide the code change', () => {
-    const diff = diffFor('adr/2026-09-24-mcp-tool-result-envelope.md', '+Behind the `v6.8.0.0` flag.') + '\n' + diffFor('src/Core/Framework/Mcp/McpToolResponse.php', "+        if (Feature::isActive('v6.8.0.0')) {");
+    const diff =
+        diffFor('adr/2026-09-24-mcp-tool-result-envelope.md', '+Behind the `v6.8.0.0` flag.') +
+        '\n' +
+        diffFor('src/Core/Framework/Mcp/McpToolResponse.php', "+        if (Feature::isActive('v6.8.0.0')) {");
     assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), true);
 });
 
 test('markdown inside Administration source does not enable the major-js arm', () => {
-    const diff = diffFor('src/Administration/Resources/app/administration/src/app/component/example/README.md', "+Shopwell.Feature.isActive('v6.8.0.0')");
+    const diff = diffFor(
+        'src/Administration/Resources/app/administration/src/app/component/example/README.md',
+        "+Shopwell.Feature.isActive('v6.8.0.0')",
+    );
     assert.equal(hasMajorJsMarkers(diff, parseMajorFlags(REGISTRY)), false);
 });
 
@@ -308,10 +353,18 @@ test('detection selects only the acceptance arm for a spec change after PHP and 
         github: {
             rest: {
                 repos: {
-                    async getContent() { return { data: REGISTRY }; },
-                    async compareCommitsWithBasehead() { throw new Error('Unexpected fallback'); },
+                    async getContent() {
+                        return { data: REGISTRY };
+                    },
+                    async compareCommitsWithBasehead() {
+                        throw new Error('Unexpected fallback');
+                    },
                 },
-                pulls: { async get() { return { data: diffFor('tests/acceptance/tests/Example.spec.ts', '+await button.click();') }; } },
+                pulls: {
+                    async get() {
+                        return { data: diffFor('tests/acceptance/tests/Example.spec.ts', '+await button.click();') };
+                    },
+                },
                 issues: { async addLabels() {} },
             },
         },
@@ -320,18 +373,19 @@ test('detection selects only the acceptance arm for a spec change after PHP and 
     assert.deepEqual(labelsForMajorTestArms(arms, context.payload.pull_request.labels), ['major-acceptance']);
 });
 
-
-const tooLargeDiff = () => Object.assign(new Error('diff too large'), {
-    status: 406,
-    response: { data: { errors: [{ field: 'diff', code: 'too_large' }] } },
-});
+const tooLargeDiff = () =>
+    Object.assign(new Error('diff too large'), {
+        status: 406,
+        response: { data: { errors: [{ field: 'diff', code: 'too_large' }] } },
+    });
 
 function gitFixture(t: NodeTestContext, files: Record<string, string>, baseFiles: Record<string, string> = {}) {
     const root = mkdtempSync(join(tmpdir(), 'major-label-test-'));
     t.after(() => rmSync(root, { recursive: true, force: true }));
     const origin = join(root, 'origin');
     const cwd = join(root, 'checkout');
-    const git = (...args: string[]) => execFileSync('git', args, { cwd: origin, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    const git = (...args: string[]) =>
+        execFileSync('git', args, { cwd: origin, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     mkdirSync(origin);
     git('init', '--initial-branch=main');
     git('config', 'user.email', 'test@example.com');
@@ -352,11 +406,20 @@ function gitFixture(t: NodeTestContext, files: Record<string, string>, baseFiles
     git('commit', '-m', 'change');
     const head = git('rev-parse', 'HEAD');
     git('checkout', 'main');
-    writeFiles({ 'src/Core/BaseOnly.php': "<?php // v6.8.0.0\n" });
+    writeFiles({ 'src/Core/BaseOnly.php': '<?php // v6.8.0.0\n' });
     git('add', '.');
     git('commit', '-m', 'advance base');
     const base = git('rev-parse', 'HEAD');
-    execFileSync('git', ['clone', '--depth=1', `file://${origin}`, cwd], { stdio: 'pipe' });
+    execFileSync(
+        'git',
+        [
+            'clone',
+            '--depth=1',
+            `file://${origin}`,
+            cwd,
+        ],
+        { stdio: 'pipe' },
+    );
 
     return { cwd, head, base, mergeBase };
 }
@@ -379,13 +442,19 @@ function largeDiffToolkit(fixture: { head: string; base: string; mergeBase: stri
         github: {
             rest: {
                 repos: {
-                    async getContent() { return { data: REGISTRY }; },
+                    async getContent() {
+                        return { data: REGISTRY };
+                    },
                     async compareCommitsWithBasehead(options: { basehead: string }) {
                         assert.equal(options.basehead, `${fixture.base}...${fixture.head}`);
                         return { data: { merge_base_commit: { sha: fixture.mergeBase } } };
                     },
                 },
-                pulls: { async get(): Promise<{ data: unknown }> { throw error; } },
+                pulls: {
+                    async get(): Promise<{ data: unknown }> {
+                        throw error;
+                    },
+                },
                 issues: { async addLabels() {} },
             },
         },
@@ -413,7 +482,9 @@ test('406 fallback examines markers and acceptance specs beyond 3000 changed fil
     const fixture = gitFixture(t, files);
 
     assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
-        php: true, js: true, acceptance: true,
+        php: true,
+        js: true,
+        acceptance: true,
     });
 });
 
@@ -425,24 +496,41 @@ test('406 fallback preserves docs exclusions and ignores base-only markers', asy
     });
 
     assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
-        php: false, js: false, acceptance: false,
+        php: false,
+        js: false,
+        acceptance: false,
     });
 });
 
 test('406 fallback sees removed markers in a file too large for an API patch', async (t) => {
     const path = 'src/Core/Example.php';
-    const fixture = gitFixture(t, { [path]: '<?php\n' }, {
-        [path]: "<?php\nFeature::isActive('WEBHOOKS_REWORK');\n" + `${'plain line '.repeat(10)}\n`.repeat(21000),
-    });
+    const fixture = gitFixture(
+        t,
+        { [path]: '<?php\n' },
+        {
+            [path]: "<?php\nFeature::isActive('WEBHOOKS_REWORK');\n" + `${'plain line '.repeat(10)}\n`.repeat(21000),
+        },
+    );
 
     assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
-        php: true, js: false, acceptance: false,
+        php: true,
+        js: false,
+        acceptance: false,
     });
 });
 
 test('406 fallback fails closed when exact commits cannot be fetched', async (t) => {
     const fixture = gitFixture(t, { 'src/Core/Example.php': '<?php\n' });
-    execFileSync('git', ['remote', 'set-url', 'origin', join(fixture.cwd, 'missing')], { cwd: fixture.cwd });
+    execFileSync(
+        'git',
+        [
+            'remote',
+            'set-url',
+            'origin',
+            join(fixture.cwd, 'missing'),
+        ],
+        { cwd: fixture.cwd },
+    );
 
     await assert.rejects(detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), /git|fetch/);
 });
@@ -461,14 +549,12 @@ test('ordinary API failures are propagated instead of being treated as oversized
     await assert.rejects(detectMajorTestArms(largeDiffToolkit(fixture, error)), error);
 });
 
-
 test('a 406 unrelated to diff size is propagated', async () => {
     const error = Object.assign(new Error('unacceptable'), { status: 406 });
     const fixture = { base: 'a'.repeat(40), head: 'b'.repeat(40), mergeBase: 'c'.repeat(40) };
 
     await assert.rejects(detectMajorTestArms(largeDiffToolkit(fixture, error)), error);
 });
-
 
 test('406 fallback retains active conditional checkout configuration', async (t) => {
     const fixture = gitFixture(t, { 'tests/acceptance/tests/Example.spec.ts': 'await button.click();\n' });
@@ -481,6 +567,27 @@ test('406 fallback retains active conditional checkout configuration', async (t)
     assert.equal(git('remote', 'get-url', 'origin'), origin);
 
     assert.deepEqual(await detectMajorTestArms(largeDiffToolkit(fixture), { cwd: fixture.cwd }), {
-        php: false, js: false, acceptance: true,
+        php: false,
+        js: false,
+        acceptance: true,
     });
+});
+
+test('isDiffTooLarge recognises only the too_large refusal', () => {
+    assert.equal(isDiffTooLarge(tooLargeDiff()), true);
+    assert.equal(isDiffTooLarge(Object.assign(new Error('Not Acceptable'), { status: 406 })), false);
+    assert.equal(isDiffTooLarge(Object.assign(new Error('other side closed'), { status: 500 })), false);
+    assert.equal(isDiffTooLarge(undefined), false);
+});
+
+test('diffFromFiles rebuilds a diff the detection reads like the native one', () => {
+    const diff = diffFromFiles([
+        {
+            filename: 'src/Core/Framework/Feature.php',
+            patch: '@@ -1,1 +1,1 @@\n+     * @deprecated tag:v6.8.0 - Will be removed',
+        },
+        { filename: 'tests/acceptance/tests/Huge.spec.ts' },
+    ]);
+    assert.equal(hasMajorMarkers(diff, parseMajorFlags(REGISTRY)), true);
+    assert.equal(hasAcceptanceTestChanges(diff), true);
 });

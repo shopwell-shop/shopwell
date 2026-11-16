@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Customer\Rule;
 
+use Shopwell\Core\Checkout\Cart\Rule\DeliveryRuleScope;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Framework\Log\Package;
@@ -35,8 +36,12 @@ class ShippingCityRule extends Rule
             return false;
         }
 
-        $address = $scope->getSalesChannelContext()->getShippingLocation()->getAddress()
-            ?? $scope->getCustomer()?->getActiveShippingAddress();
+        if ($scope instanceof DeliveryRuleScope) {
+            $address = $scope->getDelivery()->getLocation()->getAddress();
+        } else {
+            $address = $scope->getSalesChannelContext()->getShippingLocation()->getAddress()
+                ?? $scope->getCustomer()?->getActiveShippingAddress();
+        }
 
         if (!$address) {
             return RuleComparison::isNegativeOperator($this->operator);

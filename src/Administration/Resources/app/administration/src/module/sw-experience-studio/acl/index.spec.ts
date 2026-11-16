@@ -1,46 +1,83 @@
+import PrivilegesService from 'src/app/service/privileges.service';
+
 /**
  * @sw-package discovery
  */
+describe('src/module/sw-experience-studio/acl/index.ts', () => {
+    let privileges: PrivilegesService;
+    let service: jest.SpyInstance;
 
-import PrivilegesService from 'src/app/service/privileges.service';
-
-Shopwell.Application.addServiceProvider('privileges', () => new PrivilegesService());
-
-describe('Experience Studio Blog assignment permissions', () => {
     beforeEach(() => {
-        jest.resetModules();
-        jest.requireActual('./index');
+        privileges = new PrivilegesService();
+        service = jest
+            .spyOn(Shopwell, 'Service')
+            .mockImplementation((() => privileges) as unknown as typeof Shopwell.Service);
+
+        jest.isolateModules(() => {
+            jest.requireActual('./index');
+        });
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        service.mockRestore();
     });
 
-    it('lets viewers load assignments and select a Blog preview without granting writes', () => {
-        const viewer = Shopwell.Service('privileges').getPrivilegeRole('experience_studio.viewer');
-        expect(viewer).toBeDefined();
+    it('lets viewers read landing pages and editors manage their layout assignments', () => {
+        const viewer = privileges.getPrivilegeRole('experience_studio.viewer');
+        const editor = privileges.getPrivilegeRole('experience_studio.editor');
 
-        expect(viewer?.privileges).toEqual(
-            expect.arrayContaining(['blog_content_layout:read', 'blog:read', 'sales_channel:read']),
-        );
-        expect(viewer?.privileges).not.toContain('blog_content_layout:create');
-        expect(viewer?.privileges).not.toContain('blog_content_layout:update');
-        expect(viewer?.privileges).not.toContain('blog_content_layout:delete');
-        expect(viewer?.privileges).not.toContain('blog:update');
+        expect(viewer?.privileges).toContain('landing_page:read');
+        expect(viewer?.privileges).toContain('landing_page_content_layout:read');
+        expect(viewer?.privileges).not.toContain('user:read');
+        expect(viewer?.privileges).not.toContain('media:read');
+        expect(viewer?.privileges).toContain('content_workspace:read');
+        for (const [operation, role] of [
+            ['create', 'editor'],
+            ['update', 'editor'],
+            ['delete', 'deleter'],
+        ]) {
+            expect(viewer?.privileges).not.toContain(`content_workspace:${operation}`);
+            expect(privileges.getPrivilegeRole(`experience_studio.${role}`)?.privileges).toContain(
+                `content_workspace:${operation}`,
+            );
+        }
+        expect(editor?.privileges).not.toContain('content_layout:create');
+        for (const operation of ['create', 'update', 'delete']) {
+            expect(editor?.privileges).toContain(`landing_page_content_layout:${operation}`);
+            expect(viewer?.privileges).not.toContain(`landing_page_content_layout:${operation}`);
+        }
+        expect(editor?.dependencies).toContain('experience_studio.viewer');
     });
 
-    it('lets editors maintain assignments while inheriting read permissions', () => {
-        const editor = Shopwell.Service('privileges').getPrivilegeRole('experience_studio.editor');
-        expect(editor).toBeDefined();
-
-        expect(editor?.privileges).toEqual(
-            expect.arrayContaining([
-                'blog_content_layout:create',
-                'blog_content_layout:update',
-                'blog_content_layout:delete',
-            ]),
-        );
+    it('preserves Blog assignment reads and writes without allowing Blog edits', () => {
+        const viewer = privileges.getPrivilegeRole('experience_studio.viewer');
+        const editor = privileges.getPrivilegeRole('experience_studio.editor');
+        expect(viewer?.privileges).toEqual(expect.arrayContaining(['blog:read', 'blog_content_layout:read']));
+        for (const operation of ['create', 'update', 'delete']) {
+            expect(viewer?.privileges).not.toContain(`blog_content_layout:${operation}`);
+            expect(editor?.privileges).toContain(`blog_content_layout:${operation}`);
+        }
         expect(editor?.dependencies).toContain('experience_studio.viewer');
         expect(editor?.privileges).not.toContain('blog:update');
+    });
+
+    it('registers exactly the permission entry and the additional permission entry', () => {
+        const entries = privileges.getPrivilegesMappings().map(({ category, parent, key }) => ({ category, parent, key }));
+
+        expect(entries).toEqual([
+            { category: 'permissions', parent: 'content', key: 'experience_studio' },
+            { category: 'additional_permissions', parent: null, key: 'experience_studio' },
+        ]);
+    });
+
+    it('lets the editor role translate content layouts', () => {
+        expect(privileges.getPrivilegeRole('experience_studio.editor')?.privileges).toContain('content_layout:translate');
+    });
+
+    it('registers a translator role holding only the translate privilege on top of the viewer', () => {
+        const translator = privileges.getPrivilegeRole('experience_studio.translator');
+
+        expect(translator?.privileges).toEqual(['content_layout:translate']);
+        expect(translator?.dependencies).toEqual(['experience_studio.viewer']);
     });
 });

@@ -504,6 +504,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(GenericPageLoader::class),
             service(LandingPageRoute::class),
             service('event_dispatcher'),
+            service(AbstractContentRoute::class),
         ]);
 
     $services->set(MenuOffcanvasPageletLoader::class)

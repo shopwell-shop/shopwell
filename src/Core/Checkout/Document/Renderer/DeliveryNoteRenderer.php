@@ -12,6 +12,8 @@ use Shopwell\Core\Checkout\Document\Service\DocumentFileRendererRegistry;
 use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
 use Shopwell\Core\Checkout\DocumentV2\Provider\AbstractDocumentDataProvider;
 use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
+use Shopwell\Core\Checkout\DocumentV2\Template\Calculation\DeliveryNoteLineItems;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Defaults;
@@ -106,6 +108,8 @@ final class DeliveryNoteRenderer extends AbstractDocumentRenderer
                         continue;
                     }
 
+                    $requestedOrderDelivery = $this->getRequestedOrderDelivery($order, $operation);
+
                     $config = clone $this->documentConfigLoader->load(self::TYPE, $order->getSalesChannelId(), $context);
 
                     $config->merge($operation->getConfig());
@@ -155,7 +159,16 @@ final class DeliveryNoteRenderer extends AbstractDocumentRenderer
                         $config->jsonSerialize(),
                     );
 
-                    $doc->setParameters(['orderDelivery' => $deliveries]);
+                    $parameters = ['orderDelivery' => $deliveries];
+
+                    if ($requestedOrderDelivery !== null) {
+                        $parameters = [
+                            'orderDelivery' => $requestedOrderDelivery,
+                            'deliveryLineItemQuantities' => DeliveryNoteLineItems::quantities($order, $requestedOrderDelivery),
+                        ];
+                    }
+
+                    $doc->setParameters($parameters);
                     $doc->setTemplate($template);
                     $doc->setOrder($order);
                     $doc->setContext($context);
@@ -175,6 +188,22 @@ final class DeliveryNoteRenderer extends AbstractDocumentRenderer
     public function getDecorated(): AbstractDocumentRenderer
     {
         throw new DecorationPatternException(self::class);
+    }
+
+    private function getRequestedOrderDelivery(OrderEntity $order, DocumentGenerateOperation $operation): ?OrderDeliveryEntity
+    {
+        $orderDeliveryId = $operation->getConfig()['custom']['orderDeliveryId'] ?? null;
+
+        if ($orderDeliveryId === null) {
+            return null;
+        }
+
+        if (!\is_string($orderDeliveryId)) {
+            throw DocumentException::invalidRequestParameter('custom.orderDeliveryId');
+        }
+
+        return $order->getDeliveries()?->get($orderDeliveryId)
+            ?? throw DocumentException::orderDeliveryNotFound($orderDeliveryId, $order->getId());
     }
 
     private function getNumber(Context $context, OrderEntity $order, DocumentGenerateOperation $operation): string

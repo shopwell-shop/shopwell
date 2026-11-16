@@ -4,18 +4,25 @@ namespace Shopwell\Tests\Integration\Core\Checkout\Cart\Order;
 
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\CartBehavior;
+use Shopwell\Core\Checkout\Cart\CartRuleLoader;
+use Shopwell\Core\Checkout\Cart\Delivery\DeliveryPositionSplitter;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryTime;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Order\IdStruct;
 use Shopwell\Core\Checkout\Cart\Order\OrderConversionContext;
 use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
+use Shopwell\Core\Checkout\Cart\Order\OrderPersister;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRule;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Cart\Transaction\Struct\Transaction;
 use Shopwell\Core\Checkout\Cart\Transaction\Struct\TransactionCollection;
@@ -28,14 +35,18 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderDeliveryPosition\OrderDeliveryPo
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDeliveryPosition\OrderDeliveryPositionEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\Test\Generator;
+use Shopwell\Core\Test\Integration\Traits\TestShortHands;
 
 /**
  * @internal
@@ -44,6 +55,7 @@ use Shopwell\Core\Test\Generator;
 class OrderConverterTest extends TestCase
 {
     use IntegrationTestBehaviour;
+    use TestShortHands;
 
     private OrderConverter $orderConverter;
 
@@ -111,6 +123,76 @@ class OrderConverterTest extends TestCase
         static::assertSame($thirdDeliveryId, $convertedCart->getDeliveries()->getAt(2)->getExtensionOfType(OrderConverter::ORIGINAL_ID, IdStruct::class)?->getId());
         static::assertNotNull($convertedCart->getDeliveries()->getAt(3));
         static::assertSame($fourthDeliveryId, $convertedCart->getDeliveries()->getAt(3)->getExtensionOfType(OrderConverter::ORIGINAL_ID, IdStruct::class)?->getId());
+    }
+
+    public function testSplitPositionKeepsQuantityAndPricePerDeliveryThroughTheOrder(): void
+    {
+        $context = $this->login($this->getContext());
+
+        $cart = new Cart(Uuid::randomHex());
+        $cart->add(
+            (new LineItem('split-item', LineItem::CUSTOM_LINE_ITEM_TYPE, null, 3))
+                ->setLabel('Split item')
+                ->setStackable(true)
+                ->setPriceDefinition(new QuantityPriceDefinition(9.99, new TaxRuleCollection([new TaxRule(19)]), 3))
+        );
+        $cart = static::getContainer()->get(CartRuleLoader::class)->loadByCart($context, $cart, new CartBehavior())->getCart();
+
+        $delivery = $cart->getDeliveries()->first();
+        static::assertNotNull($delivery);
+        $position = $delivery->getPositions()->get('split-item');
+        static::assertNotNull($position);
+
+        $shippingMethodDeliveryTime = $delivery->getShippingMethod()->getDeliveryTime();
+        static::assertNotNull($shippingMethodDeliveryTime);
+
+        [$part, $remainder] = static::getContainer()->get(DeliveryPositionSplitter::class)
+            ->split($position, 2, DeliveryTime::createFromEntity($shippingMethodDeliveryTime), $context);
+
+        $cart->setDeliveries(new DeliveryCollection([
+            new Delivery(new DeliveryPositionCollection([$part]), $part->getDeliveryDate(), $delivery->getShippingMethod(), $delivery->getLocation(), $delivery->getShippingCosts()),
+            new Delivery(new DeliveryPositionCollection([$remainder]), $remainder->getDeliveryDate(), $delivery->getShippingMethod(), $delivery->getLocation(), new CalculatedPrice(0, 0, new CalculatedTaxCollection(), new TaxRuleCollection())),
+        ]));
+
+        $orderId = static::getContainer()->get(OrderPersister::class)->persist($cart, $context);
+
+        $criteria = (new Criteria([$orderId]))
+            ->addAssociation('lineItems')
+            ->addAssociation('deliveries.shippingMethod')
+            ->addAssociation('deliveries.shippingOrderAddress.country')
+            ->addAssociation('deliveries.positions.orderLineItem');
+
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        $order = $orderRepository->search($criteria, $context->getContext())->getEntities()->get($orderId);
+        static::assertNotNull($order);
+        static::assertNotNull($order->getDeliveries());
+
+        $orderPositionPrices = [];
+        foreach ($order->getDeliveries() as $orderDelivery) {
+            $orderPositions = $orderDelivery->getPositions();
+            static::assertNotNull($orderPositions);
+            static::assertCount(1, $orderPositions);
+
+            $orderPosition = $orderPositions->first();
+            static::assertNotNull($orderPosition);
+            $orderPositionPrices[$orderPosition->getQuantity()] = $orderPosition->getPrice();
+        }
+
+        static::assertEquals([2 => $part->getPrice(), 1 => $remainder->getPrice()], $orderPositionPrices);
+
+        $convertedCart = $this->orderConverter->convertToCart($order, $context->getContext());
+
+        $cartPositionPrices = [];
+        foreach ($convertedCart->getDeliveries() as $convertedDelivery) {
+            static::assertCount(1, $convertedDelivery->getPositions());
+
+            $convertedPosition = $convertedDelivery->getPositions()->get('split-item');
+            static::assertNotNull($convertedPosition);
+            $cartPositionPrices[$convertedPosition->getQuantity()] = $convertedPosition->getPrice();
+        }
+
+        static::assertEquals([2 => $part->getPrice(), 1 => $remainder->getPrice()], $cartPositionPrices);
     }
 
     private function getCustomer(): CustomerEntity

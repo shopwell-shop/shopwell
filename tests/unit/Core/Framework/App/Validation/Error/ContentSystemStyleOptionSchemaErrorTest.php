@@ -21,13 +21,9 @@ class ContentSystemStyleOptionSchemaErrorTest extends TestCase
     {
         $error = new ContentSystemStyleOptionSchemaError('/path/to/style-options', 'YAML syntax invalid');
 
+        static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
+        static::assertSame([], $error->getParameters());
         static::assertSame('Invalid style option schema in "/path/to/style-options": YAML syntax invalid', $error->getMessage());
-    }
-
-    public function testProvidesTheGenericValidationErrorContract(): void
-    {
-        $error = new ContentSystemStyleOptionSchemaError('/path/to/schema', 'Invalid schema');
-
         static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
         static::assertSame([], $error->getParameters());
     }

@@ -111,6 +111,21 @@ function getStyleOptionRangeProps(range: ContentSystemStyleOptionSpecification['
     return props;
 }
 
+function getStyleOptionComponent(option: ContentSystemStyleOptionSpecification): string | undefined {
+    const component = option.adminUI?.component;
+    const adminComponent = typeof component === 'string' ? component : undefined;
+
+    if (
+        option.breakpointAware &&
+        adminComponent !== 'box-spacing' &&
+        (option.type === 'integer' || option.type === 'number' || adminComponent === 'number')
+    ) {
+        return 'responsive-number';
+    }
+
+    return adminComponent;
+}
+
 /**
  * @private
  * @sw-package discovery
@@ -120,20 +135,9 @@ export function styleOptionToElementProperty(
     option: ContentSystemStyleOptionSpecification,
 ): ContentSystemElementTypeProperty {
     const adminUI = option.adminUI ?? {};
-    const adminComponent = typeof adminUI.component === 'string' ? adminUI.component : undefined;
     const props = {
         ...(typeof adminUI.props === 'object' && adminUI.props !== null ? adminUI.props : {}),
     };
-
-    let mappedComponent = adminComponent;
-
-    if (
-        option.breakpointAware &&
-        adminComponent !== 'box-spacing' &&
-        (option.type === 'integer' || option.type === 'number' || adminComponent === 'number')
-    ) {
-        mappedComponent = 'responsive-number';
-    }
 
     return {
         type: option.breakpointAware
@@ -152,10 +156,12 @@ export function styleOptionToElementProperty(
         inlineMappable: false,
         defaultMapping: null,
         title: typeof adminUI.label === 'string' && adminUI.label.length > 0 ? adminUI.label : key,
+        titleSnippet: typeof adminUI.labelSnippet === 'string' ? adminUI.labelSnippet : undefined,
+        descriptionSnippet: typeof adminUI.descriptionSnippet === 'string' ? adminUI.descriptionSnippet : undefined,
         description: typeof adminUI.description === 'string' ? adminUI.description : '',
         adminUI: {
             ...adminUI,
-            component: mappedComponent,
+            component: getStyleOptionComponent(option),
             props: { ...props, ...getStyleOptionRangeProps(option.range) },
         },
     };

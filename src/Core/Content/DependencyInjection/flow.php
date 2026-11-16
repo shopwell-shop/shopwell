@@ -48,6 +48,7 @@ use Shopwell\Core\Content\Flow\Dispatching\Storer\LanguageStorer;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\MailStorer;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\MessageStorer;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\NewsletterRecipientStorer;
+use Shopwell\Core\Content\Flow\Dispatching\Storer\OrderDeliveryStorer;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\OrderStorer;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\OrderTransactionStorer;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\ProductStorer;
@@ -78,6 +79,7 @@ use Shopwell\Core\Content\Shared\MailFlow\DataProvider\CustomerGroupProvider;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\CustomerProvider;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\CustomerRecoveryProvider;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\NewsletterRecipientProvider;
+use Shopwell\Core\Content\Shared\MailFlow\DataProvider\OrderDeliveryProvider;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\OrderProvider;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\OrderTransactionProvider;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\ProductProvider;
@@ -402,6 +404,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('order_transaction.repository'),
             service('event_dispatcher'),
             service(OrderTransactionProvider::class),
+        ])
+        ->tag('flow.storer');
+
+    $services->set(OrderDeliveryStorer::class)
+        ->args([
+            service(OrderDeliveryProvider::class),
         ])
         ->tag('flow.storer');
 

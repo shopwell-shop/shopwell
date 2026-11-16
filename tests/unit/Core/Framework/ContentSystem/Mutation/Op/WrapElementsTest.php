@@ -5,14 +5,18 @@ namespace Shopwell\Tests\Unit\Core\Framework\ContentSystem\Mutation\Op;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredElement;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredValue;
 use Shopwell\Core\Framework\ContentSystem\Layout\StoredTree;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\AbstractContentSystemElementTypeRegistry;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Specification\ContentSystemElementTypeSpecification;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Specification\CopilotSpecification;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\WrapElements;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\ContentSystem\StoredElementBuilder;
 
 /**
  * @internal
@@ -66,6 +70,20 @@ class WrapElementsTest extends TestCase
         static::assertCount(1, $parentChildren);
         static::assertSame('Sw:Container', $parentChildren[0]->component);
         static::assertSame(['a', 'b'], array_map(static fn (StoredElement $e): string => $e->id, $parentChildren[0]->slots['items']));
+    }
+
+    #[TestDox('moves a wrapped element language-map property value into the container unchanged')]
+    public function testWrapCarriesLanguageMapUnchanged(): void
+    {
+        $german = Uuid::randomHex();
+        $translations = [Defaults::LANGUAGE_SYSTEM => 'Autumn sale', $german => 'Herbstschlussverkauf'];
+        $target = StoredElementBuilder::create('Sw:Block', 'a')->withProperty('text', $translations)->build();
+
+        $result = (new WrapElements($this->registry('Sw:Container'), ['a'], 'Sw:Container', 'content'))->apply(new StoredTree([$target]));
+
+        $carried = $result->roots[0]->slots['content'][0]->property('text');
+        static::assertNotNull($carried);
+        static::assertTrue($carried->equals(StoredValue::fromDecoded($translations)));
     }
 
     #[TestDox('rejects wrapping an empty target list with a 400')]

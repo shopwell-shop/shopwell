@@ -15,8 +15,10 @@ use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutMoveRequest;
 use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutMutationController;
 use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutRemoveRequest;
 use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutReplaceRequest;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutTranslateElementRequest;
 use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutUnmapPropertyRequest;
 use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutUnwrapRequest;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutUpdateElementPropertiesRequest;
 use Shopwell\Core\Framework\ContentSystem\Api\ContentLayoutWrapElementsRequest;
 use Shopwell\Core\Framework\ContentSystem\Api\DraftLayoutDecoder;
 use Shopwell\Core\Framework\ContentSystem\Binding\BindingApplicator;
@@ -48,8 +50,10 @@ use Shopwell\Core\Framework\ContentSystem\Mutation\Op\MapProperty;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\MoveElement;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\RemoveElement;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\ReplaceElement;
+use Shopwell\Core\Framework\ContentSystem\Mutation\Op\TranslateElement;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\UnmapProperty;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\UnwrapElement;
+use Shopwell\Core\Framework\ContentSystem\Mutation\Op\UpdateElementProperties;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\WrapElements;
 use Shopwell\Core\Framework\ContentSystem\Mutation\PersistedLayoutMutator;
 use Shopwell\Core\Framework\ContentSystem\Mutation\PropertyMappingMutationFactory;
@@ -143,6 +147,8 @@ class ContentLayoutMutationControllerTest extends TestCase
         yield 'map property' => [static fn (ContentLayoutMutationController $c): Response => $c->mapProperty('l', new ContentLayoutMapPropertyRequest('el', 'text', ['type' => 'root', 'id' => 'product', 'path' => 'name'], null), $context), MapProperty::class];
         yield 'unmap property' => [static fn (ContentLayoutMutationController $c): Response => $c->unmapProperty('l', new ContentLayoutUnmapPropertyRequest('el', 'text', null), $context), UnmapProperty::class];
         yield 'bind' => [static fn (ContentLayoutMutationController $c): Response => $c->bind('l', new ContentLayoutBindRequest('el', 'core:hero', null), $context), BindElement::class];
+        yield 'translate' => [static fn (ContentLayoutMutationController $c): Response => $c->translate('l', new ContentLayoutTranslateElementRequest('el', null, ['headline' => []]), $context), TranslateElement::class];
+        yield 'update properties' => [static fn (ContentLayoutMutationController $c): Response => $c->updateProperties('l', new ContentLayoutUpdateElementPropertiesRequest('el', null, ['headline' => []], []), $context), UpdateElementProperties::class];
     }
 
     /**
@@ -271,7 +277,7 @@ class ContentLayoutMutationControllerTest extends TestCase
             $this->decoder(),
             static::createStub(AbstractContentSystemBindingSpecificationRegistry::class),
             // BindingApplicator is final: a real instance over a stubbed serializer provider.
-            new BindingApplicator(static::createStub(DataLoaderConfigSerializerProvider::class)),
+            new BindingApplicator(static::createStub(DataLoaderConfigSerializerProvider::class), $typeRegistry),
             new PropertyMappingMutationFactory($typeRegistry, $mappingInspector),
             $mappingInspector,
         );

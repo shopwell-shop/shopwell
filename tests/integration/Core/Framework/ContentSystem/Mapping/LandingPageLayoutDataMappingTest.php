@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Integration\Core\Framework\ContentSystem\Mapping;
 
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -80,7 +81,7 @@ class LandingPageLayoutDataMappingTest extends TestCase
                 'slots' => ['content' => [[
                     'id' => $this->ids->create('text'),
                     'component' => 'Sw:Content:Text',
-                    'properties' => ['text' => '{{map:landing_page.name}}'],
+                    'properties' => ['text' => [Defaults::LANGUAGE_SYSTEM => '{{map:landing_page.name}}']],
                 ]]],
             ]],
         ]], $context);

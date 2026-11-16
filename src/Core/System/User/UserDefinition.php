@@ -8,6 +8,7 @@ use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLog
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\Api\Acl\Role\AclUserRoleDefinition;
+use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\CloneProtection;
@@ -150,6 +151,7 @@ class UserDefinition extends EntityDefinition
             (new ManyToManyIdField('organization_unit_ids', 'organizationUnitIds', 'organizationUnits'))->addFlags(new ApiAware()),
             (new ManyToManyAssociationField('positions', PositionDefinition::class, UserPositionDefinition::class, 'user_id', 'position_id'))->addFlags(new ApiAware()),
             (new ManyToManyIdField('position_ids', 'positionIds', 'positions'))->addFlags(new ApiAware()),
+            (new OneToManyAssociationField('createdContentWorkspaces', ContentWorkspaceDefinition::class, 'created_by_id'))->addFlags(new SetNullOnDelete()),
         ]);
     }
 }

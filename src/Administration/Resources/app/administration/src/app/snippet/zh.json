@@ -934,7 +934,11 @@
                 "customerSalutationRule": "客户称呼",
                 "lineItemPropertyValueRule": "带属性规格的项目",
                 "lineItemVariantValueRule": "带变体规格的项目",
-                "lineItemDimensionLongestAndGirthRule": "商品最长边与围长"
+                "lineItemDimensionLongestAndGirthRule": "商品最长边与围长",
+                "deliveryCondition": {
+                    "cart": "整个购物车",
+                    "delivery": "本次配送"
+                }
             }
         },
         "sw-condition-generic": {
@@ -1174,7 +1178,10 @@
             "blog_author": "作者 | 作者",
             "blog_comment": "评论 | 评论",
             "blog_video": "视频 | 视频",
-            "content_layout": "布局 | 布局"
+            "content_layout": "布局",
+            "category_content_layout": "分类分配",
+            "product_content_layout": "商品分配",
+            "landing_page_content_layout": "落地页分配"
         },
         "day-of-week": {
             "monday": "星期一",

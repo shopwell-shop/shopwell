@@ -38,17 +38,21 @@ test('tolerates surrounding whitespace from a ref name', () => {
     assert.equal(entitySchemaPackageVersion('  v6.7.15.0\n'), '7.15.0');
 });
 
-for (const tag of ['trunk', '6.7.15.0', 'v7.0.0.0', 'v6.7.15', 'v6.7.15.0.1', '']) {
+for (const tag of [
+    'trunk',
+    '6.7.15.0',
+    'v7.0.0.0',
+    'v6.7.15',
+    'v6.7.15.0.1',
+    '',
+]) {
     test(`refuses to derive a version from ${JSON.stringify(tag)}`, () => {
         assert.throws(() => entitySchemaPackageVersion(tag), /not a release tag/);
     });
 }
 
 test('prefers the tag the upstream generator reads over the GitHub ref name', () => {
-    assert.equal(
-        releaseTagFromEnvironment({ CI_COMMIT_TAG: 'v6.7.15.0', GITHUB_REF_NAME: 'trunk' }),
-        'v6.7.15.0',
-    );
+    assert.equal(releaseTagFromEnvironment({ CI_COMMIT_TAG: 'v6.7.15.0', GITHUB_REF_NAME: 'trunk' }), 'v6.7.15.0');
 });
 
 test('falls back to the GitHub ref name when the generator variable is absent', () => {
@@ -84,9 +88,14 @@ test('reports a version that does not match the release tag', () => {
 });
 
 test('reports a repository npm trusted publishing would reject', () => {
-    const problems = manifestProblems({ ...manifestFor(), repository: { url: 'git+https://example.invalid/wrong/repository.git' } }, '7.15.0');
+    const problems = manifestProblems(
+        { ...manifestFor(), repository: { url: 'git+https://example.invalid/wrong/repository.git' } },
+        '7.15.0',
+    );
 
-    assert.deepEqual(problems, [`repository.url is "git+https://example.invalid/wrong/repository.git", expected ${JSON.stringify(REPOSITORY_URL)}`]);
+    assert.deepEqual(problems, [
+        `repository.url is "git+https://example.invalid/wrong/repository.git", expected ${JSON.stringify(REPOSITORY_URL)}`,
+    ]);
 });
 
 test('reports a scoped package left at the restricted default', () => {

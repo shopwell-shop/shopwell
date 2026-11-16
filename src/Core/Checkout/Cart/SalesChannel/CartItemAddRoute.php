@@ -9,6 +9,7 @@ use Shopwell\Core\Checkout\Cart\CartLocker;
 use Shopwell\Core\Checkout\Cart\Event\AfterLineItemAddedEvent;
 use Shopwell\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 use Shopwell\Core\Checkout\Cart\Event\CartChangedEvent;
+use Shopwell\Core\Checkout\Cart\Event\LineItemsAddedBeforeCalculationEvent;
 use Shopwell\Core\Checkout\Cart\Extension\CartItemAddRouteExtension;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryRegistry;
@@ -85,6 +86,8 @@ class CartItemAddRoute extends AbstractCartItemAddRoute
 
                 $this->eventDispatcher->dispatch(new BeforeLineItemAddedEvent($item, $cart, $context, $alreadyExists));
             }
+
+            $this->eventDispatcher->dispatch(new LineItemsAddedBeforeCalculationEvent($items, $cart, $context));
 
             $cart->markModified();
 

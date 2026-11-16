@@ -934,7 +934,11 @@
                 "customerCreatedByAdminRule": "Customer created by admin",
                 "customerSalutationRule": "Customer salutation",
                 "lineItemPropertyValueRule": "Item with property value",
-                "lineItemVariantValueRule": "Item with variant value"
+                "lineItemVariantValueRule": "Item with variant value",
+                "deliveryCondition": {
+                    "cart": "Whole cart",
+                    "delivery": "This delivery"
+                }
             }
         },
         "sw-condition-generic": {
@@ -1174,7 +1178,10 @@
             "blog_author": "Author | Authors",
             "blog_comment": "Comment | Comments",
             "blog_video": "Video | Videos",
-            "content_layout": "Layout | Layouts"
+            "content_layout": "Layout | Layouts",
+            "category_content_layout": "Category assignment | Category assignments",
+            "product_content_layout": "Product assignment | Product assignments",
+            "landing_page_content_layout": "Landing page assignment | Landing page assignments"
         },
         "day-of-week": {
             "monday": "Monday",

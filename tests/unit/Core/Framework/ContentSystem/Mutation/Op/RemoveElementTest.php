@@ -5,13 +5,17 @@ namespace Shopwell\Tests\Unit\Core\Framework\ContentSystem\Mutation\Op;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\AbstractContentDataLoaderConfig;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\DataRequirement\DataRequirement;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredElement;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredValue;
 use Shopwell\Core\Framework\ContentSystem\Layout\StoredTree;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\RemoveElement;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\ContentSystem\StoredElementBuilder;
 
 /**
  * @internal
@@ -64,6 +68,20 @@ class RemoveElementTest extends TestCase
         $result = (new RemoveElement('drop'))->apply($tree);
 
         static::assertSame(['product' => $requirement], $result->roots[0]->dataRequirements);
+    }
+
+    #[TestDox('leaves a surviving element language-map property value unchanged')]
+    public function testRemoveLeavesSurvivorLanguageMapUnchanged(): void
+    {
+        $german = Uuid::randomHex();
+        $translations = [Defaults::LANGUAGE_SYSTEM => 'Autumn sale', $german => 'Herbstschlussverkauf'];
+        $survivor = StoredElementBuilder::create('Sw:Block', 'survivor')->withProperty('text', $translations)->build();
+
+        $result = (new RemoveElement('drop'))->apply(new StoredTree([$survivor, new StoredElement('drop', 'Sw:Block')]));
+
+        $carried = $result->roots[0]->property('text');
+        static::assertNotNull($carried);
+        static::assertTrue($carried->equals(StoredValue::fromDecoded($translations)));
     }
 
     #[TestDox('rejects removing an element absent from the tree with a 400')]

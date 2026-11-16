@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Customer\Rule;
 
+use Shopwell\Core\Checkout\Cart\Rule\DeliveryRuleScope;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Exception\UnsupportedOperatorException;
@@ -41,14 +42,15 @@ class ShippingCountryRule extends Rule
             return false;
         }
 
+        $location = $scope instanceof DeliveryRuleScope
+            ? $scope->getDelivery()->getLocation()
+            : $scope->getSalesChannelContext()->getShippingLocation();
+
         $countryId = $scope->getSalesChannelContext()->getCustomer() === null
             ? $scope->getCustomer()?->getActiveShippingAddress()?->getCountryId()
             : null;
 
-        $countryId ??= $scope->getSalesChannelContext()
-            ->getShippingLocation()
-            ->getCountry()
-            ->getId();
+        $countryId ??= $location->getCountry()->getId();
 
         $parameter = [$countryId];
         if ($countryId === '') {

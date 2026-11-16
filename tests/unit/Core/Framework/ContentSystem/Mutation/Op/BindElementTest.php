@@ -16,9 +16,13 @@ use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\DataLoaderConfigS
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\DataRequirement\DataRequirement;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredElement;
 use Shopwell\Core\Framework\ContentSystem\Layout\StoredTree;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\AbstractContentSystemElementTypeRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Specification\ContentSystemElementTypeSpecification;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\BindElement;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Stub\ContentSystem\ContentSystemElementTypeSpecificationBuilder;
 use Shopwell\Core\Test\Stub\ContentSystem\StoredElementBuilder;
+use Shopwell\Core\Test\Stub\ContentSystem\TestElementTypeRegistry;
 
 /**
  * @internal
@@ -175,6 +179,21 @@ class BindElementTest extends TestCase
         $serializers = static::createStub(DataLoaderConfigSerializerProvider::class);
         $serializers->method('decode')->willReturn($config);
 
-        return new BindingApplicator($serializers);
+        return new BindingApplicator($serializers, $this->productTypeRegistry());
+    }
+
+    private function productTypeRegistry(): AbstractContentSystemElementTypeRegistry
+    {
+        return $this->typeRegistry([
+            'Sw:Product' => ContentSystemElementTypeSpecificationBuilder::create('Sw:Product')->primitive('mediaId', 'string')->build(),
+        ]);
+    }
+
+    /**
+     * @param array<string, ContentSystemElementTypeSpecification> $specs
+     */
+    private function typeRegistry(array $specs): AbstractContentSystemElementTypeRegistry
+    {
+        return TestElementTypeRegistry::of($specs);
     }
 }

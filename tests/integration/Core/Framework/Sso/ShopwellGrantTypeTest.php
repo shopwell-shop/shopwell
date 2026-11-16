@@ -4,13 +4,18 @@ namespace Shopwell\Tests\Integration\Core\Framework\Sso;
 
 use Doctrine\DBAL\Connection;
 use Lcobucci\JWT\Configuration;
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Token\Parser;
+use Lcobucci\JWT\UnencryptedToken;
 use League\OAuth2\Server\ResponseTypes\BearerTokenResponse;
 use Nyholm\Psr7\Response as Psr7Response;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\OAuth\AccessTokenRepository;
 use Shopwell\Core\Framework\Api\OAuth\ClientRepository;
 use Shopwell\Core\Framework\Api\OAuth\FakeCryptKey;
 use Shopwell\Core\Framework\Api\OAuth\RefreshTokenRepository;
+use Shopwell\Core\Framework\Api\OAuth\Scope\UserVerifiedScope;
 use Shopwell\Core\Framework\Api\OAuth\ScopeRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Sso\Config\LoginConfigService;
@@ -59,14 +64,63 @@ class ShopwellGrantTypeTest extends TestCase
         );
     }
 
-    public function testRespondToAccessTokenRequest(): void
+    /**
+     * @return \Generator<string, array{?\DateInterval, bool, bool}>
+     */
+    public static function authenticationTimeProvider(): \Generator
+    {
+        yield 'identity provider login just happened' => [new \DateInterval('PT10S'), true, false];
+        yield 'identity provider session was reused' => [new \DateInterval('PT1H'), false, false];
+        yield 'identity provider does not report auth_time' => [null, false, false];
+        yield 'returning user, identity provider login just happened' => [new \DateInterval('PT10S'), true, true];
+        yield 'returning user, identity provider session was reused' => [new \DateInterval('PT1H'), false, true];
+    }
+
+    /**
+     * @param \DateInterval|null $authenticatedAgo how long before the code exchange the identity provider authenticated the user
+     * @param bool $returningUser whether the user already logged in through the identity provider before
+     */
+    #[DataProvider('authenticationTimeProvider')]
+    public function testRespondToAccessTokenRequest(?\DateInterval $authenticatedAgo, bool $verified, bool $returningUser): void
     {
         $email = 'test@shopwell.cn';
-        $idToken = (new FakeTokenGenerator())->setEmail($email)->generate(JwksIds::KEY_ID_ONE);
 
         $fakeUserInstall = new FakeUserInstaller($this->connection);
         $fakeUserInstall->installBaseUserData(Uuid::randomHex(), $email);
 
+        if ($returningUser) {
+            $this->requestAccessToken((new FakeTokenGenerator())->setEmail($email)->generate(JwksIds::KEY_ID_ONE));
+        }
+
+        $tokenGenerator = (new FakeTokenGenerator())->setEmail($email);
+        if ($authenticatedAgo !== null) {
+            $tokenGenerator->setAuthTime((new \DateTimeImmutable())->sub($authenticatedAgo));
+        }
+
+        $responseBodyData = $this->requestAccessToken($tokenGenerator->generate(JwksIds::KEY_ID_ONE));
+
+        static::assertArrayHasKey('token_type', $responseBodyData);
+        static::assertArrayHasKey('expires_in', $responseBodyData);
+        static::assertArrayHasKey('access_token', $responseBodyData);
+        static::assertArrayHasKey('refresh_token', $responseBodyData);
+        static::assertSame('Bearer', $responseBodyData['token_type']);
+        // Assert that expires_in is between 3595 and 3600 to account for minor delays in processing
+        static::assertTrue($responseBodyData['expires_in'] <= 3600 && $responseBodyData['expires_in'] > 3595);
+        static::assertIsString($responseBodyData['access_token']);
+        static::assertIsString($responseBodyData['refresh_token']);
+
+        $jwt = $responseBodyData['access_token'];
+        static::assertNotSame('', $jwt);
+        $accessToken = (new Parser(new JoseEncoder()))->parse($jwt);
+        static::assertInstanceOf(UnencryptedToken::class, $accessToken);
+        static::assertSame($verified, \in_array(UserVerifiedScope::IDENTIFIER, $accessToken->claims()->get('scopes', []), true));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function requestAccessToken(string $idToken): array
+    {
         $session = new Session(new MockArraySessionStorage());
         $session->set('sso_proof_key_verifier', 'proofKeyVerifier');
 
@@ -90,29 +144,19 @@ class ShopwellGrantTypeTest extends TestCase
         $request->server->set('HTTPS', 'on');
         $request->request->set('code', 'code');
 
-        $psrHttpFactory = $this->getContainer()->get(PsrHttpFactory::class);
-        $psr7Request = $psrHttpFactory->createRequest($request);
-        $ttl = new \DateInterval('PT1H');
+        $psr7Request = $this->getContainer()->get(PsrHttpFactory::class)->createRequest($request);
 
         $bearerResponse = new BearerTokenResponse();
         $bearerResponse->setEncryptionKey('key');
 
-        $responseResult = $shopwellGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, $ttl);
+        $responseResult = $shopwellGrantType->respondToAccessTokenRequest($psr7Request, $bearerResponse, new \DateInterval('PT1H'));
         static::assertInstanceOf(BearerTokenResponse::class, $responseResult);
         $result = $responseResult->generateHttpResponse(new Psr7Response());
 
         $responseBodyData = \json_decode($result->getBody()->__toString(), true);
         static::assertIsArray($responseBodyData);
 
-        static::assertArrayHasKey('token_type', $responseBodyData);
-        static::assertArrayHasKey('expires_in', $responseBodyData);
-        static::assertArrayHasKey('access_token', $responseBodyData);
-        static::assertArrayHasKey('refresh_token', $responseBodyData);
-        static::assertSame('Bearer', $responseBodyData['token_type']);
-        // Assert that expires_in is between 3595 and 3600 to account for minor delays in processing
-        static::assertTrue($responseBodyData['expires_in'] <= 3600 && $responseBodyData['expires_in'] > 3595);
-        static::assertIsString($responseBodyData['access_token']);
-        static::assertIsString($responseBodyData['refresh_token']);
+        return $responseBodyData;
     }
 
     private function createExternalTokenService(string $token): ExternalTokenService

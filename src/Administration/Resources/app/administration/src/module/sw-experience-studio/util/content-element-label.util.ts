@@ -1,10 +1,17 @@
+import type { ContentSystemElementTypeProperty } from 'src/core/service/api/content-system-element-type.api.service';
 import type { ContentElementNode } from 'src/core/service/content-element.types';
+import { resolveTranslatableEntry } from './element-settings.util';
 
 /**
  * @private
  * @sw-package discovery
  */
-export function getContentElementLabel(element: ContentElementNode): string {
+export function getContentElementLabel(
+    element: ContentElementNode,
+    declaredProperties: Record<string, ContentSystemElementTypeProperty> | undefined,
+    chain: readonly string[],
+    fallback?: string,
+): string {
     const properties = element.properties ?? {};
     const nameKeys = [
         'name',
@@ -14,13 +21,14 @@ export function getContentElementLabel(element: ContentElementNode): string {
 
     for (const key of nameKeys) {
         const value = properties[key];
+        const candidate = declaredProperties?.[key]?.translatable === true ? resolveTranslatableEntry(value, chain) : value;
 
-        if (typeof value === 'string' && value.trim() !== '') {
-            return value;
+        if (typeof candidate === 'string' && candidate.trim() !== '') {
+            return candidate;
         }
     }
 
-    return formatComponentName(element.component);
+    return fallback ?? formatComponentName(element.component);
 }
 
 /**

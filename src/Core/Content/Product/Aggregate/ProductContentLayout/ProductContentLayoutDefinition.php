@@ -2,6 +2,8 @@
 
 namespace Shopwell\Core\Content\Product\Aggregate\ProductContentLayout;
 
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\CrossSellingDataLoader;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\CrossSellingLoaderConfig;
 use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductConfiguratorDataLoader;
 use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductConfiguratorLoaderConfig;
 use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductReviewDataLoader;
@@ -69,6 +71,11 @@ class ProductContentLayoutDefinition extends AbstractContentLayoutAssignableDefi
                 'reviews',
                 ProductReviewDataLoader::SOURCE,
                 new ProductReviewLoaderConfig(property: 'productId')
+            ),
+            new DataRequirement(
+                'crossSellings',
+                CrossSellingDataLoader::SOURCE,
+                new CrossSellingLoaderConfig(property: 'productId'),
             ),
         ];
     }

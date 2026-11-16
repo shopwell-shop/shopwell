@@ -6,8 +6,11 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\After;
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\PriceDefinitionFactory;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentType\DocumentTypeCollection;
 use Shopwell\Core\Checkout\Document\DocumentIdCollection;
 use Shopwell\Core\Checkout\Document\FileGenerator\FileTypes;
@@ -16,6 +19,8 @@ use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
 use Shopwell\Core\Checkout\Document\Struct\DocumentGenerateOperation;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigCollection;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Content\Test\Product\ProductBuilder;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
@@ -333,5 +338,85 @@ trait DocumentTrait
             'id' => Uuid::fromHexToBytes($orderId),
             'versionId' => Uuid::fromHexToBytes($orderVersionId),
         ]);
+    }
+
+    /**
+     * @param array<string, int> $quantities position quantities keyed by product number
+     */
+    private function addOrderDelivery(string $orderId, string $street, array $quantities, ?string $shippingMethodId = null): string
+    {
+        $context = Context::createDefaultContext();
+
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+
+        $criteria = (new Criteria([$orderId]))->addAssociations(['lineItems', 'deliveries.shippingOrderAddress']);
+        $order = $orderRepository->search($criteria, $context)->getEntities()->first();
+        static::assertNotNull($order);
+
+        $delivery = $order->getDeliveries()?->first();
+        static::assertNotNull($delivery);
+
+        $address = $delivery->getShippingOrderAddress();
+        static::assertNotNull($address);
+
+        $positions = [];
+        foreach ($quantities as $productNumber => $quantity) {
+            $lineItem = $order->getLineItems()?->firstWhere(
+                static fn (OrderLineItemEntity $lineItem) => ($lineItem->getPayload()['productNumber'] ?? null) === $productNumber
+            );
+            static::assertNotNull($lineItem);
+
+            $unitPrice = $lineItem->getUnitPrice();
+            $positions[] = [
+                'orderLineItemId' => $lineItem->getId(),
+                'price' => new CalculatedPrice($unitPrice, $unitPrice * $quantity, new CalculatedTaxCollection(), new TaxRuleCollection(), $quantity),
+            ];
+        }
+
+        $addressId = Uuid::randomHex();
+        $deliveryId = Uuid::randomHex();
+
+        $orderRepository->update([
+            [
+                'id' => $orderId,
+                'addresses' => [
+                    [
+                        'id' => $addressId,
+                        'countryId' => $address->getCountryId(),
+                        'firstName' => $address->getFirstName(),
+                        'lastName' => $address->getLastName(),
+                        'street' => $street,
+                        'zipcode' => $address->getZipcode(),
+                        'city' => $address->getCity(),
+                    ],
+                ],
+                'deliveries' => [
+                    [
+                        'id' => $deliveryId,
+                        'shippingOrderAddressId' => $addressId,
+                        'shippingMethodId' => $shippingMethodId ?? $delivery->getShippingMethodId(),
+                        'stateId' => $delivery->getStateId(),
+                        'trackingCodes' => [],
+                        'shippingDateEarliest' => $delivery->getShippingDateEarliest(),
+                        'shippingDateLatest' => $delivery->getShippingDateLatest(),
+                        'shippingCosts' => $delivery->getShippingCosts(),
+                        'positions' => $positions,
+                    ],
+                ],
+            ],
+        ], $context);
+
+        return $deliveryId;
+    }
+
+    /**
+     * @return array<string, string> rendered quantity keyed by product number
+     */
+    private function renderedQuantities(string $html): array
+    {
+        preg_match_all('/class="line-item-product-number">([^<]+)<.*?<td class="align-right">([^<]+)</s', $html, $matches);
+
+        return array_combine($matches[1], $matches[2]);
     }
 }

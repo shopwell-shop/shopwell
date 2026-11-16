@@ -1,28 +1,34 @@
+import { shallowMount } from '@vue/test-utils';
 import toolbarComponent from './index';
 
 describe('module/sw-experience-studio/component/sw-experience-studio-toolbar', () => {
-    const methods = (toolbarComponent as unknown as { methods: Record<string, (...args: unknown[]) => unknown> }).methods;
+    const config = toolbarComponent as unknown as { props: Record<string, unknown>; emits: string[] };
 
-    it('localizes a built-in layout title without replacing merchant names', () => {
-        const computed = (toolbarComponent as unknown as { computed: Record<string, () => unknown> }).computed;
-        const layout = { id: '91ddf2e3fd20050a47409eb9ebbdfff5', name: 'Default blog article' };
-        const vm = { layout, $t: (key: string) => key };
-        expect(computed.layoutName.call(vm)).toBe('sw-experience-studio.builtinLayouts.defaultBlogPost');
-        layout.name = 'My article design';
-        expect(computed.layoutName.call(vm)).toBe('My article design');
+    it('does not expose layout-specific assignment actions', () => {
+        expect(config.props.canManageAssignments).toBeUndefined();
+        expect(config.emits).not.toContain('open-assignments');
     });
-
-    it('labels blog preview entries by their title', () => {
-        const computed = (toolbarComponent as unknown as { computed: Record<string, () => unknown> }).computed;
-        expect(computed.previewEntityLabelProperty.call({ previewEntityType: 'blog' })).toBe('title');
-        expect(computed.previewEntityLabelProperty.call({ previewEntityType: 'product' })).toBe('name');
-    });
-
-    it('emits open-assignments when the assignments button is clicked', () => {
-        const emit = jest.fn();
-
-        methods.onOpenAssignments.call({ $emit: emit });
-
-        expect(emit).toHaveBeenCalledWith('open-assignments');
+    it('always shows the workspace switcher and keeps entity selection and history in the frames', async () => {
+        const wrapper = shallowMount(await wrapTestComponent('sw-experience-studio-toolbar', { sync: true }), {
+            slots: { 'workspace-switcher': '<span>Selected workspace</span>' },
+            global: {
+                stubs: {
+                    'sw-entity-single-select': {
+                        name: 'sw-entity-single-select',
+                        props: ['entity'],
+                        template: '<div />',
+                    },
+                },
+            },
+        });
+        expect(wrapper.text()).toContain('Selected workspace');
+        expect(wrapper.find('.sw-experience-studio-toolbar__back-btn').exists()).toBe(false);
+        expect(wrapper.find('.sw-experience-studio-toolbar__page-name').exists()).toBe(false);
+        expect(wrapper.find('.sw-experience-studio-toolbar__history-actions').exists()).toBe(false);
+        expect(wrapper.find('.sw-experience-studio-toolbar__entity-select').exists()).toBe(false);
+        const selectors = wrapper.findAllComponents({ name: 'sw-entity-single-select' });
+        expect(selectors).toHaveLength(1);
+        expect(selectors[0].props('entity')).toBe('sales_channel');
+        wrapper.unmount();
     });
 });

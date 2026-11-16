@@ -140,8 +140,11 @@ use Shopwell\Core\Framework\ContentSystem\Validation\LayoutGate;
 use Shopwell\Core\Framework\ContentSystem\Validation\LayoutRootSourceReader;
 use Shopwell\Core\Framework\ContentSystem\Validation\StoredMappingValidator;
 use Shopwell\Core\Framework\ContentSystem\Validation\ViolationConstraintMapper;
+use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceDefinition;
+use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceWriteValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
+use Shopwell\Core\System\Language\LanguageLoader;
 use Shopwell\Core\System\SalesChannel\Api\StructEncoder;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
@@ -167,16 +170,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ContentLayoutDefinition::class)
         ->tag('shopwell.entity.definition');
 
+    $services->set(ContentWorkspaceDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ContentWorkspaceWriteValidator::class)
+        ->args([service(ValidatorInterface::class)])
+        ->tag('kernel.event_subscriber');
+
     // Scaffolding Services
     $services->set(VirtualRootWrapper::class);
     $services->set(StoredTreePreparer::class)
         ->args([
+            service(ContentSystemElementTypeRegistry::class),
             service(VirtualRootWrapper::class),
             service(PartialRenderer::class),
             service(DataLoaderConfigSerializerProvider::class),
             service(DataLoaderProvider::class),
             service(InlineMappingTokenParser::class),
-            service(ContentSystemElementTypeRegistry::class),
         ]);
 
     // Output Services
@@ -388,7 +396,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SubTreeExtractor::class);
 
     // Entity Layout Services
-    $services->set(EntityLayoutResolver::class);
+    $services->set(EntityLayoutResolver::class)
+        ->args([
+            param('shopwell.http_cache.ignored_url_parameters'),
+        ]);
     $services->set(EntityLayoutContextFactory::class)
         ->args([
             service(EntityLayoutResolver::class),
@@ -530,6 +541,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(DraftLayoutDecoder::class),
             service(StoredElementCodec::class),
+            service(ContentSystemElementTypeRegistry::class),
         ]);
 
     $services->set(LayoutPresetSpecificationSerializer::class);
@@ -692,6 +704,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(BindingApplicator::class)
         ->args([
             service(DataLoaderConfigSerializerProvider::class),
+            service(ContentSystemElementTypeRegistry::class),
         ]);
 
     // What an element type stores (as opposed to its hydrated properties): the storageSchema introspection fold
@@ -753,6 +766,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataLoaderConfigSerializerProvider::class),
             service(ContentSystemStyleOptionRegistry::class),
             service(ContextPathResolver::class),
+            service(LanguageLoader::class),
             service(MappingConsumers::class),
             service(StoredMappingInspector::class),
         ]);
@@ -900,7 +914,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ContentPreviewPayloadStore::class)
         ->args([
-            service('cache.system'),
+            service('cache.content_system_preview'),
             service('validator'),
         ]);
 

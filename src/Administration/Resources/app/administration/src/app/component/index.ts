@@ -176,6 +176,10 @@ export default () => {
         'sw-condition-all-line-items-container',
         () => import('src/app/component/rule/sw-condition-all-line-items-container/index'),
     );
+    Shopwell.Component.register(
+        'sw-condition-delivery-container',
+        () => import('src/app/component/rule/sw-condition-delivery-container/index'),
+    );
     Shopwell.Component.register('sw-arrow-field', () => import('src/app/component/rule/sw-arrow-field/index'));
     Shopwell.Component.register(
         'sw-search-preferences-modal',
@@ -535,7 +539,11 @@ export default () => {
     );
     Shopwell.Component.register('sw-model-viewer', () => import('src/app/component/media/sw-model-viewer'));
     Shopwell.Component.register('sw-vector-field', () => import('src/app/component/media/sw-vector-field'));
-    Shopwell.Component.extend('sw-media-replace', 'sw-media-upload-v2', import('src/app/component/media/sw-media-replace'));
+    Shopwell.Component.extend(
+        'sw-media-replace',
+        'sw-media-upload-v2',
+        () => import('src/app/component/media/sw-media-replace'),
+    );
     Shopwell.Component.register('sw-media-upload-v2', () => import('src/app/component/media/sw-media-upload-v2'));
     Shopwell.Component.register('sw-media-url-form', () => import('src/app/component/media/sw-media-url-form'));
     Shopwell.Component.register('sw-sidebar-media-item', () => import('src/app/component/media/sw-sidebar-media-item'));
@@ -645,6 +653,11 @@ export default () => {
         'sw-condition-generic',
         'sw-condition-base',
         () => import('./rule/condition-type/sw-condition-generic/index'),
+    );
+    Shopwell.Component.extend(
+        'sw-condition-generic-delivery',
+        'sw-condition-generic',
+        () => import('./rule/condition-type/sw-condition-generic-delivery/index'),
     );
     Shopwell.Component.extend(
         'sw-condition-date-range',

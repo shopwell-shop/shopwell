@@ -27,10 +27,8 @@ export const hasPublishedVersion = (metadata: PackageMetadata, packageName: stri
     );
 };
 
-export const missingPublications = (
-    metadata: Record<string, PackageMetadata>,
-    version: string,
-): string[] => RELEASE_PACKAGES.filter((packageName) => !hasPublishedVersion(metadata[packageName] ?? {}, packageName, version));
+export const missingPublications = (metadata: Record<string, PackageMetadata>, version: string): string[] =>
+    RELEASE_PACKAGES.filter((packageName) => !hasPublishedVersion(metadata[packageName] ?? {}, packageName, version));
 
 const fetchMetadata = async (packageName: string): Promise<PackageMetadata> => {
     const url = `https://repo.packagist.org/p2/${packageName}.json?release-check=${Date.now()}`;
@@ -69,7 +67,9 @@ const main = async (): Promise<void> => {
         alreadyPublished = missing.length === 0;
 
         if (alreadyPublished) {
-            console.log(`${version} is already published for all five Shopwell packages; immutable release jobs will be skipped.`);
+            console.log(
+                `${version} is already published for all five Shopwell packages; immutable release jobs will be skipped.`,
+            );
         } else {
             console.log(`${version} still needs publication for: ${missing.join(', ')}`);
         }

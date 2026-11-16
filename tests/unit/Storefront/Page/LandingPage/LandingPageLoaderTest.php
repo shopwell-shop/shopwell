@@ -7,9 +7,14 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRouteResponse;
+use Shopwell\Core\Framework\ContentSystem\LayoutReference;
+use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\ContentRouteResponse;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\Test\Generator;
@@ -34,7 +39,8 @@ class LandingPageLoaderTest extends TestCase
         $landingPageLoader = new LandingPageLoader(
             static::createStub(GenericPageLoader::class),
             $landingPageRouteMock,
-            static::createStub(EventDispatcherInterface::class)
+            static::createStub(EventDispatcherInterface::class),
+            $this->createContentRoute()
         );
 
         $request = new Request([], [], []);
@@ -42,6 +48,60 @@ class LandingPageLoaderTest extends TestCase
 
         $this->expectExceptionObject(RoutingException::missingRequestParameter('landingPageId', '/landingPageId'));
         $landingPageLoader->load($request, $salesChannelContext);
+    }
+
+    public function testLoadsAssignedContentLayout(): void
+    {
+        $landingPageId = Uuid::randomHex();
+        $parameters = [
+            'includes' => ['x' => 'y'],
+            'excludes' => ['x' => '1'],
+            'elementId' => Uuid::randomHex(),
+            'search' => 'campaign',
+        ];
+        $request = new Request($parameters, $parameters, ['landingPageId' => $landingPageId, ...$parameters]);
+        $context = $this->getSalesChannelContext();
+        $landingPage = new LandingPageEntity();
+        $landingPage->setId($landingPageId);
+        $landingPage->setTranslated(['name' => 'Campaign', 'metaTitle' => 'Campaign title']);
+        $response = new ContentRouteResponse(new RenderResult(
+            tree: [],
+            reference: LayoutReference::create(Uuid::randomHex(), 'Campaign layout', null),
+            index: null,
+        ));
+        $contentRoute = $this->createMock(AbstractContentRoute::class);
+        $contentRoute->expects($this->once())->method('load')
+            ->willReturnCallback(static function (string $path, Request $contentRequest, SalesChannelContext $contentContext) use ($request, $landingPageId, $context, $response): ContentRouteResponse {
+                static::assertSame('/landing-page/' . $landingPageId, $path);
+                static::assertSame($context, $contentContext);
+                static::assertNotSame($request, $contentRequest);
+                static::assertSame(['search' => 'campaign'], $contentRequest->query->all());
+                static::assertSame(['search' => 'campaign'], $contentRequest->request->all());
+                static::assertSame(['landingPageId' => $landingPageId, 'search' => 'campaign'], $contentRequest->attributes->all());
+                $contentRequest->attributes->set(PlatformRequest::ATTRIBUTE_HTTP_CACHE, false);
+
+                return $response;
+            });
+        $loader = new LandingPageLoader(
+            static::createStub(GenericPageLoader::class),
+            $this->createLandingPageRoute($landingPage, $request, $context),
+            static::createStub(EventDispatcherInterface::class),
+            $contentRoute,
+        );
+
+        $page = $loader->load($request, $context);
+
+        static::assertSame($response->getContentPage(), $page->getExtension('contentPage'));
+        static::assertSame($landingPage, $page->getLandingPage());
+        static::assertSame($landingPageId, $page->getNavigationId());
+        static::assertSame('Campaign title', $page->getMetaInformation()?->getMetaTitle());
+        static::assertSame($parameters, $request->query->all());
+        static::assertSame($parameters, $request->request->all());
+        static::assertSame([
+            'landingPageId' => $landingPageId,
+            ...$parameters,
+            PlatformRequest::ATTRIBUTE_HTTP_CACHE => false,
+        ], $request->attributes->all());
     }
 
     public function testItLoads(): void
@@ -126,7 +186,8 @@ class LandingPageLoaderTest extends TestCase
         return new LandingPageLoader(
             static::createStub(GenericPageLoader::class),
             $this->createLandingPageRoute($landingPage, $request, $salesChannelContext),
-            static::createStub(EventDispatcherInterface::class)
+            static::createStub(EventDispatcherInterface::class),
+            $this->createContentRoute()
         );
     }
 
@@ -147,7 +208,8 @@ class LandingPageLoaderTest extends TestCase
         return new LandingPageLoader(
             static::createStub(GenericPageLoader::class),
             $this->createLandingPageRoute($landingPage, $request, $salesChannelContext),
-            static::createStub(EventDispatcherInterface::class)
+            static::createStub(EventDispatcherInterface::class),
+            $this->createContentRoute()
         );
     }
 
@@ -177,6 +239,18 @@ class LandingPageLoaderTest extends TestCase
             });
 
         return $landingPageRoute;
+    }
+
+    private function createContentRoute(): AbstractContentRoute
+    {
+        $route = static::createStub(AbstractContentRoute::class);
+        $route->method('load')->willReturn(new ContentRouteResponse(new RenderResult(
+            tree: [],
+            reference: LayoutReference::create(Uuid::randomHex(), 'Campaign layout', null),
+            index: null,
+        )));
+
+        return $route;
     }
 
     private function getSalesChannelContext(): SalesChannelContext

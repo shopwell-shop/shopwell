@@ -42,17 +42,17 @@ const LAYOUT_ASSIGNMENT_TYPES: Record<string, LayoutAssignmentType> = {
         entityIdField: 'productId',
         defaultConfigKey: 'core.content_system.default_product_content_layout',
     },
-    landing_page: {
-        entity: 'landing_page',
-        assignmentEntity: 'landing_page_content_layout',
-        entityIdField: 'landingPageId',
-        defaultConfigKey: 'core.content_system.default_landing_page_content_layout',
-    },
     category: {
         entity: 'category',
         assignmentEntity: 'category_content_layout',
         entityIdField: 'categoryId',
         defaultConfigKey: 'core.content_system.default_category_content_layout',
+    },
+    landing_page: {
+        entity: 'landing_page',
+        assignmentEntity: 'landing_page_content_layout',
+        entityIdField: 'landingPageId',
+        defaultConfigKey: null,
     },
 };
 

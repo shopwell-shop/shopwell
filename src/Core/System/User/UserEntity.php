@@ -9,6 +9,7 @@ use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLog
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
+use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -95,6 +96,8 @@ class UserEntity extends Entity
     protected ?CustomerCollection $updatedCustomers = null;
 
     protected ?OrderReturnCollection $orderReturns = null;
+
+    protected ?ContentWorkspaceCollection $createdContentWorkspaces = null;
 
     protected string $timeZone;
 
@@ -392,6 +395,16 @@ class UserEntity extends Entity
     public function setOrderReturns(OrderReturnCollection $orderReturns): void
     {
         $this->orderReturns = $orderReturns;
+    }
+
+    public function getCreatedContentWorkspaces(): ?ContentWorkspaceCollection
+    {
+        return $this->createdContentWorkspaces;
+    }
+
+    public function setCreatedContentWorkspaces(ContentWorkspaceCollection $createdContentWorkspaces): void
+    {
+        $this->createdContentWorkspaces = $createdContentWorkspaces;
     }
 
     public function getLastUpdatedPasswordAt(): ?\DateTimeInterface

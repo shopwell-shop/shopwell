@@ -39,7 +39,7 @@ describe('Experience Studio blog layouts', () => {
         expect(vm.previewSalesChannelId).toBe('channel-2');
     });
 
-    it('uses the requested preview channel before loading a default channel', async () => {
+    it('keeps a requested preview channel when applying frame preview defaults', () => {
         const search = jest.fn();
         const vm = {
             $route: { query: { previewSalesChannelId: 'channel-2' } },
@@ -48,7 +48,7 @@ describe('Experience Studio blog layouts', () => {
             salesChannelRepository: { search },
         };
 
-        await methods.loadDefaultPreviewSalesChannel.call(vm);
+        methods.applyPreviewContextDefaults.call(vm);
 
         expect(vm.previewSalesChannelId).toBe('channel-2');
         expect(search).not.toHaveBeenCalled();

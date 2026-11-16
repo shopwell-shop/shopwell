@@ -24,7 +24,9 @@ use Shopwell\Core\Checkout\Cart\CreditCartProcessor;
 use Shopwell\Core\Checkout\Cart\CustomCartProcessor;
 use Shopwell\Core\Checkout\Cart\Delivery\DeliveryBuilder;
 use Shopwell\Core\Checkout\Cart\Delivery\DeliveryCalculator;
+use Shopwell\Core\Checkout\Cart\Delivery\DeliveryPositionSplitter;
 use Shopwell\Core\Checkout\Cart\Delivery\DeliveryProcessor;
+use Shopwell\Core\Checkout\Cart\Delivery\DeliveryRuleMatcher;
 use Shopwell\Core\Checkout\Cart\Delivery\DeliveryValidator;
 use Shopwell\Core\Checkout\Cart\Facade\CartFacadeHelper;
 use Shopwell\Core\Checkout\Cart\Facade\CartFacadeHookFactory;
@@ -475,6 +477,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(DeliveryBuilder::class);
 
+    $services->set(DeliveryPositionSplitter::class)
+        ->public()
+        ->args([
+            service(LineItemQuantitySplitter::class),
+        ]);
+
     $services->set(DeliveryCalculator::class)
         ->args([
             service(QuantityPriceCalculator::class),
@@ -503,11 +511,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AbsolutePriceCalculator::class),
         ]);
 
+    $services->set(DeliveryRuleMatcher::class)
+        ->args([
+            service(RuleLoader::class),
+        ])
+        ->tag('kernel.event_subscriber')
+        ->tag('kernel.reset', ['method' => 'reset']);
+
     $services->set(DeliveryProcessor::class)
         ->args([
             service(DeliveryBuilder::class),
             service(DeliveryCalculator::class),
             service('shipping_method.repository'),
+            service(DeliveryRuleMatcher::class),
         ])
         ->tag('shopwell.cart.processor', ['priority' => -5000])
         ->tag('shopwell.cart.collector', ['priority' => -5000]);

@@ -6,15 +6,18 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Hydration\DataContext\ContextType;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\Context\ContextDefinitions;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\Context\ContextProvider;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\Context\Distribution\IndexedDistributionConfig;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredElement;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredValue;
 use Shopwell\Core\Framework\ContentSystem\Layout\StoredTree;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\MoveElement;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Stub\ContentSystem\StoredElementBuilder;
 
 /**
@@ -142,6 +145,20 @@ class MoveElementTest extends TestCase
 
         static::assertSame(['parent', 'movable'], array_map(static fn (StoredElement $e): string => $e->id, $result->roots));
         static::assertSame(['movable'], $move->affected());
+    }
+
+    #[TestDox('carries the moved element language-map property value into the new parent slot unchanged')]
+    public function testMoveCarriesLanguageMapUnchanged(): void
+    {
+        $german = Uuid::randomHex();
+        $translations = [Defaults::LANGUAGE_SYSTEM => 'Autumn sale', $german => 'Herbstschlussverkauf'];
+        $movable = StoredElementBuilder::create('Sw:Block', 'movable')->withProperty('text', $translations)->build();
+
+        $result = (new MoveElement('movable', 'target', 'content'))->apply(new StoredTree([$movable, new StoredElement('target', 'Sw:Block')]));
+
+        $carried = $result->roots[0]->slots['content'][0]->property('text');
+        static::assertNotNull($carried);
+        static::assertTrue($carried->equals(StoredValue::fromDecoded($translations)));
     }
 
     /**

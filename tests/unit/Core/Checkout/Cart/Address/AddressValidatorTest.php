@@ -3,19 +3,30 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Address;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Address\AddressValidator;
 use Shopwell\Core\Checkout\Cart\Address\Error\BillingAddressCountryRegionMissingError;
 use Shopwell\Core\Checkout\Cart\Address\Error\BillingAddressGenderMissingError;
 use Shopwell\Core\Checkout\Cart\Address\Error\BillingAddressMissingError;
+use Shopwell\Core\Checkout\Cart\Address\Error\ShippingAddressBlockedError;
 use Shopwell\Core\Checkout\Cart\Address\Error\ShippingAddressCountryRegionMissingError;
 use Shopwell\Core\Checkout\Cart\Address\Error\ShippingAddressMissingError;
 use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopwell\Core\Checkout\Cart\Error\ErrorCollection;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\State;
 use Shopwell\Core\Framework\Context;
@@ -23,6 +34,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
@@ -372,6 +384,120 @@ class AddressValidatorTest extends TestCase
         static::assertCount(1, $errorCollection);
         static::assertInstanceOf(ShippingAddressMissingError::class, $errorCollection->get('shipping-address-missing'));
         static::assertTrue($errorCollection->blockOrder());
+    }
+
+    #[DataProvider('blockedDeliveryCountryProvider')]
+    public function testDeliveryToBlockedCountryIsReportedWithItsAddress(bool $active, bool $shippingAvailable, bool $assigned): void
+    {
+        $country = $this->createCountry(true);
+        $customerAddress = $this->createAddress($country);
+        $context = Generator::generateSalesChannelContext(customer: $this->createCustomer($country), country: $country, customerAddress: $customerAddress);
+
+        $blockedCountry = $this->createCountry($shippingAvailable);
+        $blockedCountry->setActive($active);
+        $blockedCountry->addTranslated('name', 'Blocked country');
+        $otherAddress = $this->createAddress($blockedCountry);
+
+        $cart = $this->createCartWithPhysicalItem();
+        $cart->setDeliveries(new DeliveryCollection([
+            $this->createDelivery($customerAddress),
+            $this->createDelivery($otherAddress),
+        ]));
+
+        $this->assignCountriesToSalesChannelExcept($assigned ? [] : [$blockedCountry->getId()]);
+
+        $errorCollection = new ErrorCollection();
+        $this->validator->validate($cart, $errorCollection, $context);
+
+        static::assertCount(1, $errorCollection);
+        $error = $errorCollection->first();
+        static::assertInstanceOf(ShippingAddressBlockedError::class, $error);
+        static::assertSame('Blocked country', $error->getName());
+        static::assertSame($otherAddress->getId(), $error->getAddressId());
+    }
+
+    public static function blockedDeliveryCountryProvider(): \Generator
+    {
+        yield 'inactive country' => [false, true, true];
+        yield 'country without shipping' => [true, false, true];
+        yield 'country not assigned to the sales channel' => [true, true, false];
+    }
+
+    public function testBlockedContextAddressIsReportedFirstAndNotRepeatedForItsDelivery(): void
+    {
+        $country = $this->createCountry(false);
+        $country->addTranslated('name', 'Context country');
+        $customerAddress = $this->createAddress($country);
+        $context = Generator::generateSalesChannelContext(customer: $this->createCustomer($country), country: $country, customerAddress: $customerAddress);
+
+        $otherCountry = $this->createCountry(false);
+        $otherCountry->addTranslated('name', 'Other country');
+        $otherAddress = $this->createAddress($otherCountry);
+
+        $cart = $this->createCartWithPhysicalItem();
+        $cart->setDeliveries(new DeliveryCollection([
+            $this->createDelivery($customerAddress),
+            $this->createDelivery($otherAddress),
+        ]));
+
+        $this->assignCountriesToSalesChannelExcept([]);
+
+        $errorCollection = new ErrorCollection();
+        $this->validator->validate($cart, $errorCollection, $context);
+
+        static::assertCount(2, $errorCollection);
+        $contextError = $errorCollection->first();
+        static::assertInstanceOf(ShippingAddressBlockedError::class, $contextError);
+        static::assertSame('Context country', $contextError->getName());
+        static::assertSame($customerAddress->getId(), $contextError->getAddressId());
+        $deliveryError = $errorCollection->last();
+        static::assertInstanceOf(ShippingAddressBlockedError::class, $deliveryError);
+        static::assertSame('Other country', $deliveryError->getName());
+        static::assertSame($otherAddress->getId(), $deliveryError->getAddressId());
+    }
+
+    private function createCartWithPhysicalItem(): Cart
+    {
+        $cart = new Cart('test');
+        $cart->add((new LineItem('a', 'test'))->setPayloadValue(LineItem::PAYLOAD_PRODUCT_TYPE, ProductDefinition::TYPE_PHYSICAL));
+
+        return $cart;
+    }
+
+    private function createDelivery(CustomerAddressEntity $address): Delivery
+    {
+        $deliveryDate = new DeliveryDate(new \DateTimeImmutable(), new \DateTimeImmutable());
+
+        return new Delivery(
+            new DeliveryPositionCollection(),
+            $deliveryDate,
+            new ShippingMethodEntity(),
+            ShippingLocation::createFromAddress($address),
+            new CalculatedPrice(0, 0, new CalculatedTaxCollection(), new TaxRuleCollection()),
+        );
+    }
+
+    /**
+     * @param list<string> $unassignedCountryIds
+     */
+    private function assignCountriesToSalesChannelExcept(array $unassignedCountryIds): void
+    {
+        $this->repository->method('searchIds')->willReturnCallback(
+            static function (Criteria $criteria) use ($unassignedCountryIds): IdSearchResult {
+                $countryId = null;
+                foreach ($criteria->getFilters() as $filter) {
+                    if ($filter instanceof EqualsFilter && $filter->getField() === 'countryId' && \is_string($filter->getValue())) {
+                        $countryId = $filter->getValue();
+                    }
+                }
+
+                if ($countryId === null || \in_array($countryId, $unassignedCountryIds, true)) {
+                    return new IdSearchResult(0, [], new Criteria(), Context::createDefaultContext());
+                }
+
+                return new IdSearchResult(1, [$countryId => ['data' => [], 'primaryKey' => $countryId]], new Criteria(), Context::createDefaultContext());
+            }
+        );
     }
 
     private function validateWithCustomer(

@@ -175,6 +175,7 @@ const baseRules = {
     // has no `--max-warnings`, so at warning level `Bad_Dir/index.vue` would pass CI.
     'sw-core-rules/native-setup-filename': 'error',
     'sw-deprecation-rules/private-feature-declarations': 'error',
+    'sw-deprecation-rules/valid-api-markers': 'error',
     'no-restricted-exports': 'off',
     'filename-rules/match': [
         2,
@@ -283,6 +284,10 @@ export default [
             '!scripts/extensionTooling/**/*',
             '!scripts/generate-shopwell-modules/',
             '!scripts/generate-shopwell-modules/**/*',
+            '!scripts/generate-public-api/',
+            '!scripts/generate-public-api/**/*',
+            // Fixture source trees are inputs of the generator, not Administration code.
+            'scripts/generate-public-api/__fixtures__/**/*',
             '!scripts/codemods/',
             '!scripts/codemods/sfc-migration/',
             '!scripts/codemods/sfc-migration/**/*',
@@ -977,6 +982,14 @@ export default [
         rules: {
             // The codemod emits and documents TODO(sfc-migration) markers by design.
             'no-warning-comments': 'off',
+        },
+    },
+
+    // The missing-test baseline is a data inventory, kept readable with one entry per line.
+    {
+        files: ['src/meta/baseline.ts'],
+        rules: {
+            'max-lines': 'off',
         },
     },
 

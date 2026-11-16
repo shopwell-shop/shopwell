@@ -7,11 +7,20 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopwell\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
 use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopwell\Core\Checkout\Cart\Rule\DeliveryRuleScope;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Rule\ShippingZipCodeRule;
+use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\Validation\Constraint\ArrayOfType;
@@ -222,6 +231,48 @@ class ShippingZipCodeRuleTest extends TestCase
         yield 'operator_empty / match / no address' => [Rule::OPERATOR_EMPTY, true, 'ky', '', true];
     }
 
+    public function testDeliveryScopeReadsTheZipCodeOfTheDeliveryAddress(): void
+    {
+        $rule = (new ShippingZipCodeRule())->assign(['zipCodes' => ['DELIVERY']]);
+
+        $this->context
+            ->method('getShippingLocation')
+            ->willReturn(ShippingLocation::createFromAddress($this->createAddress('CONTEXT')));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromAddress($this->createAddress('DELIVERY')));
+
+        static::assertTrue($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $this->context)));
+    }
+
+    public function testCartScopeStillReadsTheZipCodeOfTheContextAddress(): void
+    {
+        $rule = (new ShippingZipCodeRule())->assign(['zipCodes' => ['CONTEXT']]);
+
+        $this->context
+            ->method('getShippingLocation')
+            ->willReturn(ShippingLocation::createFromAddress($this->createAddress('CONTEXT')));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromAddress($this->createAddress('DELIVERY')));
+
+        static::assertTrue($rule->match(new CartRuleScope(new Cart('test'), $this->context)));
+        static::assertFalse($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $this->context)));
+    }
+
+    public function testDeliveryScopeDoesNotFallBackToTheCustomerAddress(): void
+    {
+        $rule = (new ShippingZipCodeRule())->assign(['zipCodes' => ['CONTEXT']]);
+
+        $customer = new CustomerEntity();
+        $customer->setActiveShippingAddress($this->createAddress('CONTEXT'));
+        $this->context->method('getCustomer')->willReturn($customer);
+        $this->context->method('getShippingLocation')->willReturn(ShippingLocation::createFromCountry(new CountryEntity()));
+
+        $delivery = $this->createDelivery(ShippingLocation::createFromCountry(new CountryEntity()));
+
+        static::assertTrue($rule->match(new CartRuleScope(new Cart('test'), $this->context)), 'The cart scope falls back to the customer address.');
+        static::assertFalse($rule->match(new DeliveryRuleScope($delivery, new Cart('test'), $this->context)), 'The delivery scope reads only the delivery location.');
+    }
+
     private function createAddress(string $code): CustomerAddressEntity
     {
         $address = new CustomerAddressEntity();
@@ -229,5 +280,16 @@ class ShippingZipCodeRuleTest extends TestCase
         $address->setCountry(new CountryEntity());
 
         return $address;
+    }
+
+    private function createDelivery(ShippingLocation $location): Delivery
+    {
+        return new Delivery(
+            new DeliveryPositionCollection(),
+            new DeliveryDate(new \DateTimeImmutable(), new \DateTimeImmutable()),
+            new ShippingMethodEntity(),
+            $location,
+            new CalculatedPrice(0, 0, new CalculatedTaxCollection(), new TaxRuleCollection())
+        );
     }
 }

@@ -1141,8 +1141,7 @@
                 "notAvailable": "暂时无法选择数量。"
             },
             "configurator": {
-                "legend": "%group_name%<span class=\"%hidden_cls%\">&nbsp;选择</span>",
-                "unavailable": "暂时无法选择规格"
+                "legend": "%group_name%<span class=\"%hidden_cls%\">&nbsp;选择</span>"
             }
         },
         "cms": {

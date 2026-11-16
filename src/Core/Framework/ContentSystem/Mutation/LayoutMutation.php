@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\ContentSystem\Mutation;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredElement;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredValue;
 use Shopwell\Core\Framework\ContentSystem\Layout\StoredTree;
+use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -60,4 +61,12 @@ interface LayoutMutation
      *                                    content is never silently lost
      */
     public function droppedProperties(): array;
+
+    /**
+     * The ACL privilege the caller must hold for {@see PersistedLayoutMutator} to run the repository write in
+     * {@see Context::SYSTEM_SCOPE}, or null to run the write on the caller's context unchanged. Only that write is
+     * scoped: the layout load before it and the diagnosis after it stay on the caller's context, and
+     * {@see MutationPipeline} persists nothing and never reads it.
+     */
+    public function writePrivilege(): ?string;
 }

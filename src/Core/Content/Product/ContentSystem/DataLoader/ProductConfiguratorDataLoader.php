@@ -18,9 +18,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\ShopwellHttpException;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
+
+use function Symfony\Component\String\u;
 
 /**
  * @internal
@@ -79,6 +83,15 @@ class ProductConfiguratorDataLoader extends AbstractContentDataLoader
             return ContentDataLoaderResult::notFound();
         }
 
+        $productId = u($productId)->lower()->toString();
+
+        // An unsubstituted placeholder or a `productId` query parameter that is no id passes
+        // LoaderInputResolver::dereference() untouched; guard after the lowercase (Uuid::VALID_PATTERN is
+        // lowercase-only) instead of reaching Uuid::fromHexToBytes() in the product search.
+        if (!Uuid::isValid($productId)) {
+            return ContentDataLoaderResult::notFound();
+        }
+
         $criteria = (new Criteria([$productId]))->addFields([
             'id',
             'parentId',
@@ -86,8 +99,15 @@ class ProductConfiguratorDataLoader extends AbstractContentDataLoader
             'variantListingConfig',
         ]);
 
-        /** @var PartialEntity|null $entity */
-        $entity = $this->productRepository->search($criteria, $context)->getEntities()->first();
+        // Any ShopwellHttpException degrades the element to notFound(); everything else propagates, matching the
+        // degradation boundary in Framework/ContentSystem/Hydration/DataLoader/README.md.
+        try {
+            /** @var PartialEntity|null $entity */
+            $entity = $this->productRepository->search($criteria, $context)->getEntities()->first();
+        } catch (ShopwellHttpException) {
+            return ContentDataLoaderResult::notFound();
+        }
+
         if (!$entity instanceof PartialEntity) {
             return ContentDataLoaderResult::notFound();
         }
@@ -107,8 +127,14 @@ class ProductConfiguratorDataLoader extends AbstractContentDataLoader
             $variantListingConfig,
         );
 
+        try {
+            $groups = $this->configuratorLoader->load($productData, $context);
+        } catch (ShopwellHttpException) {
+            return ContentDataLoaderResult::notFound();
+        }
+
         return ContentDataLoaderResult::cached(
-            $this->configuratorLoader->load($productData, $context),
+            $groups,
             EntityCacheKeyGenerator::buildProductTag($parentId)
         );
     }

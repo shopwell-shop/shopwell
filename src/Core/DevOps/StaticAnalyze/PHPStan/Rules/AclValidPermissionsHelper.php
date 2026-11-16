@@ -57,6 +57,7 @@ class AclValidPermissionsHelper
         'workflow_instance:access',
         'workflow_instance:start',
         'workflow_task:decide',
+        'content_layout:translate',
     ];
 
     /**

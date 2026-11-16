@@ -4,16 +4,22 @@ namespace Shopwell\Tests\Unit\Core\Framework\DataAbstractionLayer;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
+use Shopwell\Core\Framework\Api\Context\SalesChannelApiSource;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\AutoIncrement;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\CustomFields as CustomFieldsAttr;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity as EntityAttribute;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field as FieldAttribute;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ListField as ListFieldAttr;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Password;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey as PrimaryKeyAttribute;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Serialized;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\State;
@@ -62,6 +68,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationFi
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayEntity;
+use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntity;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntityCollection;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntityWithInheritance;
@@ -166,6 +173,72 @@ class AttributeEntityCompilerTest extends TestCase
         $result = (new AttributeEntityCompiler())->compile(Entity::class);
 
         static::assertSame([], $result);
+    }
+
+    public function testCompileEmitsReverseManyToManyAssociation(): void
+    {
+        $compiledResult = (new AttributeEntityCompiler())->compile(ReversedManyToManyEntity::class);
+
+        $reverses = array_values(array_filter($compiledResult, static fn (array $definition): bool => $definition['type'] === 'reverse'));
+        static::assertCount(1, $reverses);
+
+        static::assertSame([
+            'type' => 'reverse',
+            'parent' => null,
+            'entity_name' => 'currency',
+            'field' => [
+                'type' => ManyToMany::TYPE,
+                'name' => 'reversedEntities',
+                'class' => ManyToManyAssociationField::class,
+                'flags' => [
+                    ApiAware::class => [
+                        'class' => ApiAware::class,
+                        'args' => [AdminApiSource::class],
+                    ],
+                    CascadeDelete::class => [
+                        'class' => CascadeDelete::class,
+                    ],
+                ],
+                'translated' => false,
+                'args' => [
+                    'reversedEntities',
+                    'reversed_many_to_many_entity',
+                    'currency_reversed_many_to_many_entity',
+                    'currency_id',
+                    'reversed_many_to_many_entity_id',
+                ],
+            ],
+            'source' => 'reversed_many_to_many_entity',
+            'reference' => 'currency',
+        ], $reverses[0]);
+    }
+
+    public function testCompileEmitsReverseManyToManyAssociationWithOwnApiAndOnDelete(): void
+    {
+        $compiledResult = (new AttributeEntityCompiler())->compile(ReversedManyToManyWithReverseOptionsEntity::class);
+
+        $reverses = array_values(array_filter($compiledResult, static fn (array $definition): bool => $definition['type'] === 'reverse'));
+        static::assertCount(1, $reverses);
+
+        $field = $reverses[0]['field'] ?? null;
+        static::assertIsArray($field);
+        static::assertSame([
+            ApiAware::class => [
+                'class' => ApiAware::class,
+                'args' => [SalesChannelApiSource::class],
+            ],
+            RestrictDelete::class => [
+                'class' => RestrictDelete::class,
+            ],
+        ], $field['flags']);
+    }
+
+    public function testCompileWithoutReversedByDoesNotEmitReverseAssociation(): void
+    {
+        $compiledResult = (new AttributeEntityCompiler())->compile(AttributeEntity::class);
+
+        $reverses = array_filter($compiledResult, static fn (array $definition): bool => $definition['type'] === 'reverse');
+        static::assertSame([], $reverses);
     }
 
     /**
@@ -1013,4 +1086,38 @@ class AttributeEntityCompilerTest extends TestCase
             ],
         ];
     }
+}
+
+/**
+ * @internal
+ */
+#[EntityAttribute('reversed_many_to_many_entity')]
+class ReversedManyToManyEntity extends Entity
+{
+    #[PrimaryKeyAttribute]
+    #[FieldAttribute(type: FieldType::UUID)]
+    public string $id;
+
+    /**
+     * @var array<string, CurrencyEntity>|null
+     */
+    #[ManyToMany(entity: 'currency', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false], reversedBy: 'reversedEntities')]
+    public ?array $currencies = null;
+}
+
+/**
+ * @internal
+ */
+#[EntityAttribute('reversed_many_to_many_with_reverse_options_entity')]
+class ReversedManyToManyWithReverseOptionsEntity extends Entity
+{
+    #[PrimaryKeyAttribute]
+    #[FieldAttribute(type: FieldType::UUID)]
+    public string $id;
+
+    /**
+     * @var array<string, CurrencyEntity>|null
+     */
+    #[ManyToMany(entity: 'currency', onDelete: OnDelete::CASCADE, api: true, reversedBy: 'reversedEntities', reverseApi: ['admin-api' => false, 'store-api' => true], reverseOnDelete: OnDelete::RESTRICT)]
+    public ?array $currencies = null;
 }

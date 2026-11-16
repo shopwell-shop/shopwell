@@ -158,6 +158,788 @@
                 "panels": {
                     "general": "常规"
                 }
+            },
+            "content-text": {
+                "label": "文本",
+                "text": {
+                    "title": "文本"
+                }
+            },
+            "filter-panel": {
+                "label": "筛选面板",
+                "productListing": {
+                    "title": "商品列表"
+                },
+                "displayType": {
+                    "title": "显示方式",
+                    "helpText": "面板位于窄栏时可选择纵向排列，让筛选项依次排列并在原位置展开。",
+                    "options": {
+                        "inline": {
+                            "label": "横向排列"
+                        },
+                        "vertical": {
+                            "label": "纵向排列"
+                        }
+                    }
+                },
+                "visibleFilterCount": {
+                    "title": "可见筛选项数量"
+                },
+                "showPriceFilter": {
+                    "title": "按价格筛选"
+                },
+                "showRatingFilter": {
+                    "title": "按评分筛选"
+                },
+                "showManufacturerFilter": {
+                    "title": "按制造商筛选"
+                },
+                "showShippingFreeFilter": {
+                    "title": "筛选包邮商品"
+                },
+                "showPropertyFilter": {
+                    "title": "按属性筛选"
+                },
+                "propertyAllowList": {
+                    "title": "可筛选属性",
+                    "helpText": "仅显示本页需要的属性组，例如颜色和尺寸。"
+                }
+            },
+            "grid-container": {
+                "label": "网格容器",
+                "mode": {
+                    "title": "模式",
+                    "options": {
+                        "auto-fit": {
+                            "label": "自动适配",
+                            "description": "根据可用空间自动排列尽可能多的列。"
+                        },
+                        "max-content": {
+                            "label": "按内容宽度",
+                            "description": "按内容的最大宽度设置列宽。"
+                        },
+                        "explicit": {
+                            "label": "自定义行列",
+                            "description": "使用指定的行数和列数。"
+                        }
+                    }
+                },
+                "itemMinWidth": {
+                    "title": "单项最小宽度"
+                },
+                "columns": {
+                    "title": "列数",
+                    "xs": {
+                        "title": "列数（XS）"
+                    },
+                    "sm": {
+                        "title": "列数（SM）"
+                    },
+                    "md": {
+                        "title": "列数（MD）"
+                    },
+                    "lg": {
+                        "title": "列数（LG）"
+                    },
+                    "xl": {
+                        "title": "列数（XL）"
+                    }
+                },
+                "rows": {
+                    "title": "行数",
+                    "xs": {
+                        "title": "行数（XS）"
+                    },
+                    "sm": {
+                        "title": "行数（SM）"
+                    },
+                    "md": {
+                        "title": "行数（MD）"
+                    },
+                    "lg": {
+                        "title": "行数（LG）"
+                    },
+                    "xl": {
+                        "title": "行数（XL）"
+                    }
+                },
+                "fullWidth": {
+                    "title": "全宽"
+                },
+                "gap": {
+                    "title": "间距"
+                },
+                "maxWidth": {
+                    "title": "最大宽度"
+                },
+                "padding": {
+                    "title": "内边距",
+                    "xs": {
+                        "title": "内边距（XS）"
+                    },
+                    "sm": {
+                        "title": "内边距（SM）"
+                    },
+                    "md": {
+                        "title": "内边距（MD）"
+                    },
+                    "lg": {
+                        "title": "内边距（LG）"
+                    },
+                    "xl": {
+                        "title": "内边距（XL）"
+                    },
+                    "xxl": {
+                        "title": "内边距（XXL）"
+                    }
+                },
+                "margin": {
+                    "title": "外边距",
+                    "xs": {
+                        "title": "外边距（XS）"
+                    },
+                    "sm": {
+                        "title": "外边距（SM）"
+                    },
+                    "md": {
+                        "title": "外边距（MD）"
+                    },
+                    "lg": {
+                        "title": "外边距（LG）"
+                    },
+                    "xl": {
+                        "title": "外边距（XL）"
+                    },
+                    "xxl": {
+                        "title": "外边距（XXL）"
+                    }
+                },
+                "align": {
+                    "title": "交叉轴项目对齐",
+                    "options": {
+                        "normal": {
+                            "label": "默认"
+                        },
+                        "start": {
+                            "label": "起始端"
+                        },
+                        "center": {
+                            "label": "居中"
+                        },
+                        "end": {
+                            "label": "末端"
+                        },
+                        "stretch": {
+                            "label": "拉伸"
+                        }
+                    }
+                },
+                "alignContent": {
+                    "title": "交叉轴内容对齐",
+                    "options": {
+                        "normal": {
+                            "label": "默认"
+                        },
+                        "start": {
+                            "label": "起始端"
+                        },
+                        "center": {
+                            "label": "居中"
+                        },
+                        "end": {
+                            "label": "末端"
+                        },
+                        "stretch": {
+                            "label": "拉伸"
+                        },
+                        "spaceAround": {
+                            "label": "两侧均留间距"
+                        },
+                        "spaceBetween": {
+                            "label": "两端对齐"
+                        },
+                        "spaceEvenly": {
+                            "label": "等距分布"
+                        }
+                    }
+                },
+                "justify": {
+                    "title": "主轴项目对齐",
+                    "options": {
+                        "normal": {
+                            "label": "默认"
+                        },
+                        "start": {
+                            "label": "起始端"
+                        },
+                        "center": {
+                            "label": "居中"
+                        },
+                        "end": {
+                            "label": "末端"
+                        },
+                        "stretch": {
+                            "label": "拉伸"
+                        }
+                    }
+                },
+                "justifyContent": {
+                    "title": "主轴内容对齐",
+                    "options": {
+                        "normal": {
+                            "label": "默认"
+                        },
+                        "start": {
+                            "label": "起始端"
+                        },
+                        "center": {
+                            "label": "居中"
+                        },
+                        "end": {
+                            "label": "末端"
+                        },
+                        "stretch": {
+                            "label": "拉伸"
+                        },
+                        "spaceAround": {
+                            "label": "两侧均留间距"
+                        },
+                        "spaceBetween": {
+                            "label": "两端对齐"
+                        },
+                        "spaceEvenly": {
+                            "label": "等距分布"
+                        }
+                    }
+                },
+                "border": {
+                    "title": "边框",
+                    "options": {
+                        "all": {
+                            "label": "四边"
+                        },
+                        "top": {
+                            "label": "顶部"
+                        },
+                        "end": {
+                            "label": "末端"
+                        },
+                        "bottom": {
+                            "label": "底部"
+                        },
+                        "start": {
+                            "label": "起始端"
+                        }
+                    }
+                },
+                "borderVariant": {
+                    "title": "边框样式",
+                    "options": {
+                        "primary": {
+                            "label": "主色"
+                        },
+                        "secondary": {
+                            "label": "辅色"
+                        },
+                        "secondarySubtle": {
+                            "label": "浅辅色"
+                        }
+                    }
+                },
+                "borderFullWidth": {
+                    "title": "全宽边框"
+                },
+                "borderRadius": {
+                    "title": "圆角",
+                    "options": {
+                        "0": {
+                            "label": "直角"
+                        },
+                        "4px": {
+                            "label": "小"
+                        },
+                        "8px": {
+                            "label": "中"
+                        },
+                        "16px": {
+                            "label": "大"
+                        },
+                        "50": {
+                            "label": "圆形"
+                        }
+                    }
+                },
+                "backgroundColor": {
+                    "title": "背景颜色"
+                },
+                "backgroundOpacity": {
+                    "title": "背景不透明度"
+                },
+                "backgroundImage": {
+                    "title": "背景图片"
+                },
+                "backgroundImageMode": {
+                    "title": "背景图片显示方式",
+                    "options": {
+                        "auto": {
+                            "label": "自动"
+                        },
+                        "cover": {
+                            "label": "铺满裁切"
+                        },
+                        "contain": {
+                            "label": "完整显示"
+                        }
+                    }
+                },
+                "backgroundFullWidth": {
+                    "title": "全宽背景"
+                },
+                "shadowOffsetX": {
+                    "title": "水平偏移"
+                },
+                "shadowOffsetY": {
+                    "title": "垂直偏移"
+                },
+                "shadowSpread": {
+                    "title": "扩散范围"
+                },
+                "shadowBlur": {
+                    "title": "模糊程度"
+                },
+                "shadowOpacity": {
+                    "title": "不透明度"
+                },
+                "shadowInset": {
+                    "title": "内阴影"
+                },
+                "shadowColor": {
+                    "title": "颜色"
+                }
+            },
+            "media-gallery": {
+                "label": "图库",
+                "mediaItems": {
+                    "title": "媒体"
+                },
+                "displayMode": {
+                    "title": "显示模式",
+                    "options": {
+                        "auto": {
+                            "label": "自动"
+                        },
+                        "fixedHeight": {
+                            "label": "固定高度"
+                        }
+                    }
+                },
+                "maxHeight": {
+                    "title": "最大高度"
+                },
+                "showThumbnailNav": {
+                    "title": "显示缩略图导航"
+                },
+                "thumbnailSize": {
+                    "title": "缩略图大小"
+                },
+                "thumbnailNavigationPosition": {
+                    "title": "位置",
+                    "options": {
+                        "left": {
+                            "label": "左侧"
+                        },
+                        "bottom": {
+                            "label": "底部"
+                        }
+                    }
+                },
+                "thumbnailNavShowsMediaOnHover": {
+                    "title": "悬停切换",
+                    "helpText": "启用后，鼠标悬停即可切换媒体，无需点击，可能导致误操作。"
+                },
+                "showNavigationArrows": {
+                    "title": "显示导航箭头"
+                },
+                "showMagnifier": {
+                    "title": "显示放大镜"
+                },
+                "showFullScreenGallery": {
+                    "title": "允许全屏查看图库"
+                },
+                "autoplayVideos": {
+                    "title": "自动播放视频"
+                }
+            },
+            "media-image": {
+                "label": "图片",
+                "media": {
+                    "title": "媒体"
+                },
+                "height": {
+                    "title": "高度"
+                },
+                "maxImageWidth": {
+                    "title": "图片最大宽度"
+                },
+                "loading": {
+                    "title": "加载方式",
+                    "options": {
+                        "lazy": {
+                            "label": "延迟加载"
+                        },
+                        "eager": {
+                            "label": "立即加载"
+                        }
+                    }
+                },
+                "fetchpriority": {
+                    "title": "加载优先级",
+                    "options": {
+                        "auto": {
+                            "label": "自动"
+                        },
+                        "high": {
+                            "label": "高"
+                        },
+                        "low": {
+                            "label": "低"
+                        }
+                    }
+                }
+            },
+            "media-vimeo": {
+                "label": "Vimeo 视频",
+                "videoId": {
+                    "title": "视频 ID 或链接"
+                },
+                "videoTitle": {
+                    "title": "视频标题"
+                },
+                "autoplay": {
+                    "title": "自动播放"
+                },
+                "loop": {
+                    "title": "循环播放"
+                },
+                "showControls": {
+                    "title": "显示播放控件"
+                },
+                "doNotTrack": {
+                    "title": "禁止跟踪"
+                },
+                "needsConfirmation": {
+                    "title": "用户同意后加载"
+                },
+                "showByline": {
+                    "title": "显示作者"
+                },
+                "showTitle": {
+                    "title": "显示标题"
+                },
+                "showPortrait": {
+                    "title": "显示头像"
+                },
+                "color": {
+                    "title": "强调色"
+                },
+                "previewMedia": {
+                    "title": "预览图片"
+                }
+            },
+            "media-youtube": {
+                "label": "YouTube 视频",
+                "videoId": {
+                    "title": "视频 ID 或链接"
+                },
+                "videoTitle": {
+                    "title": "视频标题"
+                },
+                "autoplay": {
+                    "title": "自动播放"
+                },
+                "loop": {
+                    "title": "循环播放"
+                },
+                "showControls": {
+                    "title": "显示播放控件"
+                },
+                "advancedPrivacyMode": {
+                    "title": "增强隐私模式"
+                },
+                "needsConfirmation": {
+                    "title": "用户同意后加载"
+                },
+                "start": {
+                    "title": "开始时间"
+                },
+                "end": {
+                    "title": "结束时间"
+                },
+                "previewMedia": {
+                    "title": "预览图片"
+                }
+            },
+            "navigation-breadcrumb": {
+                "label": "面包屑导航",
+                "breadcrumb": {
+                    "title": "面包屑导航"
+                },
+                "showHome": {
+                    "title": "显示首页链接"
+                }
+            },
+            "navigation-tree": {
+                "label": "分类导航树",
+                "navigationTree": {
+                    "title": "分类导航树"
+                },
+                "activeId": {
+                    "title": "当前分类 ID",
+                    "helpText": "分类页面会自动填入，无需修改。"
+                },
+                "displayType": {
+                    "title": "显示方式",
+                    "helpText": "“静态”直接显示导航树。“可折叠”会为有子级的分类添加展开按钮。此模式会加载到销售渠道设置的导航深度，分类层级较多时页面加载量会增加。",
+                    "options": {
+                        "static": {
+                            "label": "静态"
+                        },
+                        "collapse": {
+                            "label": "可折叠"
+                        }
+                    }
+                },
+                "expandAll": {
+                    "title": "全部展开",
+                    "helpText": "关闭时仅展开当前分类所在的分支；开启时展开到销售渠道设置的导航深度。可折叠模式下，此项决定初始展开的分支。"
+                },
+                "ariaLabel": {
+                    "title": "无障碍名称",
+                    "helpText": "帮助屏幕阅读器用户区分本页的不同导航。"
+                }
+            },
+            "product-buy-button": {
+                "label": "商品购买按钮",
+                "product": {
+                    "title": "商品"
+                }
+            },
+            "product-cross-selling": {
+                "label": "关联推荐",
+                "crossSellings": {
+                    "title": "关联推荐"
+                },
+                "variant": {
+                    "title": "选项卡样式",
+                    "options": {
+                        "tabs": {
+                            "label": "标签式"
+                        },
+                        "pills": {
+                            "label": "胶囊式"
+                        },
+                        "underline": {
+                            "label": "下划线式"
+                        }
+                    }
+                },
+                "itemSizing": {
+                    "title": "商品卡片尺寸",
+                    "helpText": "“固定”保持卡片宽度，允许部分卡片超出可视区域；“适配”会调整卡片宽度，让完整列填满可用空间。",
+                    "options": {
+                        "fixed": {
+                            "label": "固定"
+                        },
+                        "fit": {
+                            "label": "适配"
+                        }
+                    }
+                },
+                "showNavigationArrows": {
+                    "title": "显示导航箭头"
+                }
+            },
+            "product-delivery": {
+                "label": "配送信息",
+                "product": {
+                    "title": "商品"
+                }
+            },
+            "product-listing": {
+                "label": "商品列表",
+                "listing": {
+                    "title": "商品列表"
+                },
+                "limit": {
+                    "title": "每页数量"
+                },
+                "page": {
+                    "title": "页码"
+                },
+                "showSorting": {
+                    "title": "显示排序"
+                },
+                "showLayoutSwitch": {
+                    "title": "显示布局切换"
+                }
+            },
+            "product-manufacturer": {
+                "label": "商品制造商",
+                "product": {
+                    "title": "商品"
+                },
+                "newTab": {
+                    "title": "在新标签页打开链接"
+                }
+            },
+            "product-price-display": {
+                "label": "商品价格",
+                "product": {
+                    "title": "商品"
+                },
+                "showTaxInfo": {
+                    "title": "显示税费说明"
+                },
+                "large": {
+                    "title": "放大价格"
+                },
+                "showListPriceBadge": {
+                    "title": "显示原价优惠标记"
+                }
+            },
+            "product-properties": {
+                "label": "商品属性",
+                "product": {
+                    "title": "商品"
+                }
+            },
+            "product-quantity-selector": {
+                "label": "商品数量选择器",
+                "product": {
+                    "title": "商品"
+                }
+            },
+            "product-review-filters": {
+                "label": "商品评论筛选",
+                "reviews": {
+                    "title": "评论"
+                }
+            },
+            "product-review-form": {
+                "label": "商品评论表单",
+                "reviews": {
+                    "title": "评论"
+                }
+            },
+            "product-review-indicator": {
+                "label": "商品评分标记",
+                "reviews": {
+                    "title": "评论"
+                }
+            },
+            "product-review-summary": {
+                "label": "商品评分汇总",
+                "reviews": {
+                    "title": "评论"
+                }
+            },
+            "product-reviews": {
+                "label": "商品评论",
+                "reviews": {
+                    "title": "评论"
+                }
+            },
+            "product-slider": {
+                "label": "商品轮播",
+                "products": {
+                    "title": "商品"
+                },
+                "title": {
+                    "title": "标题"
+                },
+                "itemSizing": {
+                    "title": "商品卡片尺寸",
+                    "helpText": "“固定”保持卡片宽度，允许部分卡片超出可视区域；“适配”会调整卡片宽度，让完整列填满可用空间。",
+                    "options": {
+                        "fixed": {
+                            "label": "固定"
+                        },
+                        "fit": {
+                            "label": "适配"
+                        }
+                    }
+                },
+                "scrollBehaviour": {
+                    "title": "滚动方式",
+                    "helpText": "“吸附”会将滚动位置对齐商品卡片起点；“自由”会停留在滚动结束的位置。",
+                    "options": {
+                        "snap": {
+                            "label": "吸附"
+                        },
+                        "natural": {
+                            "label": "自由"
+                        }
+                    }
+                },
+                "showNavigationArrows": {
+                    "title": "显示导航箭头"
+                },
+                "showScrollbar": {
+                    "title": "显示滚动条"
+                }
+            },
+            "product-variant-selection": {
+                "label": "商品规格选择",
+                "product": {
+                    "title": "商品"
+                },
+                "configuratorSettings": {
+                    "title": "规格组"
+                }
+            },
+            "tabs-panel": {
+                "label": "选项卡面板",
+                "variant": {
+                    "title": "样式",
+                    "options": {
+                        "tabs": {
+                            "label": "标签式"
+                        },
+                        "pills": {
+                            "label": "胶囊式"
+                        },
+                        "underline": {
+                            "label": "下划线式"
+                        }
+                    }
+                },
+                "alignment": {
+                    "title": "对齐方式",
+                    "helpText": "“按标题填充”根据标题长度分配空间；“等宽”让所有选项卡保持相同宽度。",
+                    "options": {
+                        "start": {
+                            "label": "起始端"
+                        },
+                        "center": {
+                            "label": "居中"
+                        },
+                        "end": {
+                            "label": "末端"
+                        },
+                        "fill": {
+                            "label": "按标题填充"
+                        },
+                        "justified": {
+                            "label": "等宽"
+                        }
+                    }
+                }
+            },
+            "tabs-tab": {
+                "label": "选项卡",
+                "title": {
+                    "title": "标题"
+                }
             }
         },
         "list": {
@@ -198,8 +980,9 @@
                 "previewEntityPlaceholder": "请选择预览对象",
                 "previewSalesChannel": "销售渠道",
                 "previewSalesChannelPlaceholder": "请选择预览销售渠道",
-                "assignments": "布局分配",
-                "save": "保存布局"
+                "save": "保存布局",
+                "reviewChanges": "查看修改",
+                "discardLayout": "放弃“{name}”的修改"
             },
             "assignmentModal": {
                 "title": "布局分配",
@@ -325,7 +1108,32 @@
             "messageSaveError": "无法保存内容布局。",
             "messageSaveErrorDetail": "无法保存内容布局：{detail}",
             "messageReloadError": "内容布局已保存，但无法重新加载。",
-            "messageDiagnoseError": "无法检查布局，暂时无法提供诊断结果。"
+            "messageDiagnoseError": "无法检查布局，暂时无法提供诊断结果。",
+            "canvas": {
+                "customViewport": "自定义",
+                "viewportToolbar": "预览视口",
+                "moveFrame": "移动预览框，可使用方向键调整位置。",
+                "closeFrame": "关闭布局“{name}”",
+                "panelsToolbar": "画布面板",
+                "structure": "结构",
+                "settings": "设置",
+                "closePanel": "关闭面板",
+                "contextMenu": "画布操作",
+                "zoomToolbar": "画布缩放控件",
+                "zoomOut": "缩小",
+                "zoomIn": "放大",
+                "zoomTo100": "缩放至 100%",
+                "resetZoom": "重置缩放至 100%",
+                "fit": "缩放至适合画布",
+                "resizeNorth": "从顶部调整预览框大小",
+                "resizeNorthEast": "从右上角调整预览框大小",
+                "resizeEast": "从右侧调整预览框大小",
+                "resizeSouthEast": "从右下角调整预览框大小",
+                "resizeSouth": "从底部调整预览框大小",
+                "resizeSouthWest": "从左下角调整预览框大小",
+                "resizeWest": "从左侧调整预览框大小",
+                "resizeNorthWest": "从左上角调整预览框大小"
+            }
         },
         "builtinLayouts": {
             "defaultBlogPost": "默认文章布局",
@@ -344,6 +1152,144 @@
             "listing": {
                 "name": "博客列表",
                 "description": "用于博客首页和分类页，展示内容卡片和分页。"
+            }
+        },
+        "workspace": {
+            "saveAll": "保存所有布局",
+            "saved": "所有已打开的布局均已保存。",
+            "savePartialFailure": "部分布局保存失败：{layouts}",
+            "layoutPicker": {
+                "title": "打开布局",
+                "searchLabel": "搜索布局",
+                "searchPlaceholder": "输入布局名称…",
+                "emptyTitle": "未找到布局",
+                "emptyDescription": "创建布局后即可开始编辑。",
+                "loadError": "无法加载布局列表。",
+                "open": "打开布局",
+                "activate": "切换到布局",
+                "deleteTitle": "删除布局？",
+                "deleteDescription": "确定永久删除“{name}”？此布局未保存的修改将丢失。",
+                "deleteError": "无法删除布局。"
+            },
+            "layouts": {
+                "title": "布局",
+                "emptyTitle": "尚未打开布局",
+                "emptyDescription": "打开已有布局或创建新布局后即可开始编辑。",
+                "create": "创建",
+                "unsaved": "有未保存的修改",
+                "assignments": "管理“{name}”的分配",
+                "close": "关闭“{name}”"
+            },
+            "closeDirty": {
+                "title": "保存修改？",
+                "description": "关闭“{name}”前是否保存修改？"
+            },
+            "manager": {
+                "title": "打开工作区",
+                "search": "搜索工作区",
+                "create": "新建工作区",
+                "manage": "管理工作区",
+                "rename": "重命名工作区",
+                "name": "工作区名称",
+                "empty": "暂无工作区。创建工作区后即可编排布局。",
+                "loadError": "无法加载工作区。",
+                "saveError": "画布设置保存失败，请重试后再切换工作区。",
+                "actionError": "工作区更新失败，请重试。",
+                "retry": "重试",
+                "missingReferences": "部分已保存的布局或预览选项已不可用。可用布局已使用有效的默认预览设置打开。",
+                "deleteTitle": "删除工作区？",
+                "deleteDescription": "确定删除“{name}”？其中的布局仍可继续使用。",
+                "switchDirtyDescription": "部分已打开的布局有未保存的修改。请先保存或放弃修改，再继续操作。画布设置会自动保存。",
+                "workspaceMissing": "此工作区已被删除。请打开或创建其他工作区。本次会话中未保存的布局修改仍会保留。"
+            }
+        },
+        "presets": {
+            "buy-box": {
+                "name": "购买区",
+                "description": "在网格容器中排列商品价格、评分、配送信息、规格选择、数量选择和购买按钮。"
+            },
+            "category-page": {
+                "name": "分类页",
+                "description": "用于组成分类页面的组件集合。"
+            },
+            "image-slider": {
+                "name": "图片轮播",
+                "description": "用于轮播图片的图库，不包含缩略图导航、放大镜或全屏查看。"
+            },
+            "media-and-text": {
+                "name": "图文组合",
+                "description": "在网格容器中并排展示图片和富文本。"
+            },
+            "product-detail-page": {
+                "name": "商品详情页",
+                "description": "用于组成商品详情页面的组件集合。"
+            },
+            "product-reviews": {
+                "name": "商品评论",
+                "description": "在网格中排列商品评分汇总、评论列表、排序、语言筛选和评论提交表单。"
+            },
+            "tab-panel": {
+                "name": "选项卡面板",
+                "description": "包含两个预设选项卡的面板，每个选项卡中各有一个富文本块。"
+            }
+        },
+        "styles": {
+            "align-self": {
+                "label": "交叉轴自身对齐",
+                "description": "元素在父容器交叉轴上的对齐方式。",
+                "options": {
+                    "auto": {
+                        "label": "自动"
+                    },
+                    "start": {
+                        "label": "起始端"
+                    },
+                    "center": {
+                        "label": "居中"
+                    },
+                    "end": {
+                        "label": "末端"
+                    },
+                    "stretch": {
+                        "label": "拉伸"
+                    },
+                    "baseline": {
+                        "label": "基线"
+                    }
+                }
+            },
+            "col-span": {
+                "label": "跨列数",
+                "description": "元素占用的网格列数。"
+            },
+            "display": {
+                "label": "显示",
+                "description": "是否在此断点显示元素。"
+            },
+            "justify-self": {
+                "label": "主轴自身对齐",
+                "description": "元素在父容器主轴上的对齐方式。",
+                "options": {
+                    "auto": {
+                        "label": "自动"
+                    },
+                    "start": {
+                        "label": "起始端"
+                    },
+                    "center": {
+                        "label": "居中"
+                    },
+                    "end": {
+                        "label": "末端"
+                    },
+                    "stretch": {
+                        "label": "拉伸"
+                    }
+                }
+            },
+            "row-span": {
+                "label": "跨行数",
+                "description": "元素占用的网格行数。"
             }
         }
     }

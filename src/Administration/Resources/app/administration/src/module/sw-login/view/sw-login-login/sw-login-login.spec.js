@@ -352,6 +352,8 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
         await flushPromises();
 
         expect(navigateToSpy).toHaveBeenCalledWith('https://sso.test');
+        expect(sessionStorage.getItem('sw-sso-session')).toBe('true');
+        expect(sessionStorage.getItem('sw-sso-restore-previous-route')).toBe('true');
     });
 
     it('should render a button for every third party login channel and start its round trip', async () => {

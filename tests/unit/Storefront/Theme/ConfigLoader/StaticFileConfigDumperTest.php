@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Storefront\Theme\ConfigLoader\DatabaseAvailableThemeProvider;
 use Shopwell\Storefront\Theme\ConfigLoader\DatabaseConfigLoader;
 use Shopwell\Storefront\Theme\ConfigLoader\StaticFileAvailableThemeProvider;
@@ -50,6 +51,44 @@ class StaticFileConfigDumperTest extends TestCase
 
         $dumper->dumpConfigFromEvent();
         static::assertSame('{"test":"test"}', $privateFileSystem->read($location));
+    }
+
+    public function testDumpConfigLoadsEachThemeOnlyOnce(): void
+    {
+        $sharedThemeId = Uuid::randomHex();
+        $otherThemeId = Uuid::randomHex();
+
+        $themeProvider = static::createStub(DatabaseAvailableThemeProvider::class);
+        $themeProvider->method('load')->willReturn([
+            Uuid::randomHex() => $sharedThemeId,
+            Uuid::randomHex() => $sharedThemeId,
+            Uuid::randomHex() => $otherThemeId,
+            Uuid::randomHex() => $sharedThemeId,
+        ]);
+
+        $loadedThemeIds = [];
+        $loader = $this->createMock(DatabaseConfigLoader::class);
+        $loader
+            ->expects($this->exactly(2))
+            ->method('load')
+            ->willReturnCallback(static function (string $themeId) use (&$loadedThemeIds): StorefrontPluginConfiguration {
+                $loadedThemeIds[] = $themeId;
+
+                return new StorefrontPluginConfiguration('Theme' . \count($loadedThemeIds));
+            });
+
+        $privateFileSystem = new Filesystem(new InMemoryFilesystemAdapter());
+
+        (new StaticFileConfigDumper(
+            $loader,
+            $themeProvider,
+            $privateFileSystem,
+            new Filesystem(new InMemoryFilesystemAdapter())
+        ))->dumpConfig(Context::createDefaultContext());
+
+        static::assertSame([$sharedThemeId, $otherThemeId], $loadedThemeIds);
+        static::assertTrue($privateFileSystem->fileExists(\sprintf('theme-config/%s.json', $sharedThemeId)));
+        static::assertTrue($privateFileSystem->fileExists(\sprintf('theme-config/%s.json', $otherThemeId)));
     }
 
     public function testDumpConfigInVar(): void

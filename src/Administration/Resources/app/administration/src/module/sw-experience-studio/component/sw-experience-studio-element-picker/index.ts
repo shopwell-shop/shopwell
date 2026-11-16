@@ -270,6 +270,14 @@ export default Shopwell.Component.wrapComponentConfig({
             return `sw-experience-studio.detail.elementPicker.categoryHeadlines.${categoryKey}`;
         },
 
+        categoryHeadline(key: string, snippetKey: string): string {
+            const fallbackLocale = Shopwell.Context.app.fallbackLocale;
+
+            return this.$te(snippetKey) || (fallbackLocale && this.$te(snippetKey, fallbackLocale))
+                ? this.$t(snippetKey)
+                : key.replace(/[-_]+/g, ' ');
+        },
+
         onSelect(item: PickerItem): void {
             if (item.kind === 'preset' && item.id) {
                 this.$emit('select-preset', item.id);
