@@ -114,6 +114,7 @@ use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferResubmissionSubscriber;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferWriteProtection;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
@@ -687,6 +688,7 @@ return static function (ContainerConfigurator $container): void {
     // it. They share the service as the only writer of the record and the resolver as the only way to
     // the credentials of the app
     $services->set(PaymentTransferApprovalEntity::class)->tag('shopwell.entity');
+    $services->set(PaymentTransferResubmissionSubscriber::class)->args([service('payment_transfer_approval.repository')])->tag('kernel.event_subscriber');
     $services->set(PaymentTransferApprovalPolicy::class)->args([service(WorkflowDocumentCodec::class)]);
     $services->set(PaymentTransferApprovalStore::class)->args([service(Connection::class), service('payment_transfer_approval.repository')]);
     $services->set(PaymentTransferApprovalService::class)->args([

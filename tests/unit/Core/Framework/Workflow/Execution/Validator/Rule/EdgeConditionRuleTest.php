@@ -28,4 +28,24 @@ class EdgeConditionRuleTest extends TestCase
         static::assertCount(1, $rule->validate($graph, new ValidationContext(['amount'], ['amount' => 'text'])));
         static::assertCount(1, $rule->validate($graph, ValidationContext::empty()));
     }
+
+    public function testValidatesEveryFieldInNestedGroups(): void
+    {
+        $schema = [
+            ['key' => 'amount', 'label' => 'Amount', 'type' => 'amount'],
+            ['key' => 'reason', 'label' => 'Reason', 'type' => 'text'],
+        ];
+        $expression = (new ApprovalCondition())->encode(['operator' => 'or', 'conditions' => [
+            ['field' => 'request.amount', 'fieldType' => 'amount', 'operator' => 'greaterThan', 'value' => '5000'],
+            ['operator' => 'and', 'conditions' => [
+                ['field' => 'request.reason', 'fieldType' => 'text', 'operator' => 'equals', 'value' => 'Travel'],
+            ]],
+        ]], $schema);
+        $graph = GraphData::fromArray(['nodes' => [], 'edges' => [
+            ['id' => 'route', 'sourceNodeId' => 'condition', 'targetNodeId' => 'approval', 'properties' => ['expr' => $expression]],
+        ]]);
+        $rule = new EdgeConditionRule(new ExprNormalizer());
+        static::assertSame([], $rule->validate($graph, ValidationContext::fromFormSchema($schema)));
+        static::assertCount(1, $rule->validate($graph, ValidationContext::fromFormSchema([$schema[0]])));
+    }
 }

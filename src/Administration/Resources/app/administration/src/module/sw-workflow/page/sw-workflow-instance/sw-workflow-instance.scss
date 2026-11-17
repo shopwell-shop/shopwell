@@ -64,7 +64,13 @@
         font-size: var(--font-size-2xs);
     }
 
-    &__form { gap: var(--scale-size-24); }
+    &__change + &__change {
+        margin-top: var(--scale-size-24);
+    }
+
+    &__form {
+        gap: var(--scale-size-24);
+    }
 
     &__form &__field {
         min-width: 0;

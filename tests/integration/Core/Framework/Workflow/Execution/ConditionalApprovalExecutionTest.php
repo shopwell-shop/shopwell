@@ -6,10 +6,14 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestBrowser;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowPreviewSubscriber;
+use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
+use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimePreviewEvent;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 
 /**
@@ -86,6 +90,38 @@ class ConditionalApprovalExecutionTest extends TestCase
         static::assertSame('finance', $after['currentNodeId']);
         static::assertContains('high', $after['selectedPath']['edgeIds']);
         static::assertNotContains('lower', $after['selectedPath']['edgeIds']);
+    }
+
+    #[DataProvider('amountBoundaries')]
+    public function testNestedConditionsUseTheSameRouteInPreviewAndExecution(string $amount, bool $financeRequired): void
+    {
+        [$manager, $department, , $ids] = $this->participants();
+        $document = $this->document($ids);
+        $comparison = $document['nodes'][2]['config']['branches'][0];
+        $document['nodes'][2]['config']['branches'][0] = [
+            'id' => $comparison['id'], 'label' => $comparison['label'], 'operator' => 'and', 'conditions' => [
+                array_diff_key($comparison, array_flip(['id', 'label'])),
+                ['operator' => 'or', 'conditions' => [
+                    ['field' => 'request.category', 'fieldType' => 'select', 'operator' => 'equals', 'value' => 'travel'],
+                    ['field' => 'request.reason', 'fieldType' => 'text', 'operator' => 'equals', 'value' => 'Equipment'],
+                ]],
+            ],
+        ];
+        [, $release] = $this->publish($manager, $document);
+        $releaseEntity = static::getContainer()->get('workflow_release.repository')->search(new Criteria([$release]), Context::createDefaultContext())->first();
+        static::assertInstanceOf(WorkflowReleaseEntity::class, $releaseEntity);
+        $preview = new WorkflowRuntimePreviewEvent($releaseEntity, $this->form($amount), Context::createDefaultContext());
+        static::getContainer()->get(ApprovalWorkflowPreviewSubscriber::class)->preview($preview);
+        static::assertNotNull($preview->getSteps());
+        static::assertSame($financeRequired, \in_array('finance', array_column($preview->getSteps(), 'nodeId'), true));
+
+        $instance = $this->start($manager, $release, $amount);
+        $before = $this->detail($manager, $instance);
+        $department->jsonRequest('POST', '/api/_action/workflow/task/' . $before['tasks'][0]['id'] . '/approve', []);
+        static::assertSame(204, $department->getResponse()->getStatusCode(), $this->errors($department));
+        $after = $this->detail($manager, $instance);
+        static::assertSame($financeRequired ? 'RUNNING' : 'AGREE', $after['status']);
+        static::assertSame($financeRequired, \in_array('finance', $after['selectedPath']['nodeIds'], true));
     }
 
     public function testRejectionDoesNotTraverseFutureConditionOrCreateFinanceTask(): void

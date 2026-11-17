@@ -86,7 +86,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
                 'description' => '管理流程定义、查看草稿并发布流程。',
                 'privileges' => [
                     'workflow.viewer', 'workflow.creator', 'workflow.editor', 'workflow.deleter', 'workflow.publisher',
-                    'workflow:read', 'workflow:create', 'workflow:update', 'workflow:delete', 'workflow:publish', 'workflow_draft:read', 'user:read',
+                    'workflow:read', 'workflow:create', 'workflow:update', 'workflow:delete', 'workflow:publish', 'workflow_draft:read', 'position:read', 'user:read',
                 ],
                 'adminMenuItems' => [],
             ],

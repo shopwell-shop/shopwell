@@ -81,25 +81,17 @@ final class PaymentTransferBooking
     {
         $app = $this->resolveApp($draft->paymentAppId);
 
-        // a draft that reaches this method through the controller is already validated, but the booking
-        // is the domain boundary and re-checks what the money depends on
-        $amount = $draft->amount;
-
-        if ($amount === null || $amount <= 0 || $amount > PaymentTransferDraft::MAX_AMOUNT) {
-            throw PaymentTransferException::transferAmountInvalid();
-        }
-
         $providerName = (string) $draft->provider;
         $channelName = (string) $draft->channel;
         $currency = strtoupper((string) $draft->currency);
-
-        $provider = $this->assertProviderAuthorized($app, $providerName);
-        $this->assertChannelEnabled($app, $provider, $channelName);
-        $this->assertCurrency($provider, $channelName, $currency);
+        $amount = $draft->amount;
+        if ($amount === null || $amount <= 0 || $amount > PaymentTransferDraft::MAX_AMOUNT) {
+            throw PaymentTransferException::transferAmountInvalid();
+        }
+        $this->validateProduct($app, $draft);
         $this->assertIdentity($draft);
 
         $recipientId = $this->resolveRecipientId($app, $draft, $providerName, $amount);
-
         $outNo = $draft->outNo ?? $this->generateOutNo();
 
         return $this->transferService->create(
@@ -115,6 +107,20 @@ final class PaymentTransferBooking
                 accountId: $draft->accountId,
             )
         );
+    }
+
+    /**
+     * Validate the draft's product eligibility without creating recipients or transfers.
+     */
+    public function validateProduct(PaymentAppEntity $app, PaymentTransferDraft $draft): void
+    {
+        $providerName = (string) $draft->provider;
+        $channelName = (string) $draft->channel;
+        $currency = strtoupper((string) $draft->currency);
+
+        $provider = $this->assertProviderAuthorized($app, $providerName);
+        $this->assertChannelEnabled($app, $provider, $channelName);
+        $this->assertCurrency($provider, $channelName, $currency);
     }
 
     /**

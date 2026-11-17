@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
+use Psr\Log\NullLogger;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -72,6 +73,7 @@ class WorkflowNodeTypeRegistryTest extends TestCase
         $loader = new PhpFileLoader($container, new FileLocator());
         $loader->load(\dirname(__DIR__, 8) . '/src/Core/Framework/DependencyInjection/workflow.php');
         $container->register('event_dispatcher', EventDispatcher::class);
+        $container->register('logger', NullLogger::class);
         $container->register('translator', TranslatorInterface::class)->setSynthetic(true);
         $container->register(ExtensionDispatcher::class)
             ->setArguments([new Reference('event_dispatcher')]);
@@ -84,7 +86,7 @@ class WorkflowNodeTypeRegistryTest extends TestCase
         $container->register(Filesystem::class);
         $container->register(ClockInterface::class)->setSynthetic(true);
         $container->register(StateMachineRegistry::class)->setSynthetic(true);
-        foreach (['workflow_execution_definition', 'workflow_instance', 'workflow_task', 'workflow_task_history', 'workflow_log', 'workflow_copy', 'workflow_node_execution', 'user', 'user_organization_unit'] as $entity) {
+        foreach (['workflow_approval_reminder', 'scheduled_task', 'workflow_execution_definition', 'workflow_instance', 'workflow_task', 'workflow_task_history', 'workflow_log', 'workflow_copy', 'workflow_node_execution', 'user', 'user_organization_unit', 'user_position', 'position'] as $entity) {
             $container->register($entity . '.repository', EntityRepository::class)->setSynthetic(true);
         }
         $container->register('validator', ValidatorInterface::class)->setFactory([Validation::class, 'createValidator']);

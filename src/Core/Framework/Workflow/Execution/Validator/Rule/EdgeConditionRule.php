@@ -35,10 +35,10 @@ final class EdgeConditionRule implements GraphRuleInterface
 
             try {
                 if (str_starts_with($expr, ApprovalCondition::PREFIX)) {
-                    $condition = $this->conditions->decode($expr);
-                    $field = $condition['field'];
-                    if (!$context->hasFormKey($field['key']) || ($context->formTypes[$field['key']] ?? null) !== $field['type']) {
-                        throw WorkflowExecutionException::invalidGraph('The condition field does not match the form schema.');
+                    foreach ($this->conditions->referencedFields($expr) as $field) {
+                        if (!$context->hasFormKey($field['key']) || ($context->formTypes[$field['key']] ?? null) !== $field['type']) {
+                            throw WorkflowExecutionException::invalidGraph('The condition field does not match the form schema.');
+                        }
                     }
                 } else {
                     $this->normalizer->assertValid($expr, $context->formKeys);

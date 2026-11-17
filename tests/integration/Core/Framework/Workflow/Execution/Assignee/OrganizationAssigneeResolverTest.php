@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowInstanceMetadataEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowAssigneeTypes;
@@ -81,6 +82,27 @@ class OrganizationAssigneeResolverTest extends TestCase
         static::assertSame([], $this->resolve($initiator, WorkflowAssigneeTypes::UNIT_LEADER));
     }
 
+    public function testDepartmentDisabledAfterCaptureBlocksItsExistingLeader(): void
+    {
+        $initiator = $this->createUser();
+        static::getContainer()->get('user_organization_unit.repository')->update([[
+            'id' => $this->membershipId($initiator), 'isLeader' => true,
+        ]], Context::createDefaultContext());
+        $metadata = new WorkflowInstanceMetadataEvent($initiator, Context::createDefaultContext());
+        static::getContainer()->get('event_dispatcher')->dispatch($metadata);
+        $instance = new WorkflowInstanceEntity();
+        $instance->initiatorId = $initiator;
+        $instance->ext = $metadata->getMetadata();
+        static::getContainer()->get('organization_unit.repository')->update([[
+            'id' => OrganizationDefaults::UNIT, 'active' => false,
+        ]], Context::createDefaultContext());
+        $node = new GraphNode('approval', 'task', 0, 0, ['assigneeType' => WorkflowAssigneeTypes::UNIT_LEADER]);
+        $execution = new WorkflowExecutionContext(GraphData::fromArray(['nodes' => [], 'edges' => []]), $instance, Context::createDefaultContext(), $initiator, 1);
+
+        $this->expectExceptionObject(WorkflowExecutionException::noAssignee('approval', WorkflowAssigneeTypes::UNIT_LEADER));
+        static::getContainer()->get(AssigneeResolverRegistry::class)->for(WorkflowAssigneeTypes::UNIT_LEADER)->resolve($instance, $node, $execution);
+    }
+
     /**
      * @return list<string>
      */
@@ -88,6 +110,9 @@ class OrganizationAssigneeResolverTest extends TestCase
     {
         $instance = new WorkflowInstanceEntity();
         $instance->initiatorId = $initiatorId;
+        $metadata = new WorkflowInstanceMetadataEvent($initiatorId, Context::createDefaultContext());
+        static::getContainer()->get('event_dispatcher')->dispatch($metadata);
+        $instance->ext = $metadata->getMetadata();
         $node = new GraphNode('approval', 'task', 0, 0, ['assigneeType' => $type]);
         $context = new WorkflowExecutionContext(GraphData::fromArray(['nodes' => [], 'edges' => []]), $instance, Context::createDefaultContext(), $initiatorId, 1);
 

@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowCountersignTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
@@ -31,16 +32,20 @@ class ConcurrentApprovalExecutionTest extends TestCase
     use KernelTestBehaviour;
 
     /**
-     * @return iterable<string, array{string}>
+     * @return iterable<string, array{string, string}>
      */
     public static function modes(): iterable
     {
-        yield 'all approvals survive a lock wait' => [WorkflowCountersignTypes::COUNTERSIGN];
-        yield 'first decision closes a competing sibling' => [WorkflowCountersignTypes::FIRST_DECISION];
+        yield 'all approvals survive a lock wait' => [WorkflowCountersignTypes::COUNTERSIGN, 'decide'];
+        yield 'first decision closes a competing sibling' => [WorkflowCountersignTypes::FIRST_DECISION, 'decide'];
+        yield 'competing reminders' => [WorkflowCountersignTypes::COUNTERSIGN, 'remind'];
+        yield 'competing returns' => [WorkflowCountersignTypes::COUNTERSIGN, 'return'];
+        yield 'competing form edits' => [WorkflowCountersignTypes::COUNTERSIGN, 'form-update'];
+        yield 'competing resubmissions' => [WorkflowCountersignTypes::COUNTERSIGN, 'resubmit'];
     }
 
     #[DataProvider('modes')]
-    public function testCompetingDecisionsReadStateCommittedByThePreviousHolder(string $mode): void
+    public function testCompetingDecisionsReadStateCommittedByThePreviousHolder(string $mode, string $operation): void
     {
         $connection = static::getContainer()->get(Connection::class);
         static::assertSame(0, $connection->getTransactionNestingLevel());
@@ -71,7 +76,7 @@ class ConcurrentApprovalExecutionTest extends TestCase
                     'nodes' => [
                         ['id' => 'start', 'type' => 'snaker:start', 'properties' => ['inputSchema' => $schema]],
                         ['id' => 'threshold', 'type' => 'snaker:condition', 'properties' => []],
-                        ['id' => 'approval', 'type' => 'snaker:task', 'properties' => ['name' => 'Approval', 'approvalStage' => true, 'assigneeType' => 'user', 'assigneeValue' => $userIds, 'countersignType' => $mode]],
+                        ['id' => 'approval', 'type' => 'snaker:task', 'properties' => ['name' => 'Approval', 'approvalStage' => true, 'assigneeType' => 'user', 'assigneeValue' => $userIds, 'countersignType' => $mode, 'approvalFormPermissions' => ['amount' => ['access' => 'editable']]]],
                         ['id' => 'next', 'type' => 'snaker:task', 'properties' => ['name' => 'Next approval', 'approvalStage' => true, 'assigneeType' => 'user', 'assigneeValue' => [$userIds[0]], 'countersignType' => 'single']],
                         ['id' => 'end', 'type' => 'snaker:end', 'properties' => []],
                     ],
@@ -92,6 +97,11 @@ class ConcurrentApprovalExecutionTest extends TestCase
             $taskIds = array_map(static fn ($task): string => $task->id, $tasks);
             static::assertCount(2, $tasks);
 
+            if ($operation === 'resubmit') {
+                $container = static::getContainer();
+                $container->get(ApprovalWorkflowService::class)->returnToInitiator($tasks[0]->id, 'Revise request', $actorContext);
+            }
+
             // Hold the instance until both workers are visibly waiting on its row.
             // Under the old read-before-lock order, both transactions already had
             // a stale REPEATABLE READ snapshot at this point.
@@ -99,7 +109,18 @@ class ConcurrentApprovalExecutionTest extends TestCase
             $connection->fetchOne('SELECT id FROM workflow_instance WHERE id = :id FOR UPDATE', ['id' => Uuid::fromHexToBytes($instanceId)]);
             foreach ($tasks as $index => $task) {
                 $decision = $mode === WorkflowCountersignTypes::FIRST_DECISION && $index === 1 ? 'reject' : 'approve';
-                $process = $this->worker($task->id, $task->assigneeId, $decision);
+                if ($operation === 'return') {
+                    $decision = 'returnToInitiator';
+                }
+                if ($operation === 'form-update') {
+                    $decision = 'form-update';
+                }
+                if ($operation === 'remind') {
+                    $decision = 'remind';
+                }
+                $process = $operation === 'resubmit' || $operation === 'remind'
+                    ? $this->worker($instanceId, $userIds[0], $operation)
+                    : $this->worker($task->id, $task->assigneeId, $decision);
                 $process->start();
                 $processes[] = $process;
             }
@@ -116,6 +137,48 @@ class ConcurrentApprovalExecutionTest extends TestCase
             $instance = $service->loadInstance($instanceId, $context);
             $allTasks = $finder->forInstance($instanceId, $context);
             $taskIds = array_map(static fn ($task): string => $task->id, array_values($allTasks->getElements()));
+            if ($operation === 'form-update') {
+                sort($outcomes);
+                static::assertSame([WorkflowExecutionException::formConflict()->getErrorCode(), 'ok'], $outcomes);
+                static::assertSame('6000.00', $instance->form()['amount']);
+                static::assertSame(1, $instance->ext['approvalFormVersion'] ?? null);
+                static::assertSame(1, $allTasks->countByState(WorkflowTaskStates::TODO));
+                static::assertCount(1, $finder->historyOf($instanceId, $context));
+
+                return;
+            }
+            if ($operation === 'remind') {
+                sort($outcomes);
+                static::assertSame([WorkflowExecutionException::reminderUnavailable()->getErrorCode(), 'ok'], $outcomes);
+                static::assertSame(2, $allTasks->countByState(WorkflowTaskStates::TODO));
+                static::assertCount(0, $finder->historyOf($instanceId, $context));
+                static::assertCount(2, $finder->logsOf($instanceId, $context)->filter(static fn ($log): bool => $log->action === 'remind'));
+
+                return;
+            }
+            if ($operation === 'return') {
+                sort($outcomes);
+                static::assertSame([WorkflowExecutionException::TASK_ALREADY_HANDLED, 'ok'], $outcomes);
+                static::assertSame('returned', $instance->state());
+                static::assertSame(0, $allTasks->countByState(WorkflowTaskStates::TODO));
+                static::assertCount(1, $finder->historyOf($instanceId, $context));
+
+                return;
+            }
+            if ($operation === 'resubmit') {
+                sort($outcomes);
+                static::assertSame([WorkflowExecutionException::resubmissionConflict($instanceId)->getErrorCode(), 'ok'], $outcomes);
+                static::assertSame(2, $instance->round);
+                static::assertSame('running', $instance->state());
+                static::assertSame(2, $allTasks->countByState(WorkflowTaskStates::TODO));
+                foreach ($allTasks as $current) {
+                    if ($current->isTodo()) {
+                        static::assertSame(2, $current->round);
+                    }
+                }
+
+                return;
+            }
             $advanced = $mode === WorkflowCountersignTypes::COUNTERSIGN || $finder->historyOf($instanceId, $context)->first()?->decision === 'agree';
             static::assertSame($advanced ? 1 : 0, $allTasks->countByState(WorkflowTaskStates::TODO));
             static::assertCount($advanced ? 3 : 2, $allTasks);
@@ -168,7 +231,15 @@ echo 'READY:' . $connection->fetchOne('SELECT CONNECTION_ID()') . PHP_EOL;
 $source = new Shopwell\Core\Framework\Api\Context\AdminApiSource($argv[2]);
 $source->setIsAdmin(true);
 try {
-    $container->get(Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService::class)->{$argv[3]}($argv[1], 'Concurrent decision', new Shopwell\Core\Framework\Context($source));
+    if ($argv[3] === 'remind') {
+        $container->get(Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderService::class)->remind($argv[1], new Shopwell\Core\Framework\Context($source));
+    } elseif ($argv[3] === 'form-update') {
+        $container->get(Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService::class)->approve($argv[1], 'Concurrent form edit', new Shopwell\Core\Framework\Context($source), ['amount' => '6000'], 0);
+    } elseif ($argv[3] === 'resubmit') {
+        $container->get(Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalResubmission::class)->resubmit($argv[1], 1, ['amount' => '5000.01'], 'Revised request', new Shopwell\Core\Framework\Context($source), formVersion: 0);
+    } else {
+        $container->get(Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService::class)->{$argv[3]}($argv[1], 'Concurrent decision', new Shopwell\Core\Framework\Context($source));
+    }
     echo 'RESULT:ok' . PHP_EOL;
 } catch (Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException $exception) {
     echo 'RESULT:' . $exception->getErrorCode() . PHP_EOL;

@@ -35,17 +35,26 @@ final class PaymentTransferApprovalPolicy
         }
         $config = (array) $starts[0]->config;
         $fields = $config['formFields'] ?? [];
-        if (!\is_array($fields) || \count($fields) !== 5) {
+        if (!\is_array($fields) || \count($fields) < 5) {
             throw PaymentTransferApprovalException::blocked('incompatible_form');
         }
         $expected = ['amount' => ['number', true], 'currency' => ['text', true], 'recipient' => ['text', true], 'paymentAccount' => ['text', true], 'reason' => ['text', false]];
         foreach ($fields as $raw) {
             $field = (array) $raw;
             $key = $field['key'] ?? '';
-            if (!\is_string($key) || !isset($expected[$key]) || [$field['type'] ?? null, $field['required'] ?? false] !== $expected[$key]) {
+            if (!\is_string($key)) {
+                throw PaymentTransferApprovalException::blocked('incompatible_form');
+            }
+            if (!isset($expected[$key])) {
+                continue;
+            }
+            if ([$field['type'] ?? null, $field['required'] ?? false] !== $expected[$key]) {
                 throw PaymentTransferApprovalException::blocked('incompatible_form');
             }
             unset($expected[$key]);
+        }
+        if ($expected !== []) {
+            throw PaymentTransferApprovalException::blocked('incompatible_form');
         }
         $edges = [];
         foreach ($document->connections as $edge) {

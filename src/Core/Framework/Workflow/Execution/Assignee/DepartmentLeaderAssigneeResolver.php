@@ -14,8 +14,10 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 #[Package('framework')]
 class DepartmentLeaderAssigneeResolver implements AssigneeResolverInterface
 {
-    public function __construct(private readonly OrganizationAssigneeLookup $lookup)
-    {
+    public function __construct(
+        private readonly OrganizationAssigneeLookup $lookup,
+        private readonly OrganizationAssigneeContext $organizations,
+    ) {
     }
 
     public function getAssigneeType(): string
@@ -25,11 +27,11 @@ class DepartmentLeaderAssigneeResolver implements AssigneeResolverInterface
 
     public function resolve(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context): array
     {
-        $primary = $this->lookup->primaryMembership($instance->initiatorId, $context->context());
-        if ($primary === null) {
+        $departmentId = $this->organizations->departmentId($instance);
+        if ($departmentId === null) {
             return [];
         }
-        $memberships = $this->lookup->departmentLeaders($primary->getOrganizationUnitId(), $context->context());
+        $memberships = $this->lookup->departmentLeaders($departmentId, $context->context());
         $userIds = [];
         foreach ($memberships as $membership) {
             $this->lookup->assertEligible($membership, $node->id, $this->getAssigneeType());

@@ -15,6 +15,9 @@ describe('workflow user read privilege', () => {
             'workflow_instance:start',
             'workflow:read',
         ]);
-        expect(privileges.getPrivilegeRole('workflow_participant.approver')?.privileges).toEqual(['workflow_task:decide']);
+        expect(privileges.getPrivilegeRole('workflow_participant.approver')?.privileges).toEqual([
+            'workflow_task:decide',
+            'user:read',
+        ]);
     });
 });

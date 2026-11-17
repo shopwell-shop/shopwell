@@ -93,7 +93,7 @@
                                     class="sw-workflow-runtime-viewer__person"
                                     :title="participant.name"
                                 >{{ participant.name }}</span>
-                                <span class="sw-workflow-runtime-viewer__participant-state">{{ participantState(participant.state) }}</span>
+                                <span class="sw-workflow-runtime-viewer__participant-state">{{ participantState(participant.state, participant.requiredReviewer) }}</span>
                             </li>
                         </ul>
                     </template>

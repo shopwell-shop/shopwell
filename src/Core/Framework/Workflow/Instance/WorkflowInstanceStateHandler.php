@@ -34,6 +34,29 @@ final class WorkflowInstanceStateHandler
             ?? throw WorkflowExecutionException::invalidGraph('The workflow instance state machine has no initial state.');
     }
 
+    public function returnedStateId(Context $context): string
+    {
+        return $this->stateMachineRegistry->getStateMachine(WorkflowInstanceStates::STATE_MACHINE, $context)
+            ->getStates()?->filter(static fn ($state): bool => $state->getTechnicalName() === WorkflowInstanceStates::RETURNED)->first()?->getId()
+            ?? throw WorkflowExecutionException::invalidGraph('The workflow returned state is missing.');
+    }
+
+    public function returnToInitiator(string $instanceId, Context $context): void
+    {
+        $this->stateMachineRegistry->transition(
+            new Transition(WorkflowInstanceEntity::ENTITY_NAME, $instanceId, WorkflowInstanceStates::ACTION_RETURN, 'stateId'),
+            $context,
+        );
+    }
+
+    public function resubmit(string $instanceId, Context $context): void
+    {
+        $this->stateMachineRegistry->transition(
+            new Transition(WorkflowInstanceEntity::ENTITY_NAME, $instanceId, WorkflowInstanceStates::ACTION_RESUBMIT, 'stateId'),
+            $context,
+        );
+    }
+
     public function complete(string $instanceId, string $result, Context $context): void
     {
         $this->transition($instanceId, WorkflowInstanceStates::ACTION_COMPLETE, $context);
@@ -56,7 +79,7 @@ final class WorkflowInstanceStateHandler
     }
 
     /**
-     * Transitions are allowed only from running; do not swallow StateMachineException for duplicate decisions.
+     * Terminal transitions set endedAt; duplicate decisions remain state-machine errors.
      */
     private function transition(string $instanceId, string $action, Context $context): void
     {

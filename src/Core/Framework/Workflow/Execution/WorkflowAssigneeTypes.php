@@ -37,12 +37,17 @@ final class WorkflowAssigneeTypes
      */
     public const UNIT_LEADER = 'unitLeader';
 
-    public const ALL = [self::USER, self::INITIATOR, self::LEADER, self::ROLE, self::UNIT_LEADER];
+    /**
+     * Positions held within the initiator's primary department.
+     */
+    public const POSITION = 'position';
+
+    public const ALL = [self::USER, self::INITIATOR, self::LEADER, self::ROLE, self::UNIT_LEADER, self::POSITION];
 
     /**
      * Types requiring assigneeValue; other types must leave it empty.
      */
-    public const NEEDS_VALUE = [self::USER, self::ROLE];
+    public const NEEDS_VALUE = [self::USER, self::ROLE, self::POSITION];
 
     /**
      * Reserved sources: FORM_FIELD, INITIATOR_LEADER_LEVEL2 and DEPT_LEADER_OF_USER.

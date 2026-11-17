@@ -71,6 +71,15 @@ export default Shopwell.Component.wrapComponentConfig({
                 if (revision === this.requestRevision) this.isLoading = false;
             }
         },
+        stepIcon(type: string): string {
+            const icons: Record<string, string> = {
+                approval: 'regular-user-shield',
+                condition: 'regular-flow',
+                copy: 'regular-envelope',
+            };
+            return icons[type] ?? 'regular-cog';
+        },
+
         participantNames(step: TransferApprovalPreviewStep): string {
             return step.assignees.map((assignee) => assignee.name).join(', ');
         },

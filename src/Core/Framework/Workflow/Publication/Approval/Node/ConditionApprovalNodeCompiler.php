@@ -67,7 +67,7 @@ final class ConditionApprovalNodeCompiler implements ApprovalNodeCompiler
         foreach ($branches as $index => $raw) {
             $branch = $raw instanceof \stdClass ? get_object_vars($raw) : $raw;
 
-            if (!\is_array($branch) || ($branch !== [] && array_is_list($branch)) || array_diff(array_keys($branch), ['id', 'label', 'field', 'fieldType', 'operator', 'value']) !== []) {
+            if (!\is_array($branch) || ($branch !== [] && array_is_list($branch)) || array_diff(array_keys($branch), ['id', 'label', 'field', 'fieldType', 'operator', 'value', 'conditions']) !== []) {
                 throw $context->reject('invalid_branch_configuration', '/branches/' . $index);
             }
 

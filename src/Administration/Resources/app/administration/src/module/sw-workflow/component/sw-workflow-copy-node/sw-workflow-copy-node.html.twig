@@ -1,0 +1,26 @@
+{% block sw_workflow_copy_node %}
+<div
+    class="sw-workflow-studio-node sw-workflow-copy-node is-activity is-blue"
+    :class="{ 'has-error': data.invalid || !hasRecipients }"
+>
+    <div class="sw-workflow-studio-node__heading">
+        <span class="sw-workflow-studio-node__icon"><mt-icon
+            name="regular-envelope"
+            size="18px"
+        /></span>
+        <strong>{{ data.label }}</strong>
+        <mt-icon
+            v-if="data.invalid || !hasRecipients"
+            name="regular-exclamation-circle"
+            size="16px"
+        />
+    </div>
+    <p class="sw-workflow-studio-node__summary">
+        <sw-workflow-users-assignee-summary
+            v-if="hasRecipients"
+            :config="data.node.config"
+        />
+        <span v-else>{{ $t('sw-workflow.copy.empty') }}</span>
+    </p>
+</div>
+{% endblock %}

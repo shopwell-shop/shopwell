@@ -52,6 +52,10 @@
             >
                 <span class="sw-workflow-approval-participants__assignee">{{ participant.name }}</span>
                 <span
+                    v-if="participant.requiredReviewer"
+                    class="sw-workflow-approval-participants__state"
+                >{{ $t('sw-workflow.runtime.participants.requiredReviewer') }}</span>
+                <span
                     class="sw-workflow-approval-participants__state"
                     :class="`is--${participant.state}`"
                 >{{ stateLabel(participant.state) }}</span>

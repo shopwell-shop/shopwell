@@ -55,8 +55,6 @@
         "templates": {
             "approval": "Single-step approval",
             "approvalDescription": "Includes approved and rejected paths",
-            "expense": "Expense approval",
-            "expenseDescription": "Department approval, then finance for amounts over 5,000",
             "selectTitle": "Select a template",
             "selectHint": "Preview a template before applying it to this workflow.",
             "replaceHint": "Applying this template replaces the current workflow. You can undo this change.",
@@ -71,7 +69,8 @@
                 "action": "Automated action",
                 "human-task": "Human task",
                 "approval": "Approval",
-                "condition": "Condition"
+                "condition": "Condition",
+                "copy": "Copy"
             }
         },
         "outcomes": {
@@ -105,7 +104,10 @@
             "approval_assignee_required": "Select an approver.",
             "approval_invalid_configuration": "Complete the approver and approval mode configuration.",
             "approval_incompatible_mode": "This approval mode does not support the current approver source. Select another mode.",
-            "issueCount": "{count} issue | {count} issues"
+            "issueCount": "{count} issue | {count} issues",
+            "approval_invalid_operations": "Choose installed approval operations without duplicates.",
+            "approval_invalid_deadline": "Enter a time limit from 1 to 525600 minutes and choose whether to remind when overdue.",
+            "approval_invalid_form_permissions": "Configure known form fields with hidden, read-only or editable access. Only editable approval fields can be required."
         },
         "summaries": {
             "action": "Run an automated operation",
@@ -157,7 +159,18 @@
             "unavailableOperator": "Original condition unavailable",
             "unavailableOperatorHint": "This condition is not supported by the current field type. The original rule is preserved. Select a compatible condition.",
             "staleFieldTypeHint": "The field type has changed or this rule is not bound yet. Rebind the field and enter the condition again before publishing.",
-            "rebindField": "Rebind field and reset condition"
+            "rebindField": "Rebind field and reset condition",
+            "groups": {
+                "quota": "{count} / {limit} rules used in this branch (conditions and groups).",
+                "and": "All conditions match",
+                "or": "Any condition matches",
+                "match": "Match rules",
+                "empty": "Add at least one condition.",
+                "addCondition": "Add condition",
+                "addGroup": "Add condition group",
+                "remove": "Remove rule",
+                "invalid": "This rule is invalid or nested too deeply. Remove it and add a new condition."
+            }
         },
         "persistence": {
             "defaultName": "Untitled workflow",
@@ -227,16 +240,36 @@
                 "unverifiedMember": "Unverified person {position}",
                 "inactiveMember": "{name} (disabled)",
                 "more": "{names} and others ({count} total)",
-                "unavailableMembers": "{count} approver is disabled or missing. Remove or replace them. | {count} approvers are disabled or missing. Remove or replace them.",
+                "unavailableMembers": "{count} selected person is disabled or missing. Remove or replace them. | {count} selected people are disabled or missing. Remove or replace them.",
                 "status": {
                     "empty": "Select one or more approvers",
-                    "loading": "Loading approvers…",
-                    "error": "Approvers could not be loaded. The selection has been preserved.",
+                    "loading": "Loading people…",
+                    "error": "People could not be loaded. The selection has been preserved.",
                     "forbidden": "You do not have permission to view users. The selection has been preserved."
                 }
             },
             "departmentLeaders": "Initiating department leaders",
-            "departmentLeadersHint": "Uses the ordered leaders of the initiator’s primary department. Countersign requires all leaders; first decision uses the earliest decision. Missing or unavailable leaders block entry into this node."
+            "departmentLeadersHint": "Uses the primary department captured at submission. Its current leaders are listed in their configured order when this step is reached. The selected approval mode determines how their decisions are combined. Missing or unavailable leaders block this step.",
+            "orSign": "Any one approves",
+            "orSignHint": "Any approval passes this step. It is rejected only when everyone rejects.",
+            "sequential": "Sequential approval",
+            "sequentialHint": "Approvers decide in the configured order. Everyone must approve; any rejection ends this step.",
+            "positions": {
+                "label": "Positions in the initiating department",
+                "hint": "Uses the primary department captured at submission. Current holders of the selected positions are resolved when this step is reached. Sequential approval follows the selected position order.",
+                "missing": "Missing position {position}",
+                "unavailable": "{name} (unavailable)",
+                "unavailableCount": "Unavailable positions: {count}. Select active positions before publishing.",
+                "summary": "Initiating department: {names}",
+                "status": {
+                    "empty": "Select positions",
+                    "loading": "Loading positions…",
+                    "error": "Positions could not be loaded. Saved selections are retained.",
+                    "forbidden": "You do not have permission to view positions."
+                }
+            },
+            "operationsTitle": "Approver operations",
+            "operationsHint": "Choose which additional operations approvers may use at this step."
         },
         "publication": {
             "catalogue": "Publication history",
@@ -261,7 +294,10 @@
             "emptyTitle": "No publications yet",
             "emptyHint": "Publish a workflow to view its version history.",
             "approval_assignee_forbidden": "A reviewer cannot view or decide approval tasks. Assign the Workflow participant role or equivalent permissions.",
-            "allRecords": "View all publication records"
+            "allRecords": "View all publication records",
+            "copy_recipient_unavailable": "A copy recipient is disabled or missing. Select active recipients before publishing.",
+            "copy_recipient_forbidden": "A copy recipient cannot access workflows. Assign the Workflow participant role or equivalent access.",
+            "position_unavailable": "A selected position is disabled or missing. Select active positions before publishing."
         },
         "form": {
             "title": "Request form",
@@ -293,18 +329,6 @@
             "currencySource": "System currencies",
             "selectPlaceholder": "Select an option"
         },
-        "expense": {
-            "reason": "Reason for expense",
-            "amount": "Amount",
-            "expenseDate": "Expense date",
-            "category": "Category",
-            "quantity": "Quantity",
-            "travel": "Travel",
-            "supplies": "Supplies",
-            "department": "Department approval",
-            "finance": "Finance approval",
-            "threshold": "Over 5,000"
-        },
         "runtime": {
             "general": {
                 "mainMenuItemGeneral": "My approvals",
@@ -315,11 +339,12 @@
                 "approved": "Approved",
                 "rejected": "Rejected",
                 "canceled": "Canceled",
-                "completed": "Completed"
+                "completed": "Completed",
+                "returned": "Awaiting changes"
             },
             "countersign": {
                 "single": "Single approver",
-                "orSign": "Any one",
+                "orSign": "Any one approves",
                 "countersign": "All of them",
                 "orderSign": "One by one",
                 "firstDecision": "First decision"
@@ -347,7 +372,14 @@
                 "columnStatus": "Status",
                 "columnStarted": "Started at",
                 "emptyMineHeadline": "No requests yet",
-                "emptyMineDescription": "Your submitted requests will appear here"
+                "emptyMineDescription": "Your submitted requests will appear here",
+                "tabCopies": "Copied to me",
+                "columnReceived": "Received",
+                "columnRead": "Read status",
+                "read": "Read",
+                "unread": "Unread",
+                "emptyCopiesHeadline": "No copies received",
+                "emptyCopiesDescription": "Requests copied to you appear here."
             },
             "instance": {
                 "back": "Back",
@@ -366,21 +398,39 @@
                 "cancel": "Cancel request",
                 "cancelReason": "Cancellation reason",
                 "cancelDone": "Request canceled",
-                "cancelHint": "Canceling ends this approval. Enter a reason for the audit history."
+                "cancelHint": "Canceling ends this approval. Enter a reason for the audit history.",
+                "resubmit": "Resubmit",
+                "resubmitHint": "Update the request and submit it for a new round of approval.",
+                "lockedHint": "Booked business inputs are read-only. You may add an explanation; change payout details by withdrawing and creating a new transfer.",
+                "explanation": "Additional explanation"
             },
             "timeline": {
                 "title": "History",
                 "agreed": "approved",
                 "rejected": "rejected",
                 "pending": "in progress",
-                "empty": "No decisions yet"
+                "empty": "No decisions yet",
+                "transfer": "Transferred",
+                "add-sign": "Added reviewer",
+                "return": "Return for changes",
+                "resubmit": "Resubmit",
+                "round": "Round {round}",
+                "operation": "Extension operation",
+                "remind": "Reminder sent"
             },
             "actions": {
                 "approve": "Approve",
                 "reject": "Reject",
                 "commentLabel": "Comment",
-                "commentPlaceholder": "A reason is required to reject",
-                "rejectHint": "Enter a reason to reject this request."
+                "commentPlaceholder": "Explain the reason when rejecting or returning a request",
+                "rejectHint": "Return pauses the request for changes. Reject ends it.",
+                "transfer": "Transfer",
+                "add-sign": "Add reviewer",
+                "transferHint": "The selected person takes over your current approval task. Your transfer stays in the history.",
+                "add-signHint": "Additional reviewers work in parallel. All must approve; any rejection rejects this stage. Your own approval task remains pending.",
+                "targetUser": "Reviewer",
+                "reason": "Reason (required)",
+                "return": "Return for changes"
             },
             "participants": {
                 "title": "Approval stages",
@@ -403,7 +453,9 @@
                     "orSign": "Any approval passes this step. It is rejected only when everyone rejects.",
                     "orderSign": "Approvers decide in order. Everyone must approve; any rejection ends this step."
                 },
-                "step": "Step {number}"
+                "step": "Step {number}",
+                "requiredReviewer": "Added reviewer (required)",
+                "addedReviewerState": "Added · {state}"
             },
             "navigation": "My approvals",
             "viewer": {
@@ -455,6 +507,48 @@
         },
         "publisher": {
             "workflow": "General workflow"
+        },
+        "copy": {
+            "recipients": "Copy recipients",
+            "empty": "Select one or more recipients",
+            "hint": "Recipients can view the request. Copies do not create approval tasks or pause the workflow."
+        },
+        "reminder": {
+            "receiptsTitle": "Approval reminders",
+            "system": "System",
+            "settings": {
+                "title": "Approval deadline",
+                "enabled": "Set an approval deadline",
+                "minutes": "Time limit (minutes)",
+                "hint": "Elapsed time, including weekends. A new sequential approver gets a new time limit; transfer keeps the deadline.",
+                "automatic": "Remind the approver once when overdue"
+            },
+            "action": "Remind approvers",
+            "sent": "Pending approvers have been reminded.",
+            "cooldownHint": "Reminders are available every 10 minutes while approval is pending.",
+            "overdue": "Overdue",
+            "dueAt": "Due: {time}",
+            "remindedAt": "Reminded: {time}",
+            "automaticAt": "Overdue reminder: {time}",
+            "unavailable": "No approvers can be reminded right now. The request may have changed, the cooldown may be active, or a delivery is awaiting retry."
+        },
+        "formPermissions": {
+            "title": "Form permissions",
+            "settings": "Node settings",
+            "hint": "Choose which fields this node can see or edit. Business restrictions still apply. Required fields block approval only.",
+            "empty": "Add form fields to the start node first.",
+            "hidden": "Hidden",
+            "readonly": "Read-only",
+            "editable": "Editable",
+            "required": "Required",
+            "editTitle": "Complete approval information",
+            "saveHint": "Changes are saved only when you approve. Other actions do not save these changes.",
+            "context": "View form as",
+            "contextHint": "Choose a task or copy to view its form permissions.",
+            "changes": "Form changes",
+            "revision": "Revision {version} · Round {round}",
+            "conflict": "The form changed while you were reviewing it. Reload the page and review the latest values before submitting.",
+            "loadFailed": "The editable form could not be loaded. Reload the page before approving."
         }
     },
     "sw-privileges": {

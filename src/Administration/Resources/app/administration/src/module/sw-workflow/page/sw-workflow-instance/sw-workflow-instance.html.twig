@@ -35,6 +35,27 @@
 
     {% block sw_workflow_instance_content %}
     <template #smart-bar-actions>
+        {% block sw_workflow_instance_remind %}
+        <mt-button
+            v-if="showRemind"
+            class="sw-workflow-instance__remind"
+            variant="secondary"
+            size="default"
+            :disabled="!canRemind"
+            :title="$t('sw-workflow.reminder.cooldownHint')"
+            @click="remindInstance"
+        >
+            {{ $t('sw-workflow.reminder.action') }}
+        </mt-button>
+        {% endblock %}
+        <sw-workflow-resubmit
+            v-if="instance?.canResubmit"
+            :key="instance.id + ':' + instance.round"
+            :instance="instance"
+            :disabled="isActing || isLoading"
+            @busy="isActing = $event"
+            @resubmitted="loadInstance"
+        />
         <mt-button
             v-if="canCancel"
             variant="secondary"
@@ -114,6 +135,20 @@
                             </template>
                             · {{ startedAt }}
                         </p>
+                        <mt-select
+                            v-if="instance.formContexts?.length > 1 || instance.formContextRequired"
+                            :label="$t('sw-workflow.formPermissions.context')"
+                            :model-value="instance.formContextId"
+                            :options="instance.formContexts.map(context => ({ value: context.id, label: `${context.nodeName} · ${context.round}` }))"
+                            :disabled="isActing"
+                            @update:model-value="selectFormContext"
+                        />
+                        <mt-banner
+                            v-if="instance.formContextRequired"
+                            variant="info"
+                        >
+                            {{ $t('sw-workflow.formPermissions.contextHint') }}
+                        </mt-banner>
                         <sw-description-list
                             class="sw-workflow-instance__form"
                             grid="repeat(auto-fit, minmax(min(200px, 100%), 1fr))"
@@ -126,11 +161,46 @@
                                 <dt>{{ field.label }}</dt>
                                 <dd>{{ formatValue(field.value, field) }}</dd>
                             </div>
-                            <template v-if="formFields.length === 0">
+                            <template v-if="formFields.length === 0 && !activeTask">
                                 <dt>{{ $t('sw-workflow.runtime.instance.formEmpty') }}</dt>
                                 <dd>—</dd>
                             </template>
                         </sw-description-list>
+                        <sw-workflow-approval-form
+                            v-if="activeTask && !instance.formContextRequired"
+                            :instance="instance"
+                            :disabled="isActing || isLoading"
+                            @update-patch="formPatch = $event"
+                            @validity-change="formValid = $event"
+                        />
+                    </mt-card>
+                    {% endblock %}
+
+                    {% block sw_workflow_instance_form_changes %}
+                    <mt-card
+                        v-if="instance.formChanges?.length"
+                        position-identifier="sw-workflow-instance-form-changes"
+                        :title="$t('sw-workflow.formPermissions.changes')"
+                    >
+                        <section
+                            v-for="change in formChanges"
+                            :key="change.id"
+                            class="sw-workflow-instance__change"
+                        >
+                            <p class="sw-workflow-instance__meta">
+                                {{ $t('sw-workflow.formPermissions.revision', { version: change.revision, round: change.round }) }} · {{ change.actor?.name }} · {{ change.createdAt }}
+                            </p>
+                            <sw-description-list class="sw-workflow-instance__form">
+                                <div
+                                    v-for="(values, key) in change.changes"
+                                    :key="key"
+                                    class="sw-workflow-instance__field"
+                                >
+                                    <dt>{{ instance.formSchema?.find(field => field.key === key)?.label ?? key }}</dt>
+                                    <dd>{{ formatValue(values.before) }} → {{ formatValue(values.after) }}</dd>
+                                </div>
+                            </sw-description-list>
+                        </section>
                     </mt-card>
                     {% endblock %}
 
@@ -156,6 +226,26 @@
 
                 {% block sw_workflow_instance_side %}
                 <aside class="sw-workflow-instance__side">
+                    {% block sw_workflow_instance_reminders %}
+                    <mt-card
+                        v-if="reminderTasks.length"
+                        class="sw-workflow-instance__reminders"
+                        position-identifier="sw-workflow-instance-reminders"
+                        :title="$t('sw-workflow.reminder.receiptsTitle')"
+                    >
+                        <div
+                            v-for="task in reminderTasks"
+                            :key="task.id"
+                            :data-reminder-task="task.id"
+                        >
+                            <p class="sw-workflow-instance__node">
+                                {{ task.assignee?.name || task.nodeName }}
+                            </p>
+                            <sw-workflow-approval-reminder-status :reminder="task.reminder" />
+                        </div>
+                    </mt-card>
+                    {% endblock %}
+
                     {% block sw_workflow_instance_actions %}
                     <mt-card
                         v-if="canAct"
@@ -167,9 +257,15 @@
                         </p>
 
                         <sw-workflow-approval-actions
+                            :approve-disabled="!formValid"
                             :is-loading="isActing"
+                            :available-actions="activeTask.availableActions ?? []"
+                            :task-id="activeTask.id"
+                            @completed="loadInstance"
+                            @participate="onParticipate"
                             @approve="onApprove"
                             @reject="onReject"
+                            @return="onReturn"
                         />
                     </mt-card>
                     {% endblock %}
@@ -178,6 +274,7 @@
                     <mt-card position-identifier="sw-workflow-instance-timeline">
                         <sw-workflow-approval-timeline
                             :history="history"
+                            :logs="instance.logs ?? []"
                             :current-node="currentNode"
                             :status="status"
                         />

@@ -7,15 +7,20 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestBrowser;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowPreviewSubscriber;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
+use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
+use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimePreviewEvent;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
+use Shopwell\Core\System\Organization\OrganizationDefaults;
 
 /**
  * @internal
@@ -96,6 +101,202 @@ class MultiPersonApprovalExecutionTest extends TestCase
         }
         static::assertCount(1, $finder->historyOf($instanceId, Context::createDefaultContext()));
         $this->assertSingleFinish($instanceId);
+    }
+
+    public function testAnyApprovalWaitsAfterRejectionAndPassesOnTheNextAgreement(): void
+    {
+        [$manager, $approvers, $userIds] = $this->participants(3);
+        $instanceId = $this->start($manager, $this->publish($manager, $userIds, 'core:or-sign'));
+        $tasks = $this->tasksByAssignee($instanceId);
+        $approvers[0]->jsonRequest('POST', '/api/_action/workflow/task/' . $tasks[$userIds[0]] . '/reject', ['comment' => 'Rejected']);
+        static::assertSame(204, $approvers[0]->getResponse()->getStatusCode(), $this->errors($approvers[0]));
+        $manager->request('GET', '/api/_action/workflow/instance/' . $instanceId);
+        static::assertSame('RUNNING', $this->response($manager)['data']['status']);
+
+        $approvers[1]->jsonRequest('POST', '/api/_action/workflow/task/' . $tasks[$userIds[1]] . '/approve', []);
+        static::assertSame(204, $approvers[1]->getResponse()->getStatusCode(), $this->errors($approvers[1]));
+        $manager->request('GET', '/api/_action/workflow/instance/' . $instanceId);
+        static::assertSame('AGREE', $this->response($manager)['data']['status']);
+        static::assertSame(1, static::getContainer()->get(WorkflowTaskFinder::class)->forInstance($instanceId, Context::createDefaultContext())->countByState(WorkflowTaskStates::CANCELED));
+        $this->assertNoTodos($approvers);
+        $this->assertSingleFinish($instanceId);
+    }
+
+    public function testAnyApprovalRejectsOnlyAfterEveryParticipantRejects(): void
+    {
+        [$manager, $approvers, $userIds] = $this->participants(3);
+        $instanceId = $this->start($manager, $this->publish($manager, $userIds, 'core:or-sign'));
+        $tasks = $this->tasksByAssignee($instanceId);
+
+        foreach ($approvers as $index => $approver) {
+            $approver->jsonRequest('POST', '/api/_action/workflow/task/' . $tasks[$userIds[$index]] . '/reject', ['comment' => 'Rejected']);
+            static::assertSame(204, $approver->getResponse()->getStatusCode(), $this->errors($approver));
+            $manager->request('GET', '/api/_action/workflow/instance/' . $instanceId);
+            static::assertSame($index === 2 ? 'REJECT' : 'RUNNING', $this->response($manager)['data']['status']);
+        }
+        $this->assertNoTodos($approvers);
+        $this->assertSingleFinish($instanceId);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function positionModes(): iterable
+    {
+        yield 'all members approve' => ['core:all'];
+        yield 'any approval wins' => ['core:or-sign'];
+        yield 'members approve in order' => ['core:sequential'];
+        yield 'first decision wins' => ['core:any'];
+    }
+
+    #[DataProvider('positionModes')]
+    public function testPositionPreviewAndActualParticipantsAgreeForEveryMultipleMode(string $mode): void
+    {
+        [$manager, $approvers, $userIds] = $this->participants(2);
+        $positionId = Uuid::randomHex();
+        static::getContainer()->get('position.repository')->create([[
+            'id' => $positionId, 'name' => 'Finance review', 'active' => true,
+        ]], Context::createDefaultContext());
+        $managerId = Uuid::fromBytesToHex(static::getContainer()->get(Connection::class)->fetchOne(
+            'SELECT id FROM user WHERE username = :username',
+            ['username' => $this->apiUsernames[0]],
+        ));
+        $departmentId = Uuid::randomHex();
+        static::getContainer()->get('organization_unit.repository')->create([[
+            'id' => $departmentId, 'organizationId' => OrganizationDefaults::ORGANIZATION,
+            'name' => 'Position approval department', 'active' => true,
+        ]], Context::createDefaultContext());
+        foreach ([$managerId, ...$userIds] as $memberId) {
+            static::getContainer()->get('user.repository')->update([[
+                'id' => $memberId,
+                'organizationUnitMappings' => [[
+                    'id' => Uuid::randomHex(), 'organizationUnitId' => $departmentId, 'isPrimary' => true,
+                ]],
+                'positionMappings' => [[
+                    'id' => Uuid::randomHex(), 'positionId' => $memberId === $managerId ? OrganizationDefaults::POSITION : $positionId,
+                    'organizationUnitId' => $departmentId, 'isPrimary' => true,
+                ]],
+            ]], Context::createDefaultContext());
+        }
+        $releaseId = $this->publish($manager, $userIds, $mode, positionIds: [$positionId]);
+        $instanceId = $this->start($manager, $releaseId);
+        $instance = static::getContainer()->get(WorkflowService::class)->loadInstance($instanceId, Context::createDefaultContext());
+        $release = static::getContainer()->get('workflow_release.repository')->search(new Criteria([$releaseId]), Context::createDefaultContext())->first();
+        static::assertInstanceOf(WorkflowReleaseEntity::class, $release);
+        $preview = new WorkflowRuntimePreviewEvent($release, [], new Context(new AdminApiSource($instance->initiatorId)));
+        static::getContainer()->get(ApprovalWorkflowPreviewSubscriber::class)->preview($preview);
+        $steps = $preview->getSteps();
+        static::assertNotNull($steps);
+        $expected = $userIds;
+        sort($expected);
+        static::assertSame($expected, array_column($steps[0]['assignees'], 'id'));
+
+        $byId = array_combine($userIds, $approvers);
+        $tasks = $this->tasksByAssignee($instanceId);
+        static::assertCount($mode === 'core:sequential' ? 1 : 2, $tasks);
+        foreach ($expected as $index => $userId) {
+            $tasks = $this->tasksByAssignee($instanceId);
+            $byId[$userId]->jsonRequest('POST', '/api/_action/workflow/task/' . $tasks[$userId] . '/approve', []);
+            static::assertSame(204, $byId[$userId]->getResponse()->getStatusCode(), $this->errors($byId[$userId]));
+            $manager->request('GET', '/api/_action/workflow/instance/' . $instanceId);
+            $detail = $this->response($manager)['data'];
+            $finished = $index === 1 || \in_array($mode, ['core:or-sign', 'core:any'], true);
+            static::assertSame($finished ? 'AGREE' : 'RUNNING', $detail['status']);
+            if ($finished) {
+                break;
+            }
+        }
+        $this->assertNoTodos($approvers);
+        $this->assertSingleFinish($instanceId);
+    }
+
+    public function testDepartmentIsFrozenAtStartWhileMembersAreResolvedAtNodeEntry(): void
+    {
+        [, $approvers, $userIds] = $this->participants(3);
+        $context = Context::createDefaultContext();
+        $managerId = Uuid::fromBytesToHex(static::getContainer()->get(Connection::class)->fetchOne(
+            'SELECT id FROM user WHERE username = :username',
+            ['username' => $this->apiUsernames[0]],
+        ));
+        $originalDepartment = Uuid::randomHex();
+        $newDepartment = Uuid::randomHex();
+        $positionId = Uuid::randomHex();
+        static::getContainer()->get('organization_unit.repository')->create([
+            ['id' => $originalDepartment, 'organizationId' => OrganizationDefaults::ORGANIZATION, 'name' => 'Original department', 'active' => true],
+            ['id' => $newDepartment, 'organizationId' => OrganizationDefaults::ORGANIZATION, 'name' => 'New department', 'active' => true],
+        ], $context);
+        static::getContainer()->get('position.repository')->create([
+            ['id' => $positionId, 'name' => 'Department reviewer', 'active' => true],
+        ], $context);
+        foreach ([$managerId => $originalDepartment, $userIds[0] => $originalDepartment, $userIds[1] => $originalDepartment, $userIds[2] => $newDepartment] as $userId => $departmentId) {
+            static::getContainer()->get('user.repository')->update([[
+                'id' => $userId,
+                'organizationUnitMappings' => [[
+                    'id' => Uuid::randomHex(), 'organizationUnitId' => $departmentId, 'isPrimary' => true,
+                    'isLeader' => \in_array($userId, [$userIds[1], $userIds[2]], true),
+                ]],
+                'positionMappings' => [[
+                    'id' => Uuid::randomHex(), 'positionId' => \in_array($userId, [$managerId, $userIds[0]], true) ? OrganizationDefaults::POSITION : $positionId,
+                    'organizationUnitId' => $departmentId, 'isPrimary' => true,
+                ]],
+            ]], $context);
+        }
+
+        $workflows = static::getContainer()->get(WorkflowService::class);
+        $definitionId = $workflows->createDefinition([
+            'code' => Uuid::randomHex(), 'name' => 'Department snapshot',
+            'graphData' => ['nodes' => [
+                ['id' => 'start', 'type' => 'snaker:start', 'properties' => []],
+                ['id' => 'fixed', 'type' => 'snaker:task', 'properties' => ['name' => 'Initial review', 'assigneeType' => 'user', 'assigneeValue' => [$userIds[0]], 'countersignType' => 'single']],
+                ['id' => 'leader', 'type' => 'snaker:task', 'properties' => ['name' => 'Department leaders', 'assigneeType' => 'unitLeader', 'countersignType' => 'countersign']],
+                ['id' => 'position', 'type' => 'snaker:task', 'properties' => ['name' => 'Position reviewers', 'assigneeType' => 'position', 'assigneeValue' => [$positionId], 'countersignType' => 'countersign']],
+                ['id' => 'end', 'type' => 'snaker:end', 'properties' => []],
+            ], 'edges' => [
+                ['id' => 'start-fixed', 'sourceNodeId' => 'start', 'targetNodeId' => 'fixed', 'properties' => []],
+                ['id' => 'fixed-leader', 'sourceNodeId' => 'fixed', 'targetNodeId' => 'leader', 'properties' => []],
+                ['id' => 'leader-position', 'sourceNodeId' => 'leader', 'targetNodeId' => 'position', 'properties' => []],
+                ['id' => 'position-end', 'sourceNodeId' => 'position', 'targetNodeId' => 'end', 'properties' => []],
+            ]],
+        ], $context);
+        $workflows->publishDefinition($definitionId, $context);
+        $instanceId = $workflows->start($definitionId, [], 'Department snapshot', new Context(new AdminApiSource($managerId)));
+        $firstTask = $this->tasksByAssignee($instanceId)[$userIds[0]];
+
+        static::getContainer()->get('user.repository')->update([[
+            'id' => $managerId,
+            'organizationUnitMappings' => [[
+                'id' => Uuid::randomHex(), 'organizationUnitId' => $newDepartment, 'isPrimary' => true,
+            ]],
+            'positionMappings' => [[
+                'id' => Uuid::randomHex(), 'positionId' => OrganizationDefaults::POSITION,
+                'organizationUnitId' => $newDepartment, 'isPrimary' => true,
+            ]],
+        ]], $context);
+        $approvers[0]->jsonRequest('POST', '/api/_action/workflow/task/' . $firstTask . '/approve', []);
+        static::assertSame(204, $approvers[0]->getResponse()->getStatusCode(), $this->errors($approvers[0]));
+        $finder = static::getContainer()->get(WorkflowTaskFinder::class);
+        $leaderTasks = $finder->forInstance($instanceId, $context)->filter(static fn ($task): bool => $task->isTodo());
+        static::assertSame([$userIds[1]], array_values($leaderTasks->map(static fn ($task): string => $task->assigneeId)));
+
+        // Add a position holder after start: freeze the department, not its staff.
+        static::getContainer()->get('user_position.repository')->create([[
+            'id' => Uuid::randomHex(), 'userId' => $userIds[0], 'positionId' => $positionId,
+            'organizationUnitId' => $originalDepartment, 'isPrimary' => false,
+        ]], $context);
+        $leaderTask = $leaderTasks->first();
+        static::assertNotNull($leaderTask);
+        $approvers[1]->jsonRequest('POST', '/api/_action/workflow/task/' . $leaderTask->id . '/approve', []);
+        static::assertSame(204, $approvers[1]->getResponse()->getStatusCode(), $this->errors($approvers[1]));
+        $positionTasks = $finder->forInstance($instanceId, $context)->filter(static fn ($task): bool => $task->isTodo());
+        $expected = [$userIds[0], $userIds[1]];
+        sort($expected);
+        static::assertSame($expected, array_values($positionTasks->map(static fn ($task): string => $task->assigneeId)));
+        foreach ([$approvers[0], $approvers[1]] as $index => $approver) {
+            $taskId = $this->tasksByAssignee($instanceId)[$userIds[$index]];
+            $approver->jsonRequest('POST', '/api/_action/workflow/task/' . $taskId . '/approve', []);
+            static::assertSame(204, $approver->getResponse()->getStatusCode(), $this->errors($approver));
+        }
+        static::assertSame('completed', $workflows->loadInstance($instanceId, $context)->state());
     }
 
     public function testSequentialStagesCreateFutureTasksOnlyAfterApprovalAndKeepSnapshot(): void
@@ -299,8 +500,9 @@ class MultiPersonApprovalExecutionTest extends TestCase
 
     /**
      * @param list<string> $userIds
+     * @param list<string>|null $positionIds
      */
-    private function publish(TestBrowser $manager, array $userIds, string $mode, bool $sequential = false, bool $threeStages = false): string
+    private function publish(TestBrowser $manager, array $userIds, string $mode, bool $sequential = false, bool $threeStages = false, ?array $positionIds = null): string
     {
         $draftId = Uuid::randomHex();
         $document = [
@@ -318,6 +520,9 @@ class MultiPersonApprovalExecutionTest extends TestCase
                 ['id' => 'rejected', 'source' => 'approval', 'sourcePort' => 'rejected', 'target' => 'rejected-end', 'targetPort' => 'in'],
             ],
         ];
+        if ($positionIds !== null) {
+            $document['nodes'][1]['config']['assignee'] = ['source' => 'core:positions', 'config' => ['positionIds' => $positionIds]];
+        }
         if ($sequential) {
             $document['nodes'][] = ['id' => 'second', 'type' => 'core:approval', 'typeVersion' => 1, 'config' => [
                 'label' => 'Finance', 'description' => 'Final check',

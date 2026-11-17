@@ -49,6 +49,7 @@ describe('workflow read-only graph', () => {
                                 round: 1,
                                 countersignType: 'countersign',
                                 state: 'agreed',
+                                requiredReviewer: true,
                                 assignee: { id: 'alice', name: 'Alice' },
                             },
                         ],
@@ -71,6 +72,9 @@ describe('workflow read-only graph', () => {
         expect(wrapper.findAll('path')).toHaveLength(2);
         expect(wrapper.get('.is--todo').text()).toContain('Finance review');
         expect(wrapper.get('[data-participant-state="agreed"]').text()).toContain('Alice');
+        expect(wrapper.get('[data-participant-state="agreed"]').text()).toContain(
+            'sw-workflow.runtime.participants.addedReviewerState',
+        );
         expect(wrapper.get('[data-participant-state="active"]').text()).toContain('Bob');
         expect(wrapper.text()).not.toContain('snaker:start');
         expect(wrapper.text()).not.toContain('snaker:end');

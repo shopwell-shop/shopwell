@@ -16,6 +16,11 @@ use Symfony\Contracts\EventDispatcher\Event;
 final class WorkflowInstancePresentationEvent extends Event
 {
     /**
+     * @var list<\Closure(array<string, mixed>): array<string, mixed>>
+     */
+    private array $filters = [];
+
+    /**
      * @param array<string, mixed> $data
      */
     public function __construct(
@@ -41,10 +46,25 @@ final class WorkflowInstancePresentationEvent extends Event
     }
 
     /**
+     * Filters run after subscribers have assembled the response, including extension fields.
+     *
+     * @param \Closure(array<string, mixed>): array<string, mixed> $filter
+     */
+    public function filterData(\Closure $filter): void
+    {
+        $this->filters[] = $filter;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function getData(): array
     {
-        return $this->data;
+        $data = $this->data;
+        foreach ($this->filters as $filter) {
+            $data = $filter($data);
+        }
+
+        return $data;
     }
 }

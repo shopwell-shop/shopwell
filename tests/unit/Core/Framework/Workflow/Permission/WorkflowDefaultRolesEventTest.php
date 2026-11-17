@@ -29,7 +29,7 @@ class WorkflowDefaultRolesEventTest extends TestCase
         static::assertSame([
             'workflow.viewer', 'workflow.creator', 'workflow.editor', 'workflow.deleter', 'workflow.publisher',
             'workflow:read', 'workflow:create', 'workflow:update', 'workflow:delete',
-            'workflow:publish', 'workflow_draft:read', 'user:read',
+            'workflow:publish', 'workflow_draft:read', 'position:read', 'user:read',
         ], $event->getPrivileges(WorkflowDefaultRolesEvent::MANAGER));
     }
 

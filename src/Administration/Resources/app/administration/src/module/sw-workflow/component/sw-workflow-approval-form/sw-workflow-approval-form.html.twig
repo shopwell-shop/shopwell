@@ -1,0 +1,53 @@
+{% block sw_workflow_approval_form %}
+<div class="sw-workflow-approval-form">
+    <mt-loader v-if="isLoading" />
+    <mt-banner
+        v-if="loadError"
+        variant="critical"
+    >
+        {{ $t('sw-workflow.formPermissions.loadFailed') }}
+    </mt-banner>
+    <template v-if="fields.length">
+        <h4>{{ $t('sw-workflow.formPermissions.editTitle') }}</h4>
+        <p>{{ $t('sw-workflow.formPermissions.saveHint') }}</p>
+    </template>
+    {% block sw_workflow_approval_form_fields %}
+    <div
+        v-for="field in fields"
+        :key="field.key"
+        :data-form-field="field.key"
+    >
+        <mt-select
+            v-if="field.type === 'select' || field.dataSource"
+            v-model="values[field.key]"
+            :label="field.label"
+            :options="field.options"
+            :required="field.required"
+            :disabled="disabled || isLoading"
+        />
+        <mt-textarea
+            v-else-if="field.type === 'text'"
+            v-model="values[field.key]"
+            :label="field.label"
+            :required="field.required"
+            :disabled="disabled || isLoading"
+        />
+        <mt-text-field
+            v-else
+            v-model="values[field.key]"
+            :label="field.label"
+            :type="field.type === 'date' ? 'date' : 'text'"
+            :inputmode="field.type === 'date' ? undefined : 'decimal'"
+            :required="field.required"
+            :disabled="disabled || isLoading"
+        />
+        <p
+            v-if="errors[field.key]"
+            role="alert"
+        >
+            {{ errors[field.key] }}
+        </p>
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

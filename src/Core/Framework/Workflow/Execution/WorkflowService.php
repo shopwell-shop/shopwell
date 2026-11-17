@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionEntity;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionStatus;
+use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowInstanceMetadataEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowStartedEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowRecorder;
@@ -21,6 +22,8 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\WorkflowGraphValidator;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceCollection;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
+use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -46,6 +49,7 @@ final readonly class WorkflowService
         private WorkflowInputSchema $inputs,
         private ClockInterface $clock,
         private TranslatorInterface $translator,
+        private EventDispatcherInterface $dispatcher,
     ) {
     }
 
@@ -141,6 +145,8 @@ final readonly class WorkflowService
                 Context::SYSTEM_SCOPE,
                 function (Context $scoped) use ($definition, $graph, $formData, $title, $actorId): string {
                     $instanceId = Uuid::randomHex();
+                    $metadata = new WorkflowInstanceMetadataEvent($actorId, $scoped);
+                    $this->dispatcher->dispatch($metadata);
 
                     $this->instanceRepository->create([
                         [
@@ -151,6 +157,7 @@ final readonly class WorkflowService
                             'title' => $title !== '' ? $title : $definition->name,
                             'initiatorId' => $actorId,
                             'formData' => $formData,
+                            'ext' => $metadata->getMetadata(),
                             // GraphData has already removed fields outside the snapshot contract.
                             'graphSnapshot' => $graph->toArray(),
                             'stateId' => $this->instanceStates->initialStateId($scoped),
@@ -271,7 +278,7 @@ final readonly class WorkflowService
                 throw WorkflowExecutionException::forbidden('Only the initiator can cancel this workflow.');
             }
 
-            if (!$instance->isRunning()) {
+            if (!$instance->isRunning() && $instance->state() !== WorkflowInstanceStates::RETURNED) {
                 throw WorkflowExecutionException::instanceNotRunning($instanceId);
             }
 

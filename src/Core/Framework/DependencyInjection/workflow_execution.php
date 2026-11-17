@@ -6,10 +6,13 @@ use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowGraphDiagnostics;
+use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowCopyController;
+use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowCopyPresenter;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowExecutionDefinitionController;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowExecutionDefinitionPresenter;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowInstanceController;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowInstancePresenter;
+use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowPayloadProtection;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowTaskController;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowTaskPresenter;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowUserLookup;
@@ -20,7 +23,9 @@ use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterfac
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\DepartmentLeaderAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\InitiatorAssigneeResolver;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\OrganizationAssigneeContext;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\OrganizationAssigneeLookup;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\PositionAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\RoleAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\UserAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ComparisonConditionEvaluator;
@@ -29,6 +34,7 @@ use Shopwell\Core\Framework\Workflow\Execution\Condition\ConditionExpressionPars
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ExprNormalizer;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\WorkflowConditionEvaluator;
 use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyEntity;
+use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyService;
 use Shopwell\Core\Framework\Workflow\Execution\CounterSignCalculator;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionEntity;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\ConditionExecutor;
@@ -66,12 +72,21 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalCompletionSubscriber;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalInstancePresentationSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalResubmission;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskCompletion;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskParticipation;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskPolicy;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\DepartmentLeaderApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\PositionApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\PositionApprovalValidationSubscriber;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\UserApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormPolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormPresenter;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormService;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormStore;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\AllApprovalMode;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\AnyApprovalMode;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalMode;
@@ -79,6 +94,17 @@ use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\FirstDecisionApprovalMode;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\SequentialApprovalMode;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\SingleApprovalMode;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderController;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderEntity;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderPolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderPresenter;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderProtection;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderService;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderStore;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ScheduledTask\ApprovalReminderTask;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ScheduledTask\ApprovalReminderTaskHandler;
+use Shopwell\Core\Framework\Workflow\Node\Copy\CopyWorkflowSubscriber;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowCompiler;
@@ -86,6 +112,7 @@ use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublis
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompilerRegistry;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ConditionApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\CopyApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\EndApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\StartApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\TaskApprovalNodeCompiler;
@@ -117,6 +144,61 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->instanceof(ApprovalMode::class)->tag('shopwell.workflow.approval.mode');
     $services->instanceof(ApprovalAssigneeSource::class)->tag('shopwell.workflow.approval.assignee_source');
 
+    $services->set(ApprovalFormPolicy::class);
+    $services->set(ApprovalFormStore::class)->args([service(Connection::class), service(ClockInterface::class)]);
+    $services->set(ApprovalFormService::class)->args([
+        service(ApprovalFormPolicy::class), service(WorkflowInputSchema::class), service(ApprovalFormStore::class),
+        service('workflow_instance.repository'), service('event_dispatcher'),
+    ])->public();
+    $services->set(ApprovalFormPresenter::class)->args([
+        service(ApprovalFormService::class), service(ApprovalFormStore::class), service(WorkflowTaskFinder::class),
+        service('workflow_copy.repository'), service('request_stack'), service(WorkflowUserLookup::class),
+    ])->tag('kernel.event_subscriber');
+
+    $services->set(ApprovalReminderEntity::class)->tag('shopwell.entity');
+    $services->set(ApprovalReminderProtection::class)->tag('shopwell.entity.extension');
+    $services->set(ApprovalReminderStore::class)->args([
+        service('workflow_approval_reminder.repository'),
+        service('workflow_task.repository'),
+        service('workflow_instance.repository'),
+    ]);
+    $services->set(ApprovalReminderPolicy::class)->args([
+        service(ClockInterface::class),
+        service('event_dispatcher'),
+    ]);
+    $services->set(ApprovalReminderPresenter::class)->args([
+        service(ApprovalReminderStore::class),
+        service(ApprovalReminderPolicy::class),
+        service(ClockInterface::class),
+    ]);
+    $services->set(ApprovalReminderService::class)->args([
+        service('workflow_approval_reminder.repository'),
+        service(ApprovalReminderStore::class),
+        service(WorkflowService::class),
+        service(WorkflowTaskFinder::class),
+        service(WorkflowTransactionRunner::class),
+        service(WorkflowRecorder::class),
+        service(ClockInterface::class),
+        service(ApprovalReminderPolicy::class),
+        service('event_dispatcher'),
+        service('logger'),
+        service(Connection::class),
+    ])->public();
+    $services->set(ApprovalReminderSubscriber::class)->args([
+        service(ApprovalReminderStore::class),
+        service(WorkflowTransactionRunner::class),
+    ])->tag('kernel.event_subscriber');
+    $services->set(ApprovalReminderController::class)
+        ->args([service(ApprovalReminderService::class)])
+        ->public()
+        ->tag('controller.service_arguments');
+    $services->set(ApprovalReminderTask::class)->tag('shopwell.scheduled.task');
+    $services->set(ApprovalReminderTaskHandler::class)->args([
+        service('scheduled_task.repository'),
+        service('logger'),
+        service(ApprovalReminderService::class),
+    ])->tag('messenger.message_handler');
+
     $services->set(SingleApprovalMode::class);
     $services->set(AllApprovalMode::class);
     $services->set(FirstDecisionApprovalMode::class);
@@ -126,6 +208,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(UserApprovalAssigneeSource::class . '.single')->class(UserApprovalAssigneeSource::class)->args([false]);
     $services->set(UserApprovalAssigneeSource::class . '.multiple')->class(UserApprovalAssigneeSource::class)->args([true]);
     $services->set(DepartmentLeaderApprovalAssigneeSource::class);
+    $services->set(PositionApprovalAssigneeSource::class);
+    $services->set(PositionApprovalValidationSubscriber::class)->args([service('position.repository')])->tag('kernel.event_subscriber');
     $services->set(ApprovalAssigneeRegistry::class)->args([tagged_iterator('shopwell.workflow.approval.assignee_source')]);
     $services->set(ApprovalConfigurationCompiler::class)->args([
         service(ApprovalAssigneeRegistry::class),
@@ -133,8 +217,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         service(ExtensionDispatcher::class),
     ]);
     $services->set(StartApprovalNodeCompiler::class)->args([service(WorkflowInputSchema::class), service('translator')]);
-    $services->set(TaskApprovalNodeCompiler::class)->args([service(ApprovalConfigurationCompiler::class), service('translator')]);
+    $services->set(ApprovalTaskPolicy::class)->args([service('event_dispatcher')]);
+    $services->set(TaskApprovalNodeCompiler::class)->args([service(ApprovalConfigurationCompiler::class), service('translator'), service(ApprovalTaskPolicy::class)]);
     $services->set(ConditionApprovalNodeCompiler::class)->args([service(ApprovalCondition::class), service('translator')]);
+    $services->set(CopyApprovalNodeCompiler::class)->args([service('translator')]);
     $services->set(EndApprovalNodeCompiler::class);
     $services->set(ApprovalNodeCompilerRegistry::class)->args([tagged_iterator('shopwell.workflow.approval.node_compiler')]);
     $services->set(ApprovalWorkflowCompiler::class)->args([
@@ -161,6 +247,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         service(WorkflowUserLookup::class),
         service(AssigneeResolverRegistry::class),
         service(ApprovalModeRegistry::class),
+        service('event_dispatcher'),
     ])->tag('kernel.event_subscriber');
     $services->set(WorkflowInputSchema::class)->args([service('event_dispatcher')]);
     $services->set(ApprovalCondition::class)->args([service(WorkflowInputSchema::class)]);
@@ -172,6 +259,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('workflow_execution_definition.repository'),
             service('user.repository'),
             service(WorkflowGraphValidator::class),
+            service('event_dispatcher'),
         ])
         ->tag('shopwell.workflow.publisher')->tag('kernel.event_subscriber');
     $services->set(WorkflowDefinitionWriteProtection::class)
@@ -185,6 +273,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(WorkflowTaskHistoryEntity::class)->tag('shopwell.entity');
     $services->set(WorkflowLogEntity::class)->tag('shopwell.entity');
     $services->set(WorkflowCopyEntity::class)->tag('shopwell.entity');
+
+    foreach ([
+        'workflow_instance' => ['formData', 'graphSnapshot', 'ext'],
+        'workflow_node_execution' => ['output'],
+        'workflow_task' => ['ext'],
+        'workflow_task_history' => ['ext'],
+        'workflow_log' => ['payload'],
+        'workflow_copy' => ['ext'],
+    ] as $entityName => $fields) {
+        $services->set(WorkflowPayloadProtection::class . '.' . $entityName, WorkflowPayloadProtection::class)
+            ->args([$entityName, $fields])
+            ->tag('shopwell.entity.extension');
+    }
 
     $services->set(ConditionExpressionParser::class);
     $services->set(ExprNormalizer::class)->args([service(ConditionExpressionParser::class)]);
@@ -224,7 +325,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([tagged_iterator('shopwell.workflow.execution.node_executor')]);
 
     $services->set(OrganizationAssigneeLookup::class)->args([service('user_organization_unit.repository')]);
-    $services->set(DepartmentLeaderAssigneeResolver::class)->args([service(OrganizationAssigneeLookup::class)]);
+    $services->set(OrganizationAssigneeContext::class)->args([service(OrganizationAssigneeLookup::class)])->tag('kernel.event_subscriber');
+    $services->set(DepartmentLeaderAssigneeResolver::class)->args([service(OrganizationAssigneeLookup::class), service(OrganizationAssigneeContext::class)]);
+    $services->set(PositionAssigneeResolver::class)->args([service('user_position.repository'), service(OrganizationAssigneeLookup::class), service(OrganizationAssigneeContext::class)]);
 
     $services->set(UserAssigneeResolver::class)->args([service('user.repository')]);
     $services->set(RoleAssigneeResolver::class)->args([service('user.repository')]);
@@ -320,6 +423,29 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         service(WorkflowInputSchema::class),
         service(ClockInterface::class),
         service('translator'),
+        service('event_dispatcher'),
+    ])->public();
+    $services->set(ApprovalTaskParticipation::class)->args([
+        service('workflow_task.repository'),
+        service(WorkflowTaskFinder::class),
+        service(WorkflowTaskStateHandler::class),
+        service(OrganizationAssigneeLookup::class),
+        service(WorkflowRecorder::class),
+        service(WorkflowEventQueue::class),
+        service(ExtensionDispatcher::class),
+    ]);
+    $services->set(ApprovalResubmission::class)->args([
+        service(WorkflowService::class),
+        service('workflow_instance.repository'),
+        service(WorkflowEngine::class),
+        service(WorkflowTaskFinder::class),
+        service(WorkflowTaskStateHandler::class),
+        service(WorkflowInstanceStateHandler::class),
+        service(WorkflowRecorder::class),
+        service(ApprovalFormService::class),
+        service(WorkflowTransactionRunner::class),
+        service(WorkflowEventQueue::class),
+        service('event_dispatcher'),
     ])->public();
     $services->set(ApprovalWorkflowService::class)->args([
         service(WorkflowService::class),
@@ -332,11 +458,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         service(WorkflowInstanceStateHandler::class),
         service(WorkflowCancellationStore::class),
         service(ApprovalTaskCompletion::class),
+        service(ApprovalTaskParticipation::class),
+        service(ApprovalResubmission::class),
+        service(ApprovalTaskPolicy::class),
+        service(ExtensionDispatcher::class),
+        service(WorkflowRecorder::class),
+        service(ApprovalFormService::class),
     ])->public();
 
     $services->set(WorkflowUserLookup::class)->args([service('user.repository')]);
     $services->set(WorkflowExecutionDefinitionPresenter::class);
-    $services->set(WorkflowTaskPresenter::class)->args([service(WorkflowUserLookup::class), service('workflow_instance.repository')]);
+    $services->set(WorkflowTaskPresenter::class)->args([
+        service(WorkflowUserLookup::class),
+        service('workflow_instance.repository'),
+        service(ApprovalTaskPolicy::class),
+        service(ApprovalReminderPresenter::class),
+    ]);
 
     $services->set(WorkflowInstancePresenter::class)->args([
         service(WorkflowUserLookup::class),
@@ -368,9 +505,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WorkflowInstancePresenter::class),
             service('workflow_instance.repository'),
             service(WorkflowService::class),
+            service(ApprovalResubmission::class),
         ])
         ->public()
         ->call('setContainer', [service('service_container')]);
+
+    $services->set(CopyWorkflowSubscriber::class)->args([service('user.repository')])->tag('kernel.event_subscriber');
+    $services->set(WorkflowCopyService::class)->args([
+        service('workflow_copy.repository'),
+        service(WorkflowService::class),
+        service(WorkflowTransactionRunner::class),
+        service(ClockInterface::class),
+    ])->public();
+    $services->set(WorkflowCopyPresenter::class)->args([service('workflow_instance.repository'), service(WorkflowUserLookup::class)]);
+    $services->set(WorkflowCopyController::class)->args([service(WorkflowCopyService::class), service(WorkflowCopyPresenter::class)])
+        ->public()->tag('controller.service_arguments');
 
     $services->set(WorkflowTaskController::class)
         ->args([

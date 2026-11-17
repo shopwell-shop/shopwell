@@ -25,4 +25,5 @@ return static function (RoutingConfigurator $routes): void {
     $routes->import('../../ContentSystem/Api/*Controller.php', 'attribute');
     $routes->import('../../Workflow/Api/*Controller.php', 'attribute');
     $routes->import('../../Workflow/Execution/Api/*Controller.php', 'attribute');
+    $routes->import('../../Workflow/Node/Approval/Reminder/*Controller.php', 'attribute');
 };

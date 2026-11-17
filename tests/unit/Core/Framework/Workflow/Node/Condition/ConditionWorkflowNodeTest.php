@@ -60,6 +60,26 @@ class ConditionWorkflowNodeTest extends TestCase
         yield 'inclusive upper threshold' => ['lessThanOrEqual'];
     }
 
+    public function testAcceptsNestedConditionsAndRejectsInvalidChildren(): void
+    {
+        $comparison = ['field' => 'request.amount', 'fieldType' => 'amount', 'operator' => 'greaterThan', 'value' => '5000'];
+        $group = ['operator' => 'and', 'conditions' => [$comparison, ['operator' => 'or', 'conditions' => [$comparison]]]];
+        $node = new WorkflowNode('route', 'core:condition', 1, ['branches' => [
+            ['id' => 'branch-a', 'label' => 'Finance'] + $group,
+        ]]);
+        $event = new WorkflowValidationEvent(new WorkflowDocument([$node], []));
+        (new ConditionWorkflowSubscriber())->validate($event);
+        static::assertSame([], $event->getViolations());
+
+        $group['conditions'][1]['conditions'] = [];
+        $invalid = new WorkflowNode('route', 'core:condition', 1, ['branches' => [
+            ['id' => 'branch-a', 'label' => 'Finance'] + $group,
+        ]]);
+        $event = new WorkflowValidationEvent(new WorkflowDocument([$invalid], []));
+        (new ConditionWorkflowSubscriber())->validate($event);
+        static::assertSame(['condition_invalid_rule'], array_column($event->getViolations(), 'code'));
+    }
+
     public function testIncompleteRulesKeepTheirPortsAndInvalidIdentifiersAreFiltered(): void
     {
         $node = new WorkflowNode('route', 'core:condition', 1, ['branches' => [

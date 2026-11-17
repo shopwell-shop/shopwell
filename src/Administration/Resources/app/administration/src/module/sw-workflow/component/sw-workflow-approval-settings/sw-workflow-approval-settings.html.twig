@@ -1,71 +1,136 @@
 {% block sw_workflow_approval_settings %}
 <section class="sw-workflow-approval-settings">
-    <mt-select
-        v-if="sourceOptions.length > 1 || !source"
-        class="sw-workflow-approval-settings__source"
-        :hint="$t('sw-workflow.approval.sourceHint')"
-        :model-value="source ? settings.assignee.source : null"
-        :options="sourceOptions"
-        :label="$t('sw-workflow.approval.source')"
-        :placeholder="$t('sw-workflow.approval.selectSource')"
-        :hide-clearable-button="true"
-        :disabled="!allowEdit"
-        @update:model-value="changeSource"
+    <mt-tabs
+        default-item="settings"
+        position-identifier="sw-workflow-approval-settings-tabs"
+        :items="tabs"
+        @new-item-active="activeTab = $event"
     />
-    <component
-        :is="source.settingsComponent"
-        v-if="source"
-        :config="settings.assignee.config"
-        :node="node"
-        :allow-edit="allowEdit"
-        @update-config="updateAssignee"
-    />
-    <p
-        v-else
-        class="sw-workflow-approval-settings__unavailable"
-        role="status"
-    >
-        {{ $t('sw-workflow.approval.sourceUnavailable') }}
-    </p>
-    <mt-select
-        v-if="modeOptions.length > 1 || !mode"
-        class="sw-workflow-approval-settings__mode-select"
-        :model-value="modeValue"
-        :options="modeOptions"
-        :label="$t('sw-workflow.approval.mode')"
-        :placeholder="$t('sw-workflow.approval.selectMode')"
-        :hide-clearable-button="true"
-        :disabled="!allowEdit"
-        @update:model-value="changeMode"
-    />
-    <p
-        v-if="mode && !modeCompatible"
-        class="sw-workflow-approval-settings__unavailable"
-        role="status"
-    >
-        {{ $t('sw-workflow.approval.incompatibleMode') }}
-    </p>
     <div
-        v-if="mode"
-        class="sw-workflow-approval-settings__mode"
+        v-if="activeTab === 'settings'"
+        class="sw-workflow-approval-settings__configuration"
     >
-        <h4>{{ $t(mode.labelKey) }}</h4>
-        <p>{{ $t(mode.descriptionKey) }}</p>
+        <mt-select
+            v-if="sourceOptions.length > 1 || !source"
+            class="sw-workflow-approval-settings__source"
+            :hint="$t('sw-workflow.approval.sourceHint')"
+            :model-value="source ? settings.assignee.source : null"
+            :options="sourceOptions"
+            :label="$t('sw-workflow.approval.source')"
+            :placeholder="$t('sw-workflow.approval.selectSource')"
+            :hide-clearable-button="true"
+            :disabled="!allowEdit"
+            @update:model-value="changeSource"
+        />
         <component
-            :is="mode.settingsComponent"
-            v-if="mode.settingsComponent"
-            :config="settings.approval.config"
+            :is="source.settingsComponent"
+            v-if="source"
+            :config="settings.assignee.config"
             :node="node"
             :allow-edit="allowEdit"
-            @update-config="updateApproval"
+            @update-config="updateAssignee"
         />
+        <p
+            v-else
+            class="sw-workflow-approval-settings__unavailable"
+            role="status"
+        >
+            {{ $t('sw-workflow.approval.sourceUnavailable') }}
+        </p>
+        <mt-select
+            v-if="modeOptions.length > 1 || !mode"
+            class="sw-workflow-approval-settings__mode-select"
+            :model-value="modeValue"
+            :options="modeOptions"
+            :label="$t('sw-workflow.approval.mode')"
+            :placeholder="$t('sw-workflow.approval.selectMode')"
+            :hide-clearable-button="true"
+            :disabled="!allowEdit"
+            @update:model-value="changeMode"
+        />
+        <p
+            v-if="mode && !modeCompatible"
+            class="sw-workflow-approval-settings__unavailable"
+            role="status"
+        >
+            {{ $t('sw-workflow.approval.incompatibleMode') }}
+        </p>
+        <div
+            v-if="mode"
+            class="sw-workflow-approval-settings__mode"
+        >
+            <h4>{{ $t(mode.labelKey) }}</h4>
+            <p>{{ $t(mode.descriptionKey) }}</p>
+            <component
+                :is="mode.settingsComponent"
+                v-if="mode.settingsComponent"
+                :config="settings.approval.config"
+                :node="node"
+                :allow-edit="allowEdit"
+                @update-config="updateApproval"
+            />
+        </div>
+        <p
+            v-else
+            class="sw-workflow-approval-settings__unavailable"
+            role="status"
+        >
+            {{ $t('sw-workflow.approval.modeUnavailable') }}
+        </p>
+        {% block sw_workflow_approval_settings_deadline %}
+        <div class="sw-workflow-approval-settings__deadline">
+            <h4>{{ $t('sw-workflow.reminder.settings.title') }}</h4>
+            <mt-switch
+                data-testid="approval-deadline-enabled"
+                :label="$t('sw-workflow.reminder.settings.enabled')"
+                :model-value="deadlineEnabled"
+                :disabled="!allowEdit"
+                @update:model-value="toggleDeadline"
+            />
+            <template v-if="deadlineEnabled">
+                <mt-number-field
+                    data-testid="approval-deadline-minutes"
+                    :label="$t('sw-workflow.reminder.settings.minutes')"
+                    :help-text="$t('sw-workflow.reminder.settings.hint')"
+                    :model-value="deadlineMinutes"
+                    :min="1"
+                    :max="525600"
+                    :digits="0"
+                    :disabled="!allowEdit"
+                    required
+                    @update:model-value="changeDeadlineMinutes"
+                />
+                <mt-switch
+                    :label="$t('sw-workflow.reminder.settings.automatic')"
+                    :model-value="settings.deadline?.remind === true"
+                    :disabled="!allowEdit"
+                    @update:model-value="changeDeadlineReminder"
+                />
+            </template>
+        </div>
+        {% endblock %}
+        {% block sw_workflow_approval_settings_operations %}
+        <div class="sw-workflow-approval-settings__operations">
+            <h4>{{ $t('sw-workflow.approval.operationsTitle') }}</h4>
+            <p>{{ $t('sw-workflow.approval.operationsHint') }}</p>
+            <mt-switch
+                v-for="operation in operations"
+                :key="operation.name"
+                :data-operation="operation.name"
+                :label="$t(operation.labelKey)"
+                :model-value="enabledOperations.includes(operation.name)"
+                :disabled="!allowEdit"
+                @update:model-value="changeOperation(operation.name, $event)"
+            />
+        </div>
+        {% endblock %}
     </div>
-    <p
-        v-else
-        class="sw-workflow-approval-settings__unavailable"
-        role="status"
-    >
-        {{ $t('sw-workflow.approval.modeUnavailable') }}
-    </p>
+    <sw-workflow-form-permissions
+        v-else-if="activeTab === 'form'"
+        :fields="formFields"
+        :permissions="formPermissions"
+        :allow-edit="allowEdit"
+        @update-permissions="updateFormPermissions"
+    />
 </section>
 {% endblock %}

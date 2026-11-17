@@ -17,6 +17,26 @@ describe('approval extensions', () => {
         expect(service.read({ id: 'a', type: 'core:approval', typeVersion: 1, config })).toEqual(config);
         expect(service.getSource('custom:manager')).toBeUndefined();
     });
+    it('registers operation contributions with owned disposal and preserves an explicit empty selection', () => {
+        const service = new WorkflowApprovalService();
+        const operation = { name: 'example:consult', labelKey: 'example.consult', actionComponent: 'example-consult' };
+        const dispose = service.registerOperation(operation);
+        expect(service.operations()).toEqual([operation]);
+        expect(() => service.registerOperation(operation)).toThrow();
+        const config = {
+            assignee: { source: 'core:user', config: {} },
+            approval: { mode: 'core:single', config: {} },
+            operations: [],
+        };
+        expect(service.read({ id: 'a', type: 'core:approval', typeVersion: 1, config })).toEqual(config);
+        dispose();
+        const disposeReplacement = service.registerOperation(operation);
+        dispose();
+        expect(service.operations()).toEqual([operation]);
+        disposeReplacement();
+        expect(service.operations()).toEqual([]);
+    });
+
     it('registers alternate sources and approval modes without changing the editor', () => {
         const service = new WorkflowApprovalService();
         const source = {
@@ -41,7 +61,40 @@ describe('approval extensions', () => {
     it('offers organizational sources with executable approval modes', () => {
         const service = Shopwell.Service('workflowApprovalService');
         expect(service.getSource('core:supervisor')).toBeUndefined();
-        expect(service.getSource('core:department-leaders')?.supportedModes).toEqual(['core:all', 'core:any']);
+        expect(service.getSource('core:department-leaders')?.supportedModes).toEqual([
+            'core:all',
+            'core:or-sign',
+            'core:sequential',
+            'core:any',
+        ]);
+    });
+    it('offers distinct executable modes without changing saved first-decision settings', () => {
+        const service = Shopwell.Service('workflowApprovalService');
+
+        for (const source of ['core:users', 'core:department-leaders']) {
+            for (const mode of [
+                'core:all',
+                'core:or-sign',
+                'core:sequential',
+                'core:any',
+            ]) {
+                expect(service.supportsMode(source, mode, 1)).toBe(true);
+                expect(service.getMode(mode)).toBeDefined();
+            }
+        }
+
+        expect(service.getMode('core:any')?.labelKey).not.toBe(service.getMode('core:or-sign')?.labelKey);
+        expect(service.supportsMode('core:user', 'core:sequential', 1)).toBe(false);
+        const node = {
+            id: 'review',
+            type: 'core:approval',
+            typeVersion: 1,
+            config: {
+                assignee: { source: 'core:users', config: { userIds: ['reviewer'] } },
+                approval: { mode: 'core:any', config: {} },
+            },
+        };
+        expect(service.read(node)).toEqual(node.config);
     });
     it('connects the default source and mode to approval presentation extensions', () => {
         const service = Shopwell.Service('workflowApprovalService');

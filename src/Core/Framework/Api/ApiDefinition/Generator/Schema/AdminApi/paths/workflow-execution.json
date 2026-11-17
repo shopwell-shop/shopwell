@@ -278,7 +278,7 @@
                 ],
                 "operationId": "getWorkflowInstance",
                 "summary": "Read a workflow instance and its approval progress",
-                "description": "Requires workflow_instance:access. Only participants may read an instance. Includes the immutable graph and submitted form, approval stages, tasks and history.",
+                "description": "Requires workflow_instance:access. Only participants may read an instance. Includes the immutable graph and submitted form, approval stages, tasks and history. Form data, schema, graph properties and form-change history are projected through the selected task or copy permissions. Returns formVersion, formPermissions, formContexts, formContextId, formContextRequired and formChanges for approval workflows.",
                 "responses": {
                     "200": {
                         "description": "Successful response.",
@@ -307,6 +307,15 @@
                         "name": "instanceId",
                         "in": "path",
                         "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "taskId",
+                        "in": "query",
+                        "required": false,
+                        "description": "Own task or copy ID selecting the form permission context. Multiple contexts require an explicit choice; visibility is never unioned.",
                         "schema": {
                             "type": "string"
                         }
@@ -501,13 +510,19 @@
                 ],
                 "operationId": "approveWorkflowTask",
                 "summary": "Approve an assigned workflow task",
-                "description": "Requires workflow_task:decide. The task must belong to the authenticated user. Empty comments are treated as absent.",
+                "description": "Requires workflow_task:decide. The task must belong to the authenticated user. Empty comments are treated as absent. Form changes, audit and approval are atomic. Node-required fields must be complete before approval; rejection and return do not save changes.",
                 "responses": {
                     "204": {
                         "description": "Successful response with no body."
                     },
                     "403": {
                         "description": "Required privileges are missing."
+                    },
+                    "409": {
+                        "description": "The form version is missing or stale, or the task is no longer pending."
+                    },
+                    "400": {
+                        "description": "Malformed patch, invalid value, or missing node-required value."
                     }
                 },
                 "parameters": [
@@ -530,6 +545,30 @@
                                 "properties": {
                                     "comment": {
                                         "description": "Optional string comment. Empty, whitespace-only and non-string values are treated as absent."
+                                    },
+                                    "formData": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": {
+                                                    "type": [
+                                                        "string",
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "type": "array",
+                                                "maxItems": 0
+                                            }
+                                        ],
+                                        "description": "A patch containing only changed editable fields. Hidden, read-only and unknown fields are rejected; omitted fields are retained."
+                                    },
+                                    "formVersion": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "description": "Version from the authorized instance response. Required for a nonempty formData patch; stale versions return 409."
                                     }
                                 }
                             }
@@ -582,6 +621,377 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/copy": {
+            "get": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "listWorkflowReceivedCopies",
+                "summary": "List copies received by the current user",
+                "description": "Requires workflow_instance:access. The recipient is derived from the authenticated context; client-supplied user IDs are ignored.",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkflowExecutionReceivedCopy"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "required": [
+                                                "total"
+                                            ],
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Clamped to 1–100.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Negative values are treated as zero.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    }
+                ]
+            }
+        },
+        "/_action/workflow/copy/{copyId}/read": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "markWorkflowCopyRead",
+                "summary": "Acknowledge a received workflow copy",
+                "description": "Requires workflow_instance:access and receipt ownership. Repeated calls preserve the first read timestamp. Reading does not decide or advance the workflow.",
+                "parameters": [
+                    {
+                        "name": "copyId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The receipt is marked as read."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing or the receipt does not belong to the current user."
+                    }
+                }
+            }
+        },
+        "/_action/workflow/task/{taskId}/participation": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "participateWorkflowTask",
+                "summary": "Transfer a task or add a mandatory parallel reviewer",
+                "description": "Requires workflow_task:decide and ownership of a current pending task. The target must be an active eligible member, distinct from existing stage participants. Transfer preserves the original approval position; add-sign is a separate mandatory group. All added reviewers must approve and any may reject. Both operations are serialized by instance and audited separately from votes. The operation must be enabled in the immutable node snapshot.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "action",
+                                    "targetUserId",
+                                    "comment"
+                                ],
+                                "properties": {
+                                    "action": {
+                                        "type": "string",
+                                        "description": "Built-in actions: transfer, add-sign. The node must enable the operation."
+                                    },
+                                    "targetUserId": {
+                                        "type": "string",
+                                        "pattern": "^[0-9a-fA-F]{32}$"
+                                    },
+                                    "comment": {
+                                        "type": "string",
+                                        "minLength": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/task/{taskId}/return": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "returnWorkflowTaskToInitiator",
+                "summary": "Return to the initiator for changes",
+                "description": "Requires workflow_task:decide and ownership of a current task. A nonblank comment is required. Cancels active tasks and executions without terminating the instance. The return operation must be enabled in the immutable node snapshot.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "comment"
+                                ],
+                                "properties": {
+                                    "comment": {
+                                        "type": "string",
+                                        "description": "WorkflowService rejects an absent or whitespace-only comment.",
+                                        "minLength": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/instance/{instanceId}/resubmit": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "resubmitWorkflowInstance",
+                "summary": "Resubmit a returned instance in a new round",
+                "description": "Requires workflow_instance:start and initiator ownership. The expected round must match. Uses the saved graph and input schema; business subscribers may reject changes to immutable fields. formData is a patch: omitted fields are retained. Frozen business inputs cannot be submitted as editable fields. Changes are privately audited.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "round",
+                                    "formData"
+                                ],
+                                "properties": {
+                                    "round": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "formData": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": {
+                                                    "type": [
+                                                        "string",
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "type": "array",
+                                                "maxItems": 0
+                                            }
+                                        ],
+                                        "description": "A patch containing only changed editable fields. Hidden, read-only and unknown fields are rejected; omitted fields are retained."
+                                    },
+                                    "comment": {
+                                        "type": "string"
+                                    },
+                                    "formVersion": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "description": "Version from the authorized instance response. Required for a nonempty formData patch; stale versions return 409."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/task/{taskId}/operation": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "executeWorkflowTaskOperation",
+                "summary": "Execute a declared plugin approval operation",
+                "description": "Requires workflow_task:decide, task ownership, a current pending task and an operation enabled in the immutable node snapshot. Eligibility is checked under the instance lock. A plugin handles ApprovalTaskOperationExtension; core records a separate operation audit on success. Built-in operations use their dedicated endpoints.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "action",
+                                    "comment"
+                                ],
+                                "properties": {
+                                    "action": {
+                                        "type": "string",
+                                        "description": "Installed plugin operation declared through ApprovalOperationRegistrationEvent."
+                                    },
+                                    "comment": {
+                                        "type": "string",
+                                        "minLength": 1
+                                    },
+                                    "payload": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "maxItems": 0
+                                            }
+                                        ],
+                                        "description": "Plugin-owned input map. Omission or an empty array is accepted as an empty map; explicit null is invalid. The input payload is never automatically audited."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/workflow/instance/{instanceId}/remind": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "remindWorkflowApprovers",
+                "summary": "Remind pending approvers",
+                "description": "Requires workflow_instance:start and ownership of a running instance. Rechecks current tasks under the instance lock. Reminders have a 600-second cooldown per task. Delivery retries reuse the same delivery ID. This action never changes approval decisions.",
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "A private reminder was recorded for eligible pending approvers."
+                    },
+                    "403": {
+                        "description": "The caller is not the initiator or lacks start permission."
+                    },
+                    "409": {
+                        "description": "No current task is eligible, the cooldown is active, or a delivery is pending."
                     }
                 }
             }
@@ -742,6 +1152,27 @@
                     "initiator": {
                         "$ref": "#/components/schemas/WorkflowExecutionPerson",
                         "description": "Instance initiator, included in task lists when the related instance still exists."
+                    },
+                    "availableActions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional operations admitted by the frozen node configuration and current server eligibility rules. Built-ins are transfer, add-sign and return; plugins may contribute namespaced operations."
+                    },
+                    "requiredReviewer": {
+                        "type": "boolean",
+                        "description": "Whether the task belongs to the mandatory added-reviewer group."
+                    },
+                    "reminder": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/WorkflowApprovalReminder"
+                            }
+                        ]
                     }
                 }
             },
@@ -774,7 +1205,8 @@
                         "type": "string"
                     },
                     "decision": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Operation or vote: agree, reject, transfer or add-sign. Plugins may add operations."
                     },
                     "comment": {
                         "type": [
@@ -799,6 +1231,10 @@
                     "initiator": {
                         "$ref": "#/components/schemas/WorkflowExecutionPerson",
                         "description": "Instance initiator, included in task lists when the related instance still exists."
+                    },
+                    "round": {
+                        "type": "integer",
+                        "minimum": 1
                     }
                 }
             },
@@ -835,7 +1271,8 @@
                         "type": "string"
                     },
                     "decision": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Operation or vote: agree, reject, transfer or add-sign. Plugins may add operations."
                     },
                     "comment": {
                         "type": [
@@ -848,6 +1285,20 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "target": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "round": {
+                        "type": "integer",
+                        "minimum": 1
                     }
                 }
             },
@@ -927,6 +1378,10 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "round": {
+                        "type": "integer",
+                        "minimum": 1
                     }
                 }
             },
@@ -1021,7 +1476,8 @@
                         "type": "string"
                     },
                     "status": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "RUNNING, RETURNED, COMPLETED, AGREE, REJECT or CANCEL."
                     },
                     "definitionId": {
                         "type": "string"
@@ -1235,6 +1691,171 @@
                         "items": {
                             "$ref": "#/components/schemas/WorkflowExecutionNodeExecution"
                         }
+                    },
+                    "canResubmit": {
+                        "type": "boolean"
+                    },
+                    "readOnlyInputKeys": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "canRemind": {
+                        "type": "boolean"
+                    },
+                    "formVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Snapshot revision used by approval and resubmission patches."
+                    },
+                    "formPermissions": {
+                        "oneOf": [
+                            {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "object",
+                                    "required": [
+                                        "access",
+                                        "required"
+                                    ],
+                                    "properties": {
+                                        "access": {
+                                            "type": "string",
+                                            "enum": [
+                                                "hidden",
+                                                "readonly",
+                                                "editable"
+                                            ]
+                                        },
+                                        "required": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "type": "array",
+                                "maxItems": 0
+                            }
+                        ],
+                        "description": "Visible field permissions after node policy, viewer identity and business restrictions."
+                    },
+                    "formContextId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "formContextRequired": {
+                        "type": "boolean",
+                        "description": "Choose an own task or copy context before viewing form values."
+                    },
+                    "formContexts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "nodeId",
+                                "nodeName",
+                                "kind",
+                                "round",
+                                "editable"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "nodeId": {
+                                    "type": "string"
+                                },
+                                "nodeName": {
+                                    "type": "string"
+                                },
+                                "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                        "task",
+                                        "copy"
+                                    ]
+                                },
+                                "round": {
+                                    "type": "integer"
+                                },
+                                "editable": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "formChanges": {
+                        "type": "array",
+                        "description": "Append-only changes filtered to fields visible in the selected context. Hidden-only changes are omitted.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "taskId",
+                                "actorId",
+                                "actor",
+                                "round",
+                                "revision",
+                                "createdAt",
+                                "changes"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "taskId": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "actorId": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "actor": {
+                                    "oneOf": [
+                                        {
+                                            "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "round": {
+                                    "type": "integer"
+                                },
+                                "revision": {
+                                    "type": "integer"
+                                },
+                                "createdAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "changes": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "required": [
+                                            "before",
+                                            "after"
+                                        ],
+                                        "properties": {
+                                            "before": {},
+                                            "after": {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -1310,6 +1931,120 @@
                             }
                         ],
                         "description": "Map value; an empty map may be encoded as []."
+                    }
+                }
+            },
+            "WorkflowExecutionReceivedCopy": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "instanceId",
+                    "nodeId",
+                    "nodeName",
+                    "title",
+                    "number",
+                    "initiator",
+                    "createdAt",
+                    "readAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "instanceId": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "nodeName": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "number": {
+                        "type": "string"
+                    },
+                    "initiator": {
+                        "$ref": "#/components/schemas/WorkflowExecutionPerson"
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "readAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "round": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                }
+            },
+            "WorkflowApprovalReminder": {
+                "type": "object",
+                "required": [
+                    "dueAt",
+                    "overdue",
+                    "lastRemindedAt",
+                    "source",
+                    "count",
+                    "canRemind"
+                ],
+                "properties": {
+                    "dueAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "overdue": {
+                        "type": "boolean"
+                    },
+                    "lastRemindedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "source": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "manual",
+                            "overdue",
+                            null
+                        ]
+                    },
+                    "count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "canRemind": {
+                        "type": "boolean"
+                    },
+                    "nextRemindAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "deliveryPending": {
+                        "type": "boolean",
+                        "description": "Whether the stable reminder delivery awaits successful channel processing."
                     }
                 }
             }

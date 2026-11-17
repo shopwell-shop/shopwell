@@ -107,8 +107,15 @@
                         {% block sw_workflow_tasks_grid_waiting %}
                         <template #column-startedAt="{ item }">
                             <span :title="waitingTitle(item)">{{ waitingLabel(item) }}</span>
+                            <sw-workflow-approval-reminder-status :reminder="item.reminder ?? null" />
                         </template>
                         {% endblock %}
+
+                        <template #column-readAt="{ item }">
+                            <mt-badge :variant="item.readAt ? 'neutral' : 'info'">
+                                {{ item.readAt ? $t('sw-workflow.runtime.todo.read') : $t('sw-workflow.runtime.todo.unread') }}
+                            </mt-badge>
+                        </template>
 
                         {% block sw_workflow_tasks_grid_decision %}
                         <template #column-status="{ item }">
@@ -182,8 +189,8 @@
                     >
                         <mt-empty-state
                             icon="regular-check-circle"
-                            :headline="activeTab === 'mine' ? $t('sw-workflow.runtime.todo.emptyMineHeadline') : isTodo ? $t('sw-workflow.runtime.todo.emptyTodoHeadline') : $t('sw-workflow.runtime.todo.emptyDoneHeadline')"
-                            :description="activeTab === 'mine' ? $t('sw-workflow.runtime.todo.emptyMineDescription') : isTodo ? $t('sw-workflow.runtime.todo.emptyTodoDescription') : $t('sw-workflow.runtime.todo.emptyDoneDescription')"
+                            :headline="emptyState.headline"
+                            :description="emptyState.description"
                         />
                     </div>
                     {% endblock %}

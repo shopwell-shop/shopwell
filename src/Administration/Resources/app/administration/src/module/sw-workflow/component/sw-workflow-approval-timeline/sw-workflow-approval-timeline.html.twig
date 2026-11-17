@@ -25,6 +25,10 @@
 
                     <span class="sw-workflow-approval-timeline__action">{{ decisionLabel(row.decision) }}</span>
 
+                    <span v-if="row.target" class="sw-workflow-approval-timeline__name">{{ row.target.name }}</span>
+
+                    <span v-if="row.round" class="sw-workflow-approval-timeline__node">{{ $t('sw-workflow.runtime.timeline.round', { round: row.round }) }}</span>
+
                     <span class="sw-workflow-approval-timeline__node">{{ row.nodeName }}</span>
 
                     <span

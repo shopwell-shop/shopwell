@@ -9,9 +9,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceCollection;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalResubmission;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\PlatformRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -37,6 +39,7 @@ class WorkflowInstanceController extends AbstractController
         private readonly WorkflowInstancePresenter $presenter,
         private readonly EntityRepository $instanceRepository,
         private readonly WorkflowService $workflows,
+        private readonly ApprovalResubmission $resubmission,
     ) {
     }
 
@@ -106,6 +109,26 @@ class WorkflowInstanceController extends AbstractController
         $instance = $this->flows->instanceDetail($instanceId, $context, $this->workflows->actorId($context));
 
         return new JsonResponse(['data' => $this->presenter->present($instance, $context, true)]);
+    }
+
+    #[Route(
+        path: '/api/_action/workflow/instance/{instanceId}/resubmit',
+        name: 'api.workflow.execution.instance.resubmit',
+        defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ACL => ['workflow_instance:start']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function resubmit(Context $context, Request $request, string $instanceId): Response
+    {
+        $payload = $request->getPayload()->all();
+        $version = $payload['formVersion'] ?? null;
+        if (!\is_int($payload['round'] ?? null) || !\is_array($payload['formData'] ?? null)
+            || ($payload['formData'] !== [] && array_is_list($payload['formData']))
+            || ($version !== null && (!\is_int($version) || $version < 0))) {
+            throw WorkflowExecutionException::invalidGraph('Resubmission requires an integer round and formData object.');
+        }
+        $this->resubmission->resubmit($instanceId, $payload['round'], $payload['formData'], \is_string($payload['comment'] ?? null) ? $payload['comment'] : '', $context, $version);
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
     }
 
     #[Route(

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\Workflow\Node\Approval;
 
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -17,9 +18,9 @@ use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\Node\WorkflowNodeExecutionEntity;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
+use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
-use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskHistoryEntity;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -69,12 +70,18 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
         $currentTasks = $instance->currentNodeId === null ? [] : $this->finder
             ->forNode($instance->id, $instance->currentNodeId, $instance->round, $context)
             ->getElements();
-        $approvalTasks = $this->taskPresenter->presentMany($this->finder->forInstance($instance->id, $context), $context);
+        $roundTasks = $this->finder->forInstance($instance->id, $context)->filter(static fn ($task): bool => $task->round === $instance->round);
+        $approvalTasks = $this->taskPresenter->presentMany($roundTasks, $context);
 
         $event->addData([
+            'canResubmit' => $instance->state() === WorkflowInstanceStates::RETURNED
+                && $context->getSource() instanceof AdminApiSource
+                && $context->getSource()->getUserId() === $instance->initiatorId
+                && $context->isAllowed('workflow_instance:start'),
             'plannedPath' => $plannedPath,
             'tasks' => $this->taskPresenter->presentMany($currentTasks, $context),
             'approvalTasks' => $approvalTasks,
+            'canRemind' => array_filter($approvalTasks, static fn (array $task): bool => ($task['reminder']['canRemind'] ?? false) === true) !== [],
             'approvalStages' => $this->presentStages($instance, $approvalNodes, $approvalTasks, $plannedPath['nodeIds'], $event->getData()['executions'], $context),
             'history' => $this->presentHistory($instance->id, $context),
             'copies' => $this->presentCopies($instance->id, $context),
@@ -112,7 +119,7 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
         $stages = [];
 
         foreach ($approvalNodes as $node) {
-            $stageTasks = array_values(array_filter($tasks, static fn (array $task): bool => $task['nodeId'] === $node->id));
+            $stageTasks = array_values(array_filter($tasks, static fn (array $task): bool => $task['nodeId'] === $node->id && $task['round'] === $instance->round));
             $participantIds = $node->property('assigneeUserIds', []);
             foreach ($stageTasks as $task) {
                 $participantIds[] = $task['assignee']['id'];
@@ -160,10 +167,14 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
     {
         $history = $this->finder->historyOf($instanceId, $context);
 
-        $names = $this->users->names(
-            array_map(static fn (WorkflowTaskHistoryEntity $task): string => $task->assigneeId, array_values($history->getElements())),
-            $context
-        );
+        $participantIds = [];
+        foreach ($history as $task) {
+            $participantIds[] = $task->assigneeId;
+            if (\is_string($task->ext['targetUserId'] ?? null)) {
+                $participantIds[] = $task->ext['targetUserId'];
+            }
+        }
+        $names = $this->users->names(array_values(array_unique($participantIds)), $context);
 
         $rows = [];
 
@@ -171,6 +182,7 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
             $rows[] = [
                 'id' => $task->id,
                 'taskId' => $task->taskId,
+                'round' => $task->round,
                 'nodeId' => $task->nodeId,
                 'nodeName' => $task->nodeName,
                 'assignee' => [
@@ -179,6 +191,9 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
                 ],
                 'countersignType' => $task->countersignType,
                 'decision' => $task->decision,
+                'target' => \is_string($task->ext['targetUserId'] ?? null)
+                    ? ['id' => $task->ext['targetUserId'], 'name' => $names[$task->ext['targetUserId']] ?? $task->ext['targetUserId']]
+                    : null,
                 'comment' => $task->comment,
                 'completedAt' => $task->completedAt?->format(\DateTimeInterface::ATOM),
             ];
@@ -208,6 +223,7 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
         foreach ($copies as $copy) {
             $rows[] = [
                 'userId' => $copy->userId,
+                'round' => $copy->round,
                 'name' => $names[$copy->userId] ?? $copy->userId,
                 'readAt' => $copy->readAt?->format(\DateTimeInterface::ATOM),
             ];

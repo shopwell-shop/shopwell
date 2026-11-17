@@ -1,7 +1,9 @@
 /** @sw-package framework */
 import { WORKFLOW_ASSIGNEE_SOURCES, WORKFLOW_APPROVAL_MODES } from 'src/core/workflow/workflow-node.constants';
 import { shallowReactive } from 'vue';
+import { WORKFLOW_TASK_DECISIONS } from 'src/core/workflow/workflow-runtime.constants';
 import { registerWorkflowContribution } from './workflow-registration';
+import type { WorkflowFormPermission } from 'src/core/workflow/workflow-runtime.types';
 import type { WorkflowNode } from 'src/core/workflow/workflow.types';
 
 /** @public */
@@ -22,7 +24,25 @@ export interface WorkflowApprovalMode {
     settingsComponent?: string;
 }
 /** @public */
+export interface WorkflowApprovalOperation {
+    name: string;
+    labelKey: string;
+    /** Component receives taskId and isLoading; emit completed after the server accepts the operation. */
+    actionComponent?: string;
+}
+
+/** @public */
+export const DEFAULT_APPROVAL_OPERATIONS: string[] = [
+    WORKFLOW_TASK_DECISIONS.TRANSFER,
+    WORKFLOW_TASK_DECISIONS.ADD_SIGN,
+    WORKFLOW_TASK_DECISIONS.RETURN,
+];
+
+/** @public */
 export interface WorkflowApprovalSettings {
+    formPermissions?: Record<string, WorkflowFormPermission>;
+    operations?: string[];
+    deadline?: { minutes: number; remind: boolean };
     assignee: { source: string; config: Record<string, unknown> };
     approval: { mode: string; version?: number; config: Record<string, unknown> };
 }
@@ -33,11 +53,27 @@ function object(value: unknown): Record<string, unknown> {
 
 /** Design-time approval extensions; execution is a separate capability. @public */
 export default class WorkflowApprovalService {
+    private readonly operationDefinitions = shallowReactive(new Map<string, WorkflowApprovalOperation>());
     private readonly assigneeSources = shallowReactive(new Map<string, WorkflowAssigneeSource>());
     private readonly approvalModes = shallowReactive(new Map<string, WorkflowApprovalMode>());
     private readonly supportedModes = shallowReactive(
         new Map<string, { source: WorkflowAssigneeSource; mode: WorkflowApprovalMode }>(),
     );
+
+    registerOperation(operation: WorkflowApprovalOperation): () => void {
+        if (
+            !DEFAULT_APPROVAL_OPERATIONS.includes(operation.name) &&
+            !/^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$/.test(operation.name)
+        ) {
+            throw new Error('Custom approval operations require a namespaced identifier.');
+        }
+
+        return registerWorkflowContribution(this.operationDefinitions, `operation:${operation.name}`, { ...operation });
+    }
+
+    operations(): WorkflowApprovalOperation[] {
+        return [...this.operationDefinitions.values()].map((operation) => ({ ...operation }));
+    }
 
     registerSource(source: WorkflowAssigneeSource): () => void {
         const definition = { ...source, ...(source.supportedModes ? { supportedModes: [...source.supportedModes] } : {}) };
@@ -161,6 +197,11 @@ export default class WorkflowApprovalService {
         }
 
         return {
+            ...('formPermissions' in config
+                ? { formPermissions: config.formPermissions as WorkflowApprovalSettings['formPermissions'] }
+                : {}),
+            ...('operations' in config ? { operations: config.operations as string[] } : {}),
+            ...('deadline' in config ? { deadline: config.deadline as WorkflowApprovalSettings['deadline'] } : {}),
             assignee: { source: assigneeSource, config: object(assignee.config) },
             approval: {
                 mode: approvalMode,

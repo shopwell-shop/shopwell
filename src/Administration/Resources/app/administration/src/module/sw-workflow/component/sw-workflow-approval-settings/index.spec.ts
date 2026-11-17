@@ -12,8 +12,16 @@ async function createWrapper(allowEdit = true, service = Shopwell.Service('workf
     const wrapper: VueWrapper = mount(await wrapTestComponent('sw-workflow-approval-settings', { sync: true }), {
         props: { node, allowEdit },
         global: {
-            provide: { workflowApprovalService: service },
+            provide: {
+                workflowApprovalService: service,
+                workflowRequestFormService: Shopwell.Service('workflowRequestFormService'),
+            },
             stubs: {
+                'mt-tabs': {
+                    props: ['items'],
+                    template:
+                        '<div><button v-for="item in items" :key="item.name" :data-tab="item.name" @click="$emit(\'new-item-active\', item.name)">{{ item.label }}</button></div>',
+                },
                 'sw-workflow-users-assignee-select': true,
                 'sw-workflow-user-assignee-select': {
                     props: ['config', 'allowEdit'],
@@ -31,6 +39,37 @@ describe('approval settings', () => {
     afterEach(() => {
         wrappers.splice(0).forEach((wrapper) => wrapper.unmount());
     });
+    it('uses the Meteor active-tab event to show form permissions', async () => {
+        const wrapper = await createWrapper();
+
+        await wrapper.get('[data-tab="form"]').trigger('click');
+
+        expect(wrapper.find('.sw-workflow-approval-settings__configuration').exists()).toBe(false);
+        await wrapper.get('[data-tab="settings"]').trigger('click');
+        expect(wrapper.find('.sw-workflow-approval-settings__configuration').exists()).toBe(true);
+    });
+
+    it('enables a deadline, preserves it across source changes and removes it explicitly', async () => {
+        const wrapper = await createWrapper();
+        const enabled = wrapper.findComponent('[data-testid="approval-deadline-enabled"]') as VueWrapper;
+        enabled.vm.$emit('update:modelValue', true);
+        const config = wrapper.emitted('update-config')!.at(-1)![0] as Record<string, unknown>;
+        expect(config.deadline).toEqual({ minutes: 1440, remind: true });
+        await wrapper.setProps({ node: { ...node, config } });
+        const duration = wrapper.findComponent('[data-testid="approval-deadline-minutes"]') as VueWrapper;
+        duration.vm.$emit('update:modelValue', 120);
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({ deadline: { minutes: 120, remind: true } });
+        const source = wrapper.findComponent('.sw-workflow-approval-settings__source') as VueWrapper;
+        source.vm.$emit('update:modelValue', 'core:users');
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({ deadline: { minutes: 1440, remind: true } });
+        enabled.vm.$emit('update:modelValue', false);
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).not.toHaveProperty('deadline');
+        await wrapper.setProps({ allowEdit: false });
+        const count = wrapper.emitted('update-config')!.length;
+        duration.vm.$emit('update:modelValue', 30);
+        enabled.vm.$emit('update:modelValue', false);
+        expect(wrapper.emitted('update-config')).toHaveLength(count);
+    });
     it('stores stable IDs and the single-approval mode through normal config updates', async () => {
         const wrapper = await createWrapper();
         await wrapper.find('.select-user').trigger('click');
@@ -39,6 +78,22 @@ describe('approval settings', () => {
             approval: { mode: 'core:single', config: {} },
         });
     });
+    it('configures node operations and preserves them when the participant source changes', async () => {
+        const wrapper = await createWrapper();
+        const toggle = wrapper.findComponent('[data-operation="return"]') as VueWrapper;
+        toggle.vm.$emit('update:modelValue', false);
+        const config = wrapper.emitted('update-config')!.at(-1)![0] as Record<string, unknown>;
+        expect(config.operations).toEqual(['transfer', 'add-sign']);
+        await wrapper.setProps({ node: { ...node, config } });
+        const select = wrapper.findComponent('.sw-workflow-approval-settings__source') as VueWrapper;
+        select.vm.$emit('update:modelValue', 'core:users');
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({ operations: ['transfer', 'add-sign'] });
+        await wrapper.setProps({ allowEdit: false });
+        const count = wrapper.emitted('update-config')!.length;
+        toggle.vm.$emit('update:modelValue', true);
+        expect(wrapper.emitted('update-config')).toHaveLength(count);
+    });
+
     it('keeps unavailable extension configurations unchanged and prevents read-only editing', async () => {
         const wrapper = await createWrapper(false);
         await wrapper.find('.select-user').trigger('click');
@@ -72,7 +127,12 @@ describe('approval settings', () => {
         const modeSelect = wrapper.findComponent('.sw-workflow-approval-settings__mode-select') as VueWrapper<
             ComponentPublicInstance<{ options: { value: string }[] }>
         >;
-        expect(modeSelect.props('options').map((option) => option.value)).toEqual(['core:all', 'core:any']);
+        expect(modeSelect.props('options').map((option) => option.value)).toEqual([
+            'core:all',
+            'core:or-sign',
+            'core:sequential',
+            'core:any',
+        ]);
         modeSelect.vm.$emit('update:modelValue', 'core:any');
         await flushPromises();
         expect(wrapper.emitted('update-config')!.at(-1)![0]).toEqual({

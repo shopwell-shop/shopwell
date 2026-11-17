@@ -64,6 +64,6 @@ class WorkflowLogEntity extends EntityStruct
      *
      * @var array<string, mixed>|null
      */
-    #[Field(type: FieldType::JSON, api: true)]
+    #[Field(type: FieldType::JSON, api: false)]
     public ?array $payload = null;
 }

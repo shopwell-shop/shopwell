@@ -8,6 +8,7 @@ const repository = {
     approveTask: jest.fn(),
     rejectTask: jest.fn(),
     cancelInstance: jest.fn(),
+    remindInstance: jest.fn(),
 };
 
 /** @private */
@@ -26,6 +27,7 @@ export const instance: RuntimeInstance = {
     id: 'instance',
     title: 'Request',
     status: 'RUNNING',
+    round: 1,
     graph: { nodes: [], edges: [] },
     formData: { reason: 'Equipment' },
     formSchema: [{ key: 'reason', label: 'Request reason', type: 'text', required: false }],
@@ -78,6 +80,12 @@ export async function createWrapper(
                     name: 'sw-workflow-approval-actions',
                     template:
                         '<section class="approval-actions"><button @click="$emit(\'approve\', \'\')">Approve</button></section>',
+                },
+                'sw-workflow-approval-form': {
+                    name: 'sw-workflow-approval-form',
+                    props: ['instance', 'disabled'],
+                    emits: ['update-patch', 'validity-change'],
+                    template: '<div class="approval-form-editor" />',
                 },
                 'sw-workflow-approval-timeline': true,
                 'sw-workflow-approval-participants': {

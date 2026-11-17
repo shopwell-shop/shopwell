@@ -3,8 +3,7 @@ import type { PropType } from 'vue';
 import type { WorkflowDocument, WorkflowNode } from 'src/core/workflow/workflow.types';
 import { conditionBranches } from '../../util/workflow-condition.util';
 import { canRemoveConditionBranch } from '../../service/editing/condition-workflow-editing.strategy';
-import type { WorkflowConditionBranch } from '../../util/workflow-condition.util';
-import type { WorkflowFieldLabel } from '../../service/workflow-field.service';
+import type { WorkflowConditionBranch, WorkflowCondition } from '../../util/workflow-condition.util';
 import template from './sw-workflow-condition-settings.html.twig';
 import './sw-workflow-condition-settings.scss';
 
@@ -25,15 +24,12 @@ export default Shopwell.Component.wrapComponentConfig({
         fields() {
             return this.workflowFieldService.getFields(this.document, this.node);
         },
-        fieldOptions() {
-            return this.fields.map((field) => ({ value: field.path, label: this.fieldLabel(field.label) }));
-        },
     },
     watch: {
         node: {
             immediate: true,
             handler(node: WorkflowNode) {
-                this.branches = conditionBranches(node).map((branch) => ({ ...branch }));
+                this.branches = JSON.parse(JSON.stringify(conditionBranches(node))) as WorkflowConditionBranch[];
 
                 if (!this.branches.some((branch) => branch.id === this.activeId)) {
                     this.activeId = this.branches[0]?.id ?? '';
@@ -42,166 +38,17 @@ export default Shopwell.Component.wrapComponentConfig({
         },
     },
     methods: {
-        supportsOrderedComparison(branch: WorkflowConditionBranch): boolean {
-            switch (this.fieldDefinition(branch)?.type) {
-                case 'amount':
-                case 'number':
-                case 'date':
-                    return true;
-                default:
-                    return false;
-            }
+        branchRule(branch: WorkflowConditionBranch): WorkflowCondition {
+            return Object.fromEntries(
+                Object.entries(branch).filter(([key]) => key !== 'id' && key !== 'label'),
+            ) as WorkflowCondition;
         },
-        supportedOperators(branch: WorkflowConditionBranch): string[] {
-            const operators = [
-                'equals',
-                'notEquals',
-                'isEmpty',
-                'isNotEmpty',
-            ];
-            return this.supportsOrderedComparison(branch)
-                ? [
-                      ...operators,
-                      'greaterThan',
-                      'greaterThanOrEqual',
-                      'lessThan',
-                      'lessThanOrEqual',
-                  ]
-                : operators;
-        },
-        hasUnavailableOperator(branch: WorkflowConditionBranch): boolean {
-            return !this.supportedOperators(branch).includes(branch.operator);
-        },
-        operatorOptions(branch: WorkflowConditionBranch) {
-            const options = this.supportedOperators(branch).map((value) => ({
-                value,
-                label: this.$t(`sw-workflow.condition.operators.${value}`),
-                disabled: false,
-            }));
-
-            if (this.hasUnavailableOperator(branch)) {
-                options.push({
-                    value: branch.operator,
-                    label: this.$t('sw-workflow.condition.unavailableOperator'),
-                    disabled: true,
-                });
-            }
-
-            return options;
-        },
-        valueHint(branch: WorkflowConditionBranch): string {
-            const type = this.fieldDefinition(branch)?.type;
-            return this.supportsOrderedComparison(branch) ? this.$t(`sw-workflow.form.valueHints.${type}`) : '';
-        },
-        fieldLabel(label: WorkflowFieldLabel): string {
-            return typeof label === 'string' ? label : this.$t(label.snippet);
-        },
-        fieldDefinition(branch: WorkflowConditionBranch) {
-            return this.fields.find((field) => field.path === branch.field);
-        },
-        optionsForField(branch: WorkflowConditionBranch) {
-            if (!branch.field || this.fieldDefinition(branch)) {
-                return this.fieldOptions;
-            }
-
-            return [
-                ...this.fieldOptions,
-                {
-                    value: branch.field,
-                    label: this.$t('sw-workflow.condition.unavailableField'),
-                    disabled: true,
-                },
-            ];
-        },
-        valueOptions(branch: WorkflowConditionBranch) {
-            const field = this.fieldDefinition(branch);
-
-            if (field?.type !== 'select') {
-                return [];
-            }
-
-            const options = field.options.map((option) => ({ value: option.value, label: this.fieldLabel(option.label) }));
-
-            if (!branch.value || options.some((option) => option.value === branch.value)) {
-                return options;
-            }
-
-            return [
-                ...options,
-                {
-                    value: branch.value,
-                    label: this.$t('sw-workflow.condition.unavailableValue'),
-                    disabled: true,
-                },
-            ];
-        },
-        hasUnavailableValue(branch: WorkflowConditionBranch): boolean {
-            const field = this.fieldDefinition(branch);
-            return (
-                field?.type === 'select' && !!branch.value && !field.options.some((option) => option.value === branch.value)
-            );
-        },
-        hasStaleFieldType(branch: WorkflowConditionBranch): boolean {
-            const field = this.fieldDefinition(branch);
-            return !!field && branch.fieldType !== field.type;
-        },
-        selectField(branch: WorkflowConditionBranch, path: string): void {
-            if (!this.allowEdit || path === branch.field) {
+        updateRule(index: number, rule: WorkflowCondition): void {
+            if (!this.allowEdit) {
                 return;
             }
-
-            const field = this.fields.find((item) => item.path === path);
-
-            if (!field) {
-                return;
-            }
-
-            branch.field = path;
-            this.bindField(branch);
-        },
-        bindField(branch: WorkflowConditionBranch): void {
-            const field = this.fieldDefinition(branch);
-
-            if (!this.allowEdit || !field) {
-                return;
-            }
-
-            branch.fieldType = field.type;
-            branch.operator = 'equals';
-            branch.value = '';
-            this.commit();
-        },
-        selectOperator(branch: WorkflowConditionBranch, operator: WorkflowConditionBranch['operator']): void {
-            if (
-                !this.allowEdit ||
-                this.hasStaleFieldType(branch) ||
-                !this.fieldDefinition(branch) ||
-                !this.supportedOperators(branch).includes(operator)
-            ) {
-                return;
-            }
-
-            branch.operator = operator;
-
-            if (operator === 'isEmpty' || operator === 'isNotEmpty') {
-                branch.value = '';
-            }
-
-            this.commit();
-        },
-        selectValue(branch: WorkflowConditionBranch, value: string): void {
-            const field = this.fieldDefinition(branch);
-
-            if (
-                !this.allowEdit ||
-                this.hasStaleFieldType(branch) ||
-                field?.type !== 'select' ||
-                !field.options.some((option) => option.value === value)
-            ) {
-                return;
-            }
-
-            branch.value = value;
+            const { id, label } = this.branches[index];
+            this.branches[index] = { ...rule, id, label };
             this.commit();
         },
         commit(): void {

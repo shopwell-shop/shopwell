@@ -17,6 +17,11 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceCollection;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStates;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalInstancePresentationSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskPolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderCollection;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderPolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderPresenter;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalReminderStore;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskCollection;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
@@ -26,6 +31,7 @@ use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStates;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\User\UserCollection;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -74,6 +80,7 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
     {
         $instance = new WorkflowInstanceEntity();
         $instance->id = 'instance';
+        $instance->setUniqueIdentifier($instance->id);
         $instance->currentNodeId = $currentNode;
         $state = new StateMachineStateEntity();
         $state->setTechnicalName($instanceState);
@@ -112,7 +119,7 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
         $actualPath = ['nodeIds' => ['start'], 'edgeIds' => []];
         $event = new WorkflowInstancePresentationEvent($instance, Context::createDefaultContext(), ['selectedPath' => $actualPath, 'executions' => $executionStatus === null ? [] : [['nodeId' => 'review', 'round' => 1, 'status' => $executionStatus, 'result' => $executionResult]]], withDetail: true);
         $tasks = new StaticEntityRepository([new WorkflowTaskCollection($taskEntities), new WorkflowTaskCollection($taskEntities)]);
-        $subscriber = $this->subscriber($tasks);
+        $subscriber = $this->subscriber($tasks, $instance);
         $dispatcher = new EventDispatcher();
         $dispatcher->addSubscriber($subscriber);
 
@@ -146,7 +153,7 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
     /**
      * @param StaticEntityRepository<WorkflowTaskCollection>|null $tasks
      */
-    private function subscriber(?StaticEntityRepository $tasks = null): ApprovalInstancePresentationSubscriber
+    private function subscriber(?StaticEntityRepository $tasks = null, ?WorkflowInstanceEntity $instance = null): ApprovalInstancePresentationSubscriber
     {
         $users = new WorkflowUserLookup(new StaticEntityRepository([
             new UserCollection(), new UserCollection(), new UserCollection(),
@@ -158,7 +165,23 @@ class ApprovalInstancePresentationSubscriberTest extends TestCase
                 new StaticEntityRepository([new WorkflowTaskHistoryCollection()]),
                 StaticEntityRepository::of(WorkflowLogCollection::class, []),
             ),
-            new WorkflowTaskPresenter($users, StaticEntityRepository::of(WorkflowInstanceCollection::class, [])),
+            new WorkflowTaskPresenter(
+                $users,
+                new StaticEntityRepository([
+                    new WorkflowInstanceCollection($instance === null ? [] : [$instance]),
+                    new WorkflowInstanceCollection($instance === null ? [] : [$instance]),
+                ]),
+                new ApprovalTaskPolicy(new EventDispatcher()),
+                new ApprovalReminderPresenter(
+                    new ApprovalReminderStore(
+                        new StaticEntityRepository([new ApprovalReminderCollection(), new ApprovalReminderCollection()]),
+                        StaticEntityRepository::of(WorkflowTaskCollection::class, []),
+                        StaticEntityRepository::of(WorkflowInstanceCollection::class, []),
+                    ),
+                    new ApprovalReminderPolicy(new MockClock(), new EventDispatcher()),
+                    new MockClock(),
+                ),
+            ),
             $users,
             new StaticEntityRepository([new WorkflowCopyCollection()]),
             new ApprovalRoute(static::createStub(ConditionEvaluatorInterface::class)),

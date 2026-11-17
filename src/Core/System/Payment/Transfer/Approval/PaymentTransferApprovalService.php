@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeStatusesEvent;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
+use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -251,6 +252,7 @@ class PaymentTransferApprovalService
             if ($draft->amount === null || $draft->amount <= 0 || $draft->amount > PaymentTransferDraft::MAX_AMOUNT || $draft->currency === null) {
                 throw PaymentTransferApprovalException::blocked('invalid_transfer_input');
             }
+            $this->booking->validateProduct($app, $draft);
             $event = new WorkflowRuntimePreviewEvent($release, $this->workflowData($draft->amount, strtoupper($draft->currency), $recipientLabel, $accountName, $draft->note), $context);
             $this->events->dispatch($event);
             $steps = $event->getSteps();
@@ -416,6 +418,9 @@ class PaymentTransferApprovalService
 
     private function unavailableReason(\Throwable $exception): string
     {
+        if ($exception instanceof PaymentException && $exception->getErrorCode() === PaymentException::CURRENCY_NOT_SUPPORTED) {
+            return 'currency_not_supported';
+        }
         if ($exception instanceof WorkflowRuntimeException) {
             return 'runtime_unavailable';
         }

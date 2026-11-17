@@ -38,6 +38,10 @@ class WorkflowCopyEntity extends EntityStruct
     public string $nodeId;
 
     #[Required]
+    #[Field(type: FieldType::INT, api: true)]
+    public int $round = 1;
+
+    #[Required]
     #[ForeignKey(entity: 'user', api: true)]
     public string $userId;
 

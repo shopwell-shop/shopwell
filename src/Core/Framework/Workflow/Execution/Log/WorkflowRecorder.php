@@ -7,7 +7,6 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskHistoryCollection;
 
@@ -35,25 +34,33 @@ final class WorkflowRecorder
      */
     public function recordTaskCompletion(WorkflowTaskEntity $task, bool $agreed, ?string $comment, Context $context): void
     {
-        $decision = $agreed ? 'agree' : 'reject';
+        $this->recordTaskAction($task, $agreed ? 'agree' : 'reject', $comment, [], $context);
+    }
 
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function recordTaskAction(WorkflowTaskEntity $task, string $decision, ?string $comment, array $payload, Context $context): void
+    {
         $this->hisTaskRepository->create([
             [
                 'id' => Uuid::randomHex(),
                 'taskId' => $task->id,
                 'instanceId' => $task->instanceId,
                 'nodeId' => $task->nodeId,
+                'round' => $task->round,
                 'nodeName' => $task->nodeName,
                 'assigneeId' => $task->assigneeId,
                 'countersignType' => $task->countersignType,
                 'decision' => $decision,
-                // ApprovalWorkflowService validates rejection comments; store an absent comment as null.
+                // Required comments are validated before archiving the action.
                 'comment' => $comment,
                 'completedAt' => $this->clock->now(),
+                'ext' => $payload === [] ? null : $payload,
             ],
         ], $context);
 
-        $this->record($task->instanceId, $decision, $task->id, $task->assigneeId, $comment, [], $context);
+        $this->record($task->instanceId, $decision, $task->id, $task->assigneeId, $comment, [...$payload, 'round' => $task->round], $context);
     }
 
     /**

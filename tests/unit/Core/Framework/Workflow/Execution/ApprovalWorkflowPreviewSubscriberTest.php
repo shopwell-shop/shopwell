@@ -17,7 +17,10 @@ use Shopwell\Core\Framework\Workflow\Execution\Condition\ExprNormalizer;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\WorkflowConditionEvaluator;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionEntity;
+use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowInstanceMetadataEvent;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Preview\ApprovalNodePreviewEvent;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Publication\Entity\WorkflowReleaseEntity;
@@ -28,6 +31,7 @@ use Shopwell\Core\System\User\UserEntity;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\ApprovalRegistryFixture;
 use Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures\QuorumApprovalMode;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @internal
@@ -98,6 +102,32 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
         $subscriber->preview($this->event(['amount' => '1', 'currency' => 'CNY']));
     }
 
+    #[DataProvider('resolverFailures')]
+    public function testResolverFailuresRetainTheResponsibleDomainOutcome(\Exception $failure, \Exception $expected): void
+    {
+        $resolver = static::createStub(AssigneeResolverInterface::class);
+        $resolver->method('getAssigneeType')->willReturn('user');
+        $resolver->method('resolve')->willThrowException($failure);
+        $subscriber = $this->subscriber(
+            new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$this->definition()])]),
+            StaticEntityRepository::of(UserCollection::class),
+            $resolver,
+        );
+        $this->expectExceptionObject($expected);
+
+        $subscriber->preview($this->event(['amount' => '1', 'currency' => 'CNY']));
+    }
+
+    public static function resolverFailures(): \Generator
+    {
+        yield 'unavailable organization member has an actionable reason' => [
+            WorkflowExecutionException::noAssignee('finance', 'user'),
+            WorkflowException::publicationRejected('approval_assignee_unavailable'),
+        ];
+        $unsupported = WorkflowExecutionException::unsupportedAssigneeType('extension:missing');
+        yield 'unrelated resolver error remains visible' => [$unsupported, $unsupported];
+    }
+
     public function testFormDependentResolverReceivesTheNormalizedPreviewForm(): void
     {
         $resolver = static::createStub(AssigneeResolverInterface::class);
@@ -120,6 +150,32 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
         static::assertSame([['id' => 'reviewer', 'name' => 'reviewer']], $steps[0]['assignees']);
     }
 
+    public function testPreviewCollectsExtensionMetadataBeforeResolvingParticipantsWithoutWrites(): void
+    {
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(WorkflowInstanceMetadataEvent::class, static function (WorkflowInstanceMetadataEvent $event): void {
+            $event->addMetadata('example:policy', ['revision' => 3]);
+        });
+        $resolver = static::createMock(AssigneeResolverInterface::class);
+        $resolver->method('getAssigneeType')->willReturn('user');
+        $resolver->expects($this->once())->method('resolve')->willReturnCallback(static function (WorkflowInstanceEntity $instance): array {
+            static::assertSame(['example:policy' => ['revision' => 3]], $instance->ext);
+
+            return ['reviewer'];
+        });
+        $definitions = new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$this->definition()])]);
+        $users = new StaticEntityRepository([new UserCollection()]);
+        $event = $this->event(['amount' => '1', 'currency' => 'CNY']);
+
+        $this->subscriber($definitions, $users, $resolver, $dispatcher)->preview($event);
+
+        static::assertNotNull($event->getSteps());
+        static::assertSame([], $definitions->creates);
+        static::assertSame([], $definitions->updates);
+        static::assertSame([], $users->creates);
+        static::assertSame([], $users->updates);
+    }
+
     public function testPreviewUsesTheVersionedPluginMode(): void
     {
         $definition = $this->definition();
@@ -139,11 +195,47 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
         static::assertSame('example:quorum', $steps[0]['rule']);
     }
 
+    public function testPluginCanPreviewAnAdditionalNodeWithoutChangingTheTraversal(): void
+    {
+        $definition = $this->definition();
+        $definition->graphData['nodes'][1]['type'] = 'example:review';
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(ApprovalNodePreviewEvent::class, static function (ApprovalNodePreviewEvent $event): void {
+            if ($event->node->type === 'example:review') {
+                $event->setPreview('example:review', ['plugin-reviewer'], rule: 'example:policy');
+            }
+        });
+        $preview = $this->event(['amount' => '1', 'currency' => 'CNY']);
+        $this->subscriber(
+            new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]),
+            new StaticEntityRepository([new UserCollection()]),
+            dispatcher: $dispatcher,
+        )->preview($preview);
+
+        $steps = $preview->getSteps();
+        static::assertNotNull($steps);
+        static::assertSame('example:review', $steps[0]['type']);
+        static::assertSame('example:policy', $steps[0]['rule']);
+        static::assertSame([['id' => 'plugin-reviewer', 'name' => 'plugin-reviewer']], $steps[0]['assignees']);
+    }
+
+    public function testUnsupportedNodeCannotSilentlyDisappearFromThePreview(): void
+    {
+        $definition = $this->definition();
+        $definition->graphData['nodes'][1]['type'] = 'example:unknown';
+        $subscriber = $this->subscriber(
+            new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]),
+            StaticEntityRepository::of(UserCollection::class),
+        );
+        $this->expectExceptionObject(WorkflowException::publicationRejected('preview_unavailable'));
+        $subscriber->preview($this->event(['amount' => '1', 'currency' => 'CNY']));
+    }
+
     /**
      * @param StaticEntityRepository<WorkflowExecutionDefinitionCollection> $definitions
      * @param StaticEntityRepository<UserCollection> $users
      */
-    private function subscriber(StaticEntityRepository $definitions, StaticEntityRepository $users, ?AssigneeResolverInterface $resolver = null): ApprovalWorkflowPreviewSubscriber
+    private function subscriber(StaticEntityRepository $definitions, StaticEntityRepository $users, ?AssigneeResolverInterface $resolver = null, ?EventDispatcher $dispatcher = null): ApprovalWorkflowPreviewSubscriber
     {
         if ($resolver === null) {
             $resolver = static::createStub(AssigneeResolverInterface::class);
@@ -162,7 +254,8 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
             new WorkflowInputSchema(),
             new WorkflowUserLookup($users),
             new AssigneeResolverRegistry([$resolver]),
-            ApprovalRegistryFixture::modes([new QuorumApprovalMode()])
+            ApprovalRegistryFixture::modes([new QuorumApprovalMode()]),
+            $dispatcher ?? new EventDispatcher(),
         );
     }
 

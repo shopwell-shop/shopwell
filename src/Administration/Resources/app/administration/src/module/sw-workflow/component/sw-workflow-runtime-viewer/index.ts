@@ -41,6 +41,7 @@ function approvalDetails(nodeId: string, stages: RuntimeStage[], allTasks: Runti
         description: stage?.description || '',
         participants: participants.map((participant) => ({
             ...participant,
+            requiredReviewer: currentTasks.some((task) => task.assignee.id === participant.id && task.requiredReviewer),
             state: currentTasks.find((task) => task.assignee.id === participant.id)?.state ?? stage?.status ?? 'pending',
         })),
     };
@@ -179,16 +180,19 @@ export default Shopwell.Component.wrapComponentConfig({
             };
             return labels[state] ? this.$t(`sw-workflow.runtime.viewer.states.${labels[state]}`) : '';
         },
-        participantState(state: string): string {
-            return [
+        participantState(state: string, requiredReviewer = false): string {
+            const knownState = [
                 ...Object.values(WORKFLOW_TASK_STATES),
                 'pending',
                 'active',
                 'approved',
                 'skipped',
-            ].includes(state)
-                ? this.$t(`sw-workflow.runtime.participants.states.${state}`)
-                : state;
+            ].includes(state);
+            const label = knownState ? this.$t(`sw-workflow.runtime.participants.states.${state}`) : state;
+
+            return requiredReviewer
+                ? this.$t('sw-workflow.runtime.participants.addedReviewerState', { state: label })
+                : label;
         },
         modeLabel(mode: string): string {
             return [

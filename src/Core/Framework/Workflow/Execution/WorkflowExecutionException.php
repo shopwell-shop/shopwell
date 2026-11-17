@@ -195,9 +195,14 @@ class WorkflowExecutionException extends WorkflowException
         return new self(
             Response::HTTP_CONFLICT,
             self::INSTANCE_NOT_RUNNING,
-            'Workflow instance "{{ instanceId }}" has ended and cannot be modified.',
+            'Workflow instance "{{ instanceId }}" is not running and cannot accept this operation.',
             ['instanceId' => $instanceId]
         );
+    }
+
+    public static function resubmissionConflict(string $instanceId): self
+    {
+        return new self(Response::HTTP_CONFLICT, 'FRAMEWORK__WORKFLOW_RESUBMISSION_CONFLICT', 'Workflow instance "{{ instanceId }}" is not awaiting changes in the expected round.', ['instanceId' => $instanceId]);
     }
 
     public static function conditionInvalid(string $expr, string $reason): self
@@ -257,6 +262,21 @@ class WorkflowExecutionException extends WorkflowException
             'Operation forbidden: {{ reason }}',
             ['reason' => $reason]
         );
+    }
+
+    public static function formConflict(): self
+    {
+        return new self(Response::HTTP_CONFLICT, 'FRAMEWORK__WORKFLOW_FORM_CONFLICT', 'The form has changed. Reload it before submitting your changes.');
+    }
+
+    public static function reminderRequiresCommit(): self
+    {
+        return new self(Response::HTTP_CONFLICT, 'FRAMEWORK__WORKFLOW_REMINDER_TRANSACTION_ACTIVE', 'Approval reminders must be requested after the caller transaction commits.');
+    }
+
+    public static function reminderUnavailable(): self
+    {
+        return new self(Response::HTTP_CONFLICT, 'FRAMEWORK__WORKFLOW_REMINDER_UNAVAILABLE', 'There are no pending approvers eligible for a reminder. Wait for the reminder cooldown or delivery retry.');
     }
 
     public static function duplicateRegistration(string $kind, string $name): self

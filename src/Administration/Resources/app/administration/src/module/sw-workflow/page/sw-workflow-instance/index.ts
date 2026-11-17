@@ -3,11 +3,13 @@ import {
     WORKFLOW_INSTANCE_STATUSES,
     WORKFLOW_TASK_STATES,
     WORKFLOW_TASK_DECISIONS,
+    WORKFLOW_FORM_ACCESS,
 } from 'src/core/workflow/workflow-runtime.constants';
 import type { WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
 import type { RuntimeInstance, RuntimeGraph, RuntimeTask } from 'src/core/workflow/workflow-runtime.types';
 import { absoluteTime, relativeTime } from '../../util/workflow-runtime-time.util';
 import { formatFormValue } from '../../util/workflow-runtime-form.util';
+import type { RuntimeTaskParticipation } from 'src/core/workflow/workflow-runtime.types';
 import template from './sw-workflow-instance.html.twig';
 import './sw-workflow-instance.scss';
 
@@ -33,8 +35,14 @@ export default Shopwell.Component.wrapComponentConfig({
         loadError: string;
         cancelReason: string;
         showCancel: boolean;
+        formPatch: Record<string, string>;
+        formValid: boolean;
+        reminderRefreshTimer: ReturnType<typeof setTimeout> | null;
     } {
         return {
+            formPatch: {},
+            formValid: false,
+            reminderRefreshTimer: null,
             cancelReason: '',
             showCancel: false,
             instanceId: null,
@@ -56,6 +64,7 @@ export default Shopwell.Component.wrapComponentConfig({
         statusVariant(): string {
             const variants: Record<string, string> = {
                 [WORKFLOW_INSTANCE_STATUSES.RUNNING]: 'info',
+                [WORKFLOW_INSTANCE_STATUSES.RETURNED]: 'warning',
                 [WORKFLOW_INSTANCE_STATUSES.COMPLETED]: 'positive',
                 [WORKFLOW_INSTANCE_STATUSES.AGREED]: 'positive',
                 [WORKFLOW_INSTANCE_STATUSES.REJECTED]: 'critical',
@@ -75,6 +84,7 @@ export default Shopwell.Component.wrapComponentConfig({
         statusLabel() {
             const map: Record<string, string> = {
                 [WORKFLOW_INSTANCE_STATUSES.RUNNING]: this.$t('sw-workflow.runtime.status.running'),
+                [WORKFLOW_INSTANCE_STATUSES.RETURNED]: this.$t('sw-workflow.runtime.status.returned'),
                 [WORKFLOW_INSTANCE_STATUSES.COMPLETED]: this.$t('sw-workflow.runtime.status.completed'),
                 [WORKFLOW_INSTANCE_STATUSES.AGREED]: this.$t('sw-workflow.runtime.status.approved'),
                 [WORKFLOW_INSTANCE_STATUSES.REJECTED]: this.$t('sw-workflow.runtime.status.rejected'),
@@ -91,7 +101,12 @@ export default Shopwell.Component.wrapComponentConfig({
             const known = new Set(schema.map((field) => field.key));
 
             const rows: Array<{ key: string; label: string; value: unknown; type?: string }> = schema
-                .filter((field) => Object.prototype.hasOwnProperty.call(data, field.key))
+                .filter(
+                    (field) =>
+                        Object.prototype.hasOwnProperty.call(data, field.key) &&
+                        (!this.activeTask ||
+                            this.instance?.formPermissions?.[field.key]?.access !== WORKFLOW_FORM_ACCESS.EDITABLE),
+                )
                 .map((field) => ({ ...field, value: data[field.key] }));
 
             Object.keys(data)
@@ -111,7 +126,9 @@ export default Shopwell.Component.wrapComponentConfig({
             };
 
             for (const execution of this.instance?.executions ?? []) {
-                states[execution.nodeId] = executionStates[execution.status];
+                if (execution.round === this.instance?.round) {
+                    states[execution.nodeId] = executionStates[execution.status];
+                }
             }
 
             return states;
@@ -131,9 +148,15 @@ export default Shopwell.Component.wrapComponentConfig({
 
             Object.assign(states, this.executionNodeStates);
 
-            (this.instance?.history ?? []).forEach((row) => {
-                states[row.nodeId] = row.decision === WORKFLOW_TASK_DECISIONS.REJECT ? 'REJECTED' : 'AGREED';
-            });
+            (this.instance?.history ?? [])
+                .filter((row) => row.round === this.instance?.round)
+                .forEach((row) => {
+                    if (row.decision === WORKFLOW_TASK_DECISIONS.REJECT) {
+                        states[row.nodeId] = 'REJECTED';
+                    } else if (row.decision === WORKFLOW_TASK_DECISIONS.AGREE) {
+                        states[row.nodeId] = 'AGREED';
+                    }
+                });
 
             if (this.status === WORKFLOW_INSTANCE_STATUSES.RUNNING && this.instance?.currentNodeId) {
                 states[this.instance.currentNodeId] = 'TODO';
@@ -162,6 +185,13 @@ export default Shopwell.Component.wrapComponentConfig({
                     ? this.instance?.plannedPath
                     : this.instance?.selectedPath;
             return path?.nodeIds?.length ? path : null;
+        },
+
+        formChanges() {
+            return (this.instance?.formChanges ?? []).map((change) => ({
+                ...change,
+                createdAt: absoluteTime(change.createdAt),
+            }));
         },
 
         history() {
@@ -201,7 +231,10 @@ export default Shopwell.Component.wrapComponentConfig({
                 }
             }
 
-            return tasks[0] ?? null;
+            if (this.instance?.formContextId) {
+                return tasks.find((task) => task.id === this.instance?.formContextId) ?? null;
+            }
+            return this.instance?.formContextRequired ? null : (tasks[0] ?? null);
         },
 
         canAct() {
@@ -215,12 +248,31 @@ export default Shopwell.Component.wrapComponentConfig({
             );
         },
 
+        hasFormChanges(): boolean {
+            return Object.keys(this.formPatch).length > 0;
+        },
+
+        showRemind(): boolean {
+            return this.instance?.canCancel === true && this.status === WORKFLOW_INSTANCE_STATUSES.RUNNING;
+        },
+        canRemind(): boolean {
+            return this.instance?.canRemind === true && !this.isActing && !this.isLoading && !this.hasFormChanges;
+        },
         canCancel(): boolean {
             return this.instance?.canCancel === true && !this.isActing && !this.isLoading;
         },
 
         approvalStages() {
             return this.instance?.approvalStages ?? [];
+        },
+
+        reminderTasks() {
+            return (this.instance?.tasks ?? []).filter((task) => {
+                return (
+                    task.state === WORKFLOW_TASK_STATES.TODO &&
+                    Boolean(task.reminder?.dueAt || task.reminder?.lastRemindedAt)
+                );
+            });
         },
 
         approvalTasks() {
@@ -237,13 +289,24 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     watch: {
+        hasFormChanges() {
+            this.scheduleReminderRefresh();
+        },
+        '$route.query.taskId'() {
+            this.formPatch = {};
+            this.formValid = false;
+            void this.loadInstance();
+        },
         routeInstanceId: {
             immediate: true,
             handler(id: string | null) {
+                this.clearReminderRefresh();
                 this.viewRevision += 1;
                 this.loadRevision += 1;
                 this.instanceId = id;
                 this.instance = null;
+                this.formPatch = {};
+                this.formValid = false;
                 this.graph = { nodes: [], edges: [] };
                 this.isActing = false;
                 this.showCancel = false;
@@ -260,11 +323,58 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     beforeUnmount() {
+        this.clearReminderRefresh();
         this.viewRevision += 1;
         this.loadRevision += 1;
     },
 
     methods: {
+        clearReminderRefresh(): void {
+            if (this.reminderRefreshTimer !== null) {
+                clearTimeout(this.reminderRefreshTimer);
+                this.reminderRefreshTimer = null;
+            }
+        },
+        scheduleReminderRefresh(): void {
+            this.clearReminderRefresh();
+            if (!this.showRemind || this.instance?.canRemind === true || this.hasFormChanges) {
+                return;
+            }
+            const deadlines = (this.instance?.tasks ?? [])
+                .map((task) => Date.parse(task.reminder?.nextRemindAt ?? ''))
+                .filter((timestamp) => Number.isFinite(timestamp) && timestamp > Date.now());
+            if (this.instance?.tasks?.some((task) => task.reminder?.deliveryPending)) {
+                deadlines.push(Date.now() + 60_000);
+            }
+            if (deadlines.length === 0) {
+                return;
+            }
+            const delay = Math.min(...deadlines) - Date.now();
+            this.reminderRefreshTimer = setTimeout(() => void this.loadInstance(), Math.max(1000, delay));
+        },
+        async remindInstance(): Promise<void> {
+            if (!this.canRemind || !this.instanceId) {
+                return;
+            }
+            const revision = this.viewRevision;
+            this.isActing = true;
+            try {
+                await this.workflowRuntimeApiService.remindInstance(this.instanceId);
+                if (revision !== this.viewRevision) {
+                    return;
+                }
+                this.createNotificationSuccess({ message: this.$t('sw-workflow.reminder.sent') });
+                await this.loadInstance();
+            } catch (error) {
+                if (revision === this.viewRevision) {
+                    this.createNotificationError({ message: this.errorMessage(error) });
+                }
+            } finally {
+                if (revision === this.viewRevision) {
+                    this.isActing = false;
+                }
+            }
+        },
         async cancelInstance(): Promise<void> {
             if (!this.canCancel || !this.instanceId || !this.cancelReason.trim()) {
                 return;
@@ -301,15 +411,25 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
             this.loadError = '';
 
-            return this.workflowRuntimeApiService
-                .getInstance(this.instanceId)
+            const taskId = this.$route.query.taskId;
+            const request =
+                typeof taskId === 'string'
+                    ? this.workflowRuntimeApiService.getInstance(this.instanceId, taskId)
+                    : this.workflowRuntimeApiService.getInstance(this.instanceId);
+
+            return request
                 .then((instance) => {
                     if (loadRevision !== this.loadRevision) {
                         return;
                     }
 
+                    this.formPatch = {};
+                    this.formValid = !Object.values(instance.formPermissions ?? {}).some(
+                        (permission) => permission.access === WORKFLOW_FORM_ACCESS.EDITABLE,
+                    );
                     this.instance = instance;
                     this.graph = instance.graph ?? { nodes: [], edges: [] };
+                    this.scheduleReminderRefresh();
                 })
                 .catch((error) => {
                     if (loadRevision === this.loadRevision) {
@@ -324,14 +444,43 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         onApprove(comment: string) {
-            void this.act('approveTask', comment);
+            if (!this.formValid) {
+                return;
+            }
+            const form =
+                this.instance?.formVersion === undefined
+                    ? undefined
+                    : {
+                          formData: this.formPatch,
+                          formVersion: this.instance.formVersion,
+                      };
+            void this.act((id) =>
+                form
+                    ? this.workflowRuntimeApiService.approveTask(id, comment, form)
+                    : this.workflowRuntimeApiService.approveTask(id, comment),
+            );
+        },
+
+        selectFormContext(taskId: string) {
+            if (!taskId || this.isActing) {
+                return;
+            }
+            void this.$router.replace({ query: { ...this.$route.query, taskId } });
+        },
+
+        onReturn(comment: string) {
+            void this.act((id) => this.workflowRuntimeApiService.returnTask(id, comment));
         },
 
         onReject(comment: string) {
-            void this.act('rejectTask', comment);
+            void this.act((id) => this.workflowRuntimeApiService.rejectTask(id, comment));
         },
 
-        act(method: 'approveTask' | 'rejectTask', comment: string) {
+        onParticipate(operation: RuntimeTaskParticipation) {
+            void this.act((id) => this.workflowRuntimeApiService.participateTask(id, operation));
+        },
+
+        act(operation: (id: string) => Promise<void>) {
             if (!this.canAct || !this.activeTask) {
                 return;
             }
@@ -339,7 +488,7 @@ export default Shopwell.Component.wrapComponentConfig({
             const viewRevision = this.viewRevision;
             this.isActing = true;
 
-            return this.workflowRuntimeApiService[method](this.activeTask.id, comment)
+            return operation(this.activeTask.id)
                 .then(() => {
                     if (viewRevision !== this.viewRevision) {
                         return;
@@ -404,12 +553,19 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         errorMessage(error: unknown): string {
-            const failure = error as { response?: { data?: { errors?: Array<{ detail?: string }> } }; message?: string };
-            return (
-                failure?.response?.data?.errors?.[0]?.detail ??
-                failure?.message ??
-                this.$t('sw-workflow.runtime.instance.loadError')
-            );
+            const failure = error as {
+                response?: { data?: { errors?: Array<{ code?: string; detail?: string }> } };
+                message?: string;
+            };
+            const apiError = failure.response?.data?.errors?.[0];
+            const messages: Record<string, string> = {
+                FRAMEWORK__WORKFLOW_FORM_CONFLICT: 'sw-workflow.formPermissions.conflict',
+                FRAMEWORK__WORKFLOW_REMINDER_UNAVAILABLE: 'sw-workflow.reminder.unavailable',
+            };
+            if (apiError?.code && messages[apiError.code]) {
+                return this.$t(messages[apiError.code]);
+            }
+            return apiError?.detail ?? failure.message ?? this.$t('sw-workflow.runtime.instance.loadError');
         },
     },
 });

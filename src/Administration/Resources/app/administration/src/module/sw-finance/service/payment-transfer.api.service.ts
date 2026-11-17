@@ -369,7 +369,7 @@ export type TransferReapplicationDraft = Pick<
 
 /** @private */
 export type TransferApproval = {
-    status: 'pending' | 'approved' | 'rejected' | 'canceled' | 'unavailable' | 'not_started';
+    status: 'pending' | 'returned' | 'approved' | 'rejected' | 'canceled' | 'unavailable' | 'not_started';
     releaseId: string | null;
     releaseName: string | null;
     revision: number | null;

@@ -17,8 +17,7 @@ final class WorkflowNodeTypes
 {
     public const START = 'core:start';
     public const END = 'core:end';
+    public const COPY = 'core:copy';
     public const APPROVAL = 'core:approval';
     public const CONDITION = 'core:condition';
-    public const ACTION = 'core:action';
-    public const HUMAN_TASK = 'core:human-task';
 }

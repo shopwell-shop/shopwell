@@ -15,16 +15,6 @@ const coreWorkflowStudioExtension: WorkflowStudioExtension = {
             presentation: { icon: 'regular-play', tone: 'neutral', settingsComponent: 'sw-workflow-start-settings' },
         },
         { type: WORKFLOW_NODE_TYPES.END, version: 1, presentation: { icon: 'regular-checkmark', tone: 'neutral' } },
-        {
-            type: 'core:action',
-            version: 1,
-            presentation: { icon: 'regular-cog', tone: 'blue', summaryKey: 'sw-workflow.summaries.action' },
-        },
-        {
-            type: 'core:human-task',
-            version: 1,
-            presentation: { icon: 'regular-user', tone: 'purple', summaryKey: 'sw-workflow.summaries.humanTask' },
-        },
     ],
     templates: [
         {

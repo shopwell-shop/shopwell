@@ -16,6 +16,10 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 #[Package('framework')]
 final class ConditionWorkflowSubscriber implements EventSubscriberInterface
 {
+    private const MAX_DEPTH = 6;
+    private const MAX_CONDITIONS = 100;
+    private const COMPARISON_OPERATORS = ['equals', 'notEquals', 'isEmpty', 'isNotEmpty', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'];
+
     public static function getSubscribedEvents(): array
     {
         return [WorkflowNodePortsEvent::class => 'resolvePorts', WorkflowValidationEvent::class => 'validate'];
@@ -54,14 +58,43 @@ final class ConditionWorkflowSubscriber implements EventSubscriberInterface
                     continue;
                 }
                 $ids[$branch['id']] = true;
+                $remaining = self::MAX_CONDITIONS;
+                $rule = $branch;
+                unset($rule['id'], $rule['label']);
                 if (!\is_string($branch['label'] ?? null) || trim($branch['label']) === ''
-                    || !\is_string($branch['field'] ?? null) || !preg_match('/^[a-zA-Z_][a-zA-Z0-9_.]*$/D', $branch['field'])
-                    || !\in_array($branch['operator'] ?? null, ['equals', 'notEquals', 'isEmpty', 'isNotEmpty', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'], true)
-                    || !\is_string($branch['value'] ?? null)) {
+                    || !$this->isValidRule($rule, 0, $remaining)) {
                     $event->addViolation(new WorkflowViolation('condition_invalid_rule', $path . '/' . $position, $node->id));
                 }
             }
         }
+    }
+
+    private function isValidRule(mixed $rule, int $depth, int &$remaining): bool
+    {
+        if ($depth > self::MAX_DEPTH || --$remaining < 0 || !\is_array($rule)) {
+            return false;
+        }
+
+        if (\in_array($rule['operator'] ?? null, ['and', 'or'], true)) {
+            $children = $rule['conditions'] ?? null;
+            if (array_diff(array_keys($rule), ['operator', 'conditions']) !== []
+                || !\is_array($children) || !array_is_list($children) || $children === []) {
+                return false;
+            }
+            foreach ($children as $child) {
+                if (!$this->isValidRule($child, $depth + 1, $remaining)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return array_diff(array_keys($rule), ['field', 'fieldType', 'operator', 'value']) === []
+            && \is_string($rule['field'] ?? null)
+            && preg_match('/^[a-zA-Z_][a-zA-Z0-9_.]*$/D', $rule['field']) === 1
+            && \in_array($rule['operator'] ?? null, self::COMPARISON_OPERATORS, true)
+            && \is_string($rule['value'] ?? null);
     }
 
     /**

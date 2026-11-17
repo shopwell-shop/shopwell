@@ -3,8 +3,14 @@
     gap: 16px;
     min-width: 0;
 
-    > .mt-field {
-        margin-bottom: 0;
+    &__configuration {
+        display: grid;
+        gap: 16px;
+        min-width: 0;
+
+        > .mt-field {
+            margin-bottom: 0;
+        }
     }
 
     &__mode {

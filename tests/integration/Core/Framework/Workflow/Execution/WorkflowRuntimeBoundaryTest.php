@@ -55,11 +55,15 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowTransactionRunner;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalResubmission;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskCompletion;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskParticipation;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskPolicy;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssignment;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompilationContext;
@@ -187,6 +191,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             $container->get('workflow_execution_definition.repository'),
             $container->get('user.repository'),
             $runtime['validator'],
+            new EventDispatcher(),
         );
         $publisher->publish($release, $this->context);
 
@@ -197,6 +202,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             $container->get('workflow_execution_definition.repository'),
             $container->get('user.repository'),
             $runtime['validator'],
+            new EventDispatcher(),
         );
         $withoutCompiler->check(new WorkflowReleaseCheckEvent($release, $this->context));
         $instanceId = $runtime['workflows']->start($release->getId(), [], '', $this->context);
@@ -259,6 +265,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             $container->get('workflow_execution_definition.repository'),
             $container->get('user.repository'),
             $runtime['validator'],
+            new EventDispatcher(),
         );
 
         $publisher->publish($release, $this->context);
@@ -356,6 +363,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             $container->get(WorkflowInputSchema::class),
             $clock,
             $container->get('translator'),
+            $container->get('event_dispatcher'),
         );
         $approvals = new ApprovalWorkflowService(
             $workflows,
@@ -375,6 +383,12 @@ class WorkflowRuntimeBoundaryTest extends TestCase
                 $events,
                 $engine,
             ),
+            $container->get(ApprovalTaskParticipation::class),
+            $container->get(ApprovalResubmission::class),
+            $container->get(ApprovalTaskPolicy::class),
+            $container->get(ExtensionDispatcher::class),
+            $container->get(WorkflowRecorder::class),
+            $container->get(ApprovalFormService::class),
         );
 
         return ['workflows' => $workflows, 'approvals' => $approvals, 'validator' => $validator];

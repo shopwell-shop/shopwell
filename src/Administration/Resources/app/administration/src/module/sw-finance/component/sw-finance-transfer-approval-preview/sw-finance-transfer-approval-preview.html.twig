@@ -62,7 +62,7 @@
                     >
                         <header class="sw-finance-transfer-approval-preview__node-heading">
                             <span class="sw-finance-transfer-approval-preview__node-icon"><mt-icon
-                                :name="step.type === 'approval' ? 'regular-user-shield' : 'regular-flow'"
+                                :name="stepIcon(step.type)"
                                 size="18px"
                             /></span>
                             <strong>{{ step.name }}</strong>
@@ -72,13 +72,13 @@
                             >{{ $t(`sw-finance.transfer.approvalPreview.rules.${step.rule}`) }}</span>
                         </header>
                         <p
-                            v-if="step.type === 'approval'"
+                            v-if="step.assignees.length > 0"
                             class="sw-finance-transfer-approval-preview__node-summary"
                         >
                             {{ participantNames(step) }}
                         </p>
                         <p
-                            v-else
+                            v-else-if="step.type === 'condition'"
                             class="sw-finance-transfer-approval-preview__node-summary"
                         >
                             {{ $t('sw-finance.transfer.approvalPreview.matchedBranch', { name: step.branch }) }}

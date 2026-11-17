@@ -11,8 +11,11 @@ use Shopwell\Core\Framework\Workflow\Definition\Connection\WorkflowConnection;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
 use Shopwell\Core\Framework\Workflow\Definition\Type\Loader\BuiltInWorkflowNodeTypeLoader;
+use Shopwell\Core\Framework\Workflow\Definition\Type\Loader\WorkflowNodeTypeLoader;
 use Shopwell\Core\Framework\Workflow\Definition\Type\Registry\WorkflowNodeTypeRegistry;
 use Shopwell\Core\Framework\Workflow\Definition\Type\Resolver\WorkflowNodeTypeResolver;
+use Shopwell\Core\Framework\Workflow\Definition\Type\Specification\WorkflowNodeKind;
+use Shopwell\Core\Framework\Workflow\Definition\Type\Specification\WorkflowNodeTypeSpecification;
 use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Diagnostics\Policy\StructuredWorkflowGraphPolicy;
 use Shopwell\Core\Framework\Workflow\Diagnostics\Policy\WorkflowGraphPolicyRegistry;
@@ -56,7 +59,7 @@ class WorkflowCompilerTest extends TestCase
     public function testRejectsAVisualNodeThatHasNoExecutableCompiler(): void
     {
         $document = new WorkflowDocument(
-            [new WorkflowNode('start', 'core:start', 1), new WorkflowNode('action', 'core:action', 1), new WorkflowNode('end', 'core:end', 1)],
+            [new WorkflowNode('start', 'core:start', 1), new WorkflowNode('action', 'example:action', 1), new WorkflowNode('end', 'core:end', 1)],
             [new WorkflowConnection('a', 'start', 'out', 'action', 'in'), new WorkflowConnection('b', 'action', 'out', 'end', 'in')],
         );
 
@@ -69,7 +72,7 @@ class WorkflowCompilerTest extends TestCase
         $compiler = new class implements WorkflowNodeCompiler {
             public function getNodeType(): string
             {
-                return 'core:action';
+                return 'example:action';
             }
 
             public function getNodeVersion(): int
@@ -83,7 +86,7 @@ class WorkflowCompilerTest extends TestCase
             }
         };
         $document = new WorkflowDocument(
-            [new WorkflowNode('start', 'core:start', 1), new WorkflowNode('action', 'core:action', 1), new WorkflowNode('end', 'core:end', 1)],
+            [new WorkflowNode('start', 'core:start', 1), new WorkflowNode('action', 'example:action', 1), new WorkflowNode('end', 'core:end', 1)],
             [new WorkflowConnection('a', 'start', 'out', 'action', 'in'), new WorkflowConnection('b', 'action', 'out', 'end', 'in')],
         );
 
@@ -139,7 +142,11 @@ class WorkflowCompilerTest extends TestCase
     private function compiler(array $additional = []): WorkflowCompiler
     {
         $events = new EventDispatcher();
-        $types = new WorkflowNodeTypeRegistry([new BuiltInWorkflowNodeTypeLoader()]);
+        $pluginTypes = static::createStub(WorkflowNodeTypeLoader::class);
+        $pluginTypes->method('load')->willReturn([
+            new WorkflowNodeTypeSpecification('example:action', 1, WorkflowNodeKind::ACTIVITY, ['in'], ['out']),
+        ]);
+        $types = new WorkflowNodeTypeRegistry([new BuiltInWorkflowNodeTypeLoader(), $pluginTypes]);
         $diagnostics = new WorkflowGraphDiagnostics(new WorkflowNodeTypeResolver($types, $events), new WorkflowGraphPolicyRegistry([new StructuredWorkflowGraphPolicy()]), $events);
         $compilers = new WorkflowNodeCompilerRegistry([new StartWorkflowNodeCompiler(new WorkflowInputSchema()), new EndWorkflowNodeCompiler(), ...$additional]);
         $validator = new WorkflowGraphValidator([new ShapeRule(new NodeExecutorRegistry([new StartExecutor(), new EndExecutor()]))]);

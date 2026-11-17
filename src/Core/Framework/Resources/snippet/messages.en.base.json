@@ -105,6 +105,7 @@
         "nodes": {
             "start": "Initiator",
             "end": "End",
+            "copy": "Copy recipients",
             "approval": "Approval",
             "condition": "Condition",
             "fallback": "Otherwise"

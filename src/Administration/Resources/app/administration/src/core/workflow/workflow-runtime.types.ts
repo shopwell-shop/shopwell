@@ -22,6 +22,17 @@ export type RuntimePath = { nodeIds: string[]; edgeIds: string[] };
 /** @public */
 export type RuntimeParticipant = { id: string; name?: string; unitName?: string };
 /** @public */
+export type RuntimeApprovalReminder = {
+    deliveryPending: boolean;
+    dueAt: string | null;
+    overdue: boolean;
+    lastRemindedAt: string | null;
+    nextRemindAt?: string | null;
+    source: 'manual' | 'overdue' | null;
+    count: number;
+    canRemind: boolean;
+};
+/** @public */
 export type RuntimeTask = {
     id: string;
     instanceId?: string;
@@ -31,6 +42,9 @@ export type RuntimeTask = {
     countersignType: string;
     state: string;
     actionable?: boolean;
+    availableActions?: string[];
+    requiredReviewer?: boolean;
+    reminder?: RuntimeApprovalReminder | null;
     assignee: RuntimeParticipant;
     decision?: string;
     comment?: string;
@@ -80,6 +94,7 @@ export type RuntimeTodoTask = RuntimeTask & RuntimeTaskInstanceSummary & { insta
 
 /** Decision history as presented in instance details, independent of current task state. @public */
 export type RuntimeTaskHistory = {
+    round: number;
     id: string;
     taskId: string;
     nodeId: string;
@@ -87,6 +102,7 @@ export type RuntimeTaskHistory = {
     assignee: RuntimeParticipant;
     countersignType: string;
     decision: string;
+    target?: RuntimeParticipant | null;
     comment: string | null;
     completedAt: string | null;
 };
@@ -98,11 +114,48 @@ export type RuntimeDoneTask = Pick<
 > &
     RuntimeTaskInstanceSummary & { instanceId: string };
 
+/** A received copy is a receipt and never an actionable approval task. @public */
+export type RuntimeReceivedCopy = RuntimeTaskInstanceSummary & {
+    id: string;
+    instanceId: string;
+    nodeId: string;
+    nodeName: string;
+    createdAt: string | null;
+    readAt: string | null;
+};
+
 /** Instance detail presenter, including optional extension contributions. @public */
 export type RuntimeInstance = RuntimeInstanceListItem & {
+    round: number;
+    canResubmit?: boolean;
+    canRemind?: boolean;
+    readOnlyInputKeys?: string[];
     graph?: RuntimeGraph;
     formData?: Record<string, unknown>;
     formSchema?: WorkflowFormField[];
+    formVersion?: number;
+    formPermissions?: Record<string, WorkflowFormPermission>;
+    formContextId?: string | null;
+    formContextRequired?: boolean;
+    formContexts?: Array<{
+        id: string;
+        nodeId: string;
+        nodeName: string;
+        kind: 'task' | 'copy';
+        round: number;
+        editable: boolean;
+    }>;
+    formChanges?: Array<{
+        id: string;
+        taskId: string | null;
+        actorId: string | null;
+        actor?: RuntimeParticipant | null;
+        revision: number;
+        round: number;
+        createdAt: string;
+        changes: Record<string, { before: unknown; after: unknown }>;
+    }>;
+
     executions?: RuntimeNodeExecution[];
     result?: string | null;
     tasks?: RuntimeTask[];
@@ -111,6 +164,7 @@ export type RuntimeInstance = RuntimeInstanceListItem & {
     logs?: Array<{
         id: string;
         action: string;
+        payload?: { round?: number };
         operator: RuntimeParticipant | null;
         comment: string | null;
         createdAt: string | null;
@@ -122,5 +176,22 @@ export type RuntimeInstance = RuntimeInstanceListItem & {
     currentNode?: { id: string; name: string; enteredAt: string | null };
     canCancel?: boolean;
 };
+/** Participant operation handled inside the current task's approval transaction. @public */
+export type RuntimeTaskParticipation = {
+    action: string;
+    targetUserId: string;
+    comment: string;
+};
+
 /** @public */
 export type RuntimePage<T> = { data: T[]; meta?: { total?: number } };
+
+/**
+ * Published node-level form access; business constraints can further restrict it.
+ *
+ * @public
+ */
+export type WorkflowFormPermission = {
+    access: 'hidden' | 'readonly' | 'editable';
+    required: boolean;
+};

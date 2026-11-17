@@ -1,0 +1,90 @@
+{% block sw_workflow_condition_comparison %}
+<div class="sw-workflow-condition-comparison">
+    <p
+        v-if="fields.length === 0"
+        class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__no-fields"
+        role="status"
+    >
+        {{ $t('sw-workflow.condition.noFields') }}
+    </p>
+    <mt-select
+        :hide-clearable-button="true"
+        class="sw-workflow-condition-settings__field"
+        :model-value="branch.field"
+        :label="$t('sw-workflow.condition.field')"
+        :placeholder="$t('sw-workflow.condition.fieldPlaceholder')"
+        :options="optionsForField(branch)"
+        :disabled="!allowEdit || fields.length === 0"
+        @update:model-value="selectField(branch, $event)"
+    />
+    <p
+        v-if="branch.field && !fieldDefinition(branch)"
+        class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__unavailable"
+        role="status"
+    >
+        {{ $t('sw-workflow.condition.unavailableFieldHint') }}
+    </p>
+    <template v-if="hasStaleFieldType(branch)">
+        <p
+            class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__stale-type"
+            role="status"
+        >
+            {{ $t('sw-workflow.condition.staleFieldTypeHint') }}
+        </p>
+        <mt-button
+            class="sw-workflow-condition-settings__rebind"
+            variant="secondary"
+            :disabled="!allowEdit"
+            @click="bindField(branch)"
+        >
+            {{ $t('sw-workflow.condition.rebindField') }}
+        </mt-button>
+    </template>
+    <mt-select
+        :hide-clearable-button="true"
+        class="sw-workflow-condition-settings__operator"
+        :model-value="branch.operator"
+        :label="$t('sw-workflow.condition.operator')"
+        :hint="$t('sw-workflow.condition.operatorHints.' + branch.operator)"
+        :options="operatorOptions(branch)"
+        :disabled="!allowEdit || !fieldDefinition(branch) || hasStaleFieldType(branch)"
+        @update:model-value="selectOperator(branch, $event)"
+    />
+    <p
+        v-if="hasUnavailableOperator(branch)"
+        class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__unavailable-operator"
+        role="status"
+    >
+        {{ $t('sw-workflow.condition.unavailableOperatorHint') }}
+    </p>
+    <template v-if="fieldDefinition(branch) && branch.operator !== 'isEmpty' && branch.operator !== 'isNotEmpty'">
+        <mt-select
+            v-if="fieldDefinition(branch).type === 'select'"
+            :hide-clearable-button="true"
+            class="sw-workflow-condition-settings__value"
+            :model-value="branch.value"
+            :label="$t('sw-workflow.condition.value')"
+            :placeholder="$t('sw-workflow.condition.valuePlaceholder')"
+            :options="valueOptions(branch)"
+            :disabled="!allowEdit || hasStaleFieldType(branch)"
+            @update:model-value="selectValue(branch, $event)"
+        />
+        <mt-text-field
+            v-else
+            v-model="branch.value"
+            :hint="valueHint(branch)"
+            class="sw-workflow-condition-settings__value"
+            :label="$t('sw-workflow.condition.value')"
+            :disabled="!allowEdit || hasStaleFieldType(branch)"
+            @update:model-value="commit"
+        />
+        <p
+            v-if="hasUnavailableValue(branch)"
+            class="sw-workflow-condition-settings__hint sw-workflow-condition-settings__unavailable-value"
+            role="status"
+        >
+            {{ $t('sw-workflow.condition.unavailableValueHint') }}
+        </p>
+    </template>
+</div>
+{% endblock %}

@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ComparisonConditionEvaluator;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ExprNormalizer;
+use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowInstanceMetadataEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorRegistry;
@@ -142,9 +143,22 @@ class WorkflowSkeletonExecutionTest extends TestCase
         $flows->publishDefinition($definitionId, $this->context);
     }
 
-    private function service(NodeExecutorInterface $custom): WorkflowService
+    public function testPluginMetadataIsPersistedWithoutAnOrganizationOrApprovalDependency(): void
+    {
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(WorkflowInstanceMetadataEvent::class, static function (WorkflowInstanceMetadataEvent $event): void {
+            $event->addMetadata('example:policy', ['revision' => 3]);
+        });
+        $flows = $this->service(new SkeletonAutomaticExecutor(), $dispatcher);
+        $instanceId = $this->start($flows, 'test:automatic');
+
+        static::assertSame(['example:policy' => ['revision' => 3]], $flows->loadInstance($instanceId, $this->context)->ext);
+    }
+
+    private function service(NodeExecutorInterface $custom, ?EventDispatcher $dispatcher = null): WorkflowService
     {
         $container = static::getContainer();
+        $dispatcher ??= new EventDispatcher();
         $events = $container->get(WorkflowEventQueue::class);
         $registry = new NodeExecutorRegistry([new StartExecutor(), new EndExecutor(), $custom]);
         $transactions = $container->get(WorkflowTransactionRunner::class);
@@ -156,7 +170,7 @@ class WorkflowSkeletonExecutionTest extends TestCase
             new WorkflowNodeExecutionStore($container->get('workflow_node_execution.repository'), $clock),
             $states,
             $events,
-            new EventDispatcher(),
+            $dispatcher,
             $container->get('workflow_instance.repository'),
         );
         $validator = new WorkflowGraphValidator([new ShapeRule($registry), new SingleStartRule(), new SingleEndRule(), new CycleRule(), new ReachabilityRule()]);
@@ -174,6 +188,7 @@ class WorkflowSkeletonExecutionTest extends TestCase
             new WorkflowInputSchema(),
             $clock,
             $container->get('translator'),
+            $dispatcher,
         );
     }
 

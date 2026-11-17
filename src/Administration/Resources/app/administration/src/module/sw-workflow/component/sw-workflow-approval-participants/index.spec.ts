@@ -30,6 +30,15 @@ async function createWrapper(approvalTasks = tasks): Promise<VueWrapper> {
 }
 
 describe('approval participants', () => {
+    it('identifies mandatory added reviewers separately from the original voting rule', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.setProps({ tasks: [tasks[0], { ...tasks[1], requiredReviewer: true }] });
+        const participants = wrapper.findAll('.sw-workflow-approval-participants__participant');
+        expect(participants[0].text()).not.toContain('sw-workflow.runtime.participants.requiredReviewer');
+        expect(participants[1].text()).toContain('sw-workflow.runtime.participants.requiredReviewer');
+        wrapper.unmount();
+    });
+
     it('shows all participants and advances the decision count after one approval', async () => {
         const wrapper = await createWrapper();
         expect(wrapper.findAll('.sw-workflow-approval-participants__participant')).toHaveLength(2);

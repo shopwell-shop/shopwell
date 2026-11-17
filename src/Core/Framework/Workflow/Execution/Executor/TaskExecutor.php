@@ -148,18 +148,13 @@ final class TaskExecutor implements NodeExecutorInterface
     }
 
     /**
-     * Find the next assignee by snapshot position; sequence numbers may contain gaps after retries.
+     * Continue from the original approval position, including after a task is transferred.
      */
     private function nextAssignee(WorkflowTaskEntity $completedTask): ?string
     {
         $snapshot = $completedTask->assigneeSnapshot();
-        $index = array_search($completedTask->assigneeId, $snapshot, true);
 
-        if ($index === false) {
-            return null;
-        }
-
-        return $snapshot[$index + 1] ?? null;
+        return $snapshot[$completedTask->sequence] ?? null;
     }
 
     /**

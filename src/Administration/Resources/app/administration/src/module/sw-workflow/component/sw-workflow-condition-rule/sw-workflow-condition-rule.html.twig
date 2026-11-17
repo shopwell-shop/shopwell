@@ -1,0 +1,86 @@
+{% block sw_workflow_condition_rule %}
+<div class="sw-workflow-condition-rule">
+    <p
+        v-if="depth === 0"
+        class="sw-workflow-condition-rule__quota"
+        :role="quotaExceeded ? 'alert' : 'status'"
+    >
+        {{ quotaLabel }}
+    </p>
+    <template v-if="group">
+        <mt-select
+            class="sw-workflow-condition-rule__group-operator"
+            :model-value="group.operator"
+            :options="operatorOptions"
+            :label="$t('sw-workflow.condition.groups.match')"
+            :hide-clearable-button="true"
+            :disabled="!allowEdit"
+            @update:model-value="setOperator"
+        />
+        <p
+            v-if="!group.conditions.length"
+            role="alert"
+        >
+            {{ $t('sw-workflow.condition.groups.empty') }}
+        </p>
+        <div
+            v-for="(condition, index) in group.conditions"
+            :key="index"
+            class="sw-workflow-condition-rule__child"
+        >
+            <sw-workflow-condition-rule
+                v-if="canEditChild(condition)"
+                :model-value="condition"
+                :fields="fields"
+                :allow-edit="allowEdit"
+                :depth="depth + 1"
+                :branch-size="conditionCount"
+                @update:model-value="updateChild(index, $event)"
+            />
+            <p
+                v-if="!canEditChild(condition)"
+                class="sw-workflow-condition-rule__invalid"
+                role="alert"
+            >
+                {{ $t('sw-workflow.condition.groups.invalid') }}
+            </p>
+            <mt-button
+                class="sw-workflow-condition-rule__remove"
+                variant="secondary"
+                size="small"
+                :disabled="!allowEdit"
+                @click="removeChild(index)"
+            >
+                {{ $t('sw-workflow.condition.groups.remove') }}
+            </mt-button>
+        </div>
+    </template>
+    <sw-workflow-condition-comparison
+        v-else
+        :model-value="modelValue"
+        :fields="fields"
+        :allow-edit="allowEdit"
+        @update:model-value="update"
+    />
+    <div class="sw-workflow-condition-rule__actions">
+        <mt-button
+            class="sw-workflow-condition-rule__add-condition"
+            variant="secondary"
+            size="small"
+            :disabled="!canAddComparison"
+            @click="add()"
+        >
+            {{ $t('sw-workflow.condition.groups.addCondition') }}
+        </mt-button>
+        <mt-button
+            class="sw-workflow-condition-rule__add-group"
+            variant="secondary"
+            size="small"
+            :disabled="!canAddGroup"
+            @click="add(true)"
+        >
+            {{ $t('sw-workflow.condition.groups.addGroup') }}
+        </mt-button>
+    </div>
+</div>
+{% endblock %}

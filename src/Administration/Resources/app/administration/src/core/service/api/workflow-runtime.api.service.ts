@@ -8,6 +8,8 @@ import type {
     RuntimePage,
     RuntimeTodoTask,
     RuntimeDoneTask,
+    RuntimeReceivedCopy,
+    RuntimeTaskParticipation,
 } from 'src/core/workflow/workflow-runtime.types';
 
 const base = '/_action/workflow';
@@ -29,9 +31,32 @@ export default class WorkflowRuntimeApiService extends ApiService {
             .post<{ data: { id: string } }>(`${base}/instance`, payload, { headers: this.getBasicHeaders() })
             .then((response) => response.data);
     }
-    getInstance(id: string): Promise<RuntimeInstance> {
+    returnTask(id: string, comment: string): Promise<void> {
         return this.httpClient
-            .get<{ data: RuntimeInstance }>(`${base}/instance/${id}`, { headers: this.getBasicHeaders() })
+            .post(`${base}/task/${id}/return`, { comment }, { headers: this.getBasicHeaders() })
+            .then(() => undefined);
+    }
+
+    remindInstance(id: string): Promise<void> {
+        return this.httpClient
+            .post(`${base}/instance/${id}/remind`, {}, { headers: this.getBasicHeaders() })
+            .then(() => undefined);
+    }
+
+    resubmitInstance(
+        id: string,
+        payload: { round: number; formVersion?: number; formData: Record<string, string>; comment: string },
+    ): Promise<void> {
+        return this.httpClient
+            .post(`${base}/instance/${id}/resubmit`, payload, { headers: this.getBasicHeaders() })
+            .then(() => undefined);
+    }
+
+    getInstance(id: string, taskId?: string): Promise<RuntimeInstance> {
+        return this.httpClient
+            .get<{
+                data: RuntimeInstance;
+            }>(`${base}/instance/${id}`, { headers: this.getBasicHeaders(), ...(taskId ? { params: { taskId } } : {}) })
             .then((response) => response.data.data);
     }
     listTodo(params: PageQuery = {}): Promise<RuntimePage<RuntimeTodoTask>> {
@@ -49,9 +74,26 @@ export default class WorkflowRuntimeApiService extends ApiService {
             .get<RuntimePage<RuntimeInstanceListItem>>(`${base}/instance/mine`, { headers: this.getBasicHeaders(), params })
             .then((response) => response.data);
     }
-    approveTask(id: string, comment: string): Promise<void> {
+
+    listCopies(params: PageQuery = {}): Promise<RuntimePage<RuntimeReceivedCopy>> {
         return this.httpClient
-            .post(`${base}/task/${id}/approve`, { comment }, { headers: this.getBasicHeaders() })
+            .get<RuntimePage<RuntimeReceivedCopy>>(`${base}/copy`, { headers: this.getBasicHeaders(), params })
+            .then((response) => response.data);
+    }
+
+    markCopyRead(id: string): Promise<void> {
+        return this.httpClient
+            .post(`${base}/copy/${id}/read`, {}, { headers: this.getBasicHeaders() })
+            .then(() => undefined);
+    }
+
+    approveTask(
+        id: string,
+        comment: string,
+        form?: { formData: Record<string, string>; formVersion: number },
+    ): Promise<void> {
+        return this.httpClient
+            .post(`${base}/task/${id}/approve`, { comment, ...form }, { headers: this.getBasicHeaders() })
             .then(() => undefined);
     }
     rejectTask(id: string, comment: string): Promise<void> {
@@ -59,6 +101,21 @@ export default class WorkflowRuntimeApiService extends ApiService {
             .post(`${base}/task/${id}/reject`, { comment }, { headers: this.getBasicHeaders() })
             .then(() => undefined);
     }
+    participateTask(id: string, operation: RuntimeTaskParticipation): Promise<void> {
+        return this.httpClient
+            .post(`${base}/task/${id}/participation`, operation, { headers: this.getBasicHeaders() })
+            .then(() => undefined);
+    }
+
+    executeTaskOperation(
+        id: string,
+        operation: { action: string; comment: string; payload?: Record<string, unknown> },
+    ): Promise<void> {
+        return this.httpClient
+            .post(`${base}/task/${id}/operation`, operation, { headers: this.getBasicHeaders() })
+            .then(() => undefined);
+    }
+
     cancelInstance(id: string, reason: string): Promise<void> {
         return this.httpClient
             .post(`${base}/instance/${id}/cancel`, { reason }, { headers: this.getBasicHeaders() })

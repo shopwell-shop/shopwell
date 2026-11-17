@@ -55,8 +55,6 @@
         "templates": {
             "approval": "单级审批",
             "approvalDescription": "包含通过与拒绝两条路径",
-            "expense": "费用报销审批",
-            "expenseDescription": "部门审批后，超过 5,000 元再由财务审批",
             "selectTitle": "选择流程模板",
             "selectHint": "先选择模板预览流程，确认后再应用。",
             "replaceHint": "应用模板将替换当前流程，可通过撤销恢复。",
@@ -77,7 +75,8 @@
                 "action": "自动动作",
                 "human-task": "人工任务",
                 "approval": "审批",
-                "condition": "条件分支"
+                "condition": "条件分支",
+                "copy": "抄送"
             }
         },
         "outcomes": {
@@ -111,7 +110,10 @@
             "approval_assignee_required": "请选择审批人。",
             "approval_invalid_configuration": "请完善审批人和审批方式配置。",
             "approval_incompatible_mode": "当前人员来源不支持此审批方式，请重新选择。",
-            "issueCount": "{count} 个问题"
+            "issueCount": "{count} 个问题",
+            "approval_invalid_operations": "请选择可用的审批操作，且不可重复。",
+            "approval_invalid_deadline": "请设置 1 至 525600 分钟的审批时限，并选择是否超时提醒。",
+            "approval_invalid_form_permissions": "请为已有表单字段设置隐藏、只读或可编辑权限；仅可编辑的审批字段支持节点必填。"
         },
         "condition": {
             "title": "分支条件",
@@ -157,7 +159,18 @@
             "unavailableOperator": "原条件不可用",
             "unavailableOperatorHint": "当前字段类型不支持此条件。原规则已保留，请重新选择条件。",
             "staleFieldTypeHint": "字段类型已变更，或此规则尚未绑定类型。请重新绑定字段并设置条件后再发布。",
-            "rebindField": "重新绑定字段并重设条件"
+            "rebindField": "重新绑定字段并重设条件",
+            "groups": {
+                "quota": "本分支已用 {count} / {limit} 项（含条件和条件组）",
+                "and": "全部满足",
+                "or": "任一满足",
+                "match": "匹配方式",
+                "empty": "请至少添加一个条件",
+                "addCondition": "添加条件",
+                "addGroup": "添加条件组",
+                "remove": "删除规则",
+                "invalid": "此规则无效或嵌套过深，请删除后重新添加。"
+            }
         },
         "persistence": {
             "defaultName": "未命名流程",
@@ -216,9 +229,9 @@
             },
             "namedUsers": "指定多人",
             "all": "会签",
-            "any": "或签",
+            "any": "或签（首人决定）",
             "allHint": "所有人通过才通过；任意一人拒绝即拒绝。节点结束后，其余人员无需再处理。",
-            "anyHint": "任意一人通过即通过，任意一人拒绝即拒绝；以最先提交的决定为准，其余人员无需再处理。",
+            "anyHint": "以最先提交的同意或拒绝决定结果；其余人员无需再处理。",
             "sourceHint": "切换人员来源会清空已选人员，可通过撤销恢复。",
             "incompatibleMode": "当前人员来源不支持此审批方式，请重新选择。",
             "multiple": {
@@ -227,16 +240,36 @@
                 "unverifiedMember": "待确认人员 {position}",
                 "inactiveMember": "{name}（已停用）",
                 "more": "{names}等{count}人",
-                "unavailableMembers": "有 {count} 位审批人已停用或不存在，请移除或替换。",
+                "unavailableMembers": "有 {count} 位已选人员已停用或不存在，请移除或重新选择。",
                 "status": {
                     "empty": "请选择审批人，可多选",
-                    "loading": "正在读取审批人…",
-                    "error": "暂时无法读取审批人，名单已保留。",
+                    "loading": "正在加载人员…",
+                    "error": "人员加载失败，已保留原有选择。",
                     "forbidden": "你没有查看人员的权限，名单已保留。"
                 }
             },
             "departmentLeaders": "发起部门负责人",
-            "departmentLeadersHint": "由发起人主归属部门的负责人审批，按负责人顺序排列。会签需全部负责人同意，或签以首个决定为准。未配置或有负责人不可用时无法进入该审批节点。"
+            "departmentLeadersHint": "以发起时的主归属部门为准，到达节点时读取该部门负责人，按负责人顺序排列，处理规则由所选审批方式决定。未配置负责人或负责人不可用时，无法进入该节点。",
+            "orSign": "任一人同意",
+            "orSignHint": "任意一人同意即通过；所有人都拒绝才拒绝。",
+            "sequential": "依次审批",
+            "sequentialHint": "按人员排列顺序依次审批，全部同意才通过；任意一人拒绝即拒绝。",
+            "positions": {
+                "label": "发起部门内的岗位",
+                "hint": "以发起时的主归属部门为准，到达节点时读取所选岗位的任职人员。依次审批按所选岗位顺序处理。",
+                "missing": "失效岗位 {position}",
+                "unavailable": "{name}（不可用）",
+                "unavailableCount": "有 {count} 个岗位不可用，请重新选择后发布。",
+                "summary": "发起部门：{names}",
+                "status": {
+                    "empty": "请选择岗位",
+                    "loading": "正在加载岗位…",
+                    "error": "岗位加载失败，已保留原有选择。",
+                    "forbidden": "暂无岗位查看权限。"
+                }
+            },
+            "operationsTitle": "审批人操作",
+            "operationsHint": "设置本节点审批人可以使用的操作。"
         },
         "publication": {
             "catalogue": "发布记录",
@@ -261,7 +294,10 @@
             "emptyTitle": "暂无发布记录",
             "emptyHint": "发布流程后，可在此查看版本记录。",
             "approval_assignee_forbidden": "审批人缺少查看或处理审批的权限。请先为其分配「工作流参与者」角色或等效权限。",
-            "allRecords": "查看全部发布记录"
+            "allRecords": "查看全部发布记录",
+            "copy_recipient_unavailable": "抄送人已停用或不存在，请重新选择。",
+            "copy_recipient_forbidden": "抄送人没有查看流程的权限，请分配流程参与者角色或相应权限。",
+            "position_unavailable": "所选岗位已停用或不存在，请重新选择后发布。"
         },
         "form": {
             "title": "申请表单",
@@ -293,18 +329,6 @@
             "currencySource": "选择系统币种",
             "selectPlaceholder": "请选择"
         },
-        "expense": {
-            "reason": "报销事由",
-            "amount": "报销金额",
-            "expenseDate": "费用日期",
-            "category": "费用类别",
-            "quantity": "数量",
-            "travel": "差旅费",
-            "supplies": "办公用品",
-            "department": "部门审批",
-            "finance": "财务审批",
-            "threshold": "超过 5,000 元"
-        },
         "runtime": {
             "general": {
                 "mainMenuItemGeneral": "待办审批",
@@ -315,14 +339,15 @@
                 "approved": "已通过",
                 "rejected": "已拒绝",
                 "canceled": "已撤销",
-                "completed": "已完成"
+                "completed": "已完成",
+                "returned": "待修改"
             },
             "countersign": {
                 "single": "单人审批",
-                "orSign": "或签",
+                "orSign": "任一人同意",
                 "countersign": "会签",
                 "orderSign": "顺序会签",
-                "firstDecision": "首人决定"
+                "firstDecision": "或签（首人决定）"
             },
             "todo": {
                 "title": "审批",
@@ -347,7 +372,14 @@
                 "columnStatus": "审批状态",
                 "columnStarted": "发起时间",
                 "emptyMineHeadline": "暂无申请",
-                "emptyMineDescription": "发起审批后，可在此查看进度"
+                "emptyMineDescription": "发起审批后，可在此查看进度",
+                "tabCopies": "抄送我的",
+                "columnReceived": "抄送时间",
+                "columnRead": "阅读状态",
+                "read": "已读",
+                "unread": "未读",
+                "emptyCopiesHeadline": "暂无抄送",
+                "emptyCopiesDescription": "抄送给你的申请会显示在这里。"
             },
             "instance": {
                 "back": "返回待办",
@@ -366,21 +398,39 @@
                 "cancel": "撤销申请",
                 "cancelReason": "撤销原因",
                 "cancelDone": "申请已撤销",
-                "cancelHint": "撤销后将结束审批，请填写原因以便留痕。"
+                "cancelHint": "撤销后将结束审批，请填写原因以便留痕。",
+                "resubmit": "重新提交",
+                "resubmitHint": "修改申请内容后重新提交，将从头开始新一轮审批。",
+                "lockedHint": "已生成的业务凭证不可修改，可补充说明。若需变更转账信息，请撤销后重新发起。",
+                "explanation": "补充说明"
             },
             "timeline": {
                 "title": "审批记录",
                 "agreed": "同意",
                 "rejected": "拒绝",
                 "pending": "处理中",
-                "empty": "还没有审批记录"
+                "empty": "还没有审批记录",
+                "transfer": "转交",
+                "add-sign": "加签",
+                "return": "退回修改",
+                "resubmit": "重新提交",
+                "round": "第 {round} 轮",
+                "operation": "扩展操作",
+                "remind": "催办"
             },
             "actions": {
                 "approve": "同意",
                 "reject": "拒绝",
                 "commentLabel": "审批意见",
-                "commentPlaceholder": "拒绝时必须填写理由",
-                "rejectHint": "拒绝申请时，请填写原因。"
+                "commentPlaceholder": "拒绝或退回时，请填写原因",
+                "rejectHint": "退回后可修改并重新提交；拒绝将结束本次申请。",
+                "transfer": "转交",
+                "add-sign": "加签",
+                "transferHint": "由所选人员接替你处理当前审批，转交记录将保留在审批历史中。",
+                "add-signHint": "新增人员并行审批，必须全部同意，任一人拒绝则本节点拒绝。你仍需处理自己的审批任务。",
+                "targetUser": "选择人员",
+                "reason": "操作原因（必填）",
+                "return": "退回修改"
             },
             "participants": {
                 "title": "审批流程",
@@ -403,7 +453,9 @@
                     "orSign": "任一人同意即通过；所有人拒绝才结束。",
                     "orderSign": "审批人依次处理，所有人同意才通过，任一人拒绝即结束。"
                 },
-                "step": "第 {number} 步"
+                "step": "第 {number} 步",
+                "requiredReviewer": "加签（必须同意）",
+                "addedReviewerState": "加签 · {state}"
             },
             "navigation": "我的审批",
             "viewer": {
@@ -455,6 +507,48 @@
         },
         "publisher": {
             "workflow": "通用工作流"
+        },
+        "copy": {
+            "recipients": "抄送人",
+            "empty": "请选择抄送人",
+            "hint": "抄送人可以查看申请，无需审批，不影响流程继续流转。"
+        },
+        "reminder": {
+            "receiptsTitle": "审批提醒",
+            "system": "系统",
+            "settings": {
+                "title": "审批时限",
+                "enabled": "设置审批时限",
+                "minutes": "处理时限（分钟）",
+                "hint": "按自然时间计算，包含周末。顺签轮到下一位时重新计时，转交保留原截止时间。",
+                "automatic": "超时后提醒一次审批人"
+            },
+            "action": "催办",
+            "sent": "已催办当前待审批人。",
+            "cooldownHint": "审批中每隔 10 分钟可催办一次。",
+            "overdue": "已超时",
+            "dueAt": "截止时间：{time}",
+            "remindedAt": "最近催办：{time}",
+            "automaticAt": "超时提醒：{time}",
+            "unavailable": "当前无法催办，可能已流转、仍在冷却中，或上次提醒正在重试。"
+        },
+        "formPermissions": {
+            "title": "表单权限",
+            "settings": "节点设置",
+            "hint": "设置本节点可见和可编辑的字段。业务限制仍然生效；节点必填仅影响通过审批。",
+            "empty": "请先在发起节点添加表单字段。",
+            "hidden": "隐藏",
+            "readonly": "只读",
+            "editable": "可编辑",
+            "required": "必填",
+            "editTitle": "补充审批信息",
+            "saveHint": "修改随“通过”一起保存。拒绝、退回、转交和加签不会保存这些修改。",
+            "context": "查看身份",
+            "contextHint": "请选择一条审批任务或抄送记录，查看对应的表单权限。",
+            "changes": "表单变更",
+            "revision": "第 {version} 版 · 第 {round} 轮",
+            "conflict": "审核期间表单已被修改。请刷新页面，核对最新内容后再提交。",
+            "loadFailed": "审批表单加载失败，请刷新页面后再审批。"
         }
     },
     "sw-privileges": {

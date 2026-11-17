@@ -224,7 +224,8 @@
                     "rejected": "Rejected",
                     "canceled": "Canceled",
                     "unavailable": "Approval unavailable",
-                    "not_started": "Approval not started"
+                    "not_started": "Approval not started",
+                    "returned": "Awaiting changes"
                 },
                 "cancellation": {
                     "modalTitle": "Cancel transfer approval",
@@ -238,7 +239,7 @@
                 "reviewedPaymentAccount": "Reviewed payment account",
                 "checks": {
                     "workflow_not_configured": "Select an available approval release to enable transfer requests.",
-                    "approval_assignee_unavailable": "A reviewer account is inactive or missing. Update the reviewers and publish a new release.",
+                    "approval_assignee_unavailable": "A reviewer is unavailable, a selected position is unstaffed, or a member lacks approval permissions. Check the initiator’s department, position assignments and reviewer roles.",
                     "approval_assignee_forbidden": "A reviewer cannot view or decide approval tasks. Assign the Workflow participant role or equivalent permissions.",
                     "workflow_definition_unavailable": "This execution definition is unavailable. Check its status or publish a new release.",
                     "runtime_unavailable": "The workflow runtime is unavailable. Contact an administrator.",
@@ -246,7 +247,9 @@
                     "preview_unavailable": "This workflow does not provide a preview. Submitting still validates and starts approval.",
                     "payment_account_unavailable": "The payment account is unavailable. Select another account.",
                     "recipient_unavailable": "The recipient is unavailable or does not match the selected provider. Select another recipient.",
-                    "invalid_transfer_input": "Check the transfer amount and currency."
+                    "invalid_transfer_input": "Check the transfer amount and currency.",
+                    "position_unavailable": "A selected approval position is inactive or missing. Update the position or choose another one and publish a new release.",
+                    "currency_not_supported": "The selected payment product does not support this currency. Choose a supported currency or another payment product."
                 },
                 "loading": "Loading approval…",
                 "currentAssignees": "Current reviewer: ",
@@ -256,22 +259,22 @@
                     "approval_assignee_forbidden": "Reviewer permissions missing",
                     "workflow_definition_unavailable": "Definition unavailable",
                     "runtime_unavailable": "Runtime unavailable",
-                    "workflow_unavailable": "Workflow unavailable"
+                    "workflow_unavailable": "Workflow unavailable",
+                    "position_unavailable": "Position unavailable"
                 }
             },
             "workflowTemplate": {
                 "title": "Transfer approval",
-                "description": "Finance review, with an additional review for CNY transfers over 5,000 and all other currencies. Assign reviewers before publishing.",
+                "description": "Department position approval, finance review for non-CNY transfers or CNY amounts over 5,000, then copy recipients. Select positions, reviewers and copy recipients before publishing.",
                 "finance": "Finance review",
-                "manager": "Amount review",
-                "foreignReview": "Foreign currency review",
-                "foreignCurrency": "Non-CNY transfer",
-                "threshold": "CNY amount over 5,000",
                 "amount": "Transfer amount",
                 "currency": "Transfer currency",
                 "reason": "Transfer note",
                 "recipient": "Recipient",
-                "paymentAccount": "Payment account"
+                "paymentAccount": "Payment account",
+                "department": "Department position approval",
+                "reviewRequired": "Non-CNY or CNY over 5,000",
+                "copy": "Copy recipients"
             },
             "approvalPreview": {
                 "title": "Expected approval path",

@@ -33,6 +33,7 @@ describe('snapshot rendering', () => {
                 {
                     id: 'decision',
                     taskId: task.id,
+                    round: 1,
                     nodeId: 'review',
                     nodeName: task.nodeName,
                     assignee: task.assignee,
@@ -154,6 +155,20 @@ describe('snapshot rendering', () => {
             alternative: 'SKIPPED',
         });
         expect(wrapper.findComponent({ name: 'sw-workflow-runtime-viewer' }).props('selectedPath')).toBeDefined();
+        wrapper.unmount();
+    });
+
+    it('keeps editable values visible for a returned initiator without an active task', async () => {
+        const wrapper = await createWrapper({
+            ...instance,
+            status: 'RETURNED',
+            tasks: [],
+            approvalTasks: [],
+            formPermissions: { reason: { access: 'editable', required: false } },
+        });
+
+        expect(wrapper.text()).toContain('Equipment');
+        expect(wrapper.findComponent({ name: 'sw-workflow-approval-form' }).exists()).toBe(false);
         wrapper.unmount();
     });
 

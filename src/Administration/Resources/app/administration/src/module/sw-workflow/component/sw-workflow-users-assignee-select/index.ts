@@ -12,6 +12,8 @@ export default Shopwell.Component.wrapComponentConfig({
     props: {
         config: { type: Object as PropType<Record<string, unknown>>, required: true },
         allowEdit: { type: Boolean, default: true },
+        labelKey: { type: String, default: 'sw-workflow.approval.assignee' },
+        placeholderKey: { type: String, default: 'sw-workflow.approval.multiple.status.empty' },
     },
     emits: ['update-config'],
     setup(props) {

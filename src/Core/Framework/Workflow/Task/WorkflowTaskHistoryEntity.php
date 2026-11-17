@@ -38,6 +38,10 @@ class WorkflowTaskHistoryEntity extends EntityStruct
     #[Field(type: FieldType::STRING, api: true, maxLength: 64)]
     public string $nodeId;
 
+    #[Required]
+    #[Field(type: FieldType::INT, api: true)]
+    public int $round = 1;
+
     #[Field(type: FieldType::STRING, api: true, maxLength: 255)]
     public string $nodeName;
 

@@ -53,6 +53,7 @@ final class CopyExecutor implements NodeExecutorInterface
                 'id' => Uuid::randomHex(),
                 'instanceId' => $instance->id,
                 'nodeId' => $node->id,
+                'round' => $context->round(),
                 'userId' => $userId,
             ];
         }

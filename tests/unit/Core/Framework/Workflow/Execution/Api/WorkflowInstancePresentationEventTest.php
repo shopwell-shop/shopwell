@@ -51,4 +51,17 @@ class WorkflowInstancePresentationEventTest extends TestCase
 
         static::assertSame(['result' => null], $event->getData());
     }
+
+    public function testFiltersAlsoApplyToDataAddedByLaterSubscribers(): void
+    {
+        $event = new WorkflowInstancePresentationEvent(new WorkflowInstanceEntity(), Context::createDefaultContext(), ['formData' => ['secret' => 'Hidden']], withDetail: true);
+        $event->filterData(static function (array $data): array {
+            unset($data['formData']['secret'], $data['businessSecret']);
+
+            return $data;
+        });
+        $event->addData(['businessSecret' => 'Hidden', 'status' => 'RUNNING']);
+        static::assertSame(['formData' => [], 'status' => 'RUNNING'], $event->getData());
+        static::assertSame($event->getData(), $event->getData());
+    }
 }

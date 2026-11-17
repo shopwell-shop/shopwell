@@ -1,7 +1,13 @@
 /** @sw-package framework */
 import { mount, shallowMount, flushPromises } from '@vue/test-utils';
 
-const repository = { listTodo: jest.fn(), listDone: jest.fn(), listInitiated: jest.fn() };
+const repository = {
+    listTodo: jest.fn(),
+    listDone: jest.fn(),
+    listInitiated: jest.fn(),
+    listCopies: jest.fn(),
+    markCopyRead: jest.fn(),
+};
 
 describe('runtime task presenter contract', () => {
     it('updates the header count for the active queue and hides it after a load failure', async () => {
@@ -190,7 +196,7 @@ describe('queue endpoint projections', () => {
                 comment: null,
                 completedAt: null,
             },
-            {},
+            { taskId: 'task' },
         ],
     ])('renders the %s endpoint projection without an optional instance summary', async (queue, row, query) => {
         repository.listTodo.mockResolvedValue({ data: queue === 'todo' ? [row] : [], meta: { total: 1 } });
@@ -225,6 +231,71 @@ describe('queue endpoint projections', () => {
         expect(wrapper.get('.sw-workflow-tasks__link').text()).toBe('instance');
         await wrapper.get('.sw-workflow-tasks__link').trigger('click');
         expect(push).toHaveBeenCalledWith({ name: 'sw.workflow.instance', params: { id: 'instance' }, query });
+        wrapper.unmount();
+    });
+});
+
+describe('received copies', () => {
+    it.each([
+        { scenario: 'acknowledges an unread receipt before opening it', readAt: null, readFails: false },
+        { scenario: 'opens a read receipt without acknowledging again', readAt: '2026-11-13T00:00:00Z', readFails: false },
+        { scenario: 'keeps the queue open when acknowledgement fails', readAt: null, readFails: true },
+    ])('$scenario', async ({ readAt, readFails }) => {
+        repository.listTodo.mockResolvedValue({ data: [], meta: { total: 0 } });
+        repository.listCopies.mockResolvedValue({
+            data: [
+                {
+                    id: 'receipt',
+                    instanceId: 'instance',
+                    title: 'Copied request',
+                    nodeName: 'Notify finance',
+                    readAt,
+                    createdAt: '2026-11-13T00:00:00Z',
+                },
+            ],
+            meta: { total: 1 },
+        });
+        if (readFails) {
+            repository.markCopyRead.mockRejectedValueOnce(new Error('Unavailable'));
+        } else {
+            repository.markCopyRead.mockResolvedValue(undefined);
+        }
+        const push = jest.fn();
+        const wrapper = shallowMount(await wrapTestComponent('sw-workflow-tasks', { sync: true }), {
+            global: {
+                provide: { workflowRuntimeApiService: repository, acl: { can: () => false } },
+                mocks: { $router: { push } },
+                stubs: {
+                    'sw-page': { template: '<div><slot name="content" /></div>' },
+                    'mt-tabs': {
+                        props: ['items'],
+                        template:
+                            '<div><button v-for="item in items" :key="item.name" role="tab" @click="item.onClick()">{{ item.label }}</button></div>',
+                    },
+                    'sw-data-grid': {
+                        props: ['dataSource'],
+                        template:
+                            '<div><div v-for="item in dataSource" :key="item.id"><slot name="column-title" :item="item"/><span class="read"><slot name="column-readAt" :item="item"/></span></div></div>',
+                    },
+                },
+            },
+        });
+        await flushPromises();
+        const copyTab = wrapper.findAll('[role="tab"]').find((tab) => tab.text() === 'sw-workflow.runtime.todo.tabCopies');
+        expect(copyTab).toBeDefined();
+        await copyTab!.trigger('click');
+        await flushPromises();
+        expect(repository.listCopies).toHaveBeenCalledWith({ limit: 25, offset: 0 });
+        expect(wrapper.get('.read').text()).toBe(
+            readAt === null ? 'sw-workflow.runtime.todo.unread' : 'sw-workflow.runtime.todo.read',
+        );
+        await wrapper.get('.sw-workflow-tasks__link').trigger('click');
+        await flushPromises();
+        expect(repository.markCopyRead.mock.calls).toEqual(readAt === null ? [['receipt']] : []);
+        const expectedNavigation = readFails
+            ? []
+            : [[{ name: 'sw.workflow.instance', params: { id: 'instance' }, query: { taskId: 'receipt' } }]];
+        expect(push.mock.calls).toEqual(expectedNavigation);
         wrapper.unmount();
     });
 });

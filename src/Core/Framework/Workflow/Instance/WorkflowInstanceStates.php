@@ -6,7 +6,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 
 /**
- * Instances transition only from running through WorkflowInstanceStateHandler; terminal states cannot change again.
+ * WorkflowInstanceStateHandler owns transitions; returned instances may resume, terminal instances cannot.
  *
  * @internal
  */
@@ -19,6 +19,9 @@ final class WorkflowInstanceStates
      * Running.
      */
     public const RUNNING = 'running';
+    public const RETURNED = 'returned';
+    public const ACTION_RETURN = 'return';
+    public const ACTION_RESUBMIT = 'resubmit';
     public const COMPLETED = 'completed';
     public const ACTION_COMPLETE = 'complete';
 
@@ -46,6 +49,7 @@ final class WorkflowInstanceStates
      */
     public const CONTRACT_STATUS = [
         self::RUNNING => 'RUNNING',
+        self::RETURNED => 'RETURNED',
         self::COMPLETED => 'COMPLETED',
         self::AGREED => 'AGREE',
         self::REJECTED => 'REJECT',

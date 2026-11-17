@@ -5,6 +5,7 @@ export const WORKFLOW_NODE_TYPES = {
     START: 'core:start',
     END: 'core:end',
     APPROVAL: 'core:approval',
+    COPY: 'core:copy',
     CONDITION: 'core:condition',
 } as const;
 
@@ -29,6 +30,7 @@ export const WORKFLOW_ASSIGNEE_SOURCES = {
     USER: 'core:user',
     USERS: 'core:users',
     DEPARTMENT_LEADERS: 'core:department-leaders',
+    POSITIONS: 'core:positions',
 } as const;
 
 /** @public */
@@ -36,6 +38,8 @@ export const WORKFLOW_APPROVAL_MODES = {
     SINGLE: 'core:single',
     ALL: 'core:all',
     ANY: 'core:any',
+    OR_SIGN: 'core:or-sign',
+    SEQUENTIAL: 'core:sequential',
 } as const;
 
 /** @public */

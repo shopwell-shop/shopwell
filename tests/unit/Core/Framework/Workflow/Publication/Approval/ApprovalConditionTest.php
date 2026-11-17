@@ -16,6 +16,76 @@ use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalCondition;
 #[CoversClass(ApprovalCondition::class)]
 class ApprovalConditionTest extends TestCase
 {
+    public function testNestedGroupsPreserveTypedComparisonAndBooleanGrouping(): void
+    {
+        $conditions = new ApprovalCondition();
+        $schema = [
+            ['key' => 'amount', 'label' => 'Amount', 'type' => 'amount'],
+            ['key' => 'reason', 'label' => 'Reason', 'type' => 'text'],
+        ];
+        $expression = $conditions->encode([
+            'operator' => 'and',
+            'conditions' => [
+                ['field' => 'request.amount', 'fieldType' => 'amount', 'operator' => 'greaterThan', 'value' => '999999999999.98'],
+                ['operator' => 'or', 'conditions' => [
+                    ['field' => 'request.reason', 'fieldType' => 'text', 'operator' => 'equals', 'value' => 'Travel'],
+                    ['field' => 'request.reason', 'fieldType' => 'text', 'operator' => 'equals', 'value' => 'Equipment'],
+                ]],
+            ],
+        ], $schema);
+
+        static::assertTrue($conditions->evaluate($expression, ['amount' => '999999999999.99', 'reason' => 'Equipment']));
+        static::assertFalse($conditions->evaluate($expression, ['amount' => '999999999999.98', 'reason' => 'Travel']));
+        static::assertFalse($conditions->evaluate($expression, ['amount' => '999999999999.99', 'reason' => 'Other']));
+    }
+
+    public function testEmptyGroupCannotMatchEveryRequest(): void
+    {
+        $this->expectException(WorkflowExecutionException::class);
+
+        (new ApprovalCondition())->encode(['operator' => 'and', 'conditions' => []], []);
+    }
+
+    public function testInvalidNestedConditionCannotHideBehindAShortCircuit(): void
+    {
+        $this->expectException(WorkflowExecutionException::class);
+
+        (new ApprovalCondition())->encode([
+            'operator' => 'or',
+            'conditions' => [
+                ['field' => 'request.reason', 'fieldType' => 'text', 'operator' => 'isNotEmpty', 'value' => ''],
+                ['field' => 'request.removed', 'fieldType' => 'text', 'operator' => 'equals', 'value' => 'x'],
+            ],
+        ], [['key' => 'reason', 'label' => 'Reason', 'type' => 'text']]);
+    }
+
+    public function testRejectsExcessiveNesting(): void
+    {
+        $rule = ['field' => 'request.reason', 'fieldType' => 'text', 'operator' => 'equals', 'value' => 'Travel'];
+        for ($depth = 0; $depth <= ApprovalCondition::MAX_DEPTH; ++$depth) {
+            $rule = ['operator' => 'and', 'conditions' => [$rule]];
+        }
+        $this->expectException(WorkflowExecutionException::class);
+        (new ApprovalCondition())->encode($rule, [['key' => 'reason', 'label' => 'Reason', 'type' => 'text']]);
+    }
+
+    public function testRejectsTooManyComparisons(): void
+    {
+        $rule = ['field' => 'request.reason', 'fieldType' => 'text', 'operator' => 'equals', 'value' => 'Travel'];
+        $this->expectException(WorkflowExecutionException::class);
+        (new ApprovalCondition())->encode([
+            'operator' => 'or', 'conditions' => array_fill(0, ApprovalCondition::MAX_CONDITIONS, $rule),
+        ], [['key' => 'reason', 'label' => 'Reason', 'type' => 'text']]);
+    }
+
+    public function testMalformedSnapshotCannotHideBehindAShortCircuit(): void
+    {
+        $valid = ['field' => ['key' => 'reason', 'label' => 'Reason', 'type' => 'text'], 'operator' => 'isNotEmpty', 'value' => ''];
+        $expression = ApprovalCondition::PREFIX . json_encode(['operator' => 'or', 'conditions' => [$valid, ['operator' => 'invalid']]], \JSON_THROW_ON_ERROR);
+        $this->expectException(WorkflowExecutionException::class);
+        (new ApprovalCondition())->evaluate($expression, ['reason' => 'Travel']);
+    }
+
     #[DataProvider('comparisons')]
     public function testTypedComparisons(string $type, string $operator, string $expected, mixed $actual, bool $matches): void
     {

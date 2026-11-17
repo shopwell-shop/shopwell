@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\Workflow\_fixtures;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskPolicy;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\DepartmentLeaderApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\UserApprovalAssigneeSource;
@@ -57,7 +58,7 @@ final class ApprovalRegistryFixture
 
         return new ApprovalWorkflowCompiler(new ApprovalNodeCompilerRegistry([
             new StartApprovalNodeCompiler(new WorkflowInputSchema(), $translator),
-            new TaskApprovalNodeCompiler($approvals, $translator),
+            new TaskApprovalNodeCompiler($approvals, $translator, new ApprovalTaskPolicy($dispatcher ?? new EventDispatcher())),
             new ConditionApprovalNodeCompiler(new ApprovalCondition(), $translator),
             new EndApprovalNodeCompiler(),
             ...$additional,

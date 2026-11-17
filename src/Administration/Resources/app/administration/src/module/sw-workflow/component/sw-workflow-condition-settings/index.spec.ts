@@ -51,7 +51,15 @@ async function createWrapper(allowEdit = true) {
     const node = () => document.nodes.find((item) => item.id === 'condition') as WorkflowNode;
     const wrapper: VueWrapper = mount(await wrapTestComponent('sw-workflow-condition-settings', { sync: true }), {
         props: { document, node: node(), allowEdit },
-        global: { provide: { workflowFieldService: Shopwell.Service('workflowFieldService') } },
+        global: {
+            provide: { workflowFieldService: Shopwell.Service('workflowFieldService') },
+            stubs: {
+                'sw-workflow-condition-rule': await wrapTestComponent('sw-workflow-condition-rule', { sync: true }),
+                'sw-workflow-condition-comparison': await wrapTestComponent('sw-workflow-condition-comparison', {
+                    sync: true,
+                }),
+            },
+        },
     });
     async function applyChange() {
         const edits = wrapper.emitted('update-config') ?? [];
@@ -235,6 +243,58 @@ describe('condition settings', () => {
             ],
         });
         expect(wrapper.find('.sw-workflow-condition-settings__stale-type').exists()).toBe(false);
+        wrapper.unmount();
+    });
+
+    it('groups comparisons without changing the original rule and edits nested groups', async () => {
+        const { wrapper, applyChange, getDocument } = await createWrapper();
+        findSelect(wrapper, '.sw-workflow-condition-settings__field').vm.$emit('update:modelValue', 'request.amount');
+        await applyChange();
+        await wrapper.find('.sw-workflow-condition-settings__value input').setValue('5000.00');
+        await applyChange();
+        await wrapper.find('.sw-workflow-condition-rule__add-condition').trigger('click');
+        await applyChange();
+        expect(getDocument().nodes.find((node) => node.id === 'condition')!.config).toMatchObject({
+            branches: [
+                {
+                    operator: 'and',
+                    conditions: [
+                        { field: 'request.amount', fieldType: 'amount', value: '5000.00' },
+                        { field: '', operator: 'equals' },
+                    ],
+                },
+            ],
+        });
+        await wrapper
+            .find(
+                '.sw-workflow-condition-settings__fields > .sw-workflow-condition-rule > .sw-workflow-condition-rule__actions > .sw-workflow-condition-rule__add-group',
+            )
+            .trigger('click');
+        await applyChange();
+        const groups = wrapper.findAllComponents('.sw-workflow-condition-rule__group-operator') as VueWrapper[];
+        expect(groups).toHaveLength(2);
+        groups[1].vm.$emit('update:modelValue', 'or');
+        await applyChange();
+        expect(getDocument().nodes.find((node) => node.id === 'condition')!.config).toMatchObject({
+            branches: [{ conditions: [expect.anything(), expect.anything(), { operator: 'or' }] }],
+        });
+        wrapper.unmount();
+    });
+
+    it('keeps malformed nested rules visible and removable without rewriting the draft', async () => {
+        const { wrapper, getDocument } = await createWrapper();
+        const document = JSON.parse(JSON.stringify(getDocument())) as WorkflowDocument;
+        const node = document.nodes.find((item) => item.id === 'condition')!;
+        const invalid = [null, { operator: 'and' }];
+        node.config = { branches: [{ id: 'branch-1', label: 'Repair me', operator: 'and', conditions: invalid }] };
+        await wrapper.setProps({ document, node });
+        expect(wrapper.findAll('.sw-workflow-condition-rule__invalid')).toHaveLength(2);
+        expect(wrapper.emitted('update-config')).toBeUndefined();
+        expect(node.config).toMatchObject({ branches: [{ conditions: invalid }] });
+        await wrapper.find('.sw-workflow-condition-rule__remove').trigger('click');
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({
+            branches: [{ conditions: [{ operator: 'and' }] }],
+        });
         wrapper.unmount();
     });
 

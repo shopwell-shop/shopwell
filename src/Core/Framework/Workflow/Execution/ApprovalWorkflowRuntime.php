@@ -70,6 +70,7 @@ final class ApprovalWorkflowRuntime implements WorkflowRuntime
         $instance = $this->instance($release, $instanceId, $context);
         $status = match ($instance->state()) {
             WorkflowInstanceStates::RUNNING => WorkflowRuntimeStatus::PENDING,
+            WorkflowInstanceStates::RETURNED => WorkflowRuntimeStatus::RETURNED,
             WorkflowInstanceStates::AGREED => WorkflowRuntimeStatus::APPROVED,
             WorkflowInstanceStates::REJECTED => WorkflowRuntimeStatus::REJECTED,
             WorkflowInstanceStates::CANCELED => WorkflowRuntimeStatus::CANCELED,
@@ -92,7 +93,7 @@ final class ApprovalWorkflowRuntime implements WorkflowRuntime
         return new WorkflowRuntimeStatus(
             $status,
             $detailRoute,
-            $status === WorkflowRuntimeStatus::PENDING && $actorId === $instance->initiatorId,
+            \in_array($status, [WorkflowRuntimeStatus::PENDING, WorkflowRuntimeStatus::RETURNED], true) && $actorId === $instance->initiatorId,
         );
     }
 

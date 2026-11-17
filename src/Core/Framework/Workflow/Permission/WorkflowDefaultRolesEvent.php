@@ -32,6 +32,7 @@ final class WorkflowDefaultRolesEvent extends Event
             'workflow:delete',
             'workflow:publish',
             'workflow_draft:read',
+            'position:read',
             'user:read',
         ],
         self::PARTICIPANT => [

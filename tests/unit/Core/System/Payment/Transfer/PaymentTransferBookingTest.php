@@ -64,6 +64,16 @@ class PaymentTransferBookingTest extends TestCase
 
     private RecordingTransferRepository $repository;
 
+    public function testProductValidationDoesNotBookAPayment(): void
+    {
+        $app = $this->payableApp();
+        $booking = $this->booking($app);
+
+        $booking->validateProduct($app, PaymentTransferDraft::fromArray(self::payload()));
+
+        static::assertNull($this->repository->written);
+    }
+
     /**
      * Without an app there is nothing to pay out of: the app is the tenant of the credentials, of the
      * recipient and of the out number.

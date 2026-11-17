@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskHistoryEntity;
@@ -78,6 +79,7 @@ class WorkflowTaskController extends AbstractController
             $rows[] = [
                 'id' => $hisTask->id,
                 'taskId' => $hisTask->taskId,
+                'round' => $hisTask->round,
                 'instanceId' => $hisTask->instanceId,
                 'nodeId' => $hisTask->nodeId,
                 'nodeName' => $hisTask->nodeName,
@@ -99,9 +101,75 @@ class WorkflowTaskController extends AbstractController
     )]
     public function approve(Context $context, Request $request, string $taskId): Response
     {
-        $comment = $request->getPayload()->all()['comment'] ?? null;
+        $payload = $request->getPayload()->all();
+        $comment = $payload['comment'] ?? null;
+        $formData = \array_key_exists('formData', $payload) ? $payload['formData'] : [];
+        $version = $payload['formVersion'] ?? null;
+        if (!\is_array($formData) || ($formData !== [] && array_is_list($formData))
+            || ($version !== null && (!\is_int($version) || $version < 0))) {
+            throw WorkflowExecutionException::invalidGraph('Approval requires a formData object and a nonnegative integer formVersion.');
+        }
 
-        $this->flows->approve($taskId, \is_string($comment) && trim($comment) !== '' ? $comment : null, $context);
+        $this->flows->approve($taskId, \is_string($comment) && trim($comment) !== '' ? $comment : null, $context, $formData, $version);
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route(
+        path: '/api/_action/workflow/task/{taskId}/participation',
+        name: 'api.workflow.execution.task.participation',
+        defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ACL => ['workflow_task:decide']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function participate(Context $context, Request $request, string $taskId): Response
+    {
+        $payload = $request->getPayload()->all();
+        $this->flows->participate(
+            $taskId,
+            \is_string($payload['action'] ?? null) ? $payload['action'] : '',
+            \is_string($payload['targetUserId'] ?? null) ? $payload['targetUserId'] : '',
+            \is_string($payload['comment'] ?? null) ? $payload['comment'] : '',
+            $context,
+        );
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route(
+        path: '/api/_action/workflow/task/{taskId}/operation',
+        name: 'api.workflow.execution.task.operation',
+        defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ACL => ['workflow_task:decide']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function operation(Context $context, Request $request, string $taskId): Response
+    {
+        $input = $request->getPayload()->all();
+        $payload = \array_key_exists('payload', $input) ? $input['payload'] : [];
+        if (!\is_array($payload) || ($payload !== [] && array_is_list($payload))) {
+            throw WorkflowExecutionException::invalidGraph('Operation payload must be an object.');
+        }
+
+        $this->flows->executeOperation(
+            $taskId,
+            \is_string($input['action'] ?? null) ? $input['action'] : '',
+            $payload,
+            \is_string($input['comment'] ?? null) ? $input['comment'] : '',
+            $context,
+        );
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route(
+        path: '/api/_action/workflow/task/{taskId}/return',
+        name: 'api.workflow.execution.task.return',
+        defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ACL => ['workflow_task:decide']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function returnToInitiator(Context $context, Request $request, string $taskId): Response
+    {
+        $comment = $request->getPayload()->all()['comment'] ?? null;
+        $this->flows->returnToInitiator($taskId, \is_string($comment) ? $comment : '', $context);
 
         return new Response(null, Response::HTTP_NO_CONTENT);
     }

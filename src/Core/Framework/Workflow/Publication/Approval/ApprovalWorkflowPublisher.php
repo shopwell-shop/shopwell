@@ -20,6 +20,7 @@ use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseCheckEvent;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Shopwell\Core\System\User\UserCollection;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @internal
@@ -39,6 +40,7 @@ final readonly class ApprovalWorkflowPublisher implements WorkflowPublisher, Eve
         private EntityRepository $definitions,
         private EntityRepository $users,
         private WorkflowGraphValidator $validator,
+        private EventDispatcherInterface $events,
     ) {
     }
 
@@ -117,6 +119,7 @@ final readonly class ApprovalWorkflowPublisher implements WorkflowPublisher, Eve
         }
 
         $this->validateStaticAssignees($graph, $context);
+        $this->events->dispatch(new ApprovalWorkflowValidationEvent(GraphData::fromArray($graph), $context));
     }
 
     /**

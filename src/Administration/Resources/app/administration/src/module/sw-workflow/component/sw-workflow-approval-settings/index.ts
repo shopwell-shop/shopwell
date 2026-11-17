@@ -1,18 +1,64 @@
 /** @sw-package framework */
 import type { PropType } from 'vue';
-import type { WorkflowNode } from 'src/core/workflow/workflow.types';
+import { WORKFLOW_NODE_TYPES } from 'src/core/workflow/workflow-node.constants';
+import type { WorkflowFormPermission } from 'src/core/workflow/workflow-runtime.types';
+import type { WorkflowDocument, WorkflowNode } from 'src/core/workflow/workflow.types';
+import { DEFAULT_APPROVAL_OPERATIONS } from '../../service/workflow-approval.service';
 import template from './sw-workflow-approval-settings.html.twig';
 import './sw-workflow-approval-settings.scss';
 
 /** @private */
 export default Shopwell.Component.wrapComponentConfig({
     template,
-    inject: ['workflowApprovalService'],
-    props: { node: { type: Object as PropType<WorkflowNode>, required: true }, allowEdit: { type: Boolean, default: true } },
+    inject: ['workflowApprovalService', 'workflowRequestFormService'],
+    props: {
+        document: { type: Object as PropType<WorkflowDocument | null>, default: null },
+        node: { type: Object as PropType<WorkflowNode>, required: true },
+        allowEdit: { type: Boolean, default: true },
+    },
     emits: ['update-config'],
+    data() {
+        return { activeTab: 'settings' };
+    },
     computed: {
+        tabs() {
+            return ['settings', 'form'].map((name) => ({
+                name,
+                label: this.$t(
+                    name === 'settings' ? 'sw-workflow.formPermissions.settings' : 'sw-workflow.formPermissions.title',
+                ),
+            }));
+        },
+        formFields() {
+            const start = this.document?.nodes.find((node) => node.type === WORKFLOW_NODE_TYPES.START);
+            return start
+                ? this.workflowRequestFormService.getFields(start.config, this.$t('sw-workflow.inputs.reason'))
+                : [];
+        },
+        formPermissions(): Record<string, WorkflowFormPermission> {
+            return ('formPermissions' in this.node.config ? this.node.config.formPermissions : {}) as Record<
+                string,
+                WorkflowFormPermission
+            >;
+        },
         settings() {
             return this.workflowApprovalService.read(this.node);
+        },
+        deadlineEnabled(): boolean {
+            return 'deadline' in this.settings;
+        },
+        deadlineMinutes(): number | null {
+            return this.settings.deadline?.minutes ?? null;
+        },
+        operations() {
+            return this.workflowApprovalService.operations();
+        },
+        enabledOperations(): string[] {
+            if (!('operations' in this.settings)) {
+                return DEFAULT_APPROVAL_OPERATIONS;
+            }
+
+            return Array.isArray(this.settings.operations) ? this.settings.operations : [];
         },
         source() {
             return this.workflowApprovalService.getSource(this.settings.assignee.source);
@@ -68,6 +114,54 @@ export default Shopwell.Component.wrapComponentConfig({
         },
     },
     methods: {
+        updateFormPermissions(formPermissions: Record<string, WorkflowFormPermission>): void {
+            if (this.allowEdit) {
+                const configuration = Array.isArray(this.node.config) ? {} : this.node.config;
+                this.$emit('update-config', { ...configuration, formPermissions });
+            }
+        },
+        toggleDeadline(enabled: boolean): void {
+            if (!this.allowEdit) {
+                return;
+            }
+            const settings = { ...this.settings };
+            if (enabled) {
+                settings.deadline = { minutes: 1440, remind: true };
+            } else {
+                delete settings.deadline;
+            }
+            this.$emit('update-config', settings);
+        },
+        changeDeadlineMinutes(minutes: number | null): void {
+            if (!this.allowEdit || !this.deadlineEnabled) {
+                return;
+            }
+            this.$emit('update-config', {
+                ...this.settings,
+                deadline: { ...this.settings.deadline, minutes },
+            });
+        },
+        changeDeadlineReminder(remind: boolean): void {
+            if (!this.allowEdit || !this.deadlineEnabled) {
+                return;
+            }
+            this.$emit('update-config', {
+                ...this.settings,
+                deadline: { ...this.settings.deadline, remind },
+            });
+        },
+        changeOperation(name: string, enabled: boolean): void {
+            if (!this.allowEdit || !this.operations.some((operation) => operation.name === name)) {
+                return;
+            }
+
+            const operations = this.enabledOperations.filter((operation) => operation !== name);
+            if (enabled) {
+                operations.push(name);
+            }
+
+            this.$emit('update-config', { ...this.settings, operations });
+        },
         updateAssignee(config: Record<string, unknown>): void {
             if (!this.allowEdit || !this.source) {
                 return;
@@ -109,7 +203,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 };
             }
 
-            this.$emit('update-config', { assignee: { source, config: {} }, approval });
+            this.$emit('update-config', { ...this.settings, assignee: { source, config: {} }, approval });
         },
         changeMode(value: string): void {
             const selected = this.modeOptions.find((option) => option.value === value && !option.disabled);

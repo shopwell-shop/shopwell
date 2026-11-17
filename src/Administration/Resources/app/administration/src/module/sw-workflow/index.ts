@@ -4,6 +4,17 @@ import './service';
 import './service/extension/approval-workflow.registration';
 
 /** @private */
+Shopwell.Component.register('sw-workflow-form-permissions', () => import('./component/sw-workflow-form-permissions'));
+
+/** @private */
+Shopwell.Component.register('sw-workflow-approval-form', () => import('./component/sw-workflow-approval-form'));
+/** @private */
+Shopwell.Component.register('sw-workflow-copy-settings', () => import('./component/sw-workflow-copy-settings'));
+
+/** @private */
+Shopwell.Component.register('sw-workflow-copy-node', () => import('./component/sw-workflow-copy-node'));
+
+/** @private */
 Shopwell.Component.register(
     'sw-workflow-organization-assignee-settings',
     () => import('./component/sw-workflow-organization-assignee-settings'),
@@ -105,6 +116,15 @@ Shopwell.Component.register('sw-workflow-start', () => import('./component/sw-wo
 Shopwell.Component.register('sw-workflow-approval-actions', () => import('./component/sw-workflow-approval-actions'));
 
 /** @private */
+Shopwell.Component.register('sw-workflow-resubmit', () => import('./component/sw-workflow-resubmit'));
+
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-approval-reminder-status',
+    () => import('./component/sw-workflow-approval-reminder-status'),
+);
+
+/** @private */
 Shopwell.Component.register('sw-workflow-approval-timeline', () => import('./component/sw-workflow-approval-timeline'));
 
 /** @private */
@@ -162,3 +182,22 @@ Shopwell.Module.register('sw-workflow', {
         },
     ],
 });
+
+/** @private */
+Shopwell.Component.register('sw-workflow-condition-rule', () => import('./component/sw-workflow-condition-rule'));
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-condition-comparison',
+    () => import('./component/sw-workflow-condition-comparison'),
+);
+
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-position-assignee-select',
+    () => import('./component/sw-workflow-position-assignee-select'),
+);
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-position-assignee-summary',
+    () => import('./component/sw-workflow-position-assignee-summary'),
+);

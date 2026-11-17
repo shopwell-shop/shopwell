@@ -78,6 +78,28 @@ describe('transfer approval preview', () => {
         expect(wrapper.text()).toContain('Finance');
     });
 
+    it('shows copy recipients without describing them as a matched branch or an approval task', async () => {
+        await createWrapper(
+            jest.fn().mockResolvedValue({
+                ...preview,
+                steps: [
+                    {
+                        nodeId: 'copy',
+                        type: 'copy',
+                        name: 'Copy to finance',
+                        rule: null,
+                        assignees: [{ id: 'recipient', name: 'Bob' }],
+                        branch: null,
+                    },
+                ],
+            }),
+        );
+        await finishDebounce();
+        expect(wrapper.text()).toContain('Bob');
+        expect(wrapper.text()).not.toContain('matchedBranch');
+        expect(wrapper.find('.sw-finance-transfer-approval-preview__rule').exists()).toBe(false);
+    });
+
     it('clears stale paths immediately and ignores late responses for earlier amounts', async () => {
         let resolveFirst!: (value: typeof preview) => void;
         const request = jest

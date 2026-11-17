@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitCollection;
 use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitEntity;
+use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionEntity;
 
 /**
  * @internal
@@ -51,11 +52,14 @@ class OrganizationAssigneeLookup
         return array_values($this->memberships->search($criteria, $context)->getElements());
     }
 
-    public function assertEligible(UserOrganizationUnitEntity $membership, string $nodeId, string $type): void
+    public function assertEligible(UserOrganizationUnitEntity|UserPositionEntity $membership, string $nodeId, string $type): void
     {
         $user = $membership->getUser();
         $unit = $membership->getOrganizationUnit();
         if ($user === null || !$user->getActive() || $unit === null || !$unit->isActive() || !$unit->getOrganization()?->isActive()) {
+            throw WorkflowExecutionException::noAssignee($nodeId, $type);
+        }
+        if ($membership instanceof UserPositionEntity && !$membership->getPosition()?->isActive()) {
             throw WorkflowExecutionException::noAssignee($nodeId, $type);
         }
         if ($user->isAdmin()) {

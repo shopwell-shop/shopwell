@@ -4,9 +4,9 @@ import './approval-workflow.registration';
 import type { WorkflowNode, WorkflowNodeTypeSpecification } from 'src/core/workflow/workflow.types';
 
 describe('builtin workflow presentations', () => {
-    it('keeps approval and automation visually distinct', () => {
+    it('keeps approval and copy nodes visually distinct', () => {
         const service = Shopwell.Service('workflowNodePresentationService');
-        expect(service.get('core:approval', 1).icon).not.toBe(service.get('core:action', 1).icon);
+        expect(service.get('core:approval', 1).icon).not.toBe(service.get('core:copy', 1).icon);
         expect(service.get('core:approval', 1).summaryKey).toBeDefined();
         expect(service.get('example:unknown', 1).icon).toBe('regular-flow');
     });

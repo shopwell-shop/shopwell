@@ -11,14 +11,17 @@ use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowUserLookup;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionStatus;
+use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowInstanceMetadataEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Preview\ApprovalNodePreviewEvent;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimePreviewEvent;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @internal
@@ -36,6 +39,7 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
         private WorkflowUserLookup $users,
         private AssigneeResolverRegistry $resolvers,
         private ApprovalModeRegistry $modes,
+        private EventDispatcherInterface $events,
     ) {
     }
 
@@ -49,6 +53,7 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
         if ($event->release->getPublisher() !== ApprovalWorkflowPublisher::NAME) {
             return;
         }
+
         $definition = $this->definitions->search(new Criteria([$event->release->getId()]), $event->context)->getEntities()->first();
 
         if ($definition === null || $definition->status !== WorkflowExecutionDefinitionStatus::PUBLISHED) {
@@ -62,6 +67,9 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
         $actorId = $source instanceof AdminApiSource ? $source->getUserId() : null;
         $instance = new WorkflowInstanceEntity();
         $instance->initiatorId = $actorId ?? '';
+        $metadata = new WorkflowInstanceMetadataEvent($actorId, $event->context);
+        $this->events->dispatch($metadata);
+        $instance->ext = $metadata->getMetadata();
         $instance->formData = $form;
         $instance->graphSnapshot = $definition->graph();
         $executionContext = new WorkflowExecutionContext($graph, $instance, $event->context, $actorId, 1);
@@ -75,59 +83,81 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
                 continue;
             }
 
-            if ($node->type === WorkflowNodeTypes::CONDITION) {
-                $edge = $this->routes->next($graph, $id, $form);
-                $branch = $edge?->properties['name'] ?? null;
-                $steps[] = [
-                    'nodeId' => $id,
-                    'type' => 'condition',
-                    'name' => $node->name(),
-                    'rule' => null,
-                    'assignees' => [],
-                    'branch' => \is_string($branch) ? $branch : null,
-                ];
+            $nodePreview = new ApprovalNodePreviewEvent($node, $executionContext);
+            $this->previewBuiltInNode($nodePreview);
+            $this->events->dispatch($nodePreview);
+            $preview = $nodePreview->getPreview();
 
-                continue;
-            }
-
-            if ($node->type !== WorkflowNodeTypes::TASK || !\is_string($node->property('assigneeType'))) {
+            if ($preview === null) {
                 throw WorkflowException::publicationRejected('preview_unavailable');
             }
 
-            $mode = $this->modes->forNode($node);
-            $ids = $this->resolvers->for($node->property('assigneeType'))->resolve($instance, $node, $executionContext);
-
-            if ($ids === []) {
-                throw WorkflowException::publicationRejected('approval_assignee_unavailable');
-            }
-
             $assignees = [];
-            foreach ($ids as $userId) {
+
+            foreach ($preview['assigneeIds'] as $userId) {
                 $userIds[] = $userId;
                 $assignees[] = ['id' => $userId, 'name' => $userId];
             }
 
             $steps[] = [
                 'nodeId' => $id,
-                'type' => 'approval',
+                'type' => $preview['type'],
                 'name' => $node->name(),
-                'rule' => $mode->getType(),
+                'rule' => $preview['rule'],
                 'assignees' => $assignees,
-                'branch' => null,
+                'branch' => $preview['branch'],
             ];
         }
 
         $names = $this->users->names($userIds, $event->context);
         $namedSteps = [];
+
         foreach ($steps as $step) {
             $participants = [];
+
             foreach ($step['assignees'] as $assignee) {
                 $participants[] = ['id' => $assignee['id'], 'name' => $names[$assignee['id']] ?? $assignee['id']];
             }
+
             $step['assignees'] = $participants;
             $namedSteps[] = $step;
         }
 
         $event->setSteps($namedSteps);
+    }
+
+    private function previewBuiltInNode(ApprovalNodePreviewEvent $event): void
+    {
+        $node = $event->node;
+        $execution = $event->execution;
+
+        if ($node->type === WorkflowNodeTypes::CONDITION) {
+            $edge = $this->routes->next($execution->graph(), $node->id, $execution->instance()->form());
+            $branch = $edge?->properties['name'] ?? null;
+            $event->setPreview('condition', branch: \is_string($branch) ? $branch : null);
+
+            return;
+        }
+
+        if ($node->type !== WorkflowNodeTypes::TASK || !\is_string($node->property('assigneeType'))) {
+            return;
+        }
+
+        $mode = $this->modes->forNode($node);
+        try {
+            $ids = $this->resolvers->for($node->property('assigneeType'))->resolve($execution->instance(), $node, $execution);
+        } catch (WorkflowExecutionException $exception) {
+            if ($exception->getErrorCode() !== WorkflowExecutionException::NO_ASSIGNEE) {
+                throw $exception;
+            }
+
+            throw WorkflowException::publicationRejected('approval_assignee_unavailable');
+        }
+
+        if ($ids === []) {
+            throw WorkflowException::publicationRejected('approval_assignee_unavailable');
+        }
+
+        $event->setPreview('approval', $ids, $mode->getType());
     }
 }

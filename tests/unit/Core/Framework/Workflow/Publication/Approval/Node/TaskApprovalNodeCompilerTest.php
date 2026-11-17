@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
+use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskPolicy;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompilationContext;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeRole;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\TaskApprovalNodeCompiler;
@@ -26,7 +27,7 @@ class TaskApprovalNodeCompilerTest extends TestCase
             ApprovalRegistryFixture::sources(),
             ApprovalRegistryFixture::modes(),
             new ExtensionDispatcher(new EventDispatcher()),
-        ), ApprovalRegistryFixture::translator());
+        ), ApprovalRegistryFixture::translator(), new ApprovalTaskPolicy(new EventDispatcher()));
         $userId = '0123456789abcdef0123456789abcdef';
         $compiled = $compiler->compile(new ApprovalNodeCompilationContext('review', [
             'label' => 'Finance review',
@@ -41,5 +42,63 @@ class TaskApprovalNodeCompilerTest extends TestCase
         static::assertSame([$userId], $compiled->properties['assigneeUserIds']);
         static::assertSame(['approved' => []], $compiled->outputPorts);
         static::assertSame(['rejected'], $compiled->terminalPorts);
+    }
+
+    public function testFreezesAnExplicitlyEmptyOperationList(): void
+    {
+        $compiler = new TaskApprovalNodeCompiler(new ApprovalConfigurationCompiler(
+            ApprovalRegistryFixture::sources(),
+            ApprovalRegistryFixture::modes(),
+            new ExtensionDispatcher(new EventDispatcher()),
+        ), ApprovalRegistryFixture::translator(), new ApprovalTaskPolicy(new EventDispatcher()));
+        $compiled = $compiler->compile(new ApprovalNodeCompilationContext('review', [
+            'assignee' => ['source' => 'core:user', 'config' => ['userId' => '0123456789abcdef0123456789abcdef']],
+            'approval' => ['mode' => 'core:single', 'config' => []],
+            'operations' => [],
+        ], '/nodes/1/config'));
+
+        static::assertSame([], $compiled->properties['approvalOperations']);
+    }
+
+    public function testFreezesTheApprovalDeadline(): void
+    {
+        $compiler = new TaskApprovalNodeCompiler(new ApprovalConfigurationCompiler(
+            ApprovalRegistryFixture::sources(),
+            ApprovalRegistryFixture::modes(),
+            new ExtensionDispatcher(new EventDispatcher()),
+        ), ApprovalRegistryFixture::translator(), new ApprovalTaskPolicy(new EventDispatcher()));
+        $compiled = $compiler->compile(new ApprovalNodeCompilationContext('review', [
+            'assignee' => ['source' => 'core:user', 'config' => ['userId' => '0123456789abcdef0123456789abcdef']],
+            'approval' => ['mode' => 'core:single', 'config' => []],
+            'deadline' => ['minutes' => 60, 'remind' => false],
+        ], '/nodes/1/config'));
+        static::assertSame(['minutes' => 60, 'remind' => false], $compiled->properties['approvalDeadline']);
+    }
+
+    public function testFreezesFormPermissionsAgainstThePublishedSchema(): void
+    {
+        $compiler = new TaskApprovalNodeCompiler(new ApprovalConfigurationCompiler(
+            ApprovalRegistryFixture::sources(),
+            ApprovalRegistryFixture::modes(),
+            new ExtensionDispatcher(new EventDispatcher()),
+        ), ApprovalRegistryFixture::translator(), new ApprovalTaskPolicy(new EventDispatcher()));
+        $permissions = ['note' => ['access' => 'editable', 'required' => true]];
+        $compiled = $compiler->compile(new ApprovalNodeCompilationContext('review', [
+            'assignee' => ['source' => 'core:user', 'config' => ['userId' => '0123456789abcdef0123456789abcdef']],
+            'approval' => ['mode' => 'core:single', 'config' => []], 'formPermissions' => $permissions,
+        ], '/nodes/1/config', [['key' => 'note', 'label' => 'Review note', 'type' => 'text', 'required' => false]]));
+        static::assertSame($permissions, $compiled->properties['approvalFormPermissions']);
+    }
+
+    public function testUnknownFormFieldReportsANodeConfigurationDiagnostic(): void
+    {
+        $compiler = new TaskApprovalNodeCompiler(new ApprovalConfigurationCompiler(
+            ApprovalRegistryFixture::sources(),
+            ApprovalRegistryFixture::modes(),
+            new ExtensionDispatcher(new EventDispatcher()),
+        ), ApprovalRegistryFixture::translator(), new ApprovalTaskPolicy(new EventDispatcher()));
+        $context = new ApprovalNodeCompilationContext('review', ['formPermissions' => ['unknown' => ['access' => 'hidden']]], '/nodes/1/config');
+        $this->expectExceptionObject($context->reject('approval_invalid_form_permissions', '/formPermissions'));
+        $compiler->compile($context);
     }
 }

@@ -12,7 +12,7 @@ type ApprovalGroup = {
     mode: string;
     status: string;
     tasks: RuntimeTask[];
-    participants: (RuntimeParticipant & { state: string })[];
+    participants: (RuntimeParticipant & { state: string; requiredReviewer?: boolean })[];
     counts: Record<string, number>;
     completed: number;
 };
@@ -62,9 +62,17 @@ export default Shopwell.Component.wrapComponentConfig({
                 const participants = stage.participants.length
                     ? stage.participants.map((participant) => ({
                           ...participant,
+                          requiredReviewer: stage.tasks.some(
+                              (task) => task.assignee.id === participant.id && task.requiredReviewer,
+                          ),
                           state: stage.tasks.find((task) => task.assignee.id === participant.id)?.state ?? stage.status,
                       }))
-                    : stage.tasks.map((task) => ({ ...task.assignee, id: task.id, state: task.state }));
+                    : stage.tasks.map((task) => ({
+                          ...task.assignee,
+                          id: task.id,
+                          state: task.state,
+                          requiredReviewer: task.requiredReviewer,
+                      }));
                 return {
                     id: stage.nodeId,
                     name: stage.nodeName,

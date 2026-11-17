@@ -224,7 +224,8 @@
                     "rejected": "已拒绝",
                     "canceled": "已撤销",
                     "unavailable": "审批暂不可用",
-                    "not_started": "未发起审批"
+                    "not_started": "未发起审批",
+                    "returned": "待修改"
                 },
                 "cancellation": {
                     "modalTitle": "撤销转账审批",
@@ -238,7 +239,7 @@
                 "reviewedPaymentAccount": "审批时付款账户",
                 "checks": {
                     "workflow_not_configured": "尚未绑定审批流程，请选择可用版本。",
-                    "approval_assignee_unavailable": "审批人账号已停用或不存在。请调整审批人并重新发布流程。",
+                    "approval_assignee_unavailable": "审批人不可用、所选岗位无人任职或成员缺少审批权限，请检查发起人所属部门、岗位任职和审批角色。",
                     "approval_assignee_forbidden": "审批人缺少查看或处理审批的权限。请先为其分配「工作流参与者」角色或等效权限。",
                     "workflow_definition_unavailable": "此版本的执行流程不可用，请检查流程状态或重新发布。",
                     "runtime_unavailable": "该流程的执行服务不可用，请联系管理员。",
@@ -246,7 +247,9 @@
                     "preview_unavailable": "此流程暂不支持预览，提交时会校验并发起审批。",
                     "payment_account_unavailable": "付款账户不可用，请重新选择。",
                     "recipient_unavailable": "收款人不可用或与付款账户不匹配，请重新选择。",
-                    "invalid_transfer_input": "请检查转账金额和币种。"
+                    "invalid_transfer_input": "请检查转账金额和币种。",
+                    "position_unavailable": "所选审批岗位已停用或不存在，请调整岗位，或重新选择岗位后发布流程。",
+                    "currency_not_supported": "所选支付产品不支持该币种，请选择支持的币种或其他支付产品。"
                 },
                 "loading": "正在读取审批状态…",
                 "currentAssignees": "当前审批：",
@@ -256,22 +259,22 @@
                     "approval_assignee_forbidden": "审批人缺少权限",
                     "workflow_definition_unavailable": "执行流程不可用",
                     "runtime_unavailable": "执行服务不可用",
-                    "workflow_unavailable": "流程不可用"
+                    "workflow_unavailable": "流程不可用",
+                    "position_unavailable": "岗位不可用"
                 }
             },
             "workflowTemplate": {
                 "title": "转账审批",
-                "description": "财务初审，人民币超过 5000 元或外币转账增加复核。发布前请指定审批人。",
-                "finance": "财务初审",
-                "manager": "金额复核",
-                "foreignReview": "外币复核",
-                "foreignCurrency": "非人民币转账",
-                "threshold": "人民币超过 5000 元",
+                "description": "部门岗位审批，非人民币或人民币超过 5000 元时增加财务复核，通过后抄送。发布前请选择岗位、财务审批人及抄送人。",
+                "finance": "财务复核",
                 "amount": "转账金额",
                 "currency": "转账币种",
                 "reason": "转账说明",
                 "recipient": "收款人",
-                "paymentAccount": "付款账户"
+                "paymentAccount": "付款账户",
+                "department": "部门岗位审批",
+                "reviewRequired": "非人民币或人民币超过 5000 元",
+                "copy": "审批通过后抄送"
             },
             "approvalPreview": {
                 "title": "预计审批流程",

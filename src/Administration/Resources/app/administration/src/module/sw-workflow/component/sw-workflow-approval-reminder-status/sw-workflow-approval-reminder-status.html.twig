@@ -1,0 +1,19 @@
+{% block sw_workflow_approval_reminder_status %}
+<div
+    v-if="reminder && (reminder.dueAt || reminder.lastRemindedAt)"
+    class="sw-workflow-approval-reminder-status"
+>
+    <p v-if="reminder.dueAt">
+        <mt-badge
+            v-if="reminder.overdue"
+            variant="warning"
+        >
+            {{ $t('sw-workflow.reminder.overdue') }}
+        </mt-badge>
+        {{ $t('sw-workflow.reminder.dueAt', { time: absoluteTime(reminder.dueAt) }) }}
+    </p>
+    <p v-if="reminder.lastRemindedAt">
+        {{ $t(reminder.source === 'overdue' ? 'sw-workflow.reminder.automaticAt' : 'sw-workflow.reminder.remindedAt', { time: absoluteTime(reminder.lastRemindedAt) }) }}
+    </p>
+</div>
+{% endblock %}

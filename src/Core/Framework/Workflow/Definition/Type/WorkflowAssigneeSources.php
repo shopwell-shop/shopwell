@@ -13,4 +13,5 @@ final class WorkflowAssigneeSources
     public const USER = 'core:user';
     public const USERS = 'core:users';
     public const DEPARTMENT_LEADERS = 'core:department-leaders';
+    public const POSITIONS = 'core:positions';
 }

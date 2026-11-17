@@ -9,6 +9,7 @@ describe('workflow approval history', () => {
             {
                 id: '2',
                 taskId: 'task-2',
+                round: 1,
                 nodeId: 'review',
                 nodeName: 'Review',
                 countersignType: 'single',
@@ -20,6 +21,7 @@ describe('workflow approval history', () => {
             {
                 id: '1',
                 taskId: 'task-1',
+                round: 1,
                 nodeId: 'review',
                 nodeName: 'Review',
                 countersignType: 'single',
@@ -44,6 +46,66 @@ describe('workflow approval history', () => {
         expect(wrapper.find('.is--rejected').text()).toContain('Incorrect');
         await wrapper.setProps({ status: 'REJECT' });
         expect(wrapper.find('.is--pending').exists()).toBe(false);
+        wrapper.unmount();
+    });
+    it.each(['transfer', 'vendor:operation'])('renders %s as an operation instead of an approval', async (decision) => {
+        const wrapper: VueWrapper = shallowMount(await wrapTestComponent('sw-workflow-approval-timeline', { sync: true }), {
+            props: {
+                history: [
+                    {
+                        id: 'operation',
+                        taskId: 'task',
+                        round: 1,
+                        nodeId: 'review',
+                        nodeName: 'Review',
+                        countersignType: 'single',
+                        assignee: { id: 'actor', name: 'Alice' },
+                        target: { id: 'recipient', name: 'Bob' },
+                        decision,
+                        comment: 'Expert',
+                        completedAt: null,
+                    },
+                ],
+            },
+        });
+        expect(wrapper.find('.is--agreed').exists()).toBe(false);
+        expect(wrapper.text()).toContain(decision === 'transfer' ? 'sw-workflow.runtime.timeline.transfer' : decision);
+        expect(wrapper.text()).toContain('Bob');
+        wrapper.unmount();
+    });
+    it('shows reminders as audit operations without turning them into approval decisions', async () => {
+        const wrapper: VueWrapper = shallowMount(await wrapTestComponent('sw-workflow-approval-timeline', { sync: true }), {
+            props: {
+                logs: [
+                    {
+                        id: 'reminder',
+                        action: 'remind',
+                        operator: { id: 'initiator', name: 'Alice' },
+                        createdAt: '2026-11-17T10:00:00Z',
+                        comment: null,
+                        payload: { round: 1 },
+                    },
+                ],
+                history: [],
+            },
+        });
+        expect(wrapper.findAll('.is--operation')).toHaveLength(1);
+        expect(wrapper.find('.is--agreed').exists()).toBe(false);
+        expect(wrapper.text()).toContain('Alice');
+        expect(wrapper.text()).toContain('sw-workflow.runtime.timeline.remind');
+        await wrapper.setProps({
+            logs: [
+                {
+                    id: 'automatic-reminder',
+                    action: 'remind',
+                    operator: null,
+                    createdAt: '2026-11-17T10:00:00Z',
+                    comment: null,
+                    payload: { round: 1 },
+                },
+            ],
+        });
+        expect(wrapper.text()).toContain('sw-workflow.reminder.system');
         wrapper.unmount();
     });
 });

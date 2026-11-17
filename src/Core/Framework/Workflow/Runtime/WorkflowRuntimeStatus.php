@@ -11,12 +11,13 @@ use Shopwell\Core\Framework\Log\Package;
 final readonly class WorkflowRuntimeStatus
 {
     public const PENDING = 'pending';
+    public const RETURNED = 'returned';
     public const APPROVED = 'approved';
     public const REJECTED = 'rejected';
     public const CANCELED = 'canceled';
 
     /**
-     * @param 'pending'|'approved'|'rejected'|'canceled' $status
+     * @param 'pending'|'returned'|'approved'|'rejected'|'canceled' $status
      * @param array{name: string, params: array<string, string>}|null $detailRoute
      */
     public function __construct(

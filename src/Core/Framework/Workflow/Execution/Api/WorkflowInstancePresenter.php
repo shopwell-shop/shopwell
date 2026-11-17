@@ -88,7 +88,7 @@ final readonly class WorkflowInstancePresenter
             'startedAt' => $instance->startedAt?->format(\DateTimeInterface::ATOM),
             'endedAt' => $instance->endedAt?->format(\DateTimeInterface::ATOM),
             'formData' => $instance->form(),
-            'canCancel' => $instance->isRunning()
+            'canCancel' => ($instance->isRunning() || $instance->state() === WorkflowInstanceStates::RETURNED)
                 && $context->getSource() instanceof AdminApiSource
                 && $context->getSource()->getUserId() === $instance->initiatorId
                 && $context->isAllowed('workflow_instance:start'),
@@ -122,6 +122,10 @@ final readonly class WorkflowInstancePresenter
         $edgeIds = [];
 
         foreach ($executions as $execution) {
+            if ($execution['round'] !== $instance->round) {
+                continue;
+            }
+
             $nodeIds[] = $execution['nodeId'];
 
             if ($execution['sourceConnectionId'] !== null) {

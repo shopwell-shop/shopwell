@@ -10,7 +10,6 @@
  * orders (bookkeeping, read only) stay in `sw-payment`.
  */
 import './acl';
-import './service/payment-transfer-workflow.registration';
 
 import PaymentTransferApiService from './service/payment-transfer.api.service';
 
