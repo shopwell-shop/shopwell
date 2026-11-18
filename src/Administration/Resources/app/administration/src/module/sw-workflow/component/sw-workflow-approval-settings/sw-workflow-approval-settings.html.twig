@@ -10,6 +10,11 @@
         v-if="activeTab === 'settings'"
         class="sw-workflow-approval-settings__configuration"
     >
+        <sw-workflow-approval-automation-settings
+            :config="settings.automation"
+            :allow-edit="allowEdit"
+            @update-config="updateAutomation"
+        />
         <mt-select
             v-if="sourceOptions.length > 1 || !source"
             class="sw-workflow-approval-settings__source"
@@ -26,6 +31,7 @@
             :is="source.settingsComponent"
             v-if="source"
             :config="settings.assignee.config"
+            :document="document"
             :node="node"
             :allow-edit="allowEdit"
             @update-config="updateAssignee"
@@ -77,6 +83,22 @@
         >
             {{ $t('sw-workflow.approval.modeUnavailable') }}
         </p>
+        <mt-select
+            data-testid="missing-assignee-policy"
+            :model-value="missingAssigneeAction"
+            :options="missingAssigneeOptions"
+            :label="$t('sw-workflow.approval.missingAssignee.title')"
+            :help-text="$t('sw-workflow.approval.missingAssignee.hint')"
+            :hide-clearable-button="true"
+            :disabled="!allowEdit"
+            @update:model-value="changeMissingAssignee"
+        />
+        <sw-workflow-user-assignee-select
+            v-if="missingAssigneeAction === 'assign'"
+            :config="replacementConfig"
+            :allow-edit="allowEdit"
+            @update-config="changeReplacement"
+        />
         {% block sw_workflow_approval_settings_deadline %}
         <div class="sw-workflow-approval-settings__deadline">
             <h4>{{ $t('sw-workflow.reminder.settings.title') }}</h4>
@@ -105,6 +127,20 @@
                     :model-value="settings.deadline?.remind === true"
                     :disabled="!allowEdit"
                     @update:model-value="changeDeadlineReminder"
+                />
+                <mt-switch
+                    data-testid="approval-deadline-working-time"
+                    :label="$t('sw-workflow.reminder.settings.workingTime')"
+                    :model-value="deadlineWorkingTime"
+                    :disabled="!allowEdit"
+                    @update:model-value="changeDeadlineWorkingTime"
+                />
+                <sw-workflow-user-assignee-select
+                    data-testid="approval-deadline-escalation"
+                    :config="escalationConfig"
+                    :allow-edit="allowEdit"
+                    :label="$t('sw-workflow.reminder.settings.escalateTo')"
+                    @update-config="changeDeadlineEscalation"
                 />
             </template>
         </div>

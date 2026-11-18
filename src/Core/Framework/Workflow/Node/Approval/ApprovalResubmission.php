@@ -53,8 +53,14 @@ final readonly class ApprovalResubmission
     /**
      * Called only inside ApprovalWorkflowService's locked ownership boundary.
      */
-    public function returnToInitiator(WorkflowTaskEntity $task, string $comment, WorkflowExecutionContext $execution): void
+    public function returnToInitiator(WorkflowTaskEntity $task, string $comment, WorkflowExecutionContext $execution, ?string $targetNodeId = null): void
     {
+        if ($targetNodeId !== null) {
+            $target = $execution->graph()->node($targetNodeId);
+            if ($target->property('approvalStage') !== true) {
+                throw WorkflowExecutionException::invalidGraph('A return target must be an approval stage.');
+            }
+        }
         foreach ($this->tasks->forInstance($task->instanceId, $execution->context()) as $pending) {
             if ($pending->isTodo()) {
                 $this->taskStates->cancel($pending->id, $execution->context());
@@ -63,7 +69,11 @@ final readonly class ApprovalResubmission
 
         $this->engine->cancel($execution);
         $this->instanceStates->returnToInitiator($task->instanceId, $execution->context());
-        $this->instances->update([['id' => $task->instanceId, 'currentNodeId' => null]], $execution->context());
+        $update = ['id' => $task->instanceId, 'currentNodeId' => null];
+        if ($targetNodeId !== null) {
+            $update['ext'] = [...($execution->instance()->ext ?? []), 'returnTargetNodeId' => $targetNodeId];
+        }
+        $this->instances->update([$update], $execution->context());
         $this->recorder->recordTaskAction($task, ApprovalTaskActions::RETURN, $comment, [], $execution->context());
     }
 
@@ -95,8 +105,10 @@ final readonly class ApprovalResubmission
 
                 $normalized = $this->forms->resubmit($instance, $formData, $formVersion, $actorId, $scoped);
                 $this->dispatcher->dispatch(new ApprovalResubmittingEvent($instance, $normalized, $scoped));
+                $instance = $this->workflows->loadInstance($instanceId, $scoped);
 
                 $round = $instance->round + 1;
+                $targetNodeId = $instance->ext['returnTargetNodeId'] ?? null;
                 $this->instances->update([[
                     'id' => $instanceId,
                     'formData' => $normalized,
@@ -104,6 +116,7 @@ final readonly class ApprovalResubmission
                     'currentNodeId' => null,
                     'endedAt' => null,
                     'result' => null,
+                    'ext' => array_diff_key($instance->ext ?? [], ['returnTargetNodeId' => true]),
                 ]], $scoped);
                 $this->instanceStates->resubmit($instanceId, $scoped);
                 $fresh = $this->workflows->loadInstance($instanceId, $scoped);
@@ -112,7 +125,12 @@ final readonly class ApprovalResubmission
                     'round' => $round,
                     'previousRound' => $instance->round,
                 ], $scoped);
-                $this->engine->start($fresh, new WorkflowExecutionContext($graph, $fresh, $scoped, $actorId, $round));
+                $executionContext = new WorkflowExecutionContext($graph, $fresh, $scoped, $actorId, $round);
+                if (\is_string($targetNodeId)) {
+                    $this->engine->startAt($graph->node($targetNodeId), $executionContext);
+                } else {
+                    $this->engine->start($fresh, $executionContext);
+                }
             });
         });
         $this->events->flush();

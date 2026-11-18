@@ -35,7 +35,7 @@ export default Shopwell.Component.wrapComponentConfig({
         loadError: string;
         cancelReason: string;
         showCancel: boolean;
-        formPatch: Record<string, string>;
+        formPatch: Record<string, string | string[]>;
         formValid: boolean;
         reminderRefreshTimer: ReturnType<typeof setTimeout> | null;
     } {

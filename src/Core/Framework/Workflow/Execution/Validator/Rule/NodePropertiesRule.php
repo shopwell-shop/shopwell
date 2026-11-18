@@ -10,6 +10,9 @@ use Shopwell\Core\Framework\Workflow\Execution\Validator\ValidationContext;
 use Shopwell\Core\Framework\Workflow\Execution\Validator\Violation;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowAssigneeTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalHierarchy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\MissingApprovalAssigneePolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\ApprovalAutomation;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 
@@ -55,7 +58,9 @@ final class NodePropertiesRule implements GraphRuleInterface
         }
 
         try {
+            ApprovalAutomation::fromConfiguration(\array_key_exists('approvalAutomation', $node->properties) ? $node->properties['approvalAutomation'] : []);
             $this->modes->forNode($node);
+            MissingApprovalAssigneePolicy::fromConfiguration(\array_key_exists('missingAssignee', $node->properties) ? $node->properties['missingAssignee'] : []);
         } catch (WorkflowException $exception) {
             $violations[] = Violation::error('WORKFLOW_EXECUTION_006', $exception->getMessage(), $node->id);
         }
@@ -80,6 +85,14 @@ final class NodePropertiesRule implements GraphRuleInterface
             );
 
             return $violations;
+        }
+
+        if (\in_array($assigneeType, [WorkflowAssigneeTypes::UNIT_LEADER, WorkflowAssigneeTypes::LEADER], true)) {
+            try {
+                ApprovalHierarchy::fromConfiguration(\array_key_exists('assigneeConfig', $node->properties) ? $node->properties['assigneeConfig'] : []);
+            } catch (WorkflowException $exception) {
+                $violations[] = Violation::error('WORKFLOW_EXECUTION_006', $exception->getMessage(), $node->id);
+            }
         }
 
         if (!\in_array($assigneeType, WorkflowAssigneeTypes::NEEDS_VALUE, true)) {

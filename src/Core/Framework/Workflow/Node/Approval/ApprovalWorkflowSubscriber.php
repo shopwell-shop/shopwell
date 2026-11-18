@@ -8,6 +8,10 @@ use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowAssigneeSources;
 use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowNodeTypes as DocumentNodeTypes;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowViolation;
 use Shopwell\Core\Framework\Workflow\Event\WorkflowValidationEvent;
+use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalHierarchy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\MissingApprovalAssigneePolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\ApprovalAutomation;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -36,6 +40,16 @@ final class ApprovalWorkflowSubscriber implements EventSubscriberInterface
 
             $config = $this->objectMap($node->config);
             $path = '/nodes/' . $index . '/config';
+            try {
+                MissingApprovalAssigneePolicy::fromConfiguration(\array_key_exists('missingAssignee', $config ?? []) ? $config['missingAssignee'] : []);
+            } catch (WorkflowException) {
+                $event->addViolation(new WorkflowViolation('approval_invalid_configuration', $path . '/missingAssignee', $node->id));
+            }
+            try {
+                ApprovalAutomation::fromConfiguration(\array_key_exists('automation', $config ?? []) ? $config['automation'] : []);
+            } catch (WorkflowExecutionException) {
+                $event->addViolation(new WorkflowViolation('approval_invalid_configuration', $path . '/automation', $node->id));
+            }
             $assigneeViolation = $this->validateAssignee($config['assignee'] ?? null, $path . '/assignee', $node->id);
             if ($assigneeViolation !== null) {
                 $event->addViolation($assigneeViolation);
@@ -76,8 +90,8 @@ final class ApprovalWorkflowSubscriber implements EventSubscriberInterface
             }
 
             $multiple = match ($assignee['source']) {
-                WorkflowAssigneeSources::USER => false,
-                WorkflowAssigneeSources::USERS, WorkflowAssigneeSources::DEPARTMENT_LEADERS => true,
+                WorkflowAssigneeSources::USER, WorkflowAssigneeSources::INITIATOR => false,
+                WorkflowAssigneeSources::FORM_FIELD, WorkflowAssigneeSources::USERS, WorkflowAssigneeSources::DEPARTMENT_LEADERS, WorkflowAssigneeSources::SUPERVISORS, WorkflowAssigneeSources::ROLES, WorkflowAssigneeSources::POSITIONS => true,
                 default => null,
             };
 
@@ -98,8 +112,14 @@ final class ApprovalWorkflowSubscriber implements EventSubscriberInterface
             return new WorkflowViolation('approval_invalid_configuration', $path, $nodeId);
         }
 
-        if ($assignee['source'] === WorkflowAssigneeSources::DEPARTMENT_LEADERS) {
-            return $assignee['config'] === [] ? null : new WorkflowViolation('approval_invalid_configuration', $path . '/config', $nodeId);
+        if (\in_array($assignee['source'], [WorkflowAssigneeSources::DEPARTMENT_LEADERS, WorkflowAssigneeSources::SUPERVISORS], true)) {
+            try {
+                ApprovalHierarchy::fromConfiguration($assignee['config']);
+            } catch (WorkflowException) {
+                return new WorkflowViolation('approval_invalid_configuration', $path . '/config', $nodeId);
+            }
+
+            return null;
         }
 
         if ($assignee['source'] === WorkflowAssigneeSources::USERS) {

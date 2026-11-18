@@ -6,10 +6,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\ApprovalAssigneeResolver;
+use Shopwell\Core\Framework\Workflow\Execution\CounterSignCalculator;
 use Shopwell\Core\Framework\Workflow\Execution\CounterSignResult;
+use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowTaskCompletedEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowTaskCreatedEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
+use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowRecorder;
 use Shopwell\Core\Framework\Workflow\Execution\NodeOutcome;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowEventQueue;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionContext;
@@ -17,9 +20,12 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowSignal;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\ApprovalAutomation;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\AutomaticApprovalResolver;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskCollection;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
+use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskStateHandler;
 
 /**
@@ -34,11 +40,15 @@ final class TaskExecutor implements NodeExecutorInterface
      * @param EntityRepository<WorkflowTaskCollection> $taskRepository
      */
     public function __construct(
-        private readonly AssigneeResolverRegistry $resolvers,
+        private readonly ApprovalAssigneeResolver $assignees,
         private readonly EntityRepository $taskRepository,
         private readonly WorkflowEventQueue $events,
         private readonly WorkflowTaskStateHandler $taskStates,
         private readonly ApprovalModeRegistry $modes,
+        private readonly AutomaticApprovalResolver $automatic,
+        private readonly WorkflowTaskFinder $tasks,
+        private readonly CounterSignCalculator $calculator,
+        private readonly WorkflowRecorder $recorder,
     ) {
     }
 
@@ -51,29 +61,59 @@ final class TaskExecutor implements NodeExecutorInterface
     {
         $mode = $this->modes->forNode($node);
         $countersignType = $mode->getType();
-        $assigneeType = $node->property('assigneeType');
-
-        if (!\is_string($assigneeType) || $assigneeType === '') {
-            throw WorkflowExecutionException::unsupportedAssigneeType(get_debug_type($assigneeType));
-        }
-
-        $assignees = $this->resolveAssignees($instance, $node, $assigneeType, $context);
-
-        if ($assignees === []) {
-            throw WorkflowExecutionException::noAssignee($node->id, $assigneeType);
-        }
-
-        if ($mode->isSequential()) {
-            // Create the first task now; resume creates subsequent tasks from ext.assignees.
-            $this->createTask($instance, $node, $assignees[0], $countersignType, $context, 1, $assignees);
+        if ($node->property('handlingTask') === true) {
+            $assignment = $this->assignees->resolve($instance, $node, $context);
+            if ($assignment->assigneeIds === []) {
+                throw WorkflowExecutionException::noAssignee($node->id, (string) $node->property('assigneeType', ''));
+            }
+            $task = $this->createTask($instance, $node, $assignment->assigneeIds[0], $countersignType, $context, 1, $assignment->assigneeIds, []);
+            $this->notify($task);
 
             return NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
         }
+        $policy = ApprovalAutomation::fromConfiguration(\array_key_exists('approvalAutomation', $node->properties) ? $node->properties['approvalAutomation'] : []);
+        if ($policy->decision !== 'manual') {
+            $output = ['decision' => $policy->decision, 'reason' => 'configured'];
 
-        $sequence = 1;
+            return $policy->decision === 'approve' ? NodeOutcome::proceed(output: $output) : NodeOutcome::complete('rejected', $output);
+        }
+        $assignment = $this->assignees->resolve($instance, $node, $context);
+        if ($assignment->automaticDecision !== null) {
+            $output = ['decision' => $assignment->automaticDecision, 'reason' => 'missing-assignee'];
 
-        foreach ($assignees as $assigneeId) {
-            $this->createTask($instance, $node, $assigneeId, $countersignType, $context, $sequence++, null);
+            return $assignment->automaticDecision === 'approve'
+                ? NodeOutcome::proceed(output: $output)
+                : NodeOutcome::complete('rejected', $output);
+        }
+        $assignees = $assignment->assigneeIds;
+
+        $automatic = $this->automatic->resolve($instance, $node, $assignees, $context->context());
+        if ($mode->isSequential()) {
+            return $this->enterSequential($instance, $node, $context, $assignees, $automatic, 1);
+        }
+
+        foreach ($assignees as $index => $assigneeId) {
+            $this->createTask($instance, $node, $assigneeId, $countersignType, $context, $index + 1, null, $automatic);
+        }
+
+        $tasks = $this->tasks->forNode($instance->id, $node->id, $context->round(), $context->context());
+        $result = $this->calculator->resolve($tasks, $countersignType, configuration: $node->property('approvalModeConfig', []), version: $mode->getVersion());
+        foreach ($tasks as $task) {
+            if (!$task->isTodo()) {
+                continue;
+            }
+            if ($result->isPending()) {
+                $this->notify($task);
+            } else {
+                $this->taskStates->cancel($task->id, $context->context());
+            }
+        }
+
+        if ($result->isAgreed()) {
+            return NodeOutcome::proceed();
+        }
+        if ($result->isRejected()) {
+            return NodeOutcome::complete('rejected');
         }
 
         return NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
@@ -106,59 +146,52 @@ final class TaskExecutor implements NodeExecutorInterface
         $mode = $this->modes->forNode($node);
 
         if ($mode->isSequential() && $result === CounterSignResult::PENDING) {
-            $next = $this->nextAssignee($completedTask);
-
-            if ($next !== null) {
-                $this->createTask(
-                    $instance,
-                    $node,
-                    $next,
-                    $mode->getType(),
-                    $context,
-                    $completedTask->sequence + 1,
-                    $completedTask->assigneeSnapshot()
-                );
-
-                return NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
+            $snapshot = $completedTask->assigneeSnapshot();
+            if (!isset($snapshot[$completedTask->sequence])) {
+                throw WorkflowExecutionException::noAssignee($node->id, $completedTask->assigneeType);
+            }
+            $automatic = $completedTask->ext['automaticApprovals'] ?? [];
+            if (!\is_array($automatic) || array_filter($automatic, static fn (mixed $reason): bool => !\in_array($reason, ['initiator', 'previous-approval'], true)) !== []) {
+                throw WorkflowExecutionException::invalidGraph('Invalid automatic approval snapshot.');
             }
 
-            // Fail when the assignee snapshot cannot identify the next person rather than silently skipping them.
-            throw WorkflowExecutionException::noAssignee($node->id, $completedTask->assigneeType);
+            return $this->enterSequential($instance, $node, $context, $snapshot, $automatic, $completedTask->sequence + 1);
         }
 
         return $result === CounterSignResult::AGREED ? NodeOutcome::proceed() : NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
     }
 
     /**
-     * @return list<string>
+     * @param list<string> $assignees
+     * @param array<string, string> $automatic
      */
-    private function resolveAssignees(
-        WorkflowInstanceEntity $instance,
-        GraphNode $node,
-        string $assigneeType,
-        WorkflowExecutionContext $context,
-    ): array {
-        $resolved = $this->resolvers->for($assigneeType)->resolve($instance, $node, $context);
-
-        // Deduplicate assignees without changing their configured order.
-        return array_values(array_unique(array_filter(
-            $resolved,
-            static fn (string $userId): bool => $userId !== ''
-        )));
-    }
-
-    /**
-     * Continue from the original approval position, including after a task is transferred.
-     */
-    private function nextAssignee(WorkflowTaskEntity $completedTask): ?string
+    private function enterSequential(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context, array $assignees, array $automatic, int $sequence): NodeOutcome
     {
-        $snapshot = $completedTask->assigneeSnapshot();
+        $mode = $this->modes->forNode($node);
+        for ($index = $sequence - 1; $index < \count($assignees); ++$index) {
+            $task = $this->createTask($instance, $node, $assignees[$index], $mode->getType(), $context, $index + 1, $assignees, $automatic);
+            if (!isset($automatic[$assignees[$index]])) {
+                $this->notify($task);
 
-        return $snapshot[$completedTask->sequence] ?? null;
+                return NodeOutcome::wait(WorkflowSignal::TASK_COMPLETED);
+            }
+        }
+
+        $tasks = $this->tasks->forNode($instance->id, $node->id, $context->round(), $context->context());
+        $result = $this->calculator->resolve($tasks, $mode->getType(), \count($assignees), $node->property('approvalModeConfig', []), $mode->getVersion());
+        if ($result->isRejected()) {
+            return NodeOutcome::complete('rejected');
+        }
+        if (!$result->isAgreed()) {
+            throw WorkflowExecutionException::invalidGraph('The approval mode did not complete after all sequential reviewers agreed.');
+        }
+
+        return NodeOutcome::proceed();
     }
 
     /**
      * @param list<string>|null $assigneeSnapshot
+     * @param array<string, string> $automatic
      */
     private function createTask(
         WorkflowInstanceEntity $instance,
@@ -168,7 +201,8 @@ final class TaskExecutor implements NodeExecutorInterface
         WorkflowExecutionContext $context,
         int $sequence,
         ?array $assigneeSnapshot,
-    ): void {
+        array $automatic,
+    ): WorkflowTaskEntity {
         $taskId = Uuid::randomHex();
 
         $payload = [
@@ -187,18 +221,31 @@ final class TaskExecutor implements NodeExecutorInterface
 
         if ($assigneeSnapshot !== null) {
             $payload['ext'][WorkflowTaskEntity::EXT_ASSIGNEES] = $assigneeSnapshot;
+            $payload['ext']['automaticApprovals'] = $automatic;
         }
 
         $this->taskRepository->create([$payload], $context->context());
 
-        // Notify on task creation so each sequential assignee receives a notification when their turn starts.
+        $task = $this->taskRepository->search(new Criteria([$taskId]), $context->context())->getEntities()->first()
+            ?? throw WorkflowExecutionException::taskNotFound($taskId);
+        if (isset($automatic[$assigneeId])) {
+            $this->taskStates->agree($taskId, $context->context());
+            $this->recorder->recordTaskAction($task, 'agree', null, ['automatic' => true, 'reason' => $automatic[$assigneeId]], $context->context());
+            $this->events->push(new WorkflowTaskCompletedEvent($instance->id, $taskId, $node->id, $assigneeId, true, null));
+        }
+
+        return $task;
+    }
+
+    private function notify(WorkflowTaskEntity $task): void
+    {
         $this->events->push(new WorkflowTaskCreatedEvent(
-            $taskId,
-            $instance->id,
-            $node->id,
-            $node->name(),
-            $assigneeId,
-            $countersignType
+            $task->id,
+            $task->instanceId,
+            $task->nodeId,
+            $task->nodeName,
+            $task->assigneeId,
+            $task->countersignType,
         ));
     }
 }

@@ -15,6 +15,12 @@ const coreWorkflowStudioExtension: WorkflowStudioExtension = {
             presentation: { icon: 'regular-play', tone: 'neutral', settingsComponent: 'sw-workflow-start-settings' },
         },
         { type: WORKFLOW_NODE_TYPES.END, version: 1, presentation: { icon: 'regular-checkmark', tone: 'neutral' } },
+        { type: WORKFLOW_NODE_TYPES.SCRIPT, version: 1, presentation: { icon: 'regular-code', tone: 'purple', labelKey: 'sw-workflow.nodes.script' } },
+        { type: WORKFLOW_NODE_TYPES.ACTION, version: 1, presentation: { icon: 'regular-cog', tone: 'blue', labelKey: 'sw-workflow.nodes.action' } },
+        { type: WORKFLOW_NODE_TYPES.NOTIFICATION, version: 1, presentation: { icon: 'regular-bell', tone: 'blue', labelKey: 'sw-workflow.nodes.notification' } },
+        { type: WORKFLOW_NODE_TYPES.SUBPROCESS, version: 1, presentation: { icon: 'regular-flow', tone: 'purple', labelKey: 'sw-workflow.nodes.subprocess' } },
+        { type: WORKFLOW_NODE_TYPES.PARALLEL, version: 1, presentation: { icon: 'regular-share', tone: 'green', labelKey: 'sw-workflow.nodes.parallel' } },
+        { type: WORKFLOW_NODE_TYPES.JOIN, version: 1, presentation: { icon: 'regular-flow', tone: 'green', labelKey: 'sw-workflow.nodes.join' } },
     ],
     templates: [
         {

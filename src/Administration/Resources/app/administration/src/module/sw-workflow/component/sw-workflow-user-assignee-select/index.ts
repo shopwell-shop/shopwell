@@ -11,6 +11,8 @@ export default Shopwell.Component.wrapComponentConfig({
     props: {
         config: { type: Object as PropType<Record<string, unknown>>, required: true },
         allowEdit: { type: Boolean, default: true },
+        label: { type: String, default: '' },
+        candidateIds: { type: Array as PropType<string[]>, default: null },
     },
     emits: ['update-config'],
     setup(props) {
@@ -20,9 +22,13 @@ export default Shopwell.Component.wrapComponentConfig({
     computed: {
         criteria() {
             const { Criteria } = Shopwell.Data;
-            return new Criteria(1, 25)
+            const criteria = new Criteria(1, 25)
                 .addFilter(Criteria.equals('active', true))
                 .addSorting(Criteria.sort('username', 'ASC'));
+            if (this.candidateIds) {
+                criteria.setIds(this.candidateIds);
+            }
+            return criteria;
         },
     },
     methods: {
@@ -35,6 +41,9 @@ export default Shopwell.Component.wrapComponentConfig({
                 return;
             }
 
+            if (this.candidateIds && !this.candidateIds.includes(id.toLowerCase())) {
+                return;
+            }
             this.$emit('update-config', { ...this.config, userId: id });
         },
         clear(): void {

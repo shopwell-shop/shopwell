@@ -270,6 +270,15 @@ class ApprovalFormTest extends TestCase
         static::assertSame([], $secondContext['formChanges']);
     }
 
+    public function testRequiredPeopleFieldCannotBeCompletedWithAnEmptyList(): void
+    {
+        $id = $this->start(withPeople: true);
+        $task = $this->task($id, 1);
+        $this->approve($task, ['note' => 'Verified', 'people' => []], 0, 400);
+        $this->approve($task, ['note' => 'Verified', 'people' => [$this->userIds[2]]], 0);
+        static::assertSame([$this->userIds[2]], $this->instance($id)->form()['people']);
+    }
+
     private function actor(int $index): Context
     {
         $source = new AdminApiSource($this->userIds[$index]);
@@ -278,7 +287,7 @@ class ApprovalFormTest extends TestCase
         return new Context($source);
     }
 
-    private function start(bool $countersign = false, bool $withCopy = false, bool $withCondition = false, bool $sameFollowupActor = false): string
+    private function start(bool $countersign = false, bool $withCopy = false, bool $withCondition = false, bool $sameFollowupActor = false, bool $withPeople = false): string
     {
         $service = static::getContainer()->get(WorkflowService::class);
         $schema = [
@@ -286,6 +295,9 @@ class ApprovalFormTest extends TestCase
             ['key' => 'secret', 'label' => 'Secret', 'type' => 'text', 'required' => false],
             ['key' => 'note', 'label' => 'Review note', 'type' => 'text', 'required' => false],
         ];
+        if ($withPeople) {
+            $schema[] = ['key' => 'people', 'label' => 'People', 'type' => 'users', 'required' => false, 'candidateIds' => [$this->userIds[2]]];
+        }
         $nodes = [
             ['id' => 'start', 'type' => 'snaker:start', 'properties' => ['inputSchema' => $schema]],
             ['id' => 'review', 'type' => 'snaker:task', 'properties' => [
@@ -293,6 +305,7 @@ class ApprovalFormTest extends TestCase
                 'assigneeValue' => $countersign ? [$this->userIds[1], $this->userIds[2]] : [$this->userIds[1]],
                 'countersignType' => $countersign ? 'countersign' : 'single',
                 'approvalFormPermissions' => [
+                    ...($withPeople ? ['people' => ['access' => 'editable', 'required' => true]] : []),
                     'secret' => ['access' => 'hidden', 'required' => false],
                     'note' => ['access' => 'editable', 'required' => true],
                 ],

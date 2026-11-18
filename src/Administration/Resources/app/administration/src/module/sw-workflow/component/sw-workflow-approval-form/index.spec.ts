@@ -62,3 +62,29 @@ describe('sw-workflow-approval-form', () => {
         expect(wrapper.get('textarea').attributes('disabled')).toBeDefined();
     });
 });
+
+describe('typed approval form changes', () => {
+    it('preserves ordered user lists without emitting a phantom edit', async () => {
+        const wrapper = await createWrapper();
+        const id = '0123456789abcdef0123456789abcdef';
+        await wrapper.setProps({
+            instance: {
+                id: 'instance',
+                round: 1,
+                status: 'RUNNING',
+                title: 'People request',
+                formVersion: 3,
+                formData: { people: [id] },
+                formSchema: [{ key: 'people', label: 'People', type: 'users', required: true }],
+                formPermissions: { people: { access: 'editable', required: true } },
+            },
+        });
+        await flushPromises();
+        expect(wrapper.emitted('update-patch')?.at(-1)).toEqual([{}]);
+        expect(wrapper.emitted('validity-change')?.at(-1)).toEqual([true]);
+        await wrapper.setData({ values: { people: [] } });
+        expect(wrapper.emitted('update-patch')?.at(-1)).toEqual([{ people: [] }]);
+        expect(wrapper.emitted('validity-change')?.at(-1)).toEqual([false]);
+        wrapper.unmount();
+    });
+});

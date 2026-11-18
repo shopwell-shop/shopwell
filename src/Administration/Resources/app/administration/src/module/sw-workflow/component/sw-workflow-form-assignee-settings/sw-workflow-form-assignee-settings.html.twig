@@ -1,0 +1,13 @@
+{% block sw_workflow_form_assignee_settings %}
+<div class="sw-workflow-form-assignee-settings">
+    <mt-select
+        :model-value="config.fieldKey || null"
+        :options="options"
+        :label="$t('sw-workflow.approval.formField')"
+        :hint="$t('sw-workflow.approval.formFieldHint')"
+        :hide-clearable-button="true"
+        :disabled="!allowEdit"
+        @update:model-value="select"
+    />
+</div>
+{% endblock %}

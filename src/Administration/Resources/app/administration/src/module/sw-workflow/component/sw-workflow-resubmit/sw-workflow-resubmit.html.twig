@@ -15,14 +15,32 @@
     >
         {% block sw_workflow_resubmit_fields %}
         <p>{{ $t('sw-workflow.runtime.instance.resubmitHint') }}</p>
-        <mt-banner v-if="instance.readOnlyInputKeys?.length" variant="info">
+        <mt-banner
+            v-if="instance.readOnlyInputKeys?.length"
+            variant="info"
+        >
             {{ $t('sw-workflow.runtime.instance.lockedHint') }}
         </mt-banner>
-        <mt-banner v-if="error" variant="critical" role="alert">{{ error }}</mt-banner>
+        <mt-banner
+            v-if="error"
+            variant="critical"
+            role="alert"
+        >
+            {{ error }}
+        </mt-banner>
         <mt-loader v-if="isLoading" />
-        <template v-for="field in fields" :key="field.key">
+        <template
+            v-for="field in fields"
+            :key="field.key"
+        >
+            <sw-workflow-entity-form-field
+                v-if="['user', 'users', 'department'].includes(field.type)"
+                v-model="values[field.key]"
+                :field="field"
+                :disabled="isSubmitting || isReadOnly(field.key)"
+            />
             <mt-select
-                v-if="field.type === 'select' || field.dataSource"
+                v-else-if="field.type === 'select' || field.dataSource"
                 v-model="values[field.key]"
                 :label="field.label"
                 :options="field.options"
@@ -45,7 +63,10 @@
                 :required="field.required"
                 :disabled="isSubmitting || isReadOnly(field.key)"
             />
-            <mt-banner v-if="showValidation && fieldErrors[field.key]" variant="critical">
+            <mt-banner
+                v-if="showValidation && fieldErrors[field.key]"
+                variant="critical"
+            >
                 {{ fieldErrors[field.key] }}
             </mt-banner>
         </template>
@@ -57,7 +78,11 @@
         />
         {% endblock %}
         <template #modal-footer>
-            <mt-button variant="secondary" :disabled="isSubmitting" @click="close">
+            <mt-button
+                variant="secondary"
+                :disabled="isSubmitting"
+                @click="close"
+            >
                 {{ $t('global.default.cancel') }}
             </mt-button>
             <mt-button

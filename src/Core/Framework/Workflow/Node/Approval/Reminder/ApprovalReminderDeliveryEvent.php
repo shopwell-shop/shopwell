@@ -26,6 +26,7 @@ final class ApprovalReminderDeliveryEvent extends Event
         public readonly string $source,
         public readonly \DateTimeInterface $requestedAt,
         public readonly ?\DateTimeInterface $dueAt,
+        public readonly ?string $escalateTo = null,
     ) {
     }
 }

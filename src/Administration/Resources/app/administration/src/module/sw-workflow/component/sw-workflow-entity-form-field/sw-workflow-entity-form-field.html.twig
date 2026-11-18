@@ -1,0 +1,44 @@
+{% block sw_workflow_entity_form_field %}
+<div class="sw-workflow-entity-form-field">
+    <sw-workflow-users-assignee-summary
+        v-if="readOnly && field.type === 'users'"
+        :config="{ userIds: Array.isArray(modelValue) ? modelValue : [] }"
+    />
+    <sw-workflow-user-assignee-summary
+        v-else-if="readOnly && field.type === 'user'"
+        :config="{ userId: modelValue }"
+    />
+    <sw-workflow-users-assignee-select
+        v-else-if="field.type === 'users'"
+        :config="{ userIds: Array.isArray(modelValue) ? modelValue : [] }"
+        :candidate-ids="field.candidateIds"
+        :label-text="field.label"
+        :allow-edit="!disabled"
+        @update-config="$emit('update:model-value', $event.userIds)"
+    />
+    <sw-workflow-user-assignee-select
+        v-else-if="field.type === 'user'"
+        :config="{ userId: modelValue }"
+        :candidate-ids="field.candidateIds"
+        :label="field.label"
+        :allow-edit="!disabled"
+        @update-config="$emit('update:model-value', $event.userId || '')"
+    />
+    <sw-workflow-department-select
+        v-else-if="field.type === 'department'"
+        :model-value="modelValue"
+        :candidate-ids="field.candidateIds"
+        :label="field.label"
+        :disabled="disabled || readOnly"
+        :display-only="readOnly"
+        @update:model-value="$emit('update:model-value', $event)"
+    />
+    <sw-media-upload-v2
+        v-else-if="field.type === 'media' || field.type === 'mediaList' || field.type === 'images'"
+        variant="regular"
+        :disabled="disabled || readOnly"
+        :file-accept="field.type === 'images' ? 'image/*' : undefined"
+        @sw-media-upload-v2-media-upload-success="mediaUploaded"
+    />
+</div>
+{% endblock %}

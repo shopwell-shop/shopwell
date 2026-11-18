@@ -7,6 +7,12 @@ export const WORKFLOW_NODE_TYPES = {
     APPROVAL: 'core:approval',
     COPY: 'core:copy',
     CONDITION: 'core:condition',
+    SCRIPT: 'core:script',
+    ACTION: 'core:action',
+    NOTIFICATION: 'core:notification',
+    SUBPROCESS: 'core:subprocess',
+    PARALLEL: 'core:parallel',
+    JOIN: 'core:join',
 } as const;
 
 /** @public */
@@ -31,6 +37,10 @@ export const WORKFLOW_ASSIGNEE_SOURCES = {
     USERS: 'core:users',
     DEPARTMENT_LEADERS: 'core:department-leaders',
     POSITIONS: 'core:positions',
+    INITIATOR: 'core:initiator',
+    ROLES: 'core:roles',
+    FORM_FIELD: 'core:form-field',
+    SUPERVISORS: 'core:supervisors',
 } as const;
 
 /** @public */

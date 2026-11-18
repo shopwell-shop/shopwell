@@ -1,0 +1,29 @@
+{% block sw_workflow_approval_automation_settings %}
+<section class="sw-workflow-approval-automation-settings">
+    <mt-select
+        :model-value="config.decision || 'manual'"
+        :options="decisions"
+        :label="$t('sw-workflow.automation.decision')"
+        :hide-clearable-button="true"
+        :disabled="!allowEdit"
+        @update:model-value="changeDecision"
+    />
+    <template v-if="!config.decision || config.decision === 'manual'">
+        <mt-switch
+            :model-value="config.approveInitiator === true"
+            :label="$t('sw-workflow.automation.approveInitiator')"
+            :disabled="!allowEdit"
+            @update:model-value="changeInitiator"
+        />
+        <mt-select
+            :model-value="config.deduplication || 'none'"
+            :options="deduplicationOptions"
+            :label="$t('sw-workflow.automation.repeatReviewer')"
+            :hint="$t('sw-workflow.automation.roundHint')"
+            :hide-clearable-button="true"
+            :disabled="!allowEdit"
+            @update:model-value="changeDeduplication"
+        />
+    </template>
+</section>
+{% endblock %}

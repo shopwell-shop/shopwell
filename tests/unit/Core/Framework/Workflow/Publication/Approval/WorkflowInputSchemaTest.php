@@ -19,6 +19,27 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 #[CoversClass(WorkflowInputSchema::class)]
 class WorkflowInputSchemaTest extends TestCase
 {
+    public function testFreezesTypedPeopleAndDepartmentCandidateRanges(): void
+    {
+        $candidate = 'abcdef0123456789abcdef0123456789';
+        $schema = [
+            ['key' => 'reviewers', 'label' => 'Choose reviewers', 'type' => 'users', 'required' => true, 'candidateIds' => [strtoupper($candidate)]],
+            ['key' => 'department', 'label' => 'Department', 'type' => 'department', 'required' => false],
+        ];
+        $normalized = (new WorkflowInputSchema())->normalize($schema);
+
+        static::assertArrayHasKey('candidateIds', $normalized[0]);
+        static::assertSame([$candidate], $normalized[0]['candidateIds']);
+        static::assertSame('department', $normalized[1]['type']);
+    }
+
+    public function testRequiredPeopleCannotBeSubmittedAsAnEmptySelection(): void
+    {
+        $this->expectException(WorkflowExecutionException::class);
+
+        (new WorkflowInputSchema())->normalizeData([['key' => 'reviewers', 'label' => 'Reviewers', 'type' => 'users', 'required' => true]], ['reviewers' => []]);
+    }
+
     public function testValidatesOptionSourcesWithoutDependingOnTheFieldName(): void
     {
         $dispatcher = new EventDispatcher();

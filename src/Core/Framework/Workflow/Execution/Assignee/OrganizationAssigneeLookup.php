@@ -9,6 +9,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitCollection;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitEntity;
 use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitCollection;
 use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitEntity;
 use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionEntity;
@@ -21,9 +23,12 @@ class OrganizationAssigneeLookup
 {
     /**
      * @param EntityRepository<UserOrganizationUnitCollection> $memberships
+     * @param EntityRepository<OrganizationUnitCollection> $units
      */
-    public function __construct(private readonly EntityRepository $memberships)
-    {
+    public function __construct(
+        private readonly EntityRepository $memberships,
+        private readonly EntityRepository $units,
+    ) {
     }
 
     public function primaryMembership(string $userId, Context $context): ?UserOrganizationUnitEntity
@@ -52,6 +57,26 @@ class OrganizationAssigneeLookup
         return array_values($this->memberships->search($criteria, $context)->getElements());
     }
 
+    public function membershipForDepartment(string $userId, string $unitId, Context $context): ?UserOrganizationUnitEntity
+    {
+        $criteria = $this->criteria()->addFilter(new EqualsFilter('userId', $userId), new EqualsFilter('organizationUnitId', $unitId));
+        $criteria->setLimit(1);
+
+        return $this->memberships->search($criteria, $context)->first();
+    }
+
+    public function membership(string $id, Context $context): ?UserOrganizationUnitEntity
+    {
+        $criteria = $this->criteria()->setIds([$id]);
+
+        return $this->memberships->search($criteria, $context)->first();
+    }
+
+    public function department(string $id, Context $context): ?OrganizationUnitEntity
+    {
+        return $this->units->search((new Criteria([$id]))->addAssociation('organization'), $context)->first();
+    }
+
     public function assertEligible(UserOrganizationUnitEntity|UserPositionEntity $membership, string $nodeId, string $type): void
     {
         $user = $membership->getUser();
@@ -62,15 +87,7 @@ class OrganizationAssigneeLookup
         if ($membership instanceof UserPositionEntity && !$membership->getPosition()?->isActive()) {
             throw WorkflowExecutionException::noAssignee($nodeId, $type);
         }
-        if ($user->isAdmin()) {
-            return;
-        }
-
-        $privileges = [];
-        foreach ($user->getAclRoles() ?? [] as $role) {
-            $privileges = [...$privileges, ...$role->getPrivileges()];
-        }
-        if (array_diff(['workflow_instance:access', 'workflow_task:decide'], $privileges) !== []) {
+        if (!ApprovalUserEligibility::isEligible($user)) {
             throw WorkflowExecutionException::noAssignee($nodeId, $type);
         }
     }

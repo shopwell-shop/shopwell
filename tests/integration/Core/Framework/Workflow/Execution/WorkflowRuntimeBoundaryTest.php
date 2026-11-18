@@ -22,6 +22,7 @@ use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Definition\Node\WorkflowNode;
 use Shopwell\Core\Framework\Workflow\Definition\WorkflowDocument;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowInstancePresenter;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\UserAssigneeResolver;
@@ -63,6 +64,7 @@ use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssignment;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\AutomaticApprovalResolver;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalWorkflowPublisher;
@@ -94,7 +96,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
 
     protected function setUp(): void
     {
-        $user = TestUser::createNewTestUser(static::getContainer()->get(Connection::class));
+        $user = TestUser::createNewTestUser(static::getContainer()->get(Connection::class), ['workflow_instance:access', 'workflow_task:decide']);
         $this->userId = $user->getUserId();
         $this->context = new Context(new AdminApiSource($this->userId));
     }
@@ -330,7 +332,7 @@ class WorkflowRuntimeBoundaryTest extends TestCase
             new StartExecutor(),
             new EndExecutor(),
             ...$additionalExecutors,
-            new TaskExecutor($resolvers, $container->get('workflow_task.repository'), $events, $container->get(WorkflowTaskStateHandler::class), $modes),
+            new TaskExecutor(new ApprovalAssigneeResolver($resolvers), $container->get('workflow_task.repository'), $events, $container->get(WorkflowTaskStateHandler::class), $modes, $container->get(AutomaticApprovalResolver::class), $container->get(WorkflowTaskFinder::class), new CounterSignCalculator($modes), $container->get(WorkflowRecorder::class)),
         ]);
         $engine = new WorkflowEngine(
             $executors,

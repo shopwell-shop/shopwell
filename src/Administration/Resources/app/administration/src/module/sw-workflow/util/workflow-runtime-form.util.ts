@@ -1,10 +1,10 @@
 /** @sw-package framework */
-import type { WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
+import type { WorkflowFormField, WorkflowFormValue, WorkflowFormFieldType } from 'src/core/workflow/workflow-runtime.types';
 /** @private */
-export type FormError = 'required' | 'text' | 'amount' | 'number' | 'date' | 'select';
+export type FormError = 'required' | WorkflowFormFieldType;
 
 function isMissingFormValue(value: unknown): boolean {
-    return value === '' || value === null || value === undefined;
+    return value === '' || value === null || value === undefined || (Array.isArray(value) && value.length === 0);
 }
 
 function isValidCalendarDate(value: string): boolean {
@@ -20,6 +20,10 @@ function isValidCalendarDate(value: string): boolean {
 export function validateFormValue(field: WorkflowFormField, value: unknown): FormError | null {
     if (isMissingFormValue(value)) {
         return field.required ? 'required' : null;
+    }
+
+    if (['user', 'users', 'department'].includes(field.type)) {
+        return validateEntitySelection(field, value);
     }
 
     if (typeof value !== 'string') {
@@ -47,8 +51,11 @@ export function validateFormValue(field: WorkflowFormField, value: unknown): For
 }
 
 /** @private */
-export function serializeForm(fields: WorkflowFormField[], values: Record<string, string>): Record<string, string> {
-    return Object.fromEntries(fields.map((field) => [field.key, values[field.key] ?? '']));
+export function serializeForm(
+    fields: WorkflowFormField[],
+    values: Record<string, WorkflowFormValue>,
+): Record<string, WorkflowFormValue> {
+    return Object.fromEntries(fields.map((field) => [field.key, values[field.key] ?? (field.type === 'users' ? [] : '')]));
 }
 
 /** @private */
@@ -98,4 +105,32 @@ function validateText(field: WorkflowFormField, value: string): FormError | null
 
 function validateSelection(field: WorkflowFormField, value: string): FormError | null {
     return field.options?.some((option) => option.value === value) ? null : 'select';
+}
+
+/** Restore frozen typed form values without coercing an identifier list to text. @private */
+export function restoreFormValue(field: WorkflowFormField, value: unknown): WorkflowFormValue {
+    if (value === null || value === undefined) {
+        return field.type === 'users' ? [] : '';
+    }
+    if (field.type === 'users' && Array.isArray(value) && value.every((id): id is string => typeof id === 'string')) {
+        return [...value];
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+        return String(value);
+    }
+    throw new Error('Unsupported workflow form value.');
+}
+
+function validateEntitySelection(field: WorkflowFormField, value: unknown): FormError | null {
+    const ids = field.type === 'users' ? value : [value];
+    if (!Array.isArray(ids) || ids.length > 50 || new Set(ids).size !== ids.length) {
+        return field.type;
+    }
+    const valid = ids.every(
+        (id: unknown) =>
+            typeof id === 'string' &&
+            /^[a-f0-9]{32}$/i.test(id) &&
+            (!field.candidateIds || field.candidateIds.includes(id.toLowerCase())),
+    );
+    return valid ? null : field.type;
 }

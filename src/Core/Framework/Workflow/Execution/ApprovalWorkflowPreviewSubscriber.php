@@ -8,12 +8,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowUserLookup;
-use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionCollection;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionStatus;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowInstanceMetadataEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\ApprovalAutomation;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalModeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Preview\ApprovalNodePreviewEvent;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\ApprovalRoute;
@@ -37,7 +38,7 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
         private ApprovalRoute $routes,
         private WorkflowInputSchema $forms,
         private WorkflowUserLookup $users,
-        private AssigneeResolverRegistry $resolvers,
+        private ApprovalAssigneeResolver $assignees,
         private ApprovalModeRegistry $modes,
         private EventDispatcherInterface $events,
     ) {
@@ -107,6 +108,9 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
                 'assignees' => $assignees,
                 'branch' => $preview['branch'],
             ];
+            if ($node->type === WorkflowNodeTypes::TASK && $preview['rule'] === 'reject' && $preview['assigneeIds'] === []) {
+                break;
+            }
         }
 
         $names = $this->users->names($userIds, $event->context);
@@ -144,8 +148,14 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
         }
 
         $mode = $this->modes->forNode($node);
+        $policy = ApprovalAutomation::fromConfiguration(\array_key_exists('approvalAutomation', $node->properties) ? $node->properties['approvalAutomation'] : []);
+        if ($policy->decision !== 'manual') {
+            $event->setPreview('approval', [], $policy->decision);
+
+            return;
+        }
         try {
-            $ids = $this->resolvers->for($node->property('assigneeType'))->resolve($execution->instance(), $node, $execution);
+            $assignment = $this->assignees->resolve($execution->instance(), $node, $execution);
         } catch (WorkflowExecutionException $exception) {
             if ($exception->getErrorCode() !== WorkflowExecutionException::NO_ASSIGNEE) {
                 throw $exception;
@@ -154,10 +164,6 @@ final readonly class ApprovalWorkflowPreviewSubscriber implements EventSubscribe
             throw WorkflowException::publicationRejected('approval_assignee_unavailable');
         }
 
-        if ($ids === []) {
-            throw WorkflowException::publicationRejected('approval_assignee_unavailable');
-        }
-
-        $event->setPreview('approval', $ids, $mode->getType());
+        $event->setPreview('approval', $assignment->assigneeIds, $assignment->automaticDecision ?? $mode->getType());
     }
 }

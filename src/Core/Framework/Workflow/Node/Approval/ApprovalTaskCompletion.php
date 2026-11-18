@@ -92,6 +92,22 @@ final readonly class ApprovalTaskCompletion
         ]), $context);
     }
 
+    public function completeHandling(WorkflowTaskEntity $task, ?string $comment, WorkflowExecutionContext $context): void
+    {
+        $executionId = $task->ext['nodeExecutionId'] ?? null;
+        if (!\is_string($executionId)) {
+            throw WorkflowExecutionException::executionNotWaiting($task->id);
+        }
+
+        $this->taskStates->agree($task->id, $context->context());
+        $this->recorder->recordTaskAction($task, 'complete', $comment, [], $context->context());
+        $this->events->push(new WorkflowTaskCompletedEvent($task->instanceId, $task->id, $task->nodeId, $task->assigneeId, true, $comment));
+        $this->engine->resume($executionId, new WorkflowSignal(WorkflowSignal::TASK_COMPLETED, [
+            'taskId' => $task->id,
+            'result' => CounterSignResult::AGREED,
+        ]), $context);
+    }
+
     private function resolveOriginalVotes(WorkflowTaskCollection $originals, WorkflowTaskEntity $task, WorkflowExecutionContext $context): CounterSignResult
     {
         $expectedTotal = null;

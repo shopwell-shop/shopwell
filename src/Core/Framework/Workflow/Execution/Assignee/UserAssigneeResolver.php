@@ -50,7 +50,9 @@ final class UserAssigneeResolver implements AssigneeResolverInterface
         $criteria = new Criteria($userIds);
         $criteria->addFilter(new EqualsFilter('active', true));
 
-        $existing = $this->userRepository->search($criteria, $context->context())->getEntities()->getIds();
+        $criteria->addAssociation('aclRoles');
+        $users = $this->userRepository->search($criteria, $context->context())->getEntities();
+        $existing = $users->filter(ApprovalUserEligibility::isEligible(...))->getIds();
 
         if (array_diff($userIds, $existing) !== []) {
             throw WorkflowExecutionException::noAssignee($node->id, $this->getAssigneeType());

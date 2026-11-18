@@ -91,8 +91,9 @@ final class ApprovalWorkflowCompiler
             throw $this->rejected('single_start_required', '/nodes');
         }
 
-        if (array_filter($stages, static fn (array $stage): bool => $stage['role'] === ApprovalNodeRole::APPROVAL) === []) {
-            throw $this->rejected('approval_required', '/nodes');
+        if (array_filter($stages, static fn (array $stage): bool => $stage['role'] === ApprovalNodeRole::APPROVAL
+            || ($stage['role'] === ApprovalNodeRole::ACTIVITY && $stage['node']->type !== WorkflowNodeTypes::CONDITION)) === []) {
+            throw $this->rejected('activity_required', '/nodes');
         }
 
         return $starts[0];
@@ -276,7 +277,9 @@ final class ApprovalWorkflowCompiler
             }
 
             if ($stages[$connection->target]['role'] === ApprovalNodeRole::START
-                || (isset($incoming[$connection->target]) && $stages[$connection->target]['role'] !== ApprovalNodeRole::END)) {
+                || (isset($incoming[$connection->target])
+                    && $stages[$connection->target]['role'] !== ApprovalNodeRole::END
+                    && $stages[$connection->target]['node']->type !== WorkflowNodeTypes::JOIN)) {
                 throw $this->rejected('invalid_incoming_connection', $path . '/target', $connection->target);
             }
 
@@ -320,7 +323,7 @@ final class ApprovalWorkflowCompiler
             $stage = $stages[$id];
 
             if (isset($visited[$id])) {
-                if ($stage['role'] === ApprovalNodeRole::END) {
+                if ($stage['role'] === ApprovalNodeRole::END || $stage['node']->type === WorkflowNodeTypes::JOIN) {
                     continue;
                 }
 

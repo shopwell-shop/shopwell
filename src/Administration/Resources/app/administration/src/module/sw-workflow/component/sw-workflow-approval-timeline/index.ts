@@ -50,6 +50,8 @@ export default Shopwell.Component.wrapComponentConfig({
                     assignee: log.operator ?? { id: '', name: this.$t('sw-workflow.reminder.system') },
                     countersignType: '',
                     decision: log.action,
+                    automatic: false,
+                    automaticReason: null,
                     comment: log.comment,
                     completedAt: log.createdAt,
                     target: null,

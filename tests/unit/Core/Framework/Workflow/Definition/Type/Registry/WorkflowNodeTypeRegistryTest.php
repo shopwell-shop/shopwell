@@ -86,7 +86,7 @@ class WorkflowNodeTypeRegistryTest extends TestCase
         $container->register(Filesystem::class);
         $container->register(ClockInterface::class)->setSynthetic(true);
         $container->register(StateMachineRegistry::class)->setSynthetic(true);
-        foreach (['workflow_approval_reminder', 'scheduled_task', 'workflow_execution_definition', 'workflow_instance', 'workflow_task', 'workflow_task_history', 'workflow_log', 'workflow_copy', 'workflow_node_execution', 'user', 'user_organization_unit', 'user_position', 'position'] as $entity) {
+        foreach (['workflow_approval_reminder', 'scheduled_task', 'workflow_execution_definition', 'workflow_instance', 'workflow_task', 'workflow_task_history', 'workflow_log', 'workflow_copy', 'workflow_node_execution', 'user', 'user_organization_unit', 'user_position', 'position', 'organization_unit'] as $entity) {
             $container->register($entity . '.repository', EntityRepository::class)->setSynthetic(true);
         }
         $container->register('validator', ValidatorInterface::class)->setFactory([Validation::class, 'createValidator']);

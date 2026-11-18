@@ -1,0 +1,57 @@
+{% block sw_workflow_department_select %}
+<div class="sw-workflow-department-select">
+    <p v-if="displayOnly && canRead && !loading">
+        {{ ids.length ? ids.map(id => units.find(unit => unit.id === id)?.name || $t('sw-workflow.form.unavailableSelection')).join(', ') : '—' }}
+    </p>
+    <template v-if="canRead && !displayOnly">
+        <sw-entity-multi-select
+            v-if="multiple"
+            entity-name="organization_unit"
+            :entity-collection="collection"
+            :criteria="criteria"
+            :label="label"
+            label-property="name"
+            :disabled="disabled || loading"
+            @update:entity-collection="change"
+        />
+        <sw-entity-single-select
+            v-else
+            entity="organization_unit"
+            :value="typeof modelValue === 'string' ? modelValue : null"
+            :criteria="criteria"
+            :label="label"
+            label-property="name"
+            :disabled="disabled || loading"
+            :show-clearable-button="false"
+            @update:value="select"
+        />
+        <p
+            v-if="unavailable"
+            role="status"
+        >
+            {{ $t('sw-workflow.form.unavailableSelection') }}
+        </p>
+        <mt-button
+            v-if="ids.length && !disabled"
+            variant="secondary"
+            @click="clear"
+        >
+            {{ $t('sw-workflow.approval.clear') }}
+        </mt-button>
+    </template>
+    <p
+        v-else
+        role="status"
+    >
+        {{ $t('sw-workflow.form.selectionForbidden') }}
+    </p>
+    <mt-loader v-if="loading" />
+    <mt-button
+        v-if="failed"
+        variant="secondary"
+        @click="load"
+    >
+        {{ $t('sw-workflow.actions.retry') }}
+    </mt-button>
+</div>
+{% endblock %}

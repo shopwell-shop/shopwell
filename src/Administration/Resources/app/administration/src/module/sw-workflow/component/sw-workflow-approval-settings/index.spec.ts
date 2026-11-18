@@ -39,6 +39,28 @@ describe('approval settings', () => {
     afterEach(() => {
         wrappers.splice(0).forEach((wrapper) => wrapper.unmount());
     });
+    it('preserves a replacement policy across source changes and honors read-only mode', async () => {
+        const wrapper = await createWrapper();
+        const policy = wrapper.findComponent('[data-testid="missing-assignee-policy"]') as VueWrapper;
+        policy.vm.$emit('update:modelValue', 'assign');
+        let config = wrapper.emitted('update-config')!.at(-1)![0] as Record<string, unknown>;
+        expect(config.missingAssignee).toEqual({ action: 'assign' });
+        await wrapper.setProps({ node: { ...node, config } });
+        await wrapper.findAll('.select-user').at(-1)!.trigger('click');
+        config = wrapper.emitted('update-config')!.at(-1)![0] as Record<string, unknown>;
+        expect(config.missingAssignee).toEqual({ action: 'assign', userId: '11111111111111111111111111111111' });
+        await wrapper.setProps({ node: { ...node, config } });
+        const source = wrapper.findComponent('.sw-workflow-approval-settings__source') as VueWrapper;
+        source.vm.$emit('update:modelValue', 'core:initiator');
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({ missingAssignee: config.missingAssignee });
+        policy.vm.$emit('update:modelValue', 'approve');
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({ missingAssignee: { action: 'approve' } });
+        await wrapper.setProps({ allowEdit: false });
+        const count = wrapper.emitted('update-config')!.length;
+        policy.vm.$emit('update:modelValue', 'reject');
+        expect(wrapper.emitted('update-config')).toHaveLength(count);
+    });
+
     it('uses the Meteor active-tab event to show form permissions', async () => {
         const wrapper = await createWrapper();
 
@@ -59,6 +81,17 @@ describe('approval settings', () => {
         const duration = wrapper.findComponent('[data-testid="approval-deadline-minutes"]') as VueWrapper;
         duration.vm.$emit('update:modelValue', 120);
         expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({ deadline: { minutes: 120, remind: true } });
+        const workingTime = wrapper.findComponent('[data-testid="approval-deadline-working-time"]') as VueWrapper;
+        workingTime.vm.$emit('update:modelValue', true);
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({
+            deadline: { minutes: 1440, remind: true, workingTime: true },
+        });
+        await wrapper.setProps({ node: { ...node, config: wrapper.emitted('update-config')!.at(-1)![0] } });
+        const escalation = wrapper.findComponent('[data-testid="approval-deadline-escalation"]') as VueWrapper;
+        escalation.vm.$emit('update-config', { userId: '22222222222222222222222222222222' });
+        expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({
+            deadline: { minutes: 1440, remind: true, workingTime: true, escalateTo: '22222222222222222222222222222222' },
+        });
         const source = wrapper.findComponent('.sw-workflow-approval-settings__source') as VueWrapper;
         source.vm.$emit('update:modelValue', 'core:users');
         expect(wrapper.emitted('update-config')!.at(-1)![0]).toMatchObject({ deadline: { minutes: 1440, remind: true } });

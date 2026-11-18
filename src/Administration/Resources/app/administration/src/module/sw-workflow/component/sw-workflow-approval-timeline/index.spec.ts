@@ -48,6 +48,34 @@ describe('workflow approval history', () => {
         expect(wrapper.find('.is--pending').exists()).toBe(false);
         wrapper.unmount();
     });
+    it('distinguishes automatic approval evidence from a manual decision', async () => {
+        const wrapper = shallowMount(await wrapTestComponent('sw-workflow-approval-timeline', { sync: true }), {
+            props: {
+                history: [
+                    {
+                        id: 'automatic',
+                        taskId: 'task',
+                        round: 1,
+                        nodeId: 'review',
+                        nodeName: 'Review',
+                        countersignType: 'single',
+                        completedAt: null,
+                        assignee: { id: 'alice', name: 'Alice' },
+                        decision: 'agree',
+                        comment: null,
+                        automatic: true,
+                        automaticReason: 'initiator',
+                    },
+                ],
+            },
+        });
+        expect(wrapper.find('.is--agreed').exists()).toBe(true);
+        expect(wrapper.text()).toContain('sw-workflow.automation.automaticApproval');
+        expect(wrapper.text()).toContain('sw-workflow.automation.reasons.initiator');
+        expect(wrapper.text()).not.toContain('sw-workflow.runtime.timeline.agreed');
+        wrapper.unmount();
+    });
+
     it.each(['transfer', 'vendor:operation'])('renders %s as an operation instead of an approval', async (decision) => {
         const wrapper: VueWrapper = shallowMount(await wrapTestComponent('sw-workflow-approval-timeline', { sync: true }), {
             props: {

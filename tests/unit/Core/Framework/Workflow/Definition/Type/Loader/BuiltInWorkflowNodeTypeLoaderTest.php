@@ -19,7 +19,7 @@ class BuiltInWorkflowNodeTypeLoaderTest extends TestCase
     {
         $types = iterator_to_array((new BuiltInWorkflowNodeTypeLoader())->load(), false);
 
-        static::assertCount(4, $types);
+        static::assertCount(10, $types);
         static::assertSame('core:start', $types[0]->name);
         static::assertSame(WorkflowNodeKind::START, $types[0]->kind);
         static::assertSame([], $types[0]->inputPorts);

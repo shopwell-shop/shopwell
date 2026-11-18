@@ -169,7 +169,8 @@ class WorkflowTaskController extends AbstractController
     public function returnToInitiator(Context $context, Request $request, string $taskId): Response
     {
         $comment = $request->getPayload()->all()['comment'] ?? null;
-        $this->flows->returnToInitiator($taskId, \is_string($comment) ? $comment : '', $context);
+        $targetNodeId = $request->getPayload()->all()['targetNodeId'] ?? null;
+        $this->flows->returnToInitiator($taskId, \is_string($comment) ? $comment : '', $context, \is_string($targetNodeId) ? $targetNodeId : null);
 
         return new Response(null, Response::HTTP_NO_CONTENT);
     }
@@ -186,6 +187,20 @@ class WorkflowTaskController extends AbstractController
 
         // Pass the comment unchanged; ApprovalWorkflowService validates required comments.
         $this->flows->reject($taskId, \is_string($comment) ? $comment : null, $context);
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route(
+        path: '/api/_action/workflow/task/{taskId}/complete',
+        name: 'api.workflow.execution.task.complete',
+        defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ACL => ['workflow_task:decide']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function complete(Context $context, Request $request, string $taskId): Response
+    {
+        $comment = $request->getPayload()->all()['comment'] ?? null;
+        $this->flows->complete($taskId, \is_string($comment) && trim($comment) !== '' ? $comment : null, $context);
 
         return new Response(null, Response::HTTP_NO_CONTENT);
     }

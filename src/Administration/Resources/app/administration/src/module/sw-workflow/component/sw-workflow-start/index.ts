@@ -3,7 +3,7 @@ import { WORKFLOW_NODE_TYPES } from 'src/core/workflow/workflow-node.constants';
 import type { PropType } from 'vue';
 import type { WorkflowRelease } from 'src/core/service/api/workflow.api.service';
 import type { WorkflowDocument } from 'src/core/workflow/workflow.types';
-import type { WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
+import type { WorkflowFormField, WorkflowFormValue } from 'src/core/workflow/workflow-runtime.types';
 import { serializeForm, validateFormValue } from '../../util/workflow-runtime-form.util';
 import template from './sw-workflow-start.html.twig';
 
@@ -25,7 +25,7 @@ export default Shopwell.Component.wrapComponentConfig({
             showModal: false,
             title: '',
             fields: [] as WorkflowFormField[],
-            values: {} as Record<string, string>,
+            values: {} as Record<string, WorkflowFormValue>,
             isLoading: false,
             isReady: false,
             isSubmitting: false,

@@ -33,8 +33,14 @@
             v-for="field in fields"
             :key="field.key"
         >
+            <sw-workflow-entity-form-field
+                v-if="['user', 'users', 'department'].includes(field.type)"
+                v-model="values[field.key]"
+                :field="field"
+                :disabled="isSubmitting"
+            />
             <mt-select
-                v-if="field.type === 'select' || field.dataSource"
+                v-else-if="field.type === 'select' || field.dataSource"
                 v-model="values[field.key]"
                 :label="field.label"
                 :options="field.options"

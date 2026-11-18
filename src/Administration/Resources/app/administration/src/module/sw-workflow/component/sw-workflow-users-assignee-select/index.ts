@@ -12,6 +12,8 @@ export default Shopwell.Component.wrapComponentConfig({
     props: {
         config: { type: Object as PropType<Record<string, unknown>>, required: true },
         allowEdit: { type: Boolean, default: true },
+        candidateIds: { type: Array as PropType<string[]>, default: null },
+        labelText: { type: String, default: '' },
         labelKey: { type: String, default: 'sw-workflow.approval.assignee' },
         placeholderKey: { type: String, default: 'sw-workflow.approval.multiple.status.empty' },
     },
@@ -30,9 +32,13 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         criteria() {
             const { Criteria } = Shopwell.Data;
-            return new Criteria(1, 25)
+            const criteria = new Criteria(1, 25)
                 .addFilter(Criteria.equals('active', true))
                 .addSorting(Criteria.sort('username', 'ASC'));
+            if (this.candidateIds) {
+                criteria.setIds(this.candidateIds);
+            }
+            return criteria;
         },
         collection(): EntityCollection<'user'> {
             const members = this.userIds.map((id, index) => {
@@ -83,7 +89,10 @@ export default Shopwell.Component.wrapComponentConfig({
 
                 const id = user.id.toLowerCase();
 
-                if (!existing.has(id) && (!/^[a-f0-9]{32}$/.test(id) || !user.active)) {
+                if (
+                    !existing.has(id) &&
+                    (!/^[a-f0-9]{32}$/.test(id) || !user.active || (this.candidateIds && !this.candidateIds.includes(id)))
+                ) {
                     return;
                 }
 

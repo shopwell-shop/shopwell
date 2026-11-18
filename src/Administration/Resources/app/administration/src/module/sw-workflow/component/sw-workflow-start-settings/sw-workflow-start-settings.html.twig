@@ -74,6 +74,25 @@
                 :disabled="!allowEdit"
                 @update:model-value="selectDataSource(field, $event)"
             />
+            <sw-workflow-users-assignee-select
+                v-if="field.type === 'user' || field.type === 'users'"
+                :config="{ userIds: field.candidateIds || [] }"
+                label-key="sw-workflow.form.candidates"
+                placeholder-key="sw-workflow.form.allCandidates"
+                :allow-edit="allowEdit"
+                @update-config="setCandidates(field, $event.userIds)"
+            />
+            <sw-workflow-department-select
+                v-else-if="field.type === 'department'"
+                :model-value="field.candidateIds || []"
+                :label="$t('sw-workflow.form.candidates')"
+                :disabled="!allowEdit"
+                multiple
+                @update:model-value="setCandidates(field, $event)"
+            />
+            <p v-if="['user', 'users', 'department'].includes(field.type)">
+                {{ $t('sw-workflow.form.candidatesHint') }}
+            </p>
             <mt-switch
                 v-model="field.required"
                 :label="$t('sw-workflow.form.required')"

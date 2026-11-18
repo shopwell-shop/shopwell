@@ -28,7 +28,7 @@ final class RuntimeFixture
 
     public function __construct(private readonly Connection $connection, WorkflowService $flows)
     {
-        $user = TestUser::createNewTestUser($connection);
+        $user = TestUser::createNewTestUser($connection, ['workflow_instance:access', 'workflow_task:decide']);
         $this->userId = $user->getUserId();
         $this->avatarId = $connection->fetchOne('SELECT avatar_id FROM user WHERE id = :id', ['id' => Uuid::fromHexToBytes($this->userId)]);
         $source = new AdminApiSource($this->userId);

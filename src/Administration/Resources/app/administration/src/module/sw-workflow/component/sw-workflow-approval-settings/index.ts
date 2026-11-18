@@ -3,6 +3,7 @@ import type { PropType } from 'vue';
 import { WORKFLOW_NODE_TYPES } from 'src/core/workflow/workflow-node.constants';
 import type { WorkflowFormPermission } from 'src/core/workflow/workflow-runtime.types';
 import type { WorkflowDocument, WorkflowNode } from 'src/core/workflow/workflow.types';
+import type { WorkflowApprovalSettings } from '../../service/workflow-approval.service';
 import { DEFAULT_APPROVAL_OPERATIONS } from '../../service/workflow-approval.service';
 import template from './sw-workflow-approval-settings.html.twig';
 import './sw-workflow-approval-settings.scss';
@@ -44,11 +45,34 @@ export default Shopwell.Component.wrapComponentConfig({
         settings() {
             return this.workflowApprovalService.read(this.node);
         },
+        missingAssigneeAction(): string {
+            return this.settings.missingAssignee?.action ?? 'block';
+        },
+        missingAssigneeOptions() {
+            return [
+                'block',
+                'approve',
+                'reject',
+                'assign',
+            ].map((value) => ({
+                value,
+                label: this.$t(`sw-workflow.approval.missingAssignee.${value}`),
+            }));
+        },
+        replacementConfig(): Record<string, unknown> {
+            return { userId: this.settings.missingAssignee?.userId };
+        },
         deadlineEnabled(): boolean {
             return 'deadline' in this.settings;
         },
         deadlineMinutes(): number | null {
             return this.settings.deadline?.minutes ?? null;
+        },
+        deadlineWorkingTime(): boolean {
+            return this.settings.deadline?.workingTime === true;
+        },
+        escalationConfig(): Record<string, unknown> {
+            return { userId: this.settings.deadline?.escalateTo };
         },
         operations() {
             return this.workflowApprovalService.operations();
@@ -114,6 +138,26 @@ export default Shopwell.Component.wrapComponentConfig({
         },
     },
     methods: {
+        updateAutomation(automation: WorkflowApprovalSettings['automation']): void {
+            if (this.allowEdit) {
+                this.$emit('update-config', { ...this.settings, automation });
+            }
+        },
+        changeMissingAssignee(action: string): void {
+            if (!this.allowEdit || !this.missingAssigneeOptions.some((option) => option.value === action)) {
+                return;
+            }
+            this.$emit('update-config', {
+                ...this.settings,
+                missingAssignee: { action: action as NonNullable<WorkflowApprovalSettings['missingAssignee']>['action'] },
+            });
+        },
+        changeReplacement(config: Record<string, unknown>): void {
+            if (!this.allowEdit || this.missingAssigneeAction !== 'assign') {
+                return;
+            }
+            this.$emit('update-config', { ...this.settings, missingAssignee: { action: 'assign', userId: config.userId } });
+        },
         updateFormPermissions(formPermissions: Record<string, WorkflowFormPermission>): void {
             if (this.allowEdit) {
                 const configuration = Array.isArray(this.node.config) ? {} : this.node.config;
@@ -149,6 +193,27 @@ export default Shopwell.Component.wrapComponentConfig({
                 ...this.settings,
                 deadline: { ...this.settings.deadline, remind },
             });
+        },
+        changeDeadlineWorkingTime(workingTime: boolean): void {
+            if (!this.allowEdit || !this.deadlineEnabled) {
+                return;
+            }
+            this.$emit('update-config', {
+                ...this.settings,
+                deadline: { ...this.settings.deadline, workingTime },
+            });
+        },
+        changeDeadlineEscalation(config: Record<string, unknown>): void {
+            if (!this.allowEdit || !this.deadlineEnabled) {
+                return;
+            }
+            const deadline = { ...this.settings.deadline };
+            if (typeof config.userId === 'string' && config.userId !== '') {
+                deadline.escalateTo = config.userId;
+            } else {
+                delete deadline.escalateTo;
+            }
+            this.$emit('update-config', { ...this.settings, deadline });
         },
         changeOperation(name: string, enabled: boolean): void {
             if (!this.allowEdit || !this.operations.some((operation) => operation.name === name)) {

@@ -16,7 +16,7 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceStateHandler;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
- * @internal Sequential scheduling; parallel joins and subprocess scopes are not supported by this scheduler.
+ * @internal Persisted workflow scheduler with explicit branch fan-out and join synchronization.
  *
  * @codeCoverageIgnore
  *
@@ -42,6 +42,11 @@ final readonly class WorkflowEngine
     public function start(WorkflowInstanceEntity $instance, WorkflowExecutionContext $context): void
     {
         $this->advance($context->graph()->singleStartNode(), $context);
+    }
+
+    public function startAt(GraphNode $node, WorkflowExecutionContext $context): void
+    {
+        $this->advance($node, $context);
     }
 
     public function resume(string $executionId, WorkflowSignal $signal, WorkflowExecutionContext $context): void
@@ -74,6 +79,14 @@ final readonly class WorkflowEngine
             $this->instances->update([['id' => $context->instance()->id, 'currentNodeId' => $node->id]], $context->context());
             $outcome = $this->executors->for($node->type)->enter($context->instance(), $node, $nodeContext);
             $this->executions->record($executionId, $outcome, $context->context());
+
+            if ($outcome->isContinue() && $node->type === WorkflowNodeTypes::PARALLEL) {
+                foreach ($context->graph()->outgoing($node->id) as $branch) {
+                    $this->advance($context->graph()->node($branch->targetNodeId), $context, $branch->id);
+                }
+
+                return;
+            }
 
             if (!$outcome->isContinue()) {
                 $this->finishIfComplete($outcome, $context);

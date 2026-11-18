@@ -43,6 +43,21 @@ class OrganizationAssigneeResolverTest extends TestCase
         static::assertSame([$first, $second], $this->resolve($initiator, WorkflowAssigneeTypes::UNIT_LEADER));
     }
 
+    public function testSupervisorChainUsesExplicitMemberships(): void
+    {
+        $initiator = $this->createUser();
+        $manager = $this->createUser();
+        $director = $this->createUser();
+        $memberships = static::getContainer()->get('user_organization_unit.repository');
+        $memberships->update([
+            ['id' => $this->membershipId($initiator), 'supervisorMembershipId' => $this->membershipId($manager)],
+            ['id' => $this->membershipId($manager), 'supervisorMembershipId' => $this->membershipId($director)],
+        ], Context::createDefaultContext());
+
+        static::assertSame([$director], $this->resolve($initiator, WorkflowAssigneeTypes::LEADER, ['level' => 2]));
+        static::assertSame([$manager, $director], $this->resolve($initiator, WorkflowAssigneeTypes::LEADER, ['level' => 2, 'continuous' => true]));
+    }
+
     public function testDisabledLeaderDoesNotSilentlyReduceTheApprovalQuorum(): void
     {
         $initiator = $this->createUser();
@@ -104,16 +119,18 @@ class OrganizationAssigneeResolverTest extends TestCase
     }
 
     /**
+     * @param array<string, mixed> $configuration
+     *
      * @return list<string>
      */
-    private function resolve(string $initiatorId, string $type): array
+    private function resolve(string $initiatorId, string $type, array $configuration = []): array
     {
         $instance = new WorkflowInstanceEntity();
         $instance->initiatorId = $initiatorId;
         $metadata = new WorkflowInstanceMetadataEvent($initiatorId, Context::createDefaultContext());
         static::getContainer()->get('event_dispatcher')->dispatch($metadata);
         $instance->ext = $metadata->getMetadata();
-        $node = new GraphNode('approval', 'task', 0, 0, ['assigneeType' => $type]);
+        $node = new GraphNode('approval', 'task', 0, 0, ['assigneeType' => $type, 'assigneeConfig' => $configuration]);
         $context = new WorkflowExecutionContext(GraphData::fromArray(['nodes' => [], 'edges' => []]), $instance, Context::createDefaultContext(), $initiatorId, 1);
 
         return static::getContainer()->get(AssigneeResolverRegistry::class)->for($type)->resolve($instance, $node, $context);

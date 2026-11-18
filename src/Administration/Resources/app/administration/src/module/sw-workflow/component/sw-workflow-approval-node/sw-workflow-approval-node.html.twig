@@ -21,9 +21,12 @@
         />
     </div>
     <p class="sw-workflow-studio-node__summary">
+        <span v-if="settings.automation?.decision && settings.automation.decision !== 'manual'">
+            {{ $t('sw-workflow.automation.decisions.' + settings.automation.decision) }}
+        </span>
         <component
             :is="source.summaryComponent"
-            v-if="source && mode"
+            v-else-if="source && mode"
             :config="settings.assignee.config"
             :node="data.node"
         />

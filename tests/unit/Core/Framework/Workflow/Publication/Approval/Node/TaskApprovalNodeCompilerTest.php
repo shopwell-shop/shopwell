@@ -31,6 +31,8 @@ class TaskApprovalNodeCompilerTest extends TestCase
         $userId = '0123456789abcdef0123456789abcdef';
         $compiled = $compiler->compile(new ApprovalNodeCompilationContext('review', [
             'label' => 'Finance review',
+            'automation' => ['approveInitiator' => true],
+            'missingAssignee' => ['action' => 'assign', 'userId' => 'abcdef0123456789abcdef0123456789'],
             'assignee' => ['source' => 'core:user', 'config' => ['userId' => $userId]],
             'approval' => ['mode' => 'core:single', 'config' => []],
         ], '/nodes/1/config'));
@@ -39,7 +41,9 @@ class TaskApprovalNodeCompilerTest extends TestCase
         static::assertSame(1, $compiler->getNodeVersion());
         static::assertSame(ApprovalNodeRole::APPROVAL, $compiler->getRole());
         static::assertSame('Finance review', $compiled->properties['name']);
-        static::assertSame([$userId], $compiled->properties['assigneeUserIds']);
+        static::assertSame(['decision' => 'manual', 'approveInitiator' => true, 'deduplication' => 'none'], $compiled->properties['approvalAutomation']);
+        static::assertSame([$userId, 'abcdef0123456789abcdef0123456789'], $compiled->properties['assigneeUserIds']);
+        static::assertSame(['action' => 'assign', 'userId' => 'abcdef0123456789abcdef0123456789'], $compiled->properties['missingAssignee']);
         static::assertSame(['approved' => []], $compiled->outputPorts);
         static::assertSame(['rejected'], $compiled->terminalPorts);
     }

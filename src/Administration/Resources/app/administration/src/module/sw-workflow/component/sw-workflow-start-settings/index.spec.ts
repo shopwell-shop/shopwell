@@ -56,6 +56,9 @@ describe('request form settings', () => {
             'number',
             'date',
             'select',
+            'user',
+            'users',
+            'department',
             'text',
         ]) {
             (wrapper.findComponent('.sw-workflow-start-settings__type') as VueWrapper<ComponentPublicInstance>).vm.$emit(

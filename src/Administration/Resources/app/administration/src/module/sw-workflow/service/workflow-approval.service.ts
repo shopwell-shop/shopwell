@@ -39,10 +39,19 @@ export const DEFAULT_APPROVAL_OPERATIONS: string[] = [
 ];
 
 /** @public */
+export interface WorkflowApprovalAutomation {
+    decision?: 'manual' | 'approve' | 'reject';
+    approveInitiator?: boolean;
+    deduplication?: 'none' | 'adjacent' | 'all';
+}
+
+/** @public */
 export interface WorkflowApprovalSettings {
+    automation?: WorkflowApprovalAutomation;
+    missingAssignee?: { action: 'block' | 'approve' | 'reject' | 'assign'; userId?: string };
     formPermissions?: Record<string, WorkflowFormPermission>;
     operations?: string[];
-    deadline?: { minutes: number; remind: boolean };
+    deadline?: { minutes: number; remind: boolean; workingTime?: boolean; escalateTo?: string };
     assignee: { source: string; config: Record<string, unknown> };
     approval: { mode: string; version?: number; config: Record<string, unknown> };
 }
@@ -197,8 +206,12 @@ export default class WorkflowApprovalService {
         }
 
         return {
+            ...('automation' in config ? { automation: config.automation as WorkflowApprovalAutomation } : {}),
             ...('formPermissions' in config
                 ? { formPermissions: config.formPermissions as WorkflowApprovalSettings['formPermissions'] }
+                : {}),
+            ...('missingAssignee' in config
+                ? { missingAssignee: config.missingAssignee as WorkflowApprovalSettings['missingAssignee'] }
                 : {}),
             ...('operations' in config ? { operations: config.operations as string[] } : {}),
             ...('deadline' in config ? { deadline: config.deadline as WorkflowApprovalSettings['deadline'] } : {}),

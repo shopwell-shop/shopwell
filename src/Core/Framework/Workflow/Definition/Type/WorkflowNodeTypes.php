@@ -20,4 +20,10 @@ final class WorkflowNodeTypes
     public const COPY = 'core:copy';
     public const APPROVAL = 'core:approval';
     public const CONDITION = 'core:condition';
+    public const SCRIPT = 'core:script';
+    public const ACTION = 'core:action';
+    public const NOTIFICATION = 'core:notification';
+    public const SUBPROCESS = 'core:subprocess';
+    public const PARALLEL = 'core:parallel';
+    public const JOIN = 'core:join';
 }

@@ -4,11 +4,19 @@ import '../index';
 import WorkflowApprovalService, { DEFAULT_APPROVAL_OPERATIONS } from '../workflow-approval.service';
 import approvalWorkflowStudioExtension from './approval-workflow-studio.extension';
 
-/** @private */
-Shopwell.Service().register('workflowApprovalService', () => {
-    const service = new WorkflowApprovalService();
-    DEFAULT_APPROVAL_OPERATIONS.forEach((name) => {
-        service.registerOperation({ name, labelKey: `sw-workflow.runtime.actions.${name}` });
+function registerSources(service: WorkflowApprovalService): void {
+    const multipleModes = [
+        WORKFLOW_APPROVAL_MODES.ALL,
+        WORKFLOW_APPROVAL_MODES.OR_SIGN,
+        WORKFLOW_APPROVAL_MODES.SEQUENTIAL,
+        WORKFLOW_APPROVAL_MODES.ANY,
+    ];
+    service.registerSource({
+        name: WORKFLOW_ASSIGNEE_SOURCES.FORM_FIELD,
+        labelKey: 'sw-workflow.approval.formFieldSelection',
+        settingsComponent: 'sw-workflow-form-assignee-settings',
+        summaryComponent: 'sw-workflow-form-assignee-summary',
+        supportedModes: multipleModes,
     });
     service.registerSource({
         name: WORKFLOW_ASSIGNEE_SOURCES.USER,
@@ -22,37 +30,52 @@ Shopwell.Service().register('workflowApprovalService', () => {
         labelKey: 'sw-workflow.approval.namedUsers',
         settingsComponent: 'sw-workflow-users-assignee-select',
         summaryComponent: 'sw-workflow-users-assignee-summary',
-        supportedModes: [
-            WORKFLOW_APPROVAL_MODES.ALL,
-            WORKFLOW_APPROVAL_MODES.OR_SIGN,
-            WORKFLOW_APPROVAL_MODES.SEQUENTIAL,
-            WORKFLOW_APPROVAL_MODES.ANY,
-        ],
+        supportedModes: multipleModes,
     });
     service.registerSource({
         name: WORKFLOW_ASSIGNEE_SOURCES.DEPARTMENT_LEADERS,
         labelKey: 'sw-workflow.approval.departmentLeaders',
         settingsComponent: 'sw-workflow-organization-assignee-settings',
         summaryComponent: 'sw-workflow-organization-assignee-summary',
-        supportedModes: [
-            WORKFLOW_APPROVAL_MODES.ALL,
-            WORKFLOW_APPROVAL_MODES.OR_SIGN,
-            WORKFLOW_APPROVAL_MODES.SEQUENTIAL,
-            WORKFLOW_APPROVAL_MODES.ANY,
-        ],
+        supportedModes: multipleModes,
     });
     service.registerSource({
         name: WORKFLOW_ASSIGNEE_SOURCES.POSITIONS,
         labelKey: 'sw-workflow.approval.positions.label',
         settingsComponent: 'sw-workflow-position-assignee-select',
         summaryComponent: 'sw-workflow-position-assignee-summary',
-        supportedModes: [
-            WORKFLOW_APPROVAL_MODES.ALL,
-            WORKFLOW_APPROVAL_MODES.OR_SIGN,
-            WORKFLOW_APPROVAL_MODES.SEQUENTIAL,
-            WORKFLOW_APPROVAL_MODES.ANY,
-        ],
+        supportedModes: multipleModes,
     });
+    service.registerSource({
+        name: WORKFLOW_ASSIGNEE_SOURCES.INITIATOR,
+        labelKey: 'sw-workflow.approval.initiator',
+        settingsComponent: 'sw-workflow-organization-assignee-settings',
+        summaryComponent: 'sw-workflow-organization-assignee-summary',
+        supportedModes: [WORKFLOW_APPROVAL_MODES.SINGLE],
+    });
+    service.registerSource({
+        name: WORKFLOW_ASSIGNEE_SOURCES.SUPERVISORS,
+        labelKey: 'sw-workflow.approval.supervisors',
+        settingsComponent: 'sw-workflow-organization-assignee-settings',
+        summaryComponent: 'sw-workflow-organization-assignee-summary',
+        supportedModes: multipleModes,
+    });
+    service.registerSource({
+        name: WORKFLOW_ASSIGNEE_SOURCES.ROLES,
+        labelKey: 'sw-workflow.approval.roles.label',
+        settingsComponent: 'sw-workflow-role-assignee-select',
+        summaryComponent: 'sw-workflow-role-assignee-summary',
+        supportedModes: multipleModes,
+    });
+}
+
+/** @private */
+Shopwell.Service().register('workflowApprovalService', () => {
+    const service = new WorkflowApprovalService();
+    DEFAULT_APPROVAL_OPERATIONS.forEach((name) => {
+        service.registerOperation({ name, labelKey: `sw-workflow.runtime.actions.${name}` });
+    });
+    registerSources(service);
     service.registerMode({
         name: WORKFLOW_APPROVAL_MODES.ALL,
         labelKey: 'sw-workflow.approval.all',

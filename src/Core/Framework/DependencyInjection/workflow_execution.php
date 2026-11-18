@@ -4,6 +4,7 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
+use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowEntityFields;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Diagnostics\WorkflowGraphDiagnostics;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowCopyController;
@@ -19,14 +20,17 @@ use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowUserLookup;
 use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowPreviewSubscriber;
 use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowRuntime;
 use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowSummarySubscriber;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\DepartmentLeaderAssigneeResolver;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\FormFieldAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\InitiatorAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\OrganizationAssigneeContext;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\OrganizationAssigneeLookup;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\PositionAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\RoleAssigneeResolver;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\SupervisorAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\UserAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ComparisonConditionEvaluator;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ConditionEvaluatorInterface;
@@ -37,11 +41,15 @@ use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyEntity;
 use Shopwell\Core\Framework\Workflow\Execution\Copy\WorkflowCopyService;
 use Shopwell\Core\Framework\Workflow\Execution\CounterSignCalculator;
 use Shopwell\Core\Framework\Workflow\Execution\Definition\WorkflowExecutionDefinitionEntity;
+use Shopwell\Core\Framework\Workflow\Execution\Executor\AutomationActionExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\ConditionExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\CopyExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\EndExecutor;
+use Shopwell\Core\Framework\Workflow\Execution\Executor\JoinExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\Executor\ParallelExecutor;
+use Shopwell\Core\Framework\Workflow\Execution\Executor\ScriptExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\StartExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\TaskExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowLogEntity;
@@ -80,9 +88,16 @@ use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalWorkflowService;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeRegistry;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\DepartmentLeaderApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\FormFieldApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\FormFieldApprovalValidationSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\InitiatorApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\PositionApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\PositionApprovalValidationSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\RoleApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\RoleApprovalValidationSubscriber;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\SupervisorApprovalAssigneeSource;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\UserApprovalAssigneeSource;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\AutomaticApprovalResolver;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormPolicy;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormPresenter;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormService;
@@ -114,6 +129,9 @@ use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompi
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ConditionApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\CopyApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\EndApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\IntegrationApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ParallelApprovalNodeCompiler;
+use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ScriptApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\StartApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\TaskApprovalNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\EndWorkflowNodeCompiler;
@@ -122,6 +140,7 @@ use Shopwell\Core\Framework\Workflow\Publication\WorkflowCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowExecutionPublisher;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowNodeCompiler;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowNodeCompilerRegistry;
+use Shopwell\Core\Framework\Workflow\Subscriber\WorkflowUnusedMediaSubscriber;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskEntity;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskFinder;
 use Shopwell\Core\Framework\Workflow\Task\WorkflowTaskHistoryEntity;
@@ -208,6 +227,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(UserApprovalAssigneeSource::class . '.single')->class(UserApprovalAssigneeSource::class)->args([false]);
     $services->set(UserApprovalAssigneeSource::class . '.multiple')->class(UserApprovalAssigneeSource::class)->args([true]);
     $services->set(DepartmentLeaderApprovalAssigneeSource::class);
+    $services->set(InitiatorApprovalAssigneeSource::class);
+    $services->set(FormFieldApprovalAssigneeSource::class);
+    $services->set(FormFieldApprovalValidationSubscriber::class)->tag('kernel.event_subscriber');
+    $services->set(RoleApprovalAssigneeSource::class);
+    $services->set(RoleApprovalValidationSubscriber::class)->args([service('acl_role.repository')])->tag('kernel.event_subscriber');
+    $services->set(SupervisorApprovalAssigneeSource::class);
     $services->set(PositionApprovalAssigneeSource::class);
     $services->set(PositionApprovalValidationSubscriber::class)->args([service('position.repository')])->tag('kernel.event_subscriber');
     $services->set(ApprovalAssigneeRegistry::class)->args([tagged_iterator('shopwell.workflow.approval.assignee_source')]);
@@ -219,6 +244,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(StartApprovalNodeCompiler::class)->args([service(WorkflowInputSchema::class), service('translator')]);
     $services->set(ApprovalTaskPolicy::class)->args([service('event_dispatcher')]);
     $services->set(TaskApprovalNodeCompiler::class)->args([service(ApprovalConfigurationCompiler::class), service('translator'), service(ApprovalTaskPolicy::class)]);
+    $services->set(ScriptApprovalNodeCompiler::class)->args([service('translator')]);
+    $services->set(IntegrationApprovalNodeCompiler::class . '.action')->class(IntegrationApprovalNodeCompiler::class)->args(['core:action', 'snaker:action', service('translator')]);
+    $services->set(IntegrationApprovalNodeCompiler::class . '.notification')->class(IntegrationApprovalNodeCompiler::class)->args(['core:notification', 'snaker:notification', service('translator')]);
+    $services->set(IntegrationApprovalNodeCompiler::class . '.subprocess')->class(IntegrationApprovalNodeCompiler::class)->args(['core:subprocess', 'snaker:subprocess', service('translator')]);
+    $services->set(ParallelApprovalNodeCompiler::class . '.parallel')->class(ParallelApprovalNodeCompiler::class)->args(['core:parallel', 'snaker:parallel', service('translator')]);
+    $services->set(ParallelApprovalNodeCompiler::class . '.join')->class(ParallelApprovalNodeCompiler::class)->args(['core:join', 'snaker:join', service('translator')]);
     $services->set(ConditionApprovalNodeCompiler::class)->args([service(ApprovalCondition::class), service('translator')]);
     $services->set(CopyApprovalNodeCompiler::class)->args([service('translator')]);
     $services->set(EndApprovalNodeCompiler::class);
@@ -245,11 +276,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         service(ApprovalRoute::class),
         service(WorkflowInputSchema::class),
         service(WorkflowUserLookup::class),
-        service(AssigneeResolverRegistry::class),
+        service(ApprovalAssigneeResolver::class),
         service(ApprovalModeRegistry::class),
         service('event_dispatcher'),
     ])->tag('kernel.event_subscriber');
-    $services->set(WorkflowInputSchema::class)->args([service('event_dispatcher')]);
+    $services->set(WorkflowEntityFields::class)->args([service('user.repository'), service('organization_unit.repository'), service('media.repository')->nullOnInvalid()]);
+    $services->set(WorkflowInputSchema::class)->args([service('event_dispatcher'), service(WorkflowEntityFields::class)]);
     $services->set(ApprovalCondition::class)->args([service(WorkflowInputSchema::class)]);
     $services->set(ApprovalRoute::class)->args([service(ConditionEvaluatorInterface::class)]);
     $services->set(ApprovalWorkflowPublisher::class)
@@ -308,13 +340,25 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(StartExecutor::class);
     $services->set(ConditionExecutor::class);
     $services->set(EndExecutor::class);
+    $services->set(ScriptExecutor::class);
+    $services->set(AutomationActionExecutor::class . '.action')->class(AutomationActionExecutor::class)->args(['snaker:action', service('event_dispatcher')]);
+    $services->set(AutomationActionExecutor::class . '.notification')->class(AutomationActionExecutor::class)->args(['snaker:notification', service('event_dispatcher')]);
+    $services->set(AutomationActionExecutor::class . '.subprocess')->class(AutomationActionExecutor::class)->args(['snaker:subprocess', service('event_dispatcher')]);
+    $services->set(JoinExecutor::class)->args([service('workflow_node_execution.repository')]);
+    $services->set(ParallelExecutor::class);
+    $services->set(WorkflowUnusedMediaSubscriber::class)->args([service(Connection::class)])->tag('kernel.event_subscriber');
 
+    $services->set(AutomaticApprovalResolver::class)->args([service('workflow_task_history.repository'), service('workflow_node_execution.repository')]);
     $services->set(TaskExecutor::class)->args([
-        service(AssigneeResolverRegistry::class),
+        service(ApprovalAssigneeResolver::class),
         service('workflow_task.repository'),
         service(WorkflowEventQueue::class),
         service(WorkflowTaskStateHandler::class),
         service(ApprovalModeRegistry::class),
+        service(AutomaticApprovalResolver::class),
+        service(WorkflowTaskFinder::class),
+        service(CounterSignCalculator::class),
+        service(WorkflowRecorder::class),
     ]);
 
     $services->set(CopyExecutor::class)->args([
@@ -324,14 +368,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(NodeExecutorRegistry::class)
         ->args([tagged_iterator('shopwell.workflow.execution.node_executor')]);
 
-    $services->set(OrganizationAssigneeLookup::class)->args([service('user_organization_unit.repository')]);
+    $services->set(OrganizationAssigneeLookup::class)->args([service('user_organization_unit.repository'), service('organization_unit.repository')]);
+    $services->set(SupervisorAssigneeResolver::class)->args([service(OrganizationAssigneeLookup::class), service(OrganizationAssigneeContext::class)]);
+    $services->set(ApprovalAssigneeResolver::class)->args([service(AssigneeResolverRegistry::class)]);
     $services->set(OrganizationAssigneeContext::class)->args([service(OrganizationAssigneeLookup::class)])->tag('kernel.event_subscriber');
     $services->set(DepartmentLeaderAssigneeResolver::class)->args([service(OrganizationAssigneeLookup::class), service(OrganizationAssigneeContext::class)]);
     $services->set(PositionAssigneeResolver::class)->args([service('user_position.repository'), service(OrganizationAssigneeLookup::class), service(OrganizationAssigneeContext::class)]);
 
     $services->set(UserAssigneeResolver::class)->args([service('user.repository')]);
     $services->set(RoleAssigneeResolver::class)->args([service('user.repository')]);
-    $services->set(InitiatorAssigneeResolver::class);
+    $services->set(FormFieldAssigneeResolver::class)->args([service(UserAssigneeResolver::class)]);
+    $services->set(InitiatorAssigneeResolver::class)->args([service(UserAssigneeResolver::class)]);
 
     $services->set(AssigneeResolverRegistry::class)
         ->args([tagged_iterator('shopwell.workflow.execution.assignee_resolver')]);

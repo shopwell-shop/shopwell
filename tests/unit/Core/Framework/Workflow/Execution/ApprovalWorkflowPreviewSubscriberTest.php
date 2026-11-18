@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowInputSchema;
 use Shopwell\Core\Framework\Workflow\Execution\Api\WorkflowUserLookup;
 use Shopwell\Core\Framework\Workflow\Execution\ApprovalWorkflowPreviewSubscriber;
+use Shopwell\Core\Framework\Workflow\Execution\Assignee\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverRegistry;
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ComparisonConditionEvaluator;
@@ -61,6 +62,54 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
         static::assertSame('countersign', $steps[0]['rule']);
         static::assertCount(1, $definitions->searchedCriteria);
         static::assertCount(1, $users->searchedCriteria);
+    }
+
+    public function testAutomaticRejectionStopsThePreviewBeforeLaterReviewers(): void
+    {
+        $definition = $this->definition();
+        $graph = $definition->graph();
+        foreach ($graph['nodes'] as &$node) {
+            if ($node['id'] === 'finance') {
+                $node['properties']['missingAssignee'] = ['action' => 'reject'];
+            }
+        }
+        unset($node);
+        $definition->graphData = $graph;
+        $source = static::createStub(AssigneeResolverInterface::class);
+        $source->method('getAssigneeType')->willReturn('user');
+        $source->method('resolve')->willReturn([]);
+        $event = $this->event(['amount' => '6000', 'currency' => 'CNY']);
+        $subscriber = $this->subscriber(new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]), StaticEntityRepository::of(UserCollection::class), $source);
+
+        $subscriber->preview($event);
+
+        static::assertSame(['finance'], array_column($event->getSteps() ?? [], 'nodeId'));
+        $steps = $event->getSteps();
+        static::assertNotNull($steps);
+        static::assertCount(1, $steps);
+        static::assertSame('reject', $steps[0]['rule']);
+        static::assertSame([], $steps[0]['assignees']);
+    }
+
+    public function testConfiguredAutomaticRejectionDoesNotRequireAnAssignee(): void
+    {
+        $definition = $this->definition();
+        $definition->graphData['nodes'][1]['properties']['approvalAutomation'] = ['decision' => 'reject'];
+        $resolver = static::createMock(AssigneeResolverInterface::class);
+        $resolver->method('getAssigneeType')->willReturn('user');
+        $resolver->expects($this->never())->method('resolve');
+        $event = $this->event(['amount' => '6000', 'currency' => 'CNY']);
+        $this->subscriber(
+            new StaticEntityRepository([new WorkflowExecutionDefinitionCollection([$definition])]),
+            StaticEntityRepository::of(UserCollection::class),
+            $resolver,
+        )->preview($event);
+
+        $steps = $event->getSteps();
+        static::assertNotNull($steps);
+        static::assertCount(1, $steps);
+        static::assertSame('reject', $steps[0]['rule']);
+        static::assertSame([], $steps[0]['assignees']);
     }
 
     public static function amounts(): \Generator
@@ -253,7 +302,7 @@ class ApprovalWorkflowPreviewSubscriberTest extends TestCase
             new ApprovalRoute($conditionEvaluator),
             new WorkflowInputSchema(),
             new WorkflowUserLookup($users),
-            new AssigneeResolverRegistry([$resolver]),
+            new ApprovalAssigneeResolver(new AssigneeResolverRegistry([$resolver])),
             ApprovalRegistryFixture::modes([new QuorumApprovalMode()]),
             $dispatcher ?? new EventDispatcher(),
         );

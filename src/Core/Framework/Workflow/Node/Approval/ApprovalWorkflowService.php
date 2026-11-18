@@ -78,7 +78,18 @@ final readonly class ApprovalWorkflowService
         $this->handleTask($taskId, $context, fn (WorkflowTaskEntity $task, WorkflowExecutionContext $execution) => $this->approvalCompletion->complete($task, false, $comment, $execution));
     }
 
-    public function returnToInitiator(string $taskId, string $comment, Context $context): void
+    public function complete(string $taskId, ?string $comment, Context $context): void
+    {
+        $this->handleTask($taskId, $context, function (WorkflowTaskEntity $task, WorkflowExecutionContext $execution) use ($comment): void {
+            if ($execution->graph()->node($task->nodeId)->property('handlingTask') !== true) {
+                throw WorkflowExecutionException::forbidden('Only handling tasks can be completed with this action.');
+            }
+
+            $this->approvalCompletion->completeHandling($task, $comment, $execution);
+        });
+    }
+
+    public function returnToInitiator(string $taskId, string $comment, Context $context, ?string $targetNodeId = null): void
     {
         if (trim($comment) === '') {
             throw WorkflowExecutionException::commentRequired();
@@ -87,7 +98,7 @@ final readonly class ApprovalWorkflowService
         $this->handleTask(
             $taskId,
             $context,
-            fn (WorkflowTaskEntity $task, WorkflowExecutionContext $execution) => $this->resubmission->returnToInitiator($task, trim($comment), $execution),
+            fn (WorkflowTaskEntity $task, WorkflowExecutionContext $execution) => $this->resubmission->returnToInitiator($task, trim($comment), $execution, $targetNodeId),
             ApprovalTaskActions::RETURN,
         );
     }

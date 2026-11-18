@@ -2,6 +2,33 @@
 
 ## Core
 
+### Dynamic workflow reviewers
+
+Approval sources now include `core:initiator`, `core:roles` (`roleIds`) and `core:supervisors`.
+Supervisor and department-leader sources accept `level` (1–20) and `continuous` (boolean) and resolve the reporting relationship from the initiator’s captured department.
+A missing target level does not shorten the approval quorum.
+Approval configuration accepts `missingAssignee` with an explicit `action`: `block` (default), `approve`, `reject` or `assign` with `userId`.
+Publication validates replacement reviewers; preview and node entry apply the same policy and retain automatic decisions in node execution output.
+Malformed reporting snapshots, unsupported sources and operational errors do not trigger automatic decisions.
+Workflow viewers gain `acl_role:read` for role selection; selected role membership remains live until node entry.
+
+
+### People and department workflow fields
+
+Workflow request schemas now support `user`, `users` and `department` fields with an optional frozen `candidateIds` range.
+Submit a UUID for single selections or an ordered UUID list for `users`; unavailable or out-of-range selections are rejected by the server.
+Approval nodes can use `core:form-field` with `config.fieldKey` referencing a people field, so requesters choose reviewers within the published range.
+Existing workflow roles receive read access to organizations and departments for these selectors.
+
+
+### Automatic workflow approvals
+
+Approval nodes accept an opt-in `automation` policy with `decision` (`manual`, `approve` or `reject`), `approveInitiator` and `deduplication` (`none`, `adjacent` or `all`).
+Explicit automatic decisions retain their reason in node execution output without creating human tasks.
+Participant automation records completed approval tasks and reasons while preserving the selected approval mode's quorum.
+Deduplication uses successful decisions from the current submission round; missing required review input keeps a participant task manual.
+Automatic completions emit completion events without creating pending-task notifications.
+
 ### Approval form permissions
 
 Approval and copy nodes support frozen `formPermissions` keyed by the published form field key.
@@ -468,3 +495,17 @@ App MCP resource responses must be JSON objects containing a `text` string or a 
 Plain-text resource responses are no longer accepted; wrap the content in a JSON object.
 Resources use the URI declared in `mcp.xml`; a non-empty `mimeType` in the response takes precedence over the configured MIME type.
 Invalid JSON, malformed messages or resource contents, and `{"success":false,"error":"..."}` responses produce MCP errors with details for the client.
+
+### Handling, media and workflow control flow
+
+Approval workflows support handling tasks with an explicit completion action and preserve completion comments in task history.
+Input schemas support `media`, `mediaList` and `images` values; submitted media is checked through the Media repository and `media:read` privilege at the point of submission.
+Returning a task may name a published approval stage; the next resubmission starts at that stage while retaining prior rounds.
+Parallel and join nodes create branch-scoped execution records and wait for every incoming branch before continuing.
+Working-time deadlines count Monday to Friday from 09:00 to 18:00 UTC when `workingTime` is enabled; elapsed deadlines remain the default.
+Overdue reminder events include an optional configured `escalateTo` user ID for delivery extensions.
+
+### Workflow integrations and script nodes
+
+Action, notification and subprocess nodes dispatch `WorkflowAutomationActionEvent` with a pinned action and input map so connectors and data actions can run through one transaction-aware extension seam.
+Script nodes evaluate bounded Symfony expressions with only `form` and `round` values and persist their result in node output; PHP and service access is unavailable.

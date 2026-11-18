@@ -25,7 +25,7 @@ export default class WorkflowRuntimeApiService extends ApiService {
     startInstance(payload: {
         definitionId: string;
         title: string;
-        formData: Record<string, string>;
+        formData: Record<string, string | string[]>;
     }): Promise<{ data: { id: string } }> {
         return this.httpClient
             .post<{ data: { id: string } }>(`${base}/instance`, payload, { headers: this.getBasicHeaders() })
@@ -45,7 +45,7 @@ export default class WorkflowRuntimeApiService extends ApiService {
 
     resubmitInstance(
         id: string,
-        payload: { round: number; formVersion?: number; formData: Record<string, string>; comment: string },
+        payload: { round: number; formVersion?: number; formData: Record<string, string | string[]>; comment: string },
     ): Promise<void> {
         return this.httpClient
             .post(`${base}/instance/${id}/resubmit`, payload, { headers: this.getBasicHeaders() })
@@ -90,7 +90,7 @@ export default class WorkflowRuntimeApiService extends ApiService {
     approveTask(
         id: string,
         comment: string,
-        form?: { formData: Record<string, string>; formVersion: number },
+        form?: { formData: Record<string, string | string[]>; formVersion: number },
     ): Promise<void> {
         return this.httpClient
             .post(`${base}/task/${id}/approve`, { comment, ...form }, { headers: this.getBasicHeaders() })

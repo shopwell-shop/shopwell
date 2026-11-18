@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\DepartmentLeaderApprovalAssigneeSource;
-use Shopwell\Core\Framework\Workflow\WorkflowException;
 
 /**
  * @internal
@@ -27,10 +26,10 @@ class DepartmentLeaderApprovalAssigneeSourceTest extends TestCase
         static::assertSame([], $assignment->knownUserIds);
     }
 
-    public function testRejectsUnimplementedHierarchyOptions(): void
+    public function testCompilesAncestorSelection(): void
     {
-        $this->expectException(WorkflowException::class);
+        $assignment = (new DepartmentLeaderApprovalAssigneeSource())->compile(['level' => 2]);
 
-        (new DepartmentLeaderApprovalAssigneeSource())->compile(['level' => 2]);
+        static::assertSame(['level' => 2, 'continuous' => false], $assignment->configuration);
     }
 }

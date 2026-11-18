@@ -159,7 +159,17 @@
                                 class="sw-workflow-instance__field"
                             >
                                 <dt>{{ field.label }}</dt>
-                                <dd>{{ formatValue(field.value, field) }}</dd>
+                                <dd>
+                                    <sw-workflow-entity-form-field
+                                        v-if="['user', 'users', 'department'].includes(field.type)"
+                                        :field="field"
+                                        :model-value="field.value"
+                                        read-only
+                                    />
+                                    <template v-else>
+                                        {{ formatValue(field.value, field) }}
+                                    </template>
+                                </dd>
                             </div>
                             <template v-if="formFields.length === 0 && !activeTask">
                                 <dt>{{ $t('sw-workflow.runtime.instance.formEmpty') }}</dt>

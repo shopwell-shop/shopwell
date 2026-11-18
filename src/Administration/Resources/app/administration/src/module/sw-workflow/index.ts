@@ -201,3 +201,38 @@ Shopwell.Component.register(
     'sw-workflow-position-assignee-summary',
     () => import('./component/sw-workflow-position-assignee-summary'),
 );
+
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-role-assignee-select',
+    () => import('./component/sw-workflow-role-assignee-select'),
+);
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-role-assignee-summary',
+    () => import('./component/sw-workflow-role-assignee-summary'),
+);
+
+/** @private */
+Shopwell.Component.register('sw-workflow-department-select', () => import('./component/sw-workflow-department-select'));
+
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-form-assignee-settings',
+    () => import('./component/sw-workflow-form-assignee-settings'),
+);
+
+/** @private */
+Shopwell.Component.register('sw-workflow-entity-form-field', () => import('./component/sw-workflow-entity-form-field'));
+
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-form-assignee-summary',
+    () => import('./component/sw-workflow-form-assignee-summary'),
+);
+
+/** @private */
+Shopwell.Component.register(
+    'sw-workflow-approval-automation-settings',
+    () => import('./component/sw-workflow-approval-automation-settings'),
+);

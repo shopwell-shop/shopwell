@@ -38,7 +38,13 @@ describe('sw-workflow-organization-assignee-summary', () => {
 
         expect(wrapper.text()).toBe('source.core:user');
         await wrapper.setProps({ node: node(WORKFLOW_ASSIGNEE_SOURCES.DEPARTMENT_LEADERS) });
-        expect(wrapper.text()).toBe('source.core:department-leaders');
+        expect(wrapper.text()).toBe('source.core:department-leaders sw-workflow.approval.hierarchy.atLevel');
+        const selected = node(WORKFLOW_ASSIGNEE_SOURCES.DEPARTMENT_LEADERS);
+        selected.config = {
+            assignee: { source: WORKFLOW_ASSIGNEE_SOURCES.DEPARTMENT_LEADERS, config: { level: 3, continuous: true } },
+        };
+        await wrapper.setProps({ node: selected });
+        expect(wrapper.text()).toContain('sw-workflow.approval.hierarchy.throughLevel');
         wrapper.unmount();
     });
 });

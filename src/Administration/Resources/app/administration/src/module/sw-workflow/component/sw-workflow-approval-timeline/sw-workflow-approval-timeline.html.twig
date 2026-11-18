@@ -23,11 +23,17 @@
 
                     <span class="sw-workflow-approval-timeline__name">{{ row.assignee?.name }}</span>
 
-                    <span class="sw-workflow-approval-timeline__action">{{ decisionLabel(row.decision) }}</span>
+                    <span class="sw-workflow-approval-timeline__action">{{ row.automatic ? $t('sw-workflow.automation.automaticApproval') : decisionLabel(row.decision) }}</span>
 
-                    <span v-if="row.target" class="sw-workflow-approval-timeline__name">{{ row.target.name }}</span>
+                    <span
+                        v-if="row.target"
+                        class="sw-workflow-approval-timeline__name"
+                    >{{ row.target.name }}</span>
 
-                    <span v-if="row.round" class="sw-workflow-approval-timeline__node">{{ $t('sw-workflow.runtime.timeline.round', { round: row.round }) }}</span>
+                    <span
+                        v-if="row.round"
+                        class="sw-workflow-approval-timeline__node"
+                    >{{ $t('sw-workflow.runtime.timeline.round', { round: row.round }) }}</span>
 
                     <span class="sw-workflow-approval-timeline__node">{{ row.nodeName }}</span>
 
@@ -37,6 +43,9 @@
                     >{{ row.relative }}</span>
                 </div>
 
+                <p v-if="row.automaticReason">
+                    {{ $t('sw-workflow.automation.reasons.' + row.automaticReason) }}
+                </p>
                 <p
                     v-if="row.comment"
                     class="sw-workflow-approval-timeline__comment"

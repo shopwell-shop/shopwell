@@ -60,7 +60,7 @@ class ApprovalReminderServiceTest extends TestCase
         $container->get('user.repository')->create([[
             'id' => $this->actorId, 'username' => $this->actorId, 'name' => 'Reminder test',
             'email' => $this->actorId . '@example.invalid', 'password' => 'A-strong-test-password-123!',
-            'localeId' => $localeId, 'active' => true,
+            'localeId' => $localeId, 'active' => true, 'admin' => true,
         ]], Context::createDefaultContext());
         $source = new AdminApiSource($this->actorId);
         $source->setPermissions(['workflow_instance:access', 'workflow_instance:start', 'workflow_task:decide']);
@@ -233,6 +233,19 @@ class ApprovalReminderServiceTest extends TestCase
         static::assertSame(1, $this->receipt($task->id)->reminderCount);
     }
 
+    public function testDeliveryIncludesTheConfiguredEscalationTarget(): void
+    {
+        $task = $this->start(deadline: ['minutes' => 60, 'remind' => true, 'escalateTo' => $this->actorId]);
+        $escalationTargets = [];
+        EventHookDispatcher::fromContainer(static::getContainer())->on(ApprovalReminderDeliveryEvent::class, function (ApprovalReminderDeliveryEvent $event) use (&$escalationTargets): void {
+            $escalationTargets[] = $event->escalateTo;
+        });
+
+        $this->reminders->remind($task->instanceId, $this->context);
+
+        static::assertSame([$this->actorId], $escalationTargets);
+    }
+
     public function testCompletedAndReturnedTasksDoNotReceiveDueReminders(): void
     {
         foreach (['approve', 'returnToInitiator'] as $operation) {
@@ -384,7 +397,11 @@ class ApprovalReminderServiceTest extends TestCase
     /**
      * @param list<string>|null $approvers
      */
-    private function start(string $mode = 'single', ?array $approvers = null): WorkflowTaskEntity
+    /**
+     * @param list<string>|null $approvers
+     * @param array{minutes: int, remind: bool, workingTime?: bool, escalateTo?: string}|null $deadline
+     */
+    private function start(string $mode = 'single', ?array $approvers = null, ?array $deadline = null): WorkflowTaskEntity
     {
         $definitionId = $this->workflows->createDefinition([
             'code' => Uuid::randomHex(), 'name' => 'Reminder review',
@@ -393,7 +410,7 @@ class ApprovalReminderServiceTest extends TestCase
                 ['id' => 'review', 'type' => 'snaker:task', 'properties' => [
                     'name' => 'Review', 'approvalStage' => true, 'assigneeType' => 'user',
                     'assigneeValue' => $approvers ?? [$this->actorId], 'countersignType' => $mode,
-                    'approvalDeadline' => ['minutes' => 60, 'remind' => true],
+                    'approvalDeadline' => $deadline ?? ['minutes' => 60, 'remind' => true],
                 ]],
                 ['id' => 'end', 'type' => 'snaker:end'],
             ], 'edges' => [

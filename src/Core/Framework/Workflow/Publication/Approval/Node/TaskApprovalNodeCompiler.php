@@ -9,8 +9,11 @@ use Shopwell\Core\Framework\Workflow\Execution\WorkflowNodeTypes;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalConfigurationCompiler;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskActions;
 use Shopwell\Core\Framework\Workflow\Node\Approval\ApprovalTaskPolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\MissingApprovalAssigneePolicy;
+use Shopwell\Core\Framework\Workflow\Node\Approval\Automation\ApprovalAutomation;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Form\ApprovalFormPolicy;
 use Shopwell\Core\Framework\Workflow\Node\Approval\Reminder\ApprovalDeadline;
+use Shopwell\Core\Framework\Workflow\WorkflowException;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -44,13 +47,27 @@ final class TaskApprovalNodeCompiler implements ApprovalNodeCompiler
 
     public function compile(ApprovalNodeCompilationContext $context): CompiledApprovalNode
     {
-        $configuration = $context->configuration(['assignee', 'approval', 'label', 'description', 'operations', 'deadline', 'formPermissions']);
+        $configuration = $context->configuration(['assignee', 'approval', 'label', 'description', 'operations', 'deadline', 'formPermissions', 'missingAssignee', 'automation', 'taskKind']);
+        $taskKind = $configuration['taskKind'] ?? 'approval';
+        if (!\in_array($taskKind, ['approval', 'handling'], true)) {
+            throw $context->reject('approval_invalid_configuration', '/taskKind');
+        }
         try {
             $formPermissions = $this->forms->normalize(\array_key_exists('formPermissions', $configuration) ? $configuration['formPermissions'] : [], $context->inputSchema);
         } catch (WorkflowExecutionException) {
             throw $context->reject('approval_invalid_form_permissions', '/formPermissions');
         }
+        try {
+            $automation = ApprovalAutomation::fromConfiguration(\array_key_exists('automation', $configuration) ? $configuration['automation'] : []);
+        } catch (WorkflowExecutionException) {
+            throw $context->reject('approval_invalid_configuration', '/automation');
+        }
         $compiled = $this->approvals->compile($configuration, $context->path, $context->nodeId);
+        try {
+            $missingAssignee = MissingApprovalAssigneePolicy::fromConfiguration(\array_key_exists('missingAssignee', $configuration) ? $configuration['missingAssignee'] : []);
+        } catch (WorkflowException) {
+            throw $context->reject('approval_invalid_configuration', '/missingAssignee');
+        }
         try {
             $operations = $this->operations->normalize(\array_key_exists('operations', $configuration) ? $configuration['operations'] : ApprovalTaskActions::OPERATIONS);
         } catch (WorkflowExecutionException) {
@@ -65,6 +82,11 @@ final class TaskApprovalNodeCompiler implements ApprovalNodeCompiler
             }
         }
 
+        $knownUserIds = $compiled->assignment->knownUserIds;
+        if ($missingAssignee->userId !== null) {
+            $knownUserIds[] = $missingAssignee->userId;
+        }
+
         $name = $configuration['label'] ?? '';
 
         if (!\is_string($name) || trim($name) === '') {
@@ -76,6 +98,8 @@ final class TaskApprovalNodeCompiler implements ApprovalNodeCompiler
             [
                 ...$deadline,
                 'approvalStage' => true,
+                'handlingTask' => $taskKind === 'handling',
+                'approvalAutomation' => $automation->configuration(),
                 'approvalFormPermissions' => $formPermissions,
                 'approvalOperations' => $operations,
                 'name' => $name,
@@ -83,7 +107,8 @@ final class TaskApprovalNodeCompiler implements ApprovalNodeCompiler
                 'assigneeType' => $compiled->assignment->type,
                 'assigneeValue' => $compiled->assignment->values,
                 'assigneeConfig' => $compiled->assignment->configuration,
-                'assigneeUserIds' => $compiled->assignment->knownUserIds,
+                'assigneeUserIds' => array_values(array_unique($knownUserIds)),
+                'missingAssignee' => $missingAssignee->configuration(),
                 'countersignType' => $compiled->mode->getType(),
                 'approvalModeVersion' => $compiled->mode->getVersion(),
                 'approvalModeConfig' => $compiled->configuration,

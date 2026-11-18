@@ -1,7 +1,7 @@
 /** @sw-package framework */
 import type { PropType } from 'vue';
-import type { RuntimeInstance, WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
-import { validateFormValue } from '../../util/workflow-runtime-form.util';
+import type { RuntimeInstance, WorkflowFormField, WorkflowFormValue } from 'src/core/workflow/workflow-runtime.types';
+import { restoreFormValue, validateFormValue } from '../../util/workflow-runtime-form.util';
 import template from './sw-workflow-resubmit.html.twig';
 
 /** @private */
@@ -24,8 +24,8 @@ export default Shopwell.Component.wrapComponentConfig({
             comment: '',
             error: '',
             fields: [] as WorkflowFormField[],
-            values: {} as Record<string, string>,
-            initialValues: {} as Record<string, string>,
+            values: {} as Record<string, WorkflowFormValue>,
+            initialValues: {} as Record<string, WorkflowFormValue>,
         };
     },
     computed: {
@@ -68,18 +68,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 }
                 this.fields = fields;
                 this.values = Object.fromEntries(
-                    fields.map((field) => {
-                        const value = this.instance.formData?.[field.key];
-                        if (
-                            value !== null &&
-                            value !== undefined &&
-                            typeof value !== 'string' &&
-                            typeof value !== 'number'
-                        ) {
-                            throw new Error(this.$t('sw-workflow.request.failed'));
-                        }
-                        return [field.key, value === null || value === undefined ? '' : String(value)];
-                    }),
+                    fields.map((field) => [field.key, restoreFormValue(field, this.instance.formData?.[field.key])]),
                 );
                 this.initialValues = { ...this.values };
                 this.isReady = true;
@@ -137,7 +126,8 @@ export default Shopwell.Component.wrapComponentConfig({
                         this.fields
                             .filter(
                                 (field) =>
-                                    !this.isReadOnly(field.key) && this.values[field.key] !== this.initialValues[field.key],
+                                    !this.isReadOnly(field.key) &&
+                                    JSON.stringify(this.values[field.key]) !== JSON.stringify(this.initialValues[field.key]),
                             )
                             .map((field) => [field.key, this.values[field.key]]),
                     ),

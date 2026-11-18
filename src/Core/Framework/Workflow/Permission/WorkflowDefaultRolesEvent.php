@@ -33,7 +33,10 @@ final class WorkflowDefaultRolesEvent extends Event
             'workflow:publish',
             'workflow_draft:read',
             'position:read',
+            'acl_role:read',
             'user:read',
+            'organization:read',
+            'organization_unit:read',
         ],
         self::PARTICIPANT => [
             'workflow:read',
@@ -44,6 +47,8 @@ final class WorkflowDefaultRolesEvent extends Event
             'workflow_instance:start',
             'workflow_task:decide',
             'user:read',
+            'organization:read',
+            'organization_unit:read',
             'state_machine_state:read',
         ],
     ];

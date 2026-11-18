@@ -8,7 +8,7 @@
         :criteria="criteria"
         :label-callback="displayUser"
         label-property="username"
-        :label="$t('sw-workflow.approval.assignee')"
+        :label="label || $t('sw-workflow.approval.assignee')"
         :placeholder="$t('sw-workflow.approval.status.empty')"
         :show-clearable-button="false"
         :disabled="!allowEdit || status === 'loading'"

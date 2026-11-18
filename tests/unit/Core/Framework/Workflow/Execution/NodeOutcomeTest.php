@@ -16,10 +16,11 @@ class NodeOutcomeTest extends TestCase
 {
     public function testCompletionSeparatesTechnicalCompletionFromBusinessResult(): void
     {
-        $outcome = NodeOutcome::complete('payment-declined');
+        $outcome = NodeOutcome::complete('payment-declined', ['reason' => 'missing-assignee']);
 
         static::assertTrue($outcome->isComplete());
         static::assertSame('payment-declined', $outcome->result);
+        static::assertSame(['reason' => 'missing-assignee'], $outcome->output);
         static::assertFalse($outcome->isWaiting());
     }
 

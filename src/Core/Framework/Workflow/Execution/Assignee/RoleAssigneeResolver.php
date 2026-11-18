@@ -51,7 +51,9 @@ final class RoleAssigneeResolver implements AssigneeResolverInterface
         $criteria->addFilter(new EqualsFilter('active', true));
         $criteria->addFilter(new EqualsAnyFilter('aclRoles.id', $roleIds));
 
-        $userIds = $this->userRepository->search($criteria, $context->context())->getIds();
+        $criteria->addAssociation('aclRoles');
+        $users = $this->userRepository->search($criteria, $context->context())->getEntities();
+        $userIds = $users->filter(ApprovalUserEligibility::isEligible(...))->getIds();
         sort($userIds);
 
         return $userIds;

@@ -49,6 +49,21 @@ class NodePropertiesRuleTest extends TestCase
         static::assertSame(['manager'], $registry->for($type)->resolve($instance, $graph->nodeList()[0], $execution));
     }
 
+    public function testMalformedHierarchyIsRejectedWithoutResolvingStaff(): void
+    {
+        $resolver = static::createMock(AssigneeResolverInterface::class);
+        $resolver->method('getAssigneeType')->willReturn('leader');
+        $resolver->expects($this->never())->method('resolve');
+        $data = $this->graph('leader')->toArray();
+        $data['nodes'][0]['properties']['assigneeConfig'] = null;
+        $rule = new NodePropertiesRule(new AssigneeResolverRegistry([$resolver]), ApprovalRegistryFixture::modes());
+
+        $violations = $rule->validate(GraphData::fromArray($data), new ValidationContext());
+
+        static::assertCount(1, $violations);
+        static::assertSame('review', $violations[0]->nodeId);
+    }
+
     /**
      * @return iterable<string, array{string}>
      */

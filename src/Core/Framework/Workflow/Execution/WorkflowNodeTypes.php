@@ -38,11 +38,17 @@ final class WorkflowNodeTypes
      * Routes through conditional outgoing edges without creating tasks.
      */
     public const CONDITION = 'snaker:condition';
+    public const SCRIPT = 'snaker:script';
+    public const ACTION = 'snaker:action';
+    public const NOTIFICATION = 'snaker:notification';
+    public const SUBPROCESS = 'snaker:subprocess';
+    public const PARALLEL = 'snaker:parallel';
+    public const JOIN = 'snaker:join';
 
     /**
      * Node types accepted by the execution contract.
      */
-    public const ALL = [self::START, self::TASK, self::COPY, self::END, self::CONDITION];
+    public const ALL = [self::START, self::TASK, self::COPY, self::END, self::CONDITION, self::SCRIPT, self::ACTION, self::NOTIFICATION, self::SUBPROCESS, self::PARALLEL, self::JOIN];
 
     /**
      * Reserved subprocess type; register an executor when implementing it.

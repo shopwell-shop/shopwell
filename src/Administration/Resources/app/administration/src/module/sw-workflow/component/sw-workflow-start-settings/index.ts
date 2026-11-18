@@ -37,6 +37,9 @@ export default Shopwell.Component.wrapComponentConfig({
                 'number',
                 'date',
                 'select',
+                'user',
+                'users',
+                'department',
             ].map((value) => ({
                 value,
                 label: this.$t(`sw-workflow.form.types.${value}`),
@@ -116,6 +119,21 @@ export default Shopwell.Component.wrapComponentConfig({
                 delete field.dataSource;
             }
 
+            if (!['user', 'users', 'department'].includes(type)) {
+                delete field.candidateIds;
+            }
+
+            this.commit();
+        },
+        setCandidates(field: WorkflowFormField, ids: string[]): void {
+            if (!this.allowEdit || ids.length > 200) {
+                return;
+            }
+            if (ids.length) {
+                field.candidateIds = ids;
+            } else {
+                delete field.candidateIds;
+            }
             this.commit();
         },
         selectDataSource(field: WorkflowFormField, source: string): void {

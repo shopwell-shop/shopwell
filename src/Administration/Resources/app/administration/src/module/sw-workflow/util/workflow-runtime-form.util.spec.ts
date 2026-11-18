@@ -168,3 +168,24 @@ describe('Unicode text boundaries', () => {
         expect(validateFormValue(field, '😀'.repeat(4001))).toBe('text');
     });
 });
+
+describe('people and department input', () => {
+    const id = '0123456789abcdef0123456789abcdef';
+    const other = 'abcdef0123456789abcdef0123456789';
+    it('validates ordered people lists and frozen candidate ranges', () => {
+        const people = { ...field, type: 'users', required: true, candidateIds: [id] } as WorkflowFormField;
+        expect(validateFormValue(people, [])).toBe('required');
+        expect(validateFormValue(people, [id])).toBeNull();
+        expect(validateFormValue(people, [id, id])).toBe('users');
+        expect(validateFormValue(people, [other])).toBe('users');
+        expect(validateFormValue(people, id)).toBe('users');
+        expect(serializeForm([people], {})).toEqual({ value: [] });
+        expect(serializeForm([people], { value: [id] })).toEqual({ value: [id] });
+    });
+    it.each(['user', 'department'])('requires an identifier for %s', (type) => {
+        const entity = { ...field, type, candidateIds: [id] } as WorkflowFormField;
+        expect(validateFormValue(entity, id)).toBeNull();
+        expect(validateFormValue(entity, other)).toBe(type);
+        expect(validateFormValue(entity, 'Someone')).toBe(type);
+    });
+});

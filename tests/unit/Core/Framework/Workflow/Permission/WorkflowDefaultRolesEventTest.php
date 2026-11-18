@@ -20,7 +20,7 @@ class WorkflowDefaultRolesEventTest extends TestCase
         $event = new WorkflowDefaultRolesEvent();
 
         $participant = $event->getPrivileges(WorkflowDefaultRolesEvent::PARTICIPANT);
-        foreach (['workflow:read', 'workflow_participant.viewer', 'workflow_participant.creator', 'workflow_participant.approver', 'workflow_instance:access', 'workflow_instance:start', 'workflow_task:decide', 'user:read', 'state_machine_state:read'] as $privilege) {
+        foreach (['workflow:read', 'workflow_participant.viewer', 'workflow_participant.creator', 'workflow_participant.approver', 'workflow_instance:access', 'workflow_instance:start', 'workflow_task:decide', 'user:read', 'state_machine_state:read', 'organization:read', 'organization_unit:read'] as $privilege) {
             static::assertContains($privilege, $participant);
         }
         foreach (['workflow:update', 'workflow:publish', 'workflow_draft:read'] as $privilege) {
@@ -29,7 +29,7 @@ class WorkflowDefaultRolesEventTest extends TestCase
         static::assertSame([
             'workflow.viewer', 'workflow.creator', 'workflow.editor', 'workflow.deleter', 'workflow.publisher',
             'workflow:read', 'workflow:create', 'workflow:update', 'workflow:delete',
-            'workflow:publish', 'workflow_draft:read', 'position:read', 'user:read',
+            'workflow:publish', 'workflow_draft:read', 'position:read', 'acl_role:read', 'user:read', 'organization:read', 'organization_unit:read',
         ], $event->getPrivileges(WorkflowDefaultRolesEvent::MANAGER));
     }
 

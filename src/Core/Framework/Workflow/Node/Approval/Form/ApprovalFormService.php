@@ -127,7 +127,7 @@ final readonly class ApprovalFormService
         $data = array_replace($instance->form(), $normalized);
         foreach ($permissions as $key => $permission) {
             $value = $data[$key] ?? null;
-            if ($permission['required'] && ($value === null || (\is_string($value) && trim($value) === ''))) {
+            if ($permission['required'] && ($value === null || $value === [] || (\is_string($value) && trim($value) === ''))) {
                 throw WorkflowExecutionException::invalidGraph('A value is required for input field: ' . $key);
             }
         }

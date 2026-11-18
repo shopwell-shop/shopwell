@@ -23,7 +23,7 @@ final class WorkflowAssigneeTypes
     public const INITIATOR = 'initiator';
 
     /**
-     * Leader resolution requires an extension.
+     * Follow the initiator’s captured department reporting relationship.
      */
     public const LEADER = 'leader';
 
@@ -42,16 +42,20 @@ final class WorkflowAssigneeTypes
      */
     public const POSITION = 'position';
 
-    public const ALL = [self::USER, self::INITIATOR, self::LEADER, self::ROLE, self::UNIT_LEADER, self::POSITION];
+    /**
+     * A validated people field in the published request schema.
+     */
+    public const FORM_FIELD = 'formField';
+
+    public const ALL = [self::USER, self::INITIATOR, self::LEADER, self::ROLE, self::UNIT_LEADER, self::POSITION, self::FORM_FIELD];
 
     /**
      * Types requiring assigneeValue; other types must leave it empty.
      */
-    public const NEEDS_VALUE = [self::USER, self::ROLE, self::POSITION];
+    public const NEEDS_VALUE = [self::USER, self::ROLE, self::POSITION, self::FORM_FIELD];
 
     /**
-     * Reserved sources: FORM_FIELD, INITIATOR_LEADER_LEVEL2 and DEPT_LEADER_OF_USER.
+     * Reserved source for a future reporting-line variation.
      */
-    public const FUTURE_FORM_FIELD = 'formField';
     public const FUTURE_LEADER_LEVEL2 = 'leaderLevel2';
 }

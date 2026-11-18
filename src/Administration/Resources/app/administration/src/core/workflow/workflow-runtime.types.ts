@@ -1,6 +1,9 @@
 /** @sw-package framework */
 /** @public */
-export type WorkflowFormFieldType = 'text' | 'amount' | 'number' | 'date' | 'select';
+export type WorkflowFormFieldType = 'text' | 'amount' | 'number' | 'date' | 'select' | 'user' | 'users' | 'department' | 'media' | 'mediaList' | 'images';
+
+/** @public */
+export type WorkflowFormValue = string | string[];
 
 /** @public */
 export interface WorkflowFormField {
@@ -8,6 +11,7 @@ export interface WorkflowFormField {
     label: string;
     type: WorkflowFormFieldType;
     required: boolean;
+    candidateIds?: string[];
     dataSource?: string;
     options?: { value: string; label: string }[];
 }
@@ -102,6 +106,8 @@ export type RuntimeTaskHistory = {
     assignee: RuntimeParticipant;
     countersignType: string;
     decision: string;
+    automatic?: boolean;
+    automaticReason?: string | null;
     target?: RuntimeParticipant | null;
     comment: string | null;
     completedAt: string | null;

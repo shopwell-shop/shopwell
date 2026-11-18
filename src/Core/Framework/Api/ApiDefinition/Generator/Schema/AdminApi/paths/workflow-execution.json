@@ -183,7 +183,7 @@
                                         "type": "string"
                                     },
                                     "formData": {
-                                        "description": "Submitted form map, validated against the selected definition. Non-object/non-array values are treated as an empty form. Empty forms may be encoded as {} or []."
+                                        "description": "Submitted form map, validated against the selected definition. Non-object/non-array values are treated as an empty form. Empty forms may be encoded as {} or []. People and department fields accept UUIDs; users fields accept ordered lists of up to 50 unique UUIDs. Configured candidate ranges are enforced by the server. Media and image fields accept uploaded media IDs and require media:read access."
                                     },
                                     "title": {
                                         "description": "Optional string title. Empty or non-string values use the definition name."
@@ -551,10 +551,23 @@
                                             {
                                                 "type": "object",
                                                 "additionalProperties": {
-                                                    "type": [
-                                                        "string",
-                                                        "number",
-                                                        "null"
+                                                    "oneOf": [
+                                                        {
+                                                            "type": [
+                                                                "string",
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "pattern": "^[a-fA-F0-9]{32}$"
+                                                            },
+                                                            "maxItems": 50,
+                                                            "uniqueItems": true
+                                                        }
                                                     ]
                                                 }
                                             },
@@ -563,7 +576,7 @@
                                                 "maxItems": 0
                                             }
                                         ],
-                                        "description": "A patch containing only changed editable fields. Hidden, read-only and unknown fields are rejected; omitted fields are retained."
+                                        "description": "A patch containing only changed editable fields. Hidden, read-only and unknown fields are rejected; omitted fields are retained. People and department fields accept UUIDs; users fields accept ordered lists of up to 50 unique UUIDs. Configured candidate ranges are enforced by the server. Media and image fields accept uploaded media IDs and require media:read access."
                                     },
                                     "formVersion": {
                                         "type": "integer",
@@ -818,6 +831,10 @@
                                         "type": "string",
                                         "description": "WorkflowService rejects an absent or whitespace-only comment.",
                                         "minLength": 1
+                                    },
+                                    "targetNodeId": {
+                                        "type": "string",
+                                        "description": "Optional approval stage to resume after the initiator resubmits."
                                     }
                                 }
                             }
@@ -872,10 +889,23 @@
                                             {
                                                 "type": "object",
                                                 "additionalProperties": {
-                                                    "type": [
-                                                        "string",
-                                                        "number",
-                                                        "null"
+                                                    "oneOf": [
+                                                        {
+                                                            "type": [
+                                                                "string",
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "pattern": "^[a-fA-F0-9]{32}$"
+                                                            },
+                                                            "maxItems": 50,
+                                                            "uniqueItems": true
+                                                        }
                                                     ]
                                                 }
                                             },
@@ -884,7 +914,7 @@
                                                 "maxItems": 0
                                             }
                                         ],
-                                        "description": "A patch containing only changed editable fields. Hidden, read-only and unknown fields are rejected; omitted fields are retained."
+                                        "description": "A patch containing only changed editable fields. Hidden, read-only and unknown fields are rejected; omitted fields are retained. People and department fields accept UUIDs; users fields accept ordered lists of up to 50 unique UUIDs. Configured candidate ranges are enforced by the server. Media and image fields accept uploaded media IDs and require media:read access."
                                     },
                                     "comment": {
                                         "type": "string"
@@ -992,6 +1022,52 @@
                     },
                     "409": {
                         "description": "No current task is eligible, the cooldown is active, or a delivery is pending."
+                    }
+                }
+            }
+        },
+        "/_action/workflow/task/{taskId}/complete": {
+            "post": {
+                "tags": [
+                    "Workflow"
+                ],
+                "operationId": "completeWorkflowTask",
+                "summary": "Complete a handling workflow task",
+                "description": "Requires workflow_task:decide and ownership of a handling task. The optional comment is recorded with the completion.",
+                "responses": {
+                    "204": {
+                        "description": "Successful response with no body."
+                    },
+                    "403": {
+                        "description": "Required privileges are missing."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [],
+                                "properties": {
+                                    "comment": {
+                                        "type": "string",
+                                        "description": "WorkflowService rejects an absent or whitespace-only comment.",
+                                        "minLength": 1
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1208,6 +1284,17 @@
                         "type": "string",
                         "description": "Operation or vote: agree, reject, transfer or add-sign. Plugins may add operations."
                     },
+                    "automatic": {
+                        "type": "boolean",
+                        "description": "Whether this approval was completed by the configured automation policy."
+                    },
+                    "automaticReason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Automatic approval reason: initiator or previous-approval."
+                    },
                     "comment": {
                         "type": [
                             "string",
@@ -1273,6 +1360,17 @@
                     "decision": {
                         "type": "string",
                         "description": "Operation or vote: agree, reject, transfer or add-sign. Plugins may add operations."
+                    },
+                    "automatic": {
+                        "type": "boolean",
+                        "description": "Whether this approval was completed by the configured automation policy."
+                    },
+                    "automaticReason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Automatic approval reason: initiator or previous-approval."
                     },
                     "comment": {
                         "type": [
@@ -1519,7 +1617,7 @@
                                 "maxItems": 0
                             }
                         ],
-                        "description": "Map value; an empty map may be encoded as []."
+                        "description": "Map value; an empty map may be encoded as []. People and department fields accept UUIDs; users fields accept ordered lists of up to 50 unique UUIDs. Configured candidate ranges are enforced by the server. Media and image fields accept uploaded media IDs and require media:read access."
                     },
                     "canCancel": {
                         "type": "boolean"
@@ -1608,7 +1706,7 @@
                                 "maxItems": 0
                             }
                         ],
-                        "description": "Map value; an empty map may be encoded as []."
+                        "description": "Map value; an empty map may be encoded as []. People and department fields accept UUIDs; users fields accept ordered lists of up to 50 unique UUIDs. Configured candidate ranges are enforced by the server. Media and image fields accept uploaded media IDs and require media:read access."
                     },
                     "canCancel": {
                         "type": "boolean"

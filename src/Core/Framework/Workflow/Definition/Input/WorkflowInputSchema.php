@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\Workflow\Definition\Input;
 use Brick\Math\BigDecimal;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -15,8 +16,10 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 #[Package('framework')]
 final class WorkflowInputSchema
 {
-    public function __construct(private readonly EventDispatcherInterface $dispatcher = new EventDispatcher())
-    {
+    public function __construct(
+        private readonly EventDispatcherInterface $dispatcher = new EventDispatcher(),
+        private readonly ?WorkflowEntityFields $entities = null,
+    ) {
     }
 
     /**
@@ -35,7 +38,7 @@ final class WorkflowInputSchema
     }
 
     /**
-     * @return list<array{key: string, label: string, type: string, required: bool, options?: list<array{value: string, label: string}>, dataSource?: string}>
+     * @return list<array{key: string, label: string, type: string, required: bool, options?: list<array{value: string, label: string}>, dataSource?: string, candidateIds?: non-empty-list<string>}>
      */
     public function normalize(mixed $schema): array
     {
@@ -65,7 +68,7 @@ final class WorkflowInputSchema
      * @param array<array-key, mixed> $schema Raw schema validated by normalize().
      * @param array<string, mixed> $data
      *
-     * @return array<string, string|null>
+     * @return array<string, string|list<string>|null>
      */
     public function normalizeData(array $schema, array $data, ?Context $context = null): array
     {
@@ -81,20 +84,22 @@ final class WorkflowInputSchema
         foreach ($fields as $field) {
             $value = $data[$field['key']] ?? null;
 
-            if ($value === null || $value === '' || ($field['type'] === 'text' && \is_string($value) && trim($value) === '')) {
+            if ($value === null || $value === '' || ($field['type'] === 'text' && \is_string($value) && trim($value) === '') || (\in_array($field['type'], ['users', 'mediaList', 'images'], true) && $value === [])) {
                 if ($field['required']) {
                     throw $this->invalidField('/data/' . $field['key'], $field['key'], 'A value is required for: ' . $field['label']);
                 }
 
                 if (\array_key_exists($field['key'], $data)) {
-                    $normalized[$field['key']] = null;
+                    $normalized[$field['key']] = \in_array($field['type'], ['users', 'mediaList', 'images'], true) ? [] : null;
                 }
 
                 continue;
             }
 
             try {
-                $normalized[$field['key']] = $this->normalizeValue($field, $value);
+                $normalized[$field['key']] = \in_array($field['type'], WorkflowEntityFields::TYPES, true)
+                    ? ($this->entities ?? throw WorkflowExecutionException::invalidGraph('Entity input validation is unavailable.'))->normalize($field, $value, $context ?? Context::createDefaultContext())
+                    : $this->normalizeValue($field, $value);
 
                 if (isset($field['dataSource']) && !\in_array($normalized[$field['key']], array_column($this->options($field['dataSource'], $context), 'value'), true)) {
                     throw WorkflowExecutionException::invalidGraph('Select a valid option for: ' . $field['label']);
@@ -128,6 +133,10 @@ final class WorkflowInputSchema
                 return (string) ($type === 'amount' ? $decimal->toScale(2) : $decimal->strippedOfTrailingZeros());
             }
         } elseif (\is_string($value)) {
+            if (\in_array($type, ['user', 'department'], true) && Uuid::isValid(strtolower($value))) {
+                return strtolower($value);
+            }
+
             if ($type === 'text' && mb_strlen($value) <= 4000) {
                 return $value;
             }
@@ -145,7 +154,7 @@ final class WorkflowInputSchema
     }
 
     /**
-     * @return array{key: string, label: string, type: string, required: bool, options?: list<array{value: string, label: string}>, dataSource?: string}
+     * @return array{key: string, label: string, type: string, required: bool, options?: list<array{value: string, label: string}>, dataSource?: string, candidateIds?: non-empty-list<string>}
      */
     private function normalizeField(mixed $raw, string $path): array
     {
@@ -156,7 +165,7 @@ final class WorkflowInputSchema
         }
 
         $key = \is_string($field['key'] ?? null) ? $field['key'] : null;
-        $unknown = array_diff(array_keys($field), ['key', 'label', 'type', 'required', 'options', 'dataSource']);
+        $unknown = array_diff(array_keys($field), ['key', 'label', 'type', 'required', 'options', 'dataSource', 'candidateIds']);
 
         if ($unknown !== []) {
             throw $this->invalidField($path . '/' . reset($unknown), $key, 'Unknown input field configuration');
@@ -170,7 +179,7 @@ final class WorkflowInputSchema
             throw $this->invalidField($path . '/label', $key, 'Input field labels must be nonblank strings with at most 255 characters');
         }
 
-        if (!\in_array($field['type'] ?? null, ['text', 'amount', 'number', 'date', 'select'], true)) {
+        if (!\in_array($field['type'] ?? null, ['text', 'amount', 'number', 'date', 'select', ...WorkflowEntityFields::TYPES], true)) {
             throw $this->invalidField($path . '/type', $key, 'Invalid input field type');
         }
 
@@ -184,6 +193,17 @@ final class WorkflowInputSchema
             'type' => $field['type'],
             'required' => $field['required'] ?? false,
         ];
+
+        if (\array_key_exists('candidateIds', $field)) {
+            if (!\in_array($field['type'], WorkflowEntityFields::TYPES, true)) {
+                throw $this->invalidField($path . '/candidateIds', $key, 'Only people and department fields may restrict candidates');
+            }
+            try {
+                $normalized['candidateIds'] = WorkflowEntityFields::identifiers($field['candidateIds']);
+            } catch (WorkflowExecutionException $exception) {
+                throw $this->invalidField($path . '/candidateIds', $key, $exception->getParameters()['reason']);
+            }
+        }
 
         if (\array_key_exists('dataSource', $field)) {
             if ($field['type'] !== 'text' || !\is_string($field['dataSource']) || preg_match('/^[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$/D', $field['dataSource']) !== 1) {

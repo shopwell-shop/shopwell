@@ -39,9 +39,12 @@ final readonly class NodeOutcome
         return new self('wait', waitingFor: $signal);
     }
 
-    public static function complete(string $result = 'completed'): self
+    /**
+     * @param array<string, mixed> $output
+     */
+    public static function complete(string $result = 'completed', array $output = []): self
     {
-        return new self('complete', result: $result);
+        return new self('complete', output: $output, result: $result);
     }
 
     public function isWaiting(): bool

@@ -5,7 +5,6 @@ namespace Shopwell\Core\Framework\Workflow\Node\Approval\Assignee;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Workflow\Definition\Type\WorkflowAssigneeSources;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowAssigneeTypes;
-use Shopwell\Core\Framework\Workflow\WorkflowException;
 
 /**
  * @internal
@@ -20,10 +19,13 @@ final class DepartmentLeaderApprovalAssigneeSource implements ApprovalAssigneeSo
 
     public function compile(array $configuration): ApprovalAssignment
     {
-        if ($configuration !== []) {
-            throw WorkflowException::invalidDocument('', 'Department leaders are resolved from the initiator primary department.');
-        }
+        $hierarchy = ApprovalHierarchy::fromConfiguration($configuration);
 
-        return new ApprovalAssignment(WorkflowAssigneeTypes::UNIT_LEADER, [], multiple: true);
+        return new ApprovalAssignment(
+            WorkflowAssigneeTypes::UNIT_LEADER,
+            [],
+            multiple: true,
+            configuration: $configuration === [] ? [] : ['level' => $hierarchy->level, 'continuous' => $hierarchy->continuous],
+        );
     }
 }

@@ -16,6 +16,10 @@ use Shopwell\Core\Framework\Workflow\Instance\WorkflowInstanceEntity;
 #[Package('framework')]
 final class InitiatorAssigneeResolver implements AssigneeResolverInterface
 {
+    public function __construct(private readonly UserAssigneeResolver $users)
+    {
+    }
+
     public function getAssigneeType(): string
     {
         return WorkflowAssigneeTypes::INITIATOR;
@@ -23,6 +27,12 @@ final class InitiatorAssigneeResolver implements AssigneeResolverInterface
 
     public function resolve(WorkflowInstanceEntity $instance, GraphNode $node, WorkflowExecutionContext $context): array
     {
-        return $instance->initiatorId === '' ? [] : [$instance->initiatorId];
+        if ($instance->initiatorId === '') {
+            return [];
+        }
+
+        $assignment = new GraphNode($node->id, $node->type, $node->x, $node->y, [...$node->properties, 'assigneeValue' => [$instance->initiatorId]]);
+
+        return $this->users->resolve($instance, $assignment, $context);
     }
 }

@@ -1,8 +1,8 @@
 /** @sw-package framework */
 import type { PropType } from 'vue';
-import type { RuntimeInstance, WorkflowFormField } from 'src/core/workflow/workflow-runtime.types';
+import type { RuntimeInstance, WorkflowFormField, WorkflowFormValue } from 'src/core/workflow/workflow-runtime.types';
 import { WORKFLOW_FORM_ACCESS } from 'src/core/workflow/workflow-runtime.constants';
-import { validateFormValue } from '../../util/workflow-runtime-form.util';
+import { restoreFormValue, validateFormValue } from '../../util/workflow-runtime-form.util';
 import template from './sw-workflow-approval-form.html.twig';
 import './sw-workflow-approval-form.scss';
 
@@ -18,8 +18,8 @@ export default Shopwell.Component.wrapComponentConfig({
     data() {
         return {
             fields: [] as WorkflowFormField[],
-            initialValues: {} as Record<string, string>,
-            values: {} as Record<string, string>,
+            initialValues: {} as Record<string, WorkflowFormValue>,
+            values: {} as Record<string, WorkflowFormValue>,
             isLoading: false,
             loadError: false,
             revision: 0,
@@ -36,10 +36,12 @@ export default Shopwell.Component.wrapComponentConfig({
             }
             return errors;
         },
-        patch(): Record<string, string> {
+        patch(): Record<string, WorkflowFormValue> {
             return Object.fromEntries(
                 this.fields
-                    .filter((field) => this.values[field.key] !== this.initialValues[field.key])
+                    .filter(
+                        (field) => JSON.stringify(this.values[field.key]) !== JSON.stringify(this.initialValues[field.key]),
+                    )
                     .map((field) => [field.key, this.values[field.key]]),
             );
         },
@@ -56,7 +58,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         patch: {
             deep: true,
-            handler(value: Record<string, string>) {
+            handler(value: Record<string, WorkflowFormValue>) {
                 this.$emit('update-patch', value);
             },
         },
@@ -95,16 +97,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     return;
                 }
                 this.initialValues = Object.fromEntries(
-                    prepared.map((field) => {
-                        const value = this.instance.formData?.[field.key];
-                        if (value === null || value === undefined) {
-                            return [field.key, ''];
-                        }
-                        if (typeof value !== 'string' && typeof value !== 'number') {
-                            throw new Error('Unsupported approval form value.');
-                        }
-                        return [field.key, String(value)];
-                    }),
+                    prepared.map((field) => [field.key, restoreFormValue(field, this.instance.formData?.[field.key])]),
                 );
                 this.values = { ...this.initialValues };
                 this.fields = prepared;

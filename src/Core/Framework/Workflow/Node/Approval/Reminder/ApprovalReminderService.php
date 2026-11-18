@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphData;
 use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowRecorder;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowExecutionException;
 use Shopwell\Core\Framework\Workflow\Execution\WorkflowService;
@@ -170,6 +171,10 @@ final readonly class ApprovalReminderService
         $task = $this->tasks->forInstance($instance->id, $context)->get($receipt->taskId);
         try {
             if ($task !== null && $this->policy->isCurrent($task, $instance)) {
+                $node = GraphData::fromArray($instance->snapshot())->node($task->nodeId);
+                $deadline = \array_key_exists('approvalDeadline', $node->properties)
+                    ? ApprovalDeadline::fromConfiguration($node->properties['approvalDeadline'])
+                    : null;
                 $this->dispatcher->dispatch(new ApprovalReminderDeliveryEvent(
                     $receipt->deliveryId,
                     $task->id,
@@ -178,6 +183,7 @@ final readonly class ApprovalReminderService
                     $receipt->source ?? throw WorkflowExecutionException::invalidGraph('A pending reminder requires its source.'),
                     $receipt->lastRemindedAt ?? throw WorkflowExecutionException::invalidGraph('A pending reminder requires its request time.'),
                     $receipt->dueAt,
+                    $deadline?->escalateTo,
                 ));
             }
             $this->transactions->run(function () use ($receipt, $context): void {

@@ -223,6 +223,7 @@ describe('versioned approval modes', () => {
     it('retains the saved version and opaque plugin configuration while reading a node', () => {
         const service = new WorkflowApprovalService();
         const config = {
+            automation: { decision: 'manual' as const, approveInitiator: true, deduplication: 'adjacent' as const },
             assignee: { source: 'example:reviewers', config: { team: 'finance' } },
             approval: { mode: 'example:quorum', version: 2, config: { required: 2 } },
         };

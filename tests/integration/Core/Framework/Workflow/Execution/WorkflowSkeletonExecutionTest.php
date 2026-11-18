@@ -20,8 +20,10 @@ use Shopwell\Core\Framework\Workflow\Execution\Condition\ComparisonConditionEval
 use Shopwell\Core\Framework\Workflow\Execution\Condition\ExprNormalizer;
 use Shopwell\Core\Framework\Workflow\Execution\Event\WorkflowInstanceMetadataEvent;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\EndExecutor;
+use Shopwell\Core\Framework\Workflow\Execution\Executor\JoinExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorInterface;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorRegistry;
+use Shopwell\Core\Framework\Workflow\Execution\Executor\ParallelExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Executor\StartExecutor;
 use Shopwell\Core\Framework\Workflow\Execution\Graph\GraphNode;
 use Shopwell\Core\Framework\Workflow\Execution\Log\WorkflowRecorder;
@@ -78,6 +80,41 @@ class WorkflowSkeletonExecutionTest extends TestCase
         static::assertSame([null, 'enter-custom', 'leave-custom'], array_column($executions->getElements(), 'sourceConnectionId'));
         static::assertSame(['reference' => 'external-42'], $executions->filterByProperty('nodeId', 'custom')->first()?->output);
         static::assertSame(0, static::getContainer()->get('workflow_task.repository')->search((new Criteria())->addFilter(new EqualsFilter('instanceId', $instanceId)), $this->context)->getTotal());
+    }
+
+    public function testParallelBranchesWaitForEveryBranchBeforeTheJoinContinues(): void
+    {
+        $flows = $this->service(
+            new SkeletonAutomaticExecutor(),
+            extra: [new ParallelExecutor(), new JoinExecutor(static::getContainer()->get('workflow_node_execution.repository'))],
+        );
+        $definitionId = $flows->createDefinition([
+            'code' => Uuid::randomHex(),
+            'name' => 'Parallel validation',
+            'graphData' => [
+                'nodes' => [
+                    ['id' => 'start', 'type' => 'snaker:start'],
+                    ['id' => 'fork', 'type' => 'snaker:parallel'],
+                    ['id' => 'left', 'type' => 'test:automatic'],
+                    ['id' => 'right', 'type' => 'test:automatic'],
+                    ['id' => 'join', 'type' => 'snaker:join'],
+                    ['id' => 'end', 'type' => 'snaker:end'],
+                ],
+                'edges' => [
+                    ['id' => 'start-fork', 'sourceNodeId' => 'start', 'targetNodeId' => 'fork'],
+                    ['id' => 'fork-left', 'sourceNodeId' => 'fork', 'targetNodeId' => 'left', 'properties' => ['sourcePort' => 'branch-0']],
+                    ['id' => 'fork-right', 'sourceNodeId' => 'fork', 'targetNodeId' => 'right', 'properties' => ['sourcePort' => 'branch-1']],
+                    ['id' => 'left-join', 'sourceNodeId' => 'left', 'targetNodeId' => 'join', 'properties' => ['sourcePort' => 'out']],
+                    ['id' => 'right-join', 'sourceNodeId' => 'right', 'targetNodeId' => 'join', 'properties' => ['sourcePort' => 'out']],
+                    ['id' => 'join-end', 'sourceNodeId' => 'join', 'targetNodeId' => 'end', 'properties' => ['sourcePort' => 'out']],
+                ],
+            ],
+        ], $this->context);
+        $flows->publishDefinition($definitionId, $this->context);
+        $instanceId = $flows->start($definitionId, [], '', $this->context);
+
+        static::assertSame('completed', $flows->loadInstance($instanceId, $this->context)->state());
+        static::assertSame(['start', 'fork', 'left', 'join', 'right', 'join', 'end'], array_column($this->executions($instanceId)->getElements(), 'nodeId'));
     }
 
     public function testPersistedWaitResumesInAFreshRuntimeAndConsumesOnlyOnce(): void
@@ -155,12 +192,15 @@ class WorkflowSkeletonExecutionTest extends TestCase
         static::assertSame(['example:policy' => ['revision' => 3]], $flows->loadInstance($instanceId, $this->context)->ext);
     }
 
-    private function service(NodeExecutorInterface $custom, ?EventDispatcher $dispatcher = null): WorkflowService
+    /**
+     * @param list<NodeExecutorInterface> $extra
+     */
+    private function service(NodeExecutorInterface $custom, ?EventDispatcher $dispatcher = null, array $extra = []): WorkflowService
     {
         $container = static::getContainer();
         $dispatcher ??= new EventDispatcher();
         $events = $container->get(WorkflowEventQueue::class);
-        $registry = new NodeExecutorRegistry([new StartExecutor(), new EndExecutor(), $custom]);
+        $registry = new NodeExecutorRegistry([new StartExecutor(), new EndExecutor(), $custom, ...$extra]);
         $transactions = $container->get(WorkflowTransactionRunner::class);
         $clock = $container->get(ClockInterface::class);
         $states = $container->get(WorkflowInstanceStateHandler::class);

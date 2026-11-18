@@ -24,6 +24,33 @@ class ApprovalDeadlineTest extends TestCase
         static::assertSame('2026-11-01T07:30:00+00:00', $deadline->dueAt($created)->format(\DateTimeInterface::ATOM));
     }
 
+    public function testWorkingTimeSkipsTheWeekendAndCountsTheConfiguredBusinessWindow(): void
+    {
+        $deadline = ApprovalDeadline::fromConfiguration(['minutes' => 120, 'remind' => true, 'workingTime' => true]);
+        static::assertSame(['minutes' => 120, 'remind' => true, 'workingTime' => true], $deadline->configuration());
+        $created = new \DateTimeImmutable('2026-11-06T17:00:00+00:00');
+        static::assertSame('2026-11-09T10:00:00+00:00', $deadline->dueAt($created)->format(\DateTimeInterface::ATOM));
+    }
+
+    public function testPreservesAnEscalationTarget(): void
+    {
+        $escalateTo = '0123456789abcdef0123456789abcdef';
+        $deadline = ApprovalDeadline::fromConfiguration([
+            'minutes' => 120,
+            'remind' => true,
+            'workingTime' => true,
+            'escalateTo' => $escalateTo,
+        ]);
+
+        static::assertSame([
+            'minutes' => 120,
+            'remind' => true,
+            'workingTime' => true,
+            'escalateTo' => $escalateTo,
+        ], $deadline->configuration());
+        static::assertSame($escalateTo, $deadline->escalateTo);
+    }
+
     /**
      * @return iterable<string, array{mixed}>
      */
@@ -38,6 +65,7 @@ class ApprovalDeadlineTest extends TestCase
         yield 'missing reminder choice' => [['minutes' => 60]];
         yield 'non-boolean reminder' => [['minutes' => 60, 'remind' => 1]];
         yield 'unknown field' => [['minutes' => 60, 'remind' => true, 'action' => 'approve']];
+        yield 'invalid escalation target' => [['minutes' => 60, 'remind' => true, 'escalateTo' => 'admin']];
     }
 
     #[DataProvider('invalidConfigurations')]

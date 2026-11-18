@@ -191,6 +191,8 @@ final readonly class ApprovalInstancePresentationSubscriber implements EventSubs
                 ],
                 'countersignType' => $task->countersignType,
                 'decision' => $task->decision,
+                'automatic' => ($task->ext['automatic'] ?? false) === true,
+                'automaticReason' => $task->ext['reason'] ?? null,
                 'target' => \is_string($task->ext['targetUserId'] ?? null)
                     ? ['id' => $task->ext['targetUserId'], 'name' => $names[$task->ext['targetUserId']] ?? $task->ext['targetUserId']]
                     : null,
