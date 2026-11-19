@@ -20,6 +20,10 @@ class ApprovalFlowException extends HttpException
     public const INVALID_NODE_TYPE = 'APPROVAL_FLOW__INVALID_NODE_TYPE';
     public const DUPLICATE_NODE_TYPE = 'APPROVAL_FLOW__DUPLICATE_NODE_TYPE';
     public const NODE_TYPE_NOT_FOUND = 'APPROVAL_FLOW__NODE_TYPE_NOT_FOUND';
+    public const NODE_COMPILER_NOT_FOUND = 'APPROVAL_FLOW__NODE_COMPILER_NOT_FOUND';
+    public const DUPLICATE_NODE_COMPILER = 'APPROVAL_FLOW__DUPLICATE_NODE_COMPILER';
+    public const INVALID_NODE_COMPILER = 'APPROVAL_FLOW__INVALID_NODE_COMPILER';
+    public const INVALID_NODE_CONFIGURATION = 'APPROVAL_FLOW__INVALID_NODE_CONFIGURATION';
 
     /**
      * @param list<string> $privileges
@@ -126,6 +130,48 @@ class ApprovalFlowException extends HttpException
             self::NODE_TYPE_NOT_FOUND,
             'Approval node "{{ type }}@{{ version }}" is not available.',
             ['type' => $type, 'version' => $version]
+        );
+    }
+
+    public static function nodeCompilerNotFound(string $type, string $version): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::NODE_COMPILER_NOT_FOUND,
+            'No compiler is available for approval node "{{ type }}@{{ version }}".',
+            ['type' => $type, 'version' => $version]
+        );
+    }
+
+    public static function duplicateNodeCompiler(string $type, string $version, string $first, string $second): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::DUPLICATE_NODE_COMPILER,
+            'Approval node "{{ type }}@{{ version }}" has two compilers: "{{ first }}" and "{{ second }}".',
+            ['type' => $type, 'version' => $version, 'first' => $first, 'second' => $second]
+        );
+    }
+
+    public static function invalidNodeCompiler(string $compiler, string $reason, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_NODE_COMPILER,
+            'Invalid approval node compiler "{{ compiler }}": {{ reason }}',
+            ['compiler' => $compiler, 'reason' => $reason],
+            $previous
+        );
+    }
+
+    public static function invalidNodeConfiguration(string $type, string $version, string $path, string $reason, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::INVALID_NODE_CONFIGURATION,
+            'Invalid approval node configuration "{{ type }}@{{ version }}" at "{{ path }}": {{ reason }}',
+            ['type' => $type, 'version' => $version, 'path' => $path, 'reason' => $reason],
+            $previous
         );
     }
 }

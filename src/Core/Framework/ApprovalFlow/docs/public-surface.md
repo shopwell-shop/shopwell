@@ -1,6 +1,6 @@
 # Approval Flow public surface
 
-The supported extension surface covers node declaration and assembly.
+The supported extension surface covers node declaration, configuration compilation and assembly.
 The DAL models `approval_flow_definition` and `approval_flow_draft` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 They carry neither `@internal` nor `@final`; this does not authorize direct writes around the controlled draft path.
 No HTTP action routes, execution commands or publication services are exposed by this increment.
@@ -21,6 +21,20 @@ A consumer cannot infer executability or authorization from the presence of a de
 Loaders must be deterministic for the lifetime of the compiled container; there is no request-time registration or hot replacement API.
 The Registry caches only a complete successful load and never exposes a partially loaded catalogue.
 
+## Node configuration compilers
+
+- `NodeCompiler` declares exact supported node versions through `getTypes()` and compiles complete configuration JSON into a concrete `NodeConfiguration`.
+- Register implementations with `approval_flow.node_compiler` in the owning module; its interface contract is enforced by static analysis.
+- `NodeConfiguration` exposes deterministic node-specific object JSON through `jsonSerialize()`; empty objects must remain explicit objects.
+
+Implementations own complete input validation and semantic rules, and perform no user resolution, business reads, persistence or node execution.
+They remain stable for the compiled container lifetime; collisions fail rather than selecting a priority winner.
+The host freezes each result immediately and reports malformed output or registration metadata as an internal compiler fault.
+Use the owning module's `HttpException` with status 400 or 422 for invalid configuration, optionally carrying a configuration-local `path`; the host adds the node path and retains the original cause.
+Other statuses and unexpected failures propagate unchanged.
+The supported contracts expose neither the internal core configuration classes nor the internal publication orchestration services.
+Declaring a compiler does not establish runtime capability or a deployment artifact pin.
+
 ## Internal adapters
 
 `YamlNodeTypeLoader`, `NodeTypeSourceDirectory` and framework DI are internal adapters.
@@ -28,6 +42,7 @@ The Registry caches only a complete successful load and never exposes a partiall
 `GraphPublicationPreflight` and `GraphPublicationSnapshot` are internal graph preparation contracts.
 They freeze admitted graph and declaration bytes without establishing a published release, runtime configuration handle or executable dependency set.
 `GraphPlanCompiler`, `CompiledGraphPlan` and the versioned structural plan schema remain internal.
+`CoreNodeCompiler`, `NodeCompilerRegistry`, the concrete core configurations, `NodePlanCompiler`, `CompiledNodePlan` and its envelope schema also remain internal.
 Structural plan compilation rechecks its draft input and preserves graph identity; compiler versions and topological order do not grant runtime capability or scheduling guarantees.
 Ordinary repository and Sync writes to definitions and drafts are rejected; the storage adapter opens the internal scope only for admitted writes.
 The scope does not restrict trusted in-process PHP code that can also access the database directly.
@@ -50,3 +65,6 @@ Integration tests prove preparation leaves saved draft bytes and revisions uncha
 Compiler tests cover graph and snapshot bindings, versioned wire shape, branch/merge topology, parallel connections, numeric/special IDs and independent business declarations through actual DI.
 Integration tests prove graph plan compilation leaves stored draft bytes/revisions unchanged on success and failure.
 Publication gates, executor pins, runtime behavior and transfer execution require their own future evidence.
+
+Node configuration tests cover real tagged business compilers, exact versions and missing registrations, semantic rules, deterministic byte freezing, mutable plugin results and rejected compiler outputs.
+Database integration verifies that success and semantic failure leave saved draft bytes and revisions unchanged.

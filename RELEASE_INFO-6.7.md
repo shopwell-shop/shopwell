@@ -6,6 +6,8 @@
 
 The independent Approval Flow module provides exact-version node declarations through `NodeTypeLoader` and the `approval_flow.node_type_loader` service tag.
 Business modules register their loaders in their own DI; a declaration alone does not make a node executable.
+Business modules can also register `NodeCompiler` services with `approval_flow.node_compiler` to compile exact node versions into typed `NodeConfiguration` values.
+Configuration compilation rejects missing or conflicting compilers and invalid semantics; it does not publish a release or establish executor availability.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.
 Approval definitions and drafts now have DAL models; writes require the controlled draft path so graph admission, expected revisions and explicit removal confirmation cannot be skipped through ordinary repository or Sync calls.

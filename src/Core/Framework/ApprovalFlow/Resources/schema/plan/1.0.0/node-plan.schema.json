@@ -1,0 +1,60 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:shopwell:approval-flow:node-plan:1.0.0",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "formatVersion",
+        "compilerId",
+        "compilerVersion",
+        "graphPlanHash",
+        "nodes"
+    ],
+    "properties": {
+        "formatVersion": {
+            "const": "1.0.0"
+        },
+        "compilerId": {
+            "const": "core:node-plan"
+        },
+        "compilerVersion": {
+            "const": "1.0.0"
+        },
+        "graphPlanHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "nodes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "nodeId",
+                    "type",
+                    "typeVersion",
+                    "configuration"
+                ],
+                "properties": {
+                    "nodeId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^[^\u0000]"
+                    },
+                    "type": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
+                    },
+                    "typeVersion": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+                    },
+                    "configuration": {
+                        "type": "object",
+                        "description": "Derived node-specific output from a registered compiler; this envelope does not establish executable semantics."
+                    }
+                }
+            }
+        }
+    }
+}

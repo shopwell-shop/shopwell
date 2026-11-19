@@ -18,8 +18,11 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirecto
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Mutation\GraphMutator;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\CoreNodeCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompilerRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
+use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -81,6 +84,13 @@ return static function (ContainerConfigurator $container): void {
         ]);
     $services->set(GraphPlanCompiler::class)
         ->args([service(GraphPublicationPreflight::class), service(GraphJsonDecoder::class)]);
+    $services->set(CoreNodeCompiler::class)
+        ->args([service(NodeTypeRegistry::class), service(GraphJsonDecoder::class), service(GraphSchemaValidator::class)])
+        ->tag('approval_flow.node_compiler');
+    $services->set(NodeCompilerRegistry::class)
+        ->args([tagged_iterator('approval_flow.node_compiler')]);
+    $services->set(NodePlanCompiler::class)
+        ->args([service(GraphPlanCompiler::class), service(NodeCompilerRegistry::class), service(GraphJsonDecoder::class)]);
     $services->set(GraphMutator::class)
         ->args([service(GraphCodec::class), service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
     $services->set(GraphDiagnoseCommand::class)

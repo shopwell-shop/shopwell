@@ -23,6 +23,8 @@ Keep business implementations and their DI in the owning business module.
 - `ApprovalDraftService` owns draft admission, caller permissions and confirmed edits; `ApprovalDraftStore` isolates transactions, current row reads and DAL writes.
 - `Publication` prepares immutable graph and declaration snapshots for subsequent compilation and executable dependency checks.
 - `GraphPlanCompiler` derives graph indexes and a topological order from a freshly checked snapshot.
+- `Node/Compilation` dispatches exact-version configuration compilers; `Node/Configuration` owns the concrete built-in values.
+- `NodePlanCompiler` freezes the derived configurations with their structural graph-plan binding.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
 A loaded declaration does not establish executor availability, publication validity or authorization.
@@ -154,6 +156,41 @@ Compiler identity/version describes this plan derivation; it is not a deployment
 A topological order does not decide branch activation, joins, task order, approval policy or runtime scheduling.
 Those semantics and exact executable dependencies still require their own compilation/admission before an immutable release can be published.
 The internal plan value carries no execution authority.
+
+## Node configuration compilation
+
+`NodePlanCompiler::compile()` first compiles the input draft through `GraphPlanCompiler`, then resolves each node through the actual `approval_flow.node_compiler` service collection.
+Implement `NodeCompiler` in the owning business module and tag its service there.
+`getTypes()` maps node types to lists of exact node versions; these are not compiler artifact versions.
+A declaration and its compiler are separate requirements: a declared type without an installed compiler fails explicitly.
+Duplicate exact registrations fail the whole catalogue; there is no priority replacement, latest-version fallback or request-time registration.
+The tag contract is also registered in static analysis.
+
+`compile(type, version, configurationJson)` must validate the complete configuration shape and its own semantic rules, then return a concrete `NodeConfiguration`.
+Use typed node-specific properties in that value; the shared compiler does not interpret arbitrary business fields.
+Its `jsonSerialize()` must produce deterministic object JSON, including an explicit object for an empty configuration.
+Only frozen JSON text leaves the plan compiler, so no plugin-owned mutable configuration object reaches storage or survives into an earlier plan.
+Invalid output containers, unrepresentable object keys and lossy numbers are internal compiler defects; they do not become client success or empty plans.
+Configuration validation failures use the owning module's `HttpException` with status 400 or 422.
+An optional `path` parameter is local to that configuration; the host prefixes `/nodes/{index}/config`, retains the cause and reports `INVALID_NODE_CONFIGURATION`.
+Without a local path the whole node configuration is identified.
+Operational failures, permission errors and unexpected exceptions from compilation propagate unchanged; a malformed present path is a compiler fault.
+Validation normalization surrounds the compiler call only; a configuration serializer throwing an HTTP exception is a producer fault, even when it uses a 4xx status.
+Trusted in-process compilers are not a security sandbox.
+
+`CoreNodeCompiler` validates exact complete schemas through the strict JSON decoder, then derives `StartNodeConfiguration`, `ApprovalNodeConfiguration` or `EndNodeConfiguration`.
+Explicit user sources merge in first-appearance order, with one entry per distinct user identity.
+Single approval requires exactly one distinct configured user; this does not establish that the user exists or is eligible at runtime.
+Field access rules preserve authored order; duplicate rules, required noneditable fields and conditional rules without an expression compiler are rejected.
+Unsupported rules remain writable draft content but cannot enter a node configuration plan.
+The derived approval value retains the veto rejection policy and explicit empty-assignee behavior; it does not evaluate votes or resolve the empty set.
+
+`CompiledNodePlan` retains the graph plan and freezes the derived configuration JSON; its SHA-256 binds the complete node plan bytes.
+The internal envelope schema is `Resources/schema/plan/1.0.0/node-plan.schema.json`.
+It validates the envelope shape, not a business compiler's semantics or execution authority.
+The graph snapshot remains authoritative; normalized user lists are derived values, not a second editable graph.
+This increment neither installs executors nor validates request/form services, deployed artifacts, user eligibility, conditional routing or runtime scheduling.
+Exact executable dependency admission and immutable release publication remain required before execution.
 
 ## Implementation order
 
