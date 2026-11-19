@@ -2,8 +2,14 @@
 
 namespace Shopwell\Core\Framework\DependencyInjection;
 
+use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\ApprovalFlow\Definition\ApprovalFlowDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\Command\GraphDiagnoseCommand;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
+use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
+use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftStore;
+use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
@@ -21,6 +27,27 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
+
+    $services->set(ApprovalFlowDefinition::class)
+        ->tag('shopwell.entity.definition');
+    $services->set(ApprovalDraftDefinition::class)
+        ->tag('shopwell.entity.definition');
+    $services->set(ApprovalDraftWriteGuard::class)
+        ->tag('kernel.event_subscriber');
+    $services->set(ApprovalDraftStore::class)
+        ->args([
+            service(Connection::class),
+            service('approval_flow_definition.repository'),
+            service('approval_flow_draft.repository'),
+        ]);
+    $services->set(ApprovalDraftService::class)
+        ->args([
+            service(ApprovalDraftStore::class),
+            service(GraphCodec::class),
+            service(GraphDiagnostics::class),
+            service(GraphMutator::class),
+        ]);
+
     $services->set(YamlNodeTypeLoader::class)
         ->args([
             service('filesystem'),

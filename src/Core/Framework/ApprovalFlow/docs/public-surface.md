@@ -1,7 +1,9 @@
 # Approval Flow public surface
 
-The supported extension surface currently covers node declaration and assembly.
-No API routes, DAL entities, execution commands or publication services are exposed by this increment.
+The supported extension surface covers node declaration and assembly.
+The DAL models `approval_flow_definition` and `approval_flow_draft` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
+They carry neither `@internal` nor `@final`; this does not authorize direct writes around the controlled draft path.
+No HTTP action routes, execution commands or publication services are exposed by this increment.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
 
 ## Node declarations
@@ -22,6 +24,9 @@ The Registry caches only a complete successful load and never exposes a partiall
 ## Internal adapters
 
 `YamlNodeTypeLoader`, `NodeTypeSourceDirectory` and framework DI are internal adapters.
+`ApprovalDraftService`, `ApprovalDraftStore`, the write guard and revision-bearing draft results are internal while the controlled persistence contract is exercised.
+Ordinary repository and Sync writes to definitions and drafts are rejected; the storage adapter opens the internal scope only for admitted writes.
+The scope does not restrict trusted in-process PHP code that can also access the database directly.
 Graph values, codecs, pure mutations, diagnostics and the versioned draft wire schema remain internal while their contracts are exercised by real consumers.
 No executable graph or validated runtime configuration handle is exposed by this increment.
 They are not extension inheritance hooks.
@@ -34,4 +39,6 @@ The specification and YAML tests cover stable identity, schema shape, exact byte
 The wiring test compiles a real Symfony container with core and business-owned declarations, without changing framework configuration for the business node.
 Graph tests additionally cover explicit draft rules, closed wire shapes, exact missing versions, JSON value preservation, safe numeric lexemes, duplicate keys, graph references, control-flow diagnostics and atomic mutations with complete loss records.
 The graph wiring test exercises the same independently registered finance source through the actual codec and mutator services.
-Publication gates, executor pins, durable concurrency, runtime behavior and transfer execution require their own future evidence.
+Persistence integration tests cover DAL mapping, permissions, source/scope preservation, revision conflicts, removal confirmation, complete rollback, direct-write rejection and plugin loss/restoration.
+An independent writer process establishes an older read snapshot, proves real row contention through a lock timeout and then receives a revision conflict after the first writer commits.
+Publication gates, executor pins, runtime behavior and transfer execution require their own future evidence.

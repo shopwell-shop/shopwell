@@ -19,6 +19,8 @@ Keep business implementations and their DI in the owning business module.
 - `Graph/Codec` owns strict JSON decoding and deterministic draft encoding against the versioned wire contract.
 - `Diagnostics` reports structure defects, incomplete drafts and missing capabilities without rewriting input.
 - `Mutation` edits detached drafts and returns the complete result with diagnostics and explicit removed fragments.
+- `Definition` and `Draft` define the DAL records for a flow identity and its current draft.
+- `ApprovalDraftService` owns draft admission, caller permissions and confirmed edits; `ApprovalDraftStore` isolates transactions, current row reads and DAL writes.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
 A loaded declaration does not establish executor availability, publication validity or authorization.
@@ -51,7 +53,7 @@ It admits an empty or disconnected draft; configuration completeness and control
 `encodeDraft()` additionally rejects missing capabilities.
 `DraftGraph` retains immutable wire JSON rather than exposing nested mutable objects or pretending to be an executable graph.
 Each mutation validates its raw fragment before serialization, works on a detached copy and admits the whole result before returning it.
-Removing a node returns its complete configuration, incident connections and layout entries; the eventual persistence caller must handle loss confirmation.
+Removing a node returns its complete configuration, incident connections and layout entries; the persistence service requires explicit removal confirmation at the same revision.
 
 JSON objects and lists retain their shapes, including `{}`, `[]`, `null`, `false` and `0`.
 Object keys are ordered for deterministic encoding; list order remains authored.
@@ -68,11 +70,45 @@ Run `bin/console approval-flow:graph:diagnose <file>` to inspect a draft without
 The command reports category, stable code and JSON Pointer; any violation returns a failing exit status.
 A clean graph report only describes the implemented graph checks and never grants publication or execution.
 
+## Controlled draft persistence
+
+`ApprovalDraftService::create()` admits a draft JSON document and creates its definition and revision 1 atomically.
+It requires both `approval_flow_definition:create` and `approval_flow_draft:create`.
+`read()` requires `approval_flow_draft:read`; each edit requires both draft read and update privileges.
+An Admin API source must hold those privileges, a system source may perform internal work, and customer or unrecognized sources are rejected.
+The original Context and source reach DAL and its events; the internal write scope is restored on success and failure.
+
+The stored graph is canonical JSON text with a database `JSON_VALID` constraint.
+Its DAL field disables HTML sanitization because string content belongs to the graph contract, while the Codec remains responsible for admission.
+The existing `CreatedByField` and `UpdatedByField` record Administration users; integration and system sources have no user attribution.
+Definition names are separate management labels; graph metadata remains authored graph content.
+
+Each edit supplies an expected integer revision.
+The store opens a non-retrying transaction and locks the current draft row before comparing the revision and running the pure operation.
+It reads graph bytes and revision from the locking query itself, so an older enclosing transaction's read snapshot cannot overwrite a newer edit.
+The graph and incremented revision are written together through DAL.
+A stale revision returns `APPROVAL_FLOW__DRAFT_REVISION_CONFLICT` with HTTP 409.
+Database failures and synchronous DAL event failures propagate and roll back the transaction; the service does not replay their callbacks.
+An enclosing transaction retains commit ownership and the row lock until it finishes.
+DAL events can run before that outer commit, so event consumers must not treat them as durable external delivery.
+
+Preview removals with the pure `GraphMutator` and review its complete removed fragments.
+Persisting a node or connection removal requires `confirmRemoval: true` and the previewed revision.
+An unconfirmed removal returns `APPROVAL_FLOW__REMOVAL_NOT_CONFIRMED` without changing the draft.
+No unrestricted graph replacement or arbitrary mutation callback is exposed by the service.
+Unavailable exact plugin types remain readable with capability diagnostics; edits are blocked until those declarations return.
+
+`ApprovalDraftWriteGuard` rejects ordinary repository and Sync creates, updates and deletes for both tables, including system-scope calls.
+Its internal scope is an in-process coordination mechanism, not a security sandbox for trusted PHP plugins with direct database access.
+`Migration1795072461CreateApprovalFlowDraftTables` creates the new tables through the normal migration runner.
+It performs no legacy Workflow conversion or compatibility reads.
+This increment adds no HTTP action endpoints or Administration pages.
+
 ## Implementation order
 
 1. Validate declarations and real typed assembly with duplicate, missing and version coexistence cases.
 2. Verify the authoritative draft codec, pure mutation and diagnostics with shared schema fixtures and real tagged business nodes.
-3. Add controlled persistence and publication gates, then a minimal start → approval → end execution path.
+3. Verify controlled draft persistence, then add publication gates and a minimal start → approval → end execution path.
 4. Prove new nodes, operations and transfer integration through the public seams before expanding complex execution semantics.
 
 Read the closest implementation and adjacent tests before each increment, and review naming, responsibility, failures and dependency direction alongside tests and lint.
@@ -88,6 +124,9 @@ The legacy workflow menu is hidden through the existing menu visibility event; r
 - `StoredElementCodec` and its adjacent tests: paired wire conversion, strict shape admission and preservation of unknown capabilities.
 - `MutationPipeline` and its tests: returned diagnostics describe the returned value, with explicit losses.
 - ContentSystem draft/write-gate principles: draft incompleteness does not become malformed structure.
+- `PersistedLayoutMutator` and its tests: permission-first orchestration, locked version checks and caller Context retention.
+- `ContentWorkspaceDefinition` and its tests: native actor fields and user associations.
+- Flow and NumberRange DAL classes: entity accessors and collection conventions, without mechanical class-level restriction annotations.
 - `VisibleMenuTreeBuilder` and its tests: runtime visibility for stored, customized and synthesized menu entries.
 
 The new graph and execution model must not depend on ContentSystem or the legacy workflow implementation.

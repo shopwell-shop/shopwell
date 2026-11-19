@@ -8,6 +8,8 @@ The independent Approval Flow module provides exact-version node declarations th
 Business modules register their loaders in their own DI; a declaration alone does not make a node executable.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.
+Approval definitions and drafts now have DAL models; writes require the controlled draft path so graph admission, expected revisions and explicit removal confirmation cannot be skipped through ordinary repository or Sync calls.
+An unavailable exact node declaration keeps an existing draft readable and blocks edits until the declaration returns.
 The legacy Workflow navigation is hidden during the replacement, while its existing routes and business execution remain available.
 The new Approval navigation and business pages will be added with their corresponding capabilities.
 
