@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Specification;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Hasher;
 
@@ -19,7 +20,13 @@ final readonly class NodeTypeSpecification
     public string $draftConfigurationSchema;
 
     /**
+     * @var non-empty-list<NodeEffectType>
+     */
+    public array $allowedEffects;
+
+    /**
      * @param array<string, 'input'|'output'> $ports
+     * @param array<NodeEffectType> $allowedEffects
      */
     public function __construct(
         public string $type,
@@ -28,6 +35,7 @@ final readonly class NodeTypeSpecification
         public string $source,
         public string $configurationSchema,
         public array $ports,
+        array $allowedEffects,
         ?string $draftConfigurationSchema = null,
     ) {
         if (!preg_match('/^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$/D', $type)) {
@@ -45,6 +53,18 @@ final readonly class NodeTypeSpecification
             }
         }
 
+        if ($allowedEffects === [] || !array_is_list($allowedEffects)) {
+            throw ApprovalFlowException::invalidNodeType($source, 'allowedEffects must be a nonempty list of unique effect types');
+        }
+        $effects = [];
+        foreach ($allowedEffects as $effect) {
+            if (!$effect instanceof NodeEffectType || isset($effects[$effect->value])) {
+                throw ApprovalFlowException::invalidNodeType($source, 'allowedEffects must be a nonempty list of unique effect types');
+            }
+            $effects[$effect->value] = $effect;
+        }
+
+        $this->allowedEffects = array_values($effects);
         $this->configurationSchemaId = self::parseSchemaId($configurationSchema, $source, 'configurationSchema');
         // Retain exact schema bytes: decoding into PHP arrays would merge JSON {} and [].
         $this->configurationSchemaHash = Hasher::hash($configurationSchema, 'sha256');

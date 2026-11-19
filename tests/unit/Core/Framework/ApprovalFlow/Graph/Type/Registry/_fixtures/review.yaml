@@ -6,3 +6,4 @@ draftConfigurationSchema: review.draft.json
 ports:
   in: input
   out: output
+allowedEffects: [complete]

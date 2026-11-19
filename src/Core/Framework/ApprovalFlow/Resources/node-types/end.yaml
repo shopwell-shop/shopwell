@@ -5,3 +5,4 @@ configurationSchema: end.json
 draftConfigurationSchema: end.draft.json
 ports:
   in: input
+allowedEffects: [complete]

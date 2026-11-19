@@ -6,9 +6,11 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffectValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeConfigurationCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
 use Shopwell\Core\Framework\Context;
@@ -34,6 +36,8 @@ class ApprovalNodeEntry
         private readonly NodeConfigurationCompiler $configurations,
         private readonly NodeExecutorRegistry $executors,
         private readonly GraphJsonDecoder $jsonDecoder,
+        private readonly NodeTypeRegistry $nodeTypes,
+        private readonly NodeEffectValidator $effects,
     ) {
     }
 
@@ -58,7 +62,10 @@ class ApprovalNodeEntry
                 throw ApprovalFlowException::releaseVerificationFailed($releaseId, 'nodePlanJson/nodes/' . $index . '/configuration');
             }
 
-            return $this->executors->get($node->type, $node->typeVersion)->enter($configuration);
+            $effect = $this->executors->get($node->type, $node->typeVersion)->enter($configuration);
+            $this->effects->validate($this->nodeTypes->get($node->type, $node->typeVersion), $configuration, $effect);
+
+            return $effect;
         }
 
         throw ApprovalFlowException::releaseNodeNotFound($releaseId, $nodeId);

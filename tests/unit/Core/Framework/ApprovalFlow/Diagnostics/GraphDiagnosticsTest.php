@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeLoader;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Specification\NodeTypeSpecification;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Graph\_fixtures\GraphFixture;
@@ -25,7 +26,7 @@ class GraphDiagnosticsTest extends TestCase
         $loader = new class implements NodeTypeLoader {
             public function load(): array
             {
-                return [new NodeTypeSpecification('finance:review', '1.0.0', 'finance.review', 'finance:review.yaml', '{"$id":"urn:finance:broken","type":"object","properties":false}', ['in' => 'input', 'out' => 'output'])];
+                return [new NodeTypeSpecification('finance:review', '1.0.0', 'finance.review', 'finance:review.yaml', '{"$id":"urn:finance:broken","type":"object","properties":false}', ['in' => 'input', 'out' => 'output'], [NodeEffectType::Advance])];
             }
         };
         $json = str_replace('core:approval', 'finance:review', GraphFixture::json());

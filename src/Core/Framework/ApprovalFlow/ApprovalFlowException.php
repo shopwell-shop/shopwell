@@ -35,6 +35,7 @@ class ApprovalFlowException extends HttpException
     public const NODE_TYPE_NOT_FOUND = 'APPROVAL_FLOW__NODE_TYPE_NOT_FOUND';
     public const NODE_EXECUTOR_NOT_FOUND = 'APPROVAL_FLOW__NODE_EXECUTOR_NOT_FOUND';
     public const DUPLICATE_NODE_EXECUTOR = 'APPROVAL_FLOW__DUPLICATE_NODE_EXECUTOR';
+    public const INVALID_NODE_EFFECT = 'APPROVAL_FLOW__INVALID_NODE_EFFECT';
     public const INVALID_NODE_EXECUTOR = 'APPROVAL_FLOW__INVALID_NODE_EXECUTOR';
     public const NODE_COMPILER_NOT_FOUND = 'APPROVAL_FLOW__NODE_COMPILER_NOT_FOUND';
     public const DUPLICATE_NODE_COMPILER = 'APPROVAL_FLOW__DUPLICATE_NODE_COMPILER';
@@ -295,6 +296,16 @@ class ApprovalFlowException extends HttpException
             self::DUPLICATE_NODE_EXECUTOR,
             'Approval node "{{ type }}@{{ version }}" has two executors: "{{ first }}" and "{{ second }}".',
             ['type' => $type, 'version' => $version, 'first' => $first, 'second' => $second]
+        );
+    }
+
+    public static function invalidNodeEffect(string $type, string $version, string $effect, string $reason): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_NODE_EFFECT,
+            'Invalid approval node effect "{{ effect }}" from "{{ type }}@{{ version }}": {{ reason }}',
+            ['type' => $type, 'version' => $version, 'effect' => $effect, 'reason' => $reason]
         );
     }
 

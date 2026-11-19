@@ -39,12 +39,17 @@ Declaring a compiler does not establish runtime capability or a deployment artif
 
 - `NodeExecutor` declares one exact type/version and accepts a compiler-produced `NodeConfiguration` for that identity.
 - Register it with `approval_flow.node_executor`; static analysis enforces the interface.
+- `NodeEffectType` provides `Advance`, `RequestApproval` and `Complete` declaration values.
+- `NodeTypeSpecification` requires an explicit, nonempty `allowedEffects` list without duplicates; YAML declarations use the corresponding wire strings.
 - `enter()` returns the closed union `AdvanceEffect|RequestApprovalEffect|CompleteEffect`, without infrastructure calls or storage changes.
 - `ApprovalNodeConfiguration` and `ApprovalFieldConfiguration` are supported immutable values for approval rules and candidates carried by `RequestApprovalEffect`.
 - `ApprovalOutcome` fixes approved/rejected process outcomes at the PHP type boundary; `CompleteEffect` accepts this enum rather than an arbitrary string.
 
 A plugin may implement its own node compiler, configuration and executor and return one of the controlled intents without importing internal framework types.
 The current configuration classes identify the v1 core contract; future incompatible versions must retain their own configuration type and exact services.
+The internal entry path rejects effects outside the published permission set, changed approval rules and changed end-node outcomes.
+Approval intents currently require a matching compiled `ApprovalNodeConfiguration`; custom configurations cannot supply unrelated task rules.
+Declared business completion intents remain subject to runtime token, scope and state validation.
 Executors are pure entry services, not authorization or persistence extension points.
 Effects are uncommitted proposals: the future runtime must supply execution identity, resolve candidates, revalidate transitions and validate the whole effect set before any writes.
 The internal entry path restores compiler-produced configurations from verified persisted releases; no supported runtime decoder or instance-execution endpoint exists yet.
@@ -114,7 +119,7 @@ Its storage wire format and hash derivation remain unchanged.
 Loading a persisted release requires release read privileges and exact agreement with a fresh compilation of its saved graph, all frozen documents, current deployment bindings and full content hash.
 Only the selected node's typed configuration is restored, verified against its frozen output and immediately handed to its exact executor.
 No configuration collection escapes for later mutation, and no caller-supplied object grants execution authority.
-The returned effect remains uncommitted and cannot authorize instance state or business side effects.
+The declaration and compiled-rule checks validate the returned effect, which remains uncommitted and cannot authorize instance state or business side effects.
 Whole-release verification runs for each call without a cache; performance and command-scoped admission will need verification with the future runtime.
 
 Integration tests cover every changed frozen document, changed deployment bytes, permission-first reads, missing releases and independence from later draft edits.

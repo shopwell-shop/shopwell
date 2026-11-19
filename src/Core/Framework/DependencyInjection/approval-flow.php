@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftStore;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffectValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
@@ -67,8 +68,16 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class)]);
     $services->set(ApprovalReleaseLoader::class)
         ->args([service(ApprovalReleaseService::class), service(ApprovalReleaseCompiler::class)]);
+    $services->set(NodeEffectValidator::class);
     $services->set(ApprovalNodeEntry::class)
-        ->args([service(ApprovalReleaseLoader::class), service(NodeConfigurationCompiler::class), service(NodeExecutorRegistry::class), service(GraphJsonDecoder::class)]);
+        ->args([
+            service(ApprovalReleaseLoader::class),
+            service(NodeConfigurationCompiler::class),
+            service(NodeExecutorRegistry::class),
+            service(GraphJsonDecoder::class),
+            service(NodeTypeRegistry::class),
+            service(NodeEffectValidator::class),
+        ]);
     $services->set(ApprovalFlowDefinition::class)
         ->tag('shopwell.entity.definition');
     $services->set(ApprovalDraftDefinition::class)

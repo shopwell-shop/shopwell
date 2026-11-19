@@ -15,6 +15,19 @@ use Shopwell\Core\Framework\Log\Package;
 #[CoversClass(ApprovalNodeConfiguration::class)]
 class ApprovalNodeConfigurationTest extends TestCase
 {
+    public function testConfigurationKeepsItsOwnCandidateAndFieldValues(): void
+    {
+        $userId = 'reviewer';
+        $field = new ApprovalFieldConfiguration('form.amount', ApprovalFieldConfiguration::EDITABLE, required: true);
+        $configuration = new ApprovalNodeConfiguration([&$userId], ApprovalNodeConfiguration::ALL, [&$field], ApprovalNodeConfiguration::EMPTY_INCIDENT);
+
+        $userId = 'someone-else';
+        $field = new ApprovalFieldConfiguration('form.amount', ApprovalFieldConfiguration::READ_ONLY, required: false);
+
+        static::assertSame(['reviewer'], $configuration->userIds);
+        static::assertSame(ApprovalFieldConfiguration::EDITABLE, $configuration->fields[0]->access);
+    }
+
     public function testSerializesFieldRulesAsValuesAndKeepsListsInOrder(): void
     {
         $configuration = new ApprovalNodeConfiguration(

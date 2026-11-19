@@ -23,17 +23,30 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
     public const EMPTY_SKIP = 'skip';
 
     /**
+     * @var non-empty-list<string>
+     */
+    public array $userIds;
+
+    /**
+     * @var list<ApprovalFieldConfiguration>
+     */
+    public array $fields;
+
+    /**
      * @param non-empty-list<string> $userIds
      * @param self::SINGLE|self::ALL|self::ANY $policy
      * @param list<ApprovalFieldConfiguration> $fields
      * @param self::EMPTY_INCIDENT|self::EMPTY_SKIP $emptyAssignees
      */
     public function __construct(
-        public array $userIds,
+        array $userIds,
         public string $policy,
-        public array $fields,
+        array $fields,
         public string $emptyAssignees,
     ) {
+        // Copy list entries by value so callers cannot change the rules through array references.
+        $this->userIds = array_map(static fn (string $userId): string => $userId, $userIds);
+        $this->fields = array_map(static fn (ApprovalFieldConfiguration $field): ApprovalFieldConfiguration => $field, $fields);
     }
 
     /**

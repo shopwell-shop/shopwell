@@ -5,3 +5,4 @@ configurationSchema: start.json
 draftConfigurationSchema: start.draft.json
 ports:
   out: output
+allowedEffects: [advance]

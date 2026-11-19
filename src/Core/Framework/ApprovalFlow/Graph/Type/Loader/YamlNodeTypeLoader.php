@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Specification\NodeTypeSpecification;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\Filesystem\Filesystem;
@@ -16,7 +17,7 @@ use Symfony\Component\Yaml\Yaml;
 #[Package('framework')]
 class YamlNodeTypeLoader implements NodeTypeLoader
 {
-    private const FIELDS = ['type', 'version', 'labelSnippet', 'configurationSchema', 'draftConfigurationSchema', 'ports'];
+    private const FIELDS = ['type', 'version', 'labelSnippet', 'configurationSchema', 'draftConfigurationSchema', 'ports', 'allowedEffects'];
 
     /**
      * @param list<NodeTypeSourceDirectory> $directories
@@ -38,7 +39,7 @@ class YamlNodeTypeLoader implements NodeTypeLoader
             foreach ($files as $file) {
                 $source = $directory->source . ':' . $file->getFilename();
                 try {
-                    $data = Yaml::parse($this->filesystem->readFile($file->getPathname()));
+                    $data = Yaml::parse($this->filesystem->readFile($file->getPathname()), Yaml::PARSE_OBJECT_FOR_MAP);
                 } catch (ParseException $exception) {
                     throw ApprovalFlowException::invalidNodeType($source, 'declaration is not valid YAML', $exception);
                 }
@@ -51,9 +52,10 @@ class YamlNodeTypeLoader implements NodeTypeLoader
 
     private function loadSpecification(mixed $data, string $directory, string $source): NodeTypeSpecification
     {
-        if (!\is_array($data) || array_is_list($data)) {
+        if (!$data instanceof \stdClass) {
             throw ApprovalFlowException::invalidNodeType($source, 'declaration must be a map');
         }
+        $data = get_object_vars($data);
         if (array_diff(array_keys($data), self::FIELDS) !== []) {
             throw ApprovalFlowException::invalidNodeType($source, 'Unknown declaration field');
         }
@@ -70,13 +72,27 @@ class YamlNodeTypeLoader implements NodeTypeLoader
             throw ApprovalFlowException::invalidNodeType($source, 'configurationSchema file is missing');
         }
         $ports = $data['ports'] ?? null;
-        if (!\is_array($ports) || array_is_list($ports)) {
+        if (!$ports instanceof \stdClass || get_object_vars($ports) === []) {
             throw ApprovalFlowException::invalidNodeType($source, 'ports must be a named map');
         }
+        $ports = get_object_vars($ports);
         foreach ($ports as $id => $direction) {
             if (!\is_string($id) || $id === '' || !\in_array($direction, ['input', 'output'], true)) {
                 throw ApprovalFlowException::invalidNodeType($source, 'ports must map names to input or output');
             }
+        }
+
+        $effects = $data['allowedEffects'] ?? null;
+        if (!\is_array($effects) || $effects === [] || !array_is_list($effects)) {
+            throw ApprovalFlowException::invalidNodeType($source, 'allowedEffects must be a nonempty list of effect types');
+        }
+        $allowedEffects = [];
+        foreach ($effects as $effect) {
+            $kind = \is_string($effect) ? NodeEffectType::tryFrom($effect) : null;
+            if ($kind === null) {
+                throw ApprovalFlowException::invalidNodeType($source, 'allowedEffects contains an unknown effect type');
+            }
+            $allowedEffects[] = $kind;
         }
 
         $draftSchema = null;
@@ -98,6 +114,7 @@ class YamlNodeTypeLoader implements NodeTypeLoader
             $source,
             $this->filesystem->readFile($directory . '/' . $schemaFile),
             $ports,
+            $allowedEffects,
             $draftSchema,
         );
     }

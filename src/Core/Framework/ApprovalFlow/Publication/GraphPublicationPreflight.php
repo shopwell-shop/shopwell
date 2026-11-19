@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -56,6 +57,8 @@ class GraphPublicationPreflight
             foreach ($ports as $id => $direction) {
                 $declaredPorts[] = ['id' => $id, 'direction' => $direction];
             }
+            $allowedEffects = array_map(static fn (NodeEffectType $effect): string => $effect->value, $type->allowedEffects);
+            sort($allowedEffects, \SORT_STRING);
             $declarations[$identity] = [
                 'type' => $type->type,
                 'version' => $type->version,
@@ -63,6 +66,7 @@ class GraphPublicationPreflight
                 'configurationSchemaHash' => $type->configurationSchemaHash,
                 'configurationSchema' => $type->configurationSchema,
                 'ports' => $declaredPorts,
+                'allowedEffects' => $allowedEffects,
             ];
         }
         ksort($declarations, \SORT_STRING);

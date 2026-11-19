@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeLoader;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Specification\NodeTypeSpecification;
 use Shopwell\Core\Framework\Log\Package;
@@ -90,6 +91,7 @@ class NodeTypeRegistryTest extends TestCase
             $source,
             '{"$id":"review:config","type":"object","additionalProperties":false}',
             ['in' => 'input', 'out' => 'output'],
+            [NodeEffectType::Advance],
         );
     }
 

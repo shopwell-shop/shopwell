@@ -12,10 +12,16 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\CoreNodeType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirectory;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Specification\NodeTypeSpecification;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalNodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\NodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\ApprovalReleaseCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
@@ -179,6 +185,74 @@ class ApprovalNodeEntryTest extends TestCase
         $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'missing', Context::createDefaultContext());
     }
 
+    public function testApprovalExecutorCannotSkipApprovalByReturningCompletion(): void
+    {
+        $this->replaceExecutor(CoreNodeType::APPROVAL, ApprovalExecutor::class);
+        $release = $this->publish(GraphFixture::json());
+        $this->assertInvalidEffect($release, 'review', 'Effect is not allowed by the published node declaration.');
+    }
+
+    public function testApprovalExecutorCannotReplaceFrozenCandidates(): void
+    {
+        $this->replaceExecutor(CoreNodeType::APPROVAL, ApprovalExecutor::class);
+        $release = $this->publish(GraphFixture::json());
+        $executor = $this->container->get(ChangedNodeExecutor::class);
+        static::assertInstanceOf(ChangedNodeExecutor::class, $executor);
+        $executor->effect = new RequestApprovalEffect(new ApprovalNodeConfiguration(
+            ['another-user'],
+            ApprovalNodeConfiguration::ALL,
+            [],
+            ApprovalNodeConfiguration::EMPTY_INCIDENT,
+        ));
+        $this->assertInvalidEffect($release, 'review', 'Approval rules differ from the compiled node configuration.');
+    }
+
+    public function testEndExecutorCannotReplaceTheFrozenOutcome(): void
+    {
+        $this->replaceExecutor(CoreNodeType::END, EndExecutor::class);
+        $release = $this->publish(GraphFixture::json());
+        $executor = $this->container->get(ChangedNodeExecutor::class);
+        static::assertInstanceOf(ChangedNodeExecutor::class, $executor);
+        $executor->effect = new CompleteEffect(ApprovalOutcome::Rejected);
+        $this->assertInvalidEffect($release, 'end', 'Completion outcome differs from the compiled node configuration.');
+    }
+
+    public function testChangedEffectPermissionsCannotBeUsedWithAnExistingRelease(): void
+    {
+        $release = $this->publish(GraphFixture::json());
+        $runtime = $this->runtimeContainer();
+        $runtime->getDefinition(YamlNodeTypeLoader::class)->setClass(ChangedEffectPermissionsLoader::class);
+        $runtime->compile();
+        $runtime->set(ApprovalReleaseStore::class, static::getContainer()->get(ApprovalReleaseStore::class));
+        $this->expectExceptionObject(ApprovalFlowException::releaseVerificationFailed($release->id, 'contractJson'));
+
+        $runtime->get(ApprovalNodeEntry::class)->enter($release->id, 'review', Context::createDefaultContext());
+    }
+
+    private function assertInvalidEffect(PublishedApprovalRelease $release, string $nodeId, string $reason): void
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        $parameters = ['id' => Uuid::fromHexToBytes($release->id)];
+        $before = $connection->fetchAssociative('SELECT * FROM approval_flow_release WHERE id = :id', $parameters);
+        try {
+            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, $nodeId, Context::createDefaultContext());
+            static::fail('Invalid executor output must not escape the verified entry boundary.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertSame(ApprovalFlowException::INVALID_NODE_EFFECT, $exception->getErrorCode());
+            static::assertSame($reason, $exception->getParameters()['reason']);
+            static::assertSame('1.0.0', $exception->getParameters()['version']);
+        }
+        static::assertSame($before, $connection->fetchAssociative('SELECT * FROM approval_flow_release WHERE id = :id', $parameters));
+        static::assertSame(1, static::getContainer()->get(ApprovalDraftService::class)->read($release->definitionId, Context::createDefaultContext())->revision);
+    }
+
+    private function replaceExecutor(string $type, string $executor): void
+    {
+        $this->container->removeDefinition($executor);
+        $this->container->register(ChangedNodeExecutor::class)->setArguments([$type])->addTag('approval_flow.node_executor')->setPublic(true);
+        PublicationFixture::writeManifest($this->filesystem, $this->directory, [ChangedNodeExecutor::class]);
+    }
+
     private function runtimeContainer(): ContainerBuilder
     {
         $path = PublicationFixture::writeManifest($this->filesystem, $this->directory);
@@ -263,5 +337,60 @@ class NextEndExecutor extends EndExecutor
     public function getVersion(): string
     {
         return '2.0.0';
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class ChangedNodeExecutor implements NodeExecutor
+{
+    public AdvanceEffect|RequestApprovalEffect|CompleteEffect $effect;
+
+    public function __construct(private readonly string $type)
+    {
+        $this->effect = new CompleteEffect(ApprovalOutcome::Approved);
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    public function getVersion(): string
+    {
+        return '1.0.0';
+    }
+
+    public function enter(NodeConfiguration $configuration): AdvanceEffect|RequestApprovalEffect|CompleteEffect
+    {
+        return $this->effect;
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class ChangedEffectPermissionsLoader extends YamlNodeTypeLoader
+{
+    public function load(): array
+    {
+        $types = [];
+        foreach (parent::load() as $type) {
+            $types[] = new NodeTypeSpecification(
+                $type->type,
+                $type->version,
+                $type->labelSnippet,
+                $type->source,
+                $type->configurationSchema,
+                $type->ports,
+                [NodeEffectType::Advance, NodeEffectType::RequestApproval, NodeEffectType::Complete],
+                $type->draftConfigurationSchema,
+            );
+        }
+
+        return $types;
     }
 }

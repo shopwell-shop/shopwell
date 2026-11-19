@@ -42,7 +42,10 @@ The core Registry discovers it through the tagged iterator without importing the
 Run `bin/console approval-flow:node-types` to load and inspect the actual assembled catalogue; duplicate or malformed declarations fail the command.
 The wiring test compiles the actual framework configuration with an independently registered finance declaration.
 
-The YAML loader accepts `type`, `version`, `labelSnippet`, `configurationSchema`, optional `draftConfigurationSchema` and `ports` only.
+The YAML loader accepts `type`, `version`, `labelSnippet`, `configurationSchema`, optional `draftConfigurationSchema`, `ports` and required `allowedEffects` only.
+`allowedEffects` is a nonempty list without duplicates, using `advance`, `requestApproval` or `complete` from `NodeEffectType`.
+It declares the alternative intents permitted for one entry call; the executor still returns exactly one intent.
+Programmatic declarations supply the enum values to `NodeTypeSpecification`.
 `configurationSchema` names a JSON file beside the YAML declaration; the schema must declare an object and a nonempty `$id`.
 `draftConfigurationSchema` follows the same adjacent-file and object-schema rules.
 When absent, the complete configuration schema also governs drafts.
@@ -283,6 +286,15 @@ Only one typed configuration is restored and used immediately, so a compiler reu
 There is no PHP object deserialization, caller-selected class name or second decoder registration catalogue.
 An unknown node fails with `APPROVAL_FLOW__RELEASE_NODE_NOT_FOUND` rather than selecting another configuration.
 
+Before returning an effect, `ApprovalNodeEntry` calls `NodeEffectValidator` against the exact node declaration and restored configuration.
+Publication freezes the declaration's `allowedEffects` in sorted order; changing that permission set invalidates an existing release during verification.
+An executor cannot return a kind outside that set.
+`RequestApprovalEffect` must carry value-equivalent `ApprovalNodeConfiguration` rules, including candidates, aggregation policy, field access/required rules and the empty-assignee policy.
+A separately constructed equivalent configuration is accepted; changing a rule is rejected.
+The current task intent does not accept rules derived from an unrelated configuration class.
+A completion effect from `EndNodeConfiguration` must preserve its frozen outcome.
+Business nodes may compute an outcome when their declaration permits completion; this output check does not establish that the process can finish.
+
 The returned advance, approval-request or completion effect is still an uncommitted intent.
 Release read privileges permit this internal inspection path; they do not authorize a task, decision, transition or business side effect.
 A future instance command must bind effects to locked current execution state, resolve live prerequisites and validate them before its authoritative commit.
@@ -345,5 +357,5 @@ This increment provides no production instance creation, activation, resume, ter
 Tests seed runtime facts explicitly and use real persisted releases to exercise the commit boundary; they do not simulate an admitted business start.
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Future progression and decision commands must check the instance's running status under the same lock.
-Persistent timers, timer freezing, task cancellation, effect-set validation, request/form/participant admission and runtime scheduling remain subsequent increments.
+Persistent timers, timer freezing, task cancellation, transactional effect-set validation, request/form/participant admission and runtime scheduling remain subsequent increments.
 The command does not schedule approval-domain events or external effects; durable Outbox delivery remains a separate requirement when such delivery is introduced.

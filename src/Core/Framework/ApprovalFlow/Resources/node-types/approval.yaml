@@ -6,3 +6,4 @@ draftConfigurationSchema: approval.draft.json
 ports:
   in: input
   out: output
+allowedEffects: [requestApproval]

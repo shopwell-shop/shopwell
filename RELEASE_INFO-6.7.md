@@ -10,6 +10,8 @@ Business modules can also register `NodeCompiler` services with `approval_flow.n
 Configuration compilation rejects missing or conflicting compilers and invalid semantics.
 Register exact-version `NodeExecutor` entry services with `approval_flow.node_executor`; node-plan compilation now rejects missing executors without calling them.
 Executors return controlled advance, approval-request or completion intents; `ApprovalOutcome` represents approved/rejected outcomes as an enum.
+Node declarations require `allowedEffects` (`advance`, `requestApproval`, `complete`); programmatic declarations pass `NodeEffectType` values.
+The internal entry path rejects undeclared effects and changes to compiled approval rules or end outcomes; these checks do not authorize runtime writes.
 These entry services do not authorize task creation or process execution.
 Internal compilation publication now stores immutable `approval_flow_release` DAL records with expected-revision and full-preview-hash checks.
 Using publication requires a deployment-owned manifest configured through `APPROVAL_FLOW_ARTIFACT_MANIFEST`, binding actual service classes to retained artifact bytes and exact transitive dependencies.

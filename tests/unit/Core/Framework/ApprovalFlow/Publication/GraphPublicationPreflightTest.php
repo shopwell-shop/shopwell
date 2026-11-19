@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirectory;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Specification\NodeTypeSpecification;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
@@ -150,6 +151,7 @@ class GraphPublicationPreflightTest extends TestCase
             '/another/deployment/approval.yaml',
             $type->configurationSchema,
             array_reverse($type->ports),
+            $type->allowedEffects,
             $type->draftConfigurationSchema . "\n",
         );
         $this->types['finance:unused@1.0.0'] = new NodeTypeSpecification(
@@ -159,6 +161,7 @@ class GraphPublicationPreflightTest extends TestCase
             'plugin:finance',
             '{"$id":"urn:finance:unused:1.0.0","type":"object"}',
             ports: [],
+            allowedEffects: [NodeEffectType::Advance],
         );
 
         $second = $this->preflight($this->types)->prepare(new DraftGraph(GraphFixture::json()));
@@ -178,6 +181,7 @@ class GraphPublicationPreflightTest extends TestCase
             $type->source,
             $type->configurationSchema . "\n",
             $type->ports,
+            $type->allowedEffects,
             $type->draftConfigurationSchema,
         );
 
@@ -191,6 +195,40 @@ class GraphPublicationPreflightTest extends TestCase
         static::assertIsArray($contract['nodeTypes'][0]);
         static::assertSame($type->configurationSchema, $contract['nodeTypes'][0]['configurationSchema']);
         static::assertSame($type->configurationSchemaHash, $contract['nodeTypes'][0]['configurationSchemaHash']);
+    }
+
+    public function testAllowedEffectsAreFrozenIntoThePublicationContract(): void
+    {
+        $draft = new DraftGraph(GraphFixture::json());
+        $first = $this->preflight($this->types)->prepare($draft);
+        $type = $this->types['core:approval@1.0.0'];
+        $this->types['core:approval@1.0.0'] = new NodeTypeSpecification(
+            $type->type,
+            $type->version,
+            $type->labelSnippet,
+            $type->source,
+            $type->configurationSchema,
+            $type->ports,
+            [NodeEffectType::Advance, NodeEffectType::RequestApproval],
+            $type->draftConfigurationSchema,
+        );
+
+        $second = $this->preflight($this->types)->prepare($draft);
+
+        static::assertSame($first->graphJson, $second->graphJson);
+        static::assertNotSame($first->contractJson, $second->contractJson);
+        static::assertNotSame($first->hash, $second->hash);
+        $this->types['core:approval@1.0.0'] = new NodeTypeSpecification(
+            $type->type,
+            $type->version,
+            $type->labelSnippet,
+            $type->source,
+            $type->configurationSchema,
+            $type->ports,
+            [NodeEffectType::RequestApproval, NodeEffectType::Advance],
+            $type->draftConfigurationSchema,
+        );
+        static::assertSame($second->contractJson, $this->preflight($this->types)->prepare($draft)->contractJson);
     }
 
     public function testTheGraphSchemaBytesArePartOfTheFrozenContract(): void
