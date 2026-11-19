@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeConfigurationCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Publication\CompiledApprovalRelease;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -46,6 +47,50 @@ class ApprovalNodeEntry
         $release = $this->releases->load($releaseId, $context);
         /** @var GraphPayload $graph */
         $graph = $this->jsonDecoder->decode($release->graphJson);
+
+        return $this->enterNode($releaseId, $nodeId, $release, $graph);
+    }
+
+    /**
+     * @return array{startNodeId: string, connectionId: string, nextNodeId: string}
+     */
+    public function enterStart(string $releaseId, Context $context): array
+    {
+        $release = $this->releases->load($releaseId, $context);
+        /** @var GraphPayload $graph */
+        $graph = $this->jsonDecoder->decode($release->graphJson);
+        /** @var object{startNodeId: string} $plan */
+        $plan = $this->jsonDecoder->decode($release->graphPlanJson);
+
+        $outgoing = [];
+        foreach ($graph->connections as $connection) {
+            if ($connection->source === $plan->startNodeId) {
+                $outgoing[] = $connection;
+            }
+        }
+        if (\count($outgoing) !== 1) {
+            throw ApprovalFlowException::unsupportedStartRoute($releaseId);
+        }
+        $edge = $outgoing[0];
+        foreach ($graph->connections as $connection) {
+            if ($connection->target === $edge->target && $connection->id !== $edge->id) {
+                throw ApprovalFlowException::unsupportedStartRoute($releaseId);
+            }
+        }
+
+        $effect = $this->enterNode($releaseId, $plan->startNodeId, $release, $graph);
+        if (!$effect instanceof AdvanceEffect) {
+            throw ApprovalFlowException::invalidGraphPlan('The start node must advance to its successor.');
+        }
+
+        return ['startNodeId' => $plan->startNodeId, 'connectionId' => $edge->id, 'nextNodeId' => $edge->target];
+    }
+
+    /**
+     * @param GraphPayload $graph
+     */
+    private function enterNode(string $releaseId, string $nodeId, CompiledApprovalRelease $release, \stdClass $graph): AdvanceEffect|RequestApprovalEffect|CompleteEffect
+    {
         /** @var NodePlan $plan */
         $plan = $this->jsonDecoder->decode($release->nodePlanJson);
         foreach ($graph->nodes as $index => $node) {

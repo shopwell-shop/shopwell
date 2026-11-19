@@ -1,8 +1,8 @@
 # Approval Flow public surface
 
 The supported extension surface covers node declaration, configuration compilation, pure node entry and assembly.
-The DAL models `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance` and `approval_flow_operation` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
-They carry neither `@internal` nor `@final`; this does not authorize direct writes around the controlled draft path.
+The DAL models `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation` and `approval_flow_execution` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
+Writes use the controlled draft, release and instance paths.
 No HTTP action routes or supported PHP publication/runtime command services are exposed by this increment.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
 
@@ -131,13 +131,16 @@ The extraction retains the existing configuration validation, error causes, JSON
 `ApprovalInstanceStatus` is the closed enum used by the instance and operation DAL models.
 The six representable statuses do not imply that all transitions have been implemented.
 `ApprovalInstanceService`, `ApprovalInstanceStore`, `ApprovalInstanceWriteGuard` and `ApprovalInstanceCommandResult` are internal; they add no plugin runtime or arbitrary mutation contract.
-The only implemented command is administrative suspension from running to suspended.
-It requires `approval_flow_instance:manage`, an expected aggregate version, a command identity and a reason.
-It preserves the original actor and Context, serializes writes with the instance row lock and atomically retains the original response and audit in `approval_flow_operation`.
+Administrative suspension changes a running instance to suspended and requires `approval_flow_instance:manage` and a reason.
+Start entry is a system-only command for an existing running instance.
+It verifies the instance's bound release and records the start as completed and its single successor as waiting.
+Both commands require an expected aggregate version and a command identity.
+They preserve the original Context, serialize writes with the instance row lock and atomically retain the original response and audit in `approval_flow_operation`.
 Receipts are reauthorized on every retry and bound to their original actor and payload.
 
-Generic instance insertion, update and deletion, and generic operation writes are rejected through the DAL/Sync write guard.
-The controlled path only updates instance status/version and inserts immutable operations; it cannot rebind releases or rewrite receipts.
+The DAL/Sync write guard rejects generic writes to instances, operations and executions.
+The controlled path updates instance status and version and inserts immutable receipts and node execution records.
+Executions in `approval_flow_execution` retain their instance, node, incoming connection, sequence and status.
 Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.

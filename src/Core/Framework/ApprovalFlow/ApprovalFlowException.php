@@ -10,7 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const START_NODE_ALREADY_ENTERED = 'APPROVAL_FLOW__START_NODE_ALREADY_ENTERED';
+    public const UNSUPPORTED_START_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_START_ROUTE';
     public const INSTANCE_NOT_FOUND = 'APPROVAL_FLOW__INSTANCE_NOT_FOUND';
+    public const INSTANCE_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__INSTANCE_OUTSIDE_SNAPSHOT';
     public const INSTANCE_VERSION_CONFLICT = 'APPROVAL_FLOW__INSTANCE_VERSION_CONFLICT';
     public const INSTANCE_COMMAND_CONFLICT = 'APPROVAL_FLOW__INSTANCE_COMMAND_CONFLICT';
     public const INVALID_INSTANCE_TRANSITION = 'APPROVAL_FLOW__INVALID_INSTANCE_TRANSITION';
@@ -100,12 +103,42 @@ class ApprovalFlowException extends HttpException
         );
     }
 
+    public static function instanceOutsideSnapshot(string $instanceId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::INSTANCE_OUTSIDE_SNAPSHOT,
+            'Approval instance "{{ instanceId }}" is outside the current transaction snapshot. Retry the command in a new transaction.',
+            ['instanceId' => $instanceId]
+        );
+    }
+
+    public static function startNodeAlreadyEntered(string $instanceId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::START_NODE_ALREADY_ENTERED,
+            'Approval instance "{{ instanceId }}" has already entered its start node.',
+            ['instanceId' => $instanceId]
+        );
+    }
+
+    public static function unsupportedStartRoute(string $releaseId): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::UNSUPPORTED_START_ROUTE,
+            'Approval release "{{ releaseId }}" requires a single start edge into a node with no other incoming edges.',
+            ['releaseId' => $releaseId]
+        );
+    }
+
     public static function uncontrolledInstanceWrite(): self
     {
         return new self(
             Response::HTTP_FORBIDDEN,
             self::UNCONTROLLED_INSTANCE_WRITE,
-            'Approval instance state and immutable command receipts require a controlled command transaction.'
+            'Approval instance state, node executions and immutable command receipts require a controlled command transaction.'
         );
     }
 

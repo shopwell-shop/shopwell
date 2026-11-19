@@ -21,6 +21,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceDefi
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
@@ -53,10 +54,18 @@ return static function (ContainerConfigurator $container): void {
     $services = $container->services();
 
     $services->set(ApprovalInstanceDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalNodeExecutionDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalOperationDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalInstanceWriteGuard::class)->tag('kernel.event_subscriber');
     $services->set(ApprovalInstanceStore::class)
-        ->args([service(Connection::class), service('approval_flow_instance.repository'), service('approval_flow_operation.repository'), service(ApprovalInstanceWriteGuard::class)]);
+        ->args([
+            service(Connection::class),
+            service('approval_flow_instance.repository'),
+            service('approval_flow_operation.repository'),
+            service(ApprovalInstanceWriteGuard::class),
+            service('approval_flow_execution.repository'),
+            service(ApprovalNodeEntry::class),
+        ]);
     $services->set(ApprovalInstanceService::class)
         ->args([service(ApprovalInstanceStore::class)]);
 
@@ -69,7 +78,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalReleaseLoader::class)
         ->args([service(ApprovalReleaseService::class), service(ApprovalReleaseCompiler::class)]);
     $services->set(NodeEffectValidator::class);
+    // Only node entry requires deployment artifacts.
     $services->set(ApprovalNodeEntry::class)
+        ->lazy()
         ->args([
             service(ApprovalReleaseLoader::class),
             service(NodeConfigurationCompiler::class),

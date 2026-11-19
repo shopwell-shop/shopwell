@@ -8,9 +8,10 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * Administrative suspension only; instance creation, activation and resumption require separate admission.
+ * Handles administrative suspension and system entry into the start node of an admitted instance.
  *
  * @internal
  *
@@ -25,6 +26,18 @@ class ApprovalInstanceService
 
     public function __construct(private readonly ApprovalInstanceStore $store)
     {
+    }
+
+    public function enterStart(string $instanceId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
+    {
+        if (!$context->getSource() instanceof SystemSource) {
+            throw ApprovalFlowException::missingPrivileges(['system']);
+        }
+        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($commandId)) {
+            throw ApprovalFlowException::invalidInstanceCommand('A positive aggregate version and valid instance and command IDs are required.');
+        }
+
+        return $this->store->enterStart($instanceId, $commandId, $expectedVersion, $context);
     }
 
     public function suspend(string $instanceId, string $commandId, int $expectedVersion, string $reason, Context $context): ApprovalInstanceCommandResult

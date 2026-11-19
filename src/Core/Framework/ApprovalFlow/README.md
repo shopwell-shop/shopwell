@@ -338,11 +338,20 @@ The reason must contain non-whitespace text and fit within 1000 characters; it i
 
 The store locks the instance row and reads its current state, then checks `(instanceId, commandId)` using a current locking read.
 A matching request hash returns the original status and version, even if later commands have advanced the instance.
+When joining an existing transaction, a new command requires the locked instance to be visible to the caller's read snapshot so that the DAL can load and update it.
+A snapshot taken before the instance was admitted returns a conflict and the command can be retried in a new transaction.
 The hash includes the operation, expected version, exact reason and original source/user/integration identity.
 Reuse with another payload or actor fails with HTTP 409.
-A new command requires the expected aggregate version and `running` status; it changes the instance to `suspended`, increments the version once and inserts an immutable operation record in the same transaction.
+A new suspension requires the expected aggregate version and `running` status.
+It changes the instance to `suspended`, increments the version once and inserts an immutable operation record in the same transaction.
 The operation records both versions and statuses, actor, reason and request hash, serving as this command's audit and retry receipt.
-A DAL write or event failure rolls back both writes; the transaction is not automatically retried around callbacks.
+
+`ApprovalInstanceService::enterStart(instanceId, commandId, expectedVersion, Context)` uses the same lock, version and receipt checks for system commands.
+It takes the start node from the instance's verified release and validates the exact executor's effect.
+Start entry requires one outgoing connection whose successor has no other incoming connection.
+It inserts a completed start and a waiting successor into `approval_flow_execution`, advances the instance version, and saves the operation receipt in one transaction.
+The waiting record identifies the node and incoming connection for later execution.
+A DAL write or event failure rolls back the command's writes, and the transaction is not automatically retried around callbacks.
 
 `ApprovalInstanceWriteGuard::write()` scopes each DAL batch to system scope on the original Context and grants one pending write permit.
 The guard consumes that permit at the start of `EntityWriteEvent`, before ordinary listeners run, and admits only the exact command objects and payloads from that batch.
@@ -350,12 +359,12 @@ The guard consumes that permit at the start of `EntityWriteEvent`, before ordina
 A listener or success/error callback cannot use the same Context to obtain another write permit.
 The scope and any unused pending permit are restored or removed on success and failure.
 This uses object-keyed lifecycle tracking, as existing DAL validators do, without adding a public runtime callback contract.
-The guard rejects ordinary DAL and Sync writes, instance insertion/deletion, release rebinding, and operation modification/deletion, including through associations.
+The guard rejects ordinary DAL and Sync writes to instance, operation and execution records, including through associations.
 Trusted in-process PHP with database access remains outside this guard's protection.
 
 This increment provides no production instance creation, activation, resume, termination, decision or query endpoint.
 Tests seed runtime facts explicitly and use real persisted releases to exercise the commit boundary; they do not simulate an admitted business start.
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Future progression and decision commands must check the instance's running status under the same lock.
-Persistent timers, timer freezing, task cancellation, transactional effect-set validation, request/form/participant admission and runtime scheduling remain subsequent increments.
+Successor execution, task creation, persistent timers, task cancellation, transactional effect-set validation, request/form/participant admission and scheduling remain subsequent increments.
 The command does not schedule approval-domain events or external effects; durable Outbox delivery remains a separate requirement when such delivery is introduced.

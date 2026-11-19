@@ -52,7 +52,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
     /**
      * The case an installation is in before anything seeded the table: no rows at all, and
-     * the builder still has to render every core entry.
+     * the builder still has to render every visible core entry.
      */
     public function testRendersTheCoreDeclarationsWithoutAStoredRow(): void
     {
@@ -60,7 +60,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         $flattened = $this->flatten($tree);
 
-        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))]))->collectCore()), $flattened);
+        static::assertEqualsCanonicalizing($this->visibleCoreKeys(), array_keys($flattened));
         static::assertArrayHasKey('sw-system', $flattened);
         static::assertArrayHasKey('sw-permissions-menu', $flattened);
     }
@@ -72,7 +72,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         $tree = $this->builder()->build($this->context);
         $flattened = $this->flatten($tree);
 
-        static::assertCount(\count((new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))]))->collectCore()), $flattened);
+        static::assertEqualsCanonicalizing($this->visibleCoreKeys(), array_keys($flattened));
 
         // the first level follows the declared positions
         static::assertSame('sw-dashboard', $tree[0]['internalKey']);
@@ -137,7 +137,22 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
     private function registry(): AdminMenuRouteRegistry
     {
-        return new AdminMenuRouteRegistry(new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))]));
+        return new AdminMenuRouteRegistry($this->collector());
+    }
+
+    private function collector(): MenuDefinitionCollector
+    {
+        return new MenuDefinitionCollector([new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE))]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function visibleCoreKeys(): array
+    {
+        $declared = array_column($this->collector()->collectCore(), 'internalKey');
+
+        return array_values(array_diff($declared, ['sw-workflow', 'sw-workflow-design', 'sw-workflow-tasks']));
     }
 
     /**

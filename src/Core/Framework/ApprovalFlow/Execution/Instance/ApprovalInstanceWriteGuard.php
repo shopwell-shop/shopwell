@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
@@ -23,6 +24,12 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 #[Package('framework')]
 final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
 {
+    private const ENTITIES = [
+        ApprovalInstanceDefinition::ENTITY_NAME,
+        ApprovalOperationDefinition::ENTITY_NAME,
+        ApprovalNodeExecutionDefinition::ENTITY_NAME,
+    ];
+
     /**
      * @var \WeakMap<Context, true>
      */
@@ -67,9 +74,9 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
 
     public function admitWrite(EntityWriteEvent $event): void
     {
-        $commands = array_merge(
-            $event->getCommandsForEntity(ApprovalInstanceDefinition::ENTITY_NAME),
-            $event->getCommandsForEntity(ApprovalOperationDefinition::ENTITY_NAME),
+        $commands = array_filter(
+            $event->getCommands(),
+            static fn (WriteCommand $command): bool => \in_array($command->getEntityName(), self::ENTITIES, true),
         );
         if ($commands === []) {
             return;
@@ -82,7 +89,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
             throw ApprovalFlowException::uncontrolledInstanceWrite();
         }
         foreach ($commands as $command) {
-            if ($command->getEntityName() === ApprovalOperationDefinition::ENTITY_NAME && $command instanceof InsertCommand) {
+            if ($command instanceof InsertCommand && $command->getEntityName() !== ApprovalInstanceDefinition::ENTITY_NAME) {
                 continue;
             }
             if ($command->getEntityName() === ApprovalInstanceDefinition::ENTITY_NAME && $command instanceof UpdateCommand
@@ -100,7 +107,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
     public function validateWrite(PreWriteValidationEvent $event): void
     {
         foreach ($event->getCommands() as $command) {
-            if (!\in_array($command->getEntityName(), [ApprovalInstanceDefinition::ENTITY_NAME, ApprovalOperationDefinition::ENTITY_NAME], true)) {
+            if (!\in_array($command->getEntityName(), self::ENTITIES, true)) {
                 continue;
             }
             if (!isset($this->admittedCommands[$command]) || $this->admittedCommands[$command] !== $command->getPayload()) {

@@ -1,0 +1,12 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Node;
+
+use Shopwell\Core\Framework\Log\Package;
+
+#[Package('framework')]
+enum ApprovalNodeExecutionStatus: string
+{
+    case Waiting = 'waiting';
+    case Completed = 'completed';
+}

@@ -18,8 +18,10 @@ Using publication requires a deployment-owned manifest configured through `APPRO
 The deployment attests code origins and dependency completeness; byte verification does not prove loaded-code provenance, historical code loading or worker readiness.
 Ordinary repository and Sync writes cannot create or change release records, and publication grants no activation authority.
 Internal node entry now verifies persisted release content against this deployment and restores typed configurations through the existing exact-version compilers before requesting a pure executor intent.
-Mismatched frozen content or restored configuration is rejected before entry; instance activation, task creation and decision commits remain unavailable.
-The `approval_flow_instance` and `approval_flow_operation` DAL models now retain instance state and immutable command receipts; generic repository and Sync writes are rejected.
+Mismatched frozen content or restored configuration is rejected before entry.
+The `approval_flow_instance`, `approval_flow_operation` and `approval_flow_execution` DAL models retain instance state, immutable command receipts and node execution records.
+Generic repository and Sync writes to these models are rejected.
+An internal system command can enter the start of an existing running instance, record its completion and queue a single successor as waiting in the same transaction as the version and receipt.
 Instance lifecycle management remains internal and does not enable business starts or approval decisions.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.

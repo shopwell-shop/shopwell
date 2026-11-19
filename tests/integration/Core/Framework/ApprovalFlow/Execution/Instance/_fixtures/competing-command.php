@@ -16,6 +16,9 @@ $service = $container->get(ApprovalInstanceService::class);
 $instanceId = $argv[1];
 $commandId = $argv[2];
 $context = Context::createDefaultContext();
+$compete = $argv[3] === 'enter-start'
+    ? static fn () => $service->enterStart($instanceId, $commandId, 1, $context)
+    : static fn () => $service->suspend($instanceId, $commandId, 1, 'Review required.', $context);
 $connection->executeStatement('SET SESSION innodb_lock_wait_timeout = 1');
 $connection->executeStatement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
 $connection->beginTransaction();
@@ -26,14 +29,14 @@ try {
     echo 'SNAPSHOT:' . $status . ':' . $count . \PHP_EOL;
     fgets(\STDIN);
     try {
-        $service->suspend($instanceId, $commandId, 1, 'Review required.', $context);
+        $compete();
         throw new RuntimeException('A competing command passed the held instance lock.');
     } catch (LockWaitTimeoutException) {
         echo 'BLOCKED' . \PHP_EOL;
     }
     fgets(\STDIN);
     try {
-        $result = $service->suspend($instanceId, $commandId, 1, 'Review required.', $context);
+        $result = $compete();
         echo 'RECEIPT:' . $result->status->value . ':' . $result->aggregateVersion . \PHP_EOL;
     } catch (ApprovalFlowException $exception) {
         if ($exception->getErrorCode() !== ApprovalFlowException::INSTANCE_VERSION_CONFLICT) {
