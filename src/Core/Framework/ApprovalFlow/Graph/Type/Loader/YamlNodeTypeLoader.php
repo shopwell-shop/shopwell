@@ -16,13 +16,15 @@ use Symfony\Component\Yaml\Yaml;
 #[Package('framework')]
 class YamlNodeTypeLoader implements NodeTypeLoader
 {
-    private const FIELDS = ['type', 'version', 'labelSnippet', 'configurationSchema', 'ports'];
+    private const FIELDS = ['type', 'version', 'labelSnippet', 'configurationSchema', 'draftConfigurationSchema', 'ports'];
 
     /**
      * @param list<NodeTypeSourceDirectory> $directories
      */
-    public function __construct(private readonly Filesystem $filesystem, private readonly array $directories)
-    {
+    public function __construct(
+        private readonly Filesystem $filesystem,
+        private readonly array $directories,
+    ) {
     }
 
     public function load(): array
@@ -77,6 +79,18 @@ class YamlNodeTypeLoader implements NodeTypeLoader
             }
         }
 
+        $draftSchema = null;
+        if (\array_key_exists('draftConfigurationSchema', $data)) {
+            $draftFile = $data['draftConfigurationSchema'];
+            if (!\is_string($draftFile) || !preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.json$/D', $draftFile)) {
+                throw ApprovalFlowException::invalidNodeType($source, 'draftConfigurationSchema must name a JSON file beside the declaration');
+            }
+            if (!$this->filesystem->exists($directory . '/' . $draftFile)) {
+                throw ApprovalFlowException::invalidNodeType($source, 'draftConfigurationSchema file is missing');
+            }
+            $draftSchema = $this->filesystem->readFile($directory . '/' . $draftFile);
+        }
+
         return new NodeTypeSpecification(
             $data['type'],
             $data['version'],
@@ -84,6 +98,7 @@ class YamlNodeTypeLoader implements NodeTypeLoader
             $source,
             $this->filesystem->readFile($directory . '/' . $schemaFile),
             $ports,
+            $draftSchema,
         );
     }
 }

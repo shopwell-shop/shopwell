@@ -2,11 +2,18 @@
 
 namespace Shopwell\Core\Framework\DependencyInjection;
 
+use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\Command\GraphDiagnoseCommand;
+use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Command\NodeTypeListCommand;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirectory;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Mutation\GraphMutator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Filesystem\Filesystem;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -26,5 +33,18 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(NodeTypeListCommand::class)
         ->args([service(NodeTypeRegistry::class)])
+        ->tag('console.command');
+
+    $graphSchema = (new Filesystem())->readFile(__DIR__ . '/../ApprovalFlow/Resources/schema/graph/1.0.0/approval-graph.schema.json');
+    $services->set(GraphSchemaValidator::class);
+    $services->set(GraphJsonDecoder::class);
+    $services->set(GraphDiagnostics::class)
+        ->args([service(NodeTypeRegistry::class), service(GraphSchemaValidator::class), $graphSchema, service(GraphJsonDecoder::class)]);
+    $services->set(GraphCodec::class)
+        ->args([service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
+    $services->set(GraphMutator::class)
+        ->args([service(GraphCodec::class), service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
+    $services->set(GraphDiagnoseCommand::class)
+        ->args([service('filesystem'), service(GraphDiagnostics::class)])
         ->tag('console.command');
 };

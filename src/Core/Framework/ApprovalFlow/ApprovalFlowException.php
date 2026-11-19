@@ -9,6 +9,17 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public static function invalidGraph(string $path, string $reason, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            'APPROVAL_FLOW__INVALID_GRAPH',
+            'Invalid approval graph at "{{ path }}": {{ reason }}',
+            ['path' => $path, 'reason' => $reason],
+            $previous
+        );
+    }
+
     public static function invalidNodeType(string $source, string $reason, ?\Throwable $previous = null): self
     {
         return new self(

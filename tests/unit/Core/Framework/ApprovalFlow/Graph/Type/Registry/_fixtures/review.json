@@ -1,1 +1,38 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"urn:finance:review:1.0.0","type":"object","additionalProperties":false}
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:finance:review:1.0.0",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "limit": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "enabled": {
+            "type": "boolean"
+        },
+        "note": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "options": {
+            "type": "object",
+            "additionalProperties": false
+        },
+        "groups": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "required": [
+        "limit",
+        "enabled",
+        "note",
+        "options",
+        "groups"
+    ]
+}

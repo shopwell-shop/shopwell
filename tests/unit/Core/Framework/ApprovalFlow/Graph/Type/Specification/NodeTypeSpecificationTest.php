@@ -24,6 +24,24 @@ class NodeTypeSpecificationTest extends TestCase
         static::assertSame($schema, $type->configurationSchema);
         static::assertSame('urn:test:review:1', $type->configurationSchemaId);
         static::assertSame(hash('sha256', $schema), $type->configurationSchemaHash);
+        static::assertSame($schema, $type->draftConfigurationSchema);
+    }
+
+    public function testDraftSchemaIsExplicitAndKeepsItsOwnIdentity(): void
+    {
+        $full = '{"$id":"urn:test:review:1","type":"object","required":["kind"]}';
+        $draft = '{"$id":"urn:test:review:1:draft","type":"object"}';
+        $type = new NodeTypeSpecification('test:review', '1.0.0', 'test.review', 'test', $full, ['in' => 'input'], $draft);
+
+        static::assertSame($draft, $type->draftConfigurationSchema);
+        static::assertSame($full, $type->configurationSchema);
+    }
+
+    public function testRejectsMalformedDraftSchema(): void
+    {
+        $this->expectExceptionObject(ApprovalFlowException::invalidNodeType('test', 'draftConfigurationSchema must declare an object and a nonempty $id'));
+
+        new NodeTypeSpecification('test:review', '1.0.0', 'test.review', 'test', '{"$id":"urn:test:full","type":"object"}', ['in' => 'input'], '[]');
     }
 
     #[DataProvider('invalidDeclarationProvider')]

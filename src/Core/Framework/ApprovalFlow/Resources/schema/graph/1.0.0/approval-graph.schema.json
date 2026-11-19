@@ -1,0 +1,318 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:shopwell:approval-flow:graph:1.0.0",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schemaVersion",
+        "id",
+        "meta",
+        "nodes",
+        "connections",
+        "layout",
+        "extensions"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "const": "1.0.0"
+        },
+        "id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "meta": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "name",
+                "editingMode",
+                "formSchemaRef"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "editingMode": {
+                    "enum": [
+                        "oa",
+                        "free"
+                    ]
+                },
+                "formSchemaRef": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "nodes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "type",
+                    "typeVersion",
+                    "config",
+                    "ports",
+                    "position",
+                    "extensions"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "type": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
+                    },
+                    "typeVersion": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+                    },
+                    "config": {
+                        "type": "object"
+                    },
+                    "ports": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "id",
+                                "direction",
+                                "channel",
+                                "cardinality"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "minLength": 1
+                                },
+                                "direction": {
+                                    "enum": [
+                                        "input",
+                                        "output"
+                                    ]
+                                },
+                                "channel": {
+                                    "const": "control"
+                                },
+                                "cardinality": {
+                                    "enum": [
+                                        "one",
+                                        "many"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "position": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "x",
+                            "y"
+                        ],
+                        "properties": {
+                            "x": {
+                                "type": "number"
+                            },
+                            "y": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "extensions": {
+                        "type": "object",
+                        "propertyNames": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
+                        }
+                    }
+                }
+            }
+        },
+        "connections": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "source",
+                    "target",
+                    "sourcePort",
+                    "targetPort",
+                    "condition",
+                    "extensions"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "source": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "target": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "sourcePort": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "targetPort": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "condition": {
+                        "oneOf": [
+                            {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "kind"
+                                ],
+                                "properties": {
+                                    "kind": {
+                                        "const": "always"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "kind"
+                                ],
+                                "properties": {
+                                    "kind": {
+                                        "const": "default"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "kind",
+                                    "expression",
+                                    "priority"
+                                ],
+                                "properties": {
+                                    "kind": {
+                                        "const": "expression"
+                                    },
+                                    "expression": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "language",
+                                            "languageVersion",
+                                            "text",
+                                            "fieldRefs",
+                                            "context"
+                                        ],
+                                        "properties": {
+                                            "language": {
+                                                "type": "string",
+                                                "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
+                                            },
+                                            "languageVersion": {
+                                                "type": "string",
+                                                "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+                                            },
+                                            "text": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 4096
+                                            },
+                                            "fieldRefs": {
+                                                "type": "array",
+                                                "uniqueItems": true,
+                                                "items": {
+                                                    "type": "string",
+                                                    "pattern": "^form\\..+"
+                                                }
+                                            },
+                                            "context": {
+                                                "const": "requestSnapshot"
+                                            }
+                                        }
+                                    },
+                                    "priority": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "extensions": {
+                        "type": "object",
+                        "propertyNames": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
+                        }
+                    }
+                }
+            }
+        },
+        "layout": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "algorithm",
+                "nodes"
+            ],
+            "properties": {
+                "algorithm": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "nodeId",
+                            "width",
+                            "height",
+                            "collapsed"
+                        ],
+                        "properties": {
+                            "nodeId": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "width": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "height": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "collapsed": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "extensions": {
+            "type": "object",
+            "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
+            }
+        }
+    }
+}

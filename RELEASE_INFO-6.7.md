@@ -2,10 +2,12 @@
 
 ## Core
 
-### Approval Flow declaration skeleton
+### Approval Flow skeleton
 
 The independent Approval Flow module provides exact-version node declarations through `NodeTypeLoader` and the `approval_flow.node_type_loader` service tag.
 Business modules register their loaders in their own DI; a declaration alone does not make a node executable.
+Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
+Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.
 The legacy Workflow navigation is hidden during the replacement, while its existing routes and business execution remain available.
 The new Approval navigation and business pages will be added with their corresponding capabilities.
 

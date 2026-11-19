@@ -16,6 +16,8 @@ final readonly class NodeTypeSpecification
 
     public string $configurationSchemaHash;
 
+    public string $draftConfigurationSchema;
+
     /**
      * @param array<string, 'input'|'output'> $ports
      */
@@ -26,6 +28,7 @@ final readonly class NodeTypeSpecification
         public string $source,
         public string $configurationSchema,
         public array $ports,
+        ?string $draftConfigurationSchema = null,
     ) {
         if (!preg_match('/^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$/D', $type)) {
             throw ApprovalFlowException::invalidNodeType($source, 'type must be a namespaced identifier');
@@ -42,22 +45,29 @@ final readonly class NodeTypeSpecification
             }
         }
 
-        try {
-            $schema = json_decode($configurationSchema, flags: \JSON_THROW_ON_ERROR);
-        } catch (\JsonException $exception) {
-            throw ApprovalFlowException::invalidNodeType($source, 'configurationSchema is not valid JSON', $exception);
+        $this->configurationSchemaId = self::parseSchemaId($configurationSchema, $source, 'configurationSchema');
+        // Retain exact schema bytes: decoding into PHP arrays would merge JSON {} and [].
+        $this->configurationSchemaHash = Hasher::hash($configurationSchema, 'sha256');
+        $this->draftConfigurationSchema = $draftConfigurationSchema ?? $configurationSchema;
+        if ($draftConfigurationSchema !== null) {
+            self::parseSchemaId($draftConfigurationSchema, $source, 'draftConfigurationSchema');
         }
-        $schemaId = $schema instanceof \stdClass ? ($schema->{'$id'} ?? null) : null;
-        if (!$schema instanceof \stdClass
-            || ($schema->type ?? null) !== 'object'
-            || !\is_string($schemaId)
-            || trim($schemaId) === ''
+    }
+
+    private static function parseSchemaId(string $json, string $source, string $field): string
+    {
+        try {
+            $schema = json_decode($json, flags: \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw ApprovalFlowException::invalidNodeType($source, $field . ' is not valid JSON', $exception);
+        }
+        $id = $schema instanceof \stdClass ? ($schema->{'$id'} ?? null) : null;
+        if (!$schema instanceof \stdClass || ($schema->type ?? null) !== 'object'
+            || !\is_string($id) || trim($id) === ''
         ) {
-            throw ApprovalFlowException::invalidNodeType($source, 'configurationSchema must declare an object and a nonempty $id');
+            throw ApprovalFlowException::invalidNodeType($source, $field . ' must declare an object and a nonempty $id');
         }
 
-        // Retain exact schema bytes: decoding into PHP arrays would merge JSON {} and [].
-        $this->configurationSchemaId = $schemaId;
-        $this->configurationSchemaHash = Hasher::hash($configurationSchema, 'sha256');
+        return $id;
     }
 }

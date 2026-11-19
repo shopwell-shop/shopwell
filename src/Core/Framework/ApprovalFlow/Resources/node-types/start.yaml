@@ -2,5 +2,6 @@ type: core:start
 version: 1.0.0
 labelSnippet: sw-approval-flow.node.start
 configurationSchema: start.json
+draftConfigurationSchema: start.draft.json
 ports:
   out: output

@@ -1,0 +1,31 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:finance:review:1.0.0:draft",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "limit": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "enabled": {
+            "type": "boolean"
+        },
+        "note": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "options": {
+            "type": "object",
+            "additionalProperties": false
+        },
+        "groups": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}

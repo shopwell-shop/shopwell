@@ -1,0 +1,7 @@
+type: test:review
+version: 1.0.0
+labelSnippet: test.review
+configurationSchema: review.json
+draftConfigurationSchema: ../review.draft.json
+ports:
+  in: input

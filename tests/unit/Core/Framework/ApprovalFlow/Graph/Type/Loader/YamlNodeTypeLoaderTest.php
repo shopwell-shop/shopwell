@@ -6,6 +6,7 @@ use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\CoreNodeType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirectory;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
 use Shopwell\Core\Framework\Log\Package;
@@ -25,7 +26,7 @@ class YamlNodeTypeLoaderTest extends TestCase
 
         $types = $loader->load();
 
-        static::assertSame(['core:approval', 'core:end', 'core:start'], array_column($types, 'type'));
+        static::assertSame([CoreNodeType::APPROVAL, CoreNodeType::END, CoreNodeType::START], array_column($types, 'type'));
         foreach ($types as $type) {
             static::assertSame('1.0.0', $type->version);
             static::assertStringStartsWith('core:', $type->source);
@@ -76,6 +77,14 @@ class YamlNodeTypeLoaderTest extends TestCase
         $loader = new YamlNodeTypeLoader(new Filesystem(), [new NodeTypeSourceDirectory('test', __DIR__ . '/_fixtures/outside-schema')]);
 
         $this->expectExceptionObject(ApprovalFlowException::invalidNodeType('test:review.yaml', 'configurationSchema must name a JSON file beside the declaration'));
+        $loader->load();
+    }
+
+    public function testRejectsDraftSchemaPathsOutsideTheDeclarationDirectory(): void
+    {
+        $loader = new YamlNodeTypeLoader(new Filesystem(), [new NodeTypeSourceDirectory('test', __DIR__ . '/_fixtures/draft-outside')]);
+
+        $this->expectExceptionObject(ApprovalFlowException::invalidNodeType('test:review.yaml', 'draftConfigurationSchema must name a JSON file beside the declaration'));
         $loader->load();
     }
 }

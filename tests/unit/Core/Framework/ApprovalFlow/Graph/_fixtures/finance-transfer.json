@@ -1,0 +1,120 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "transfer-approval",
+    "meta": {
+        "name": "Transfer approval",
+        "editingMode": "oa",
+        "formSchemaRef": "payment:transfer"
+    },
+    "nodes": [
+        {
+            "id": "start",
+            "type": "core:start",
+            "typeVersion": "1.0.0",
+            "config": {
+                "requestType": "payment:transfer"
+            },
+            "ports": [
+                {
+                    "id": "out",
+                    "direction": "output",
+                    "channel": "control",
+                    "cardinality": "one"
+                }
+            ],
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "extensions": {}
+        },
+        {
+            "id": "review",
+            "type": "finance:review",
+            "typeVersion": "1.0.0",
+            "config": {
+                "limit": 0,
+                "enabled": false,
+                "note": null,
+                "options": {},
+                "groups": []
+            },
+            "ports": [
+                {
+                    "id": "in",
+                    "direction": "input",
+                    "channel": "control",
+                    "cardinality": "one"
+                },
+                {
+                    "id": "out",
+                    "direction": "output",
+                    "channel": "control",
+                    "cardinality": "one"
+                }
+            ],
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "extensions": {}
+        },
+        {
+            "id": "end",
+            "type": "core:end",
+            "typeVersion": "1.0.0",
+            "config": {
+                "outcome": "approved"
+            },
+            "ports": [
+                {
+                    "id": "in",
+                    "direction": "input",
+                    "channel": "control",
+                    "cardinality": "one"
+                }
+            ],
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "extensions": {}
+        }
+    ],
+    "connections": [
+        {
+            "id": "start-review",
+            "source": "start",
+            "target": "review",
+            "sourcePort": "out",
+            "targetPort": "in",
+            "condition": {
+                "kind": "always"
+            },
+            "extensions": {}
+        },
+        {
+            "id": "review-end",
+            "source": "review",
+            "target": "end",
+            "sourcePort": "out",
+            "targetPort": "in",
+            "condition": {
+                "kind": "always"
+            },
+            "extensions": {}
+        }
+    ],
+    "layout": {
+        "algorithm": "core:layered",
+        "nodes": [
+            {
+                "nodeId": "review",
+                "width": 180,
+                "height": 80,
+                "collapsed": false
+            }
+        ]
+    },
+    "extensions": {}
+}
