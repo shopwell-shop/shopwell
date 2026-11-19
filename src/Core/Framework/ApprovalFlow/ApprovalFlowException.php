@@ -10,6 +10,12 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const INSTANCE_NOT_FOUND = 'APPROVAL_FLOW__INSTANCE_NOT_FOUND';
+    public const INSTANCE_VERSION_CONFLICT = 'APPROVAL_FLOW__INSTANCE_VERSION_CONFLICT';
+    public const INSTANCE_COMMAND_CONFLICT = 'APPROVAL_FLOW__INSTANCE_COMMAND_CONFLICT';
+    public const INVALID_INSTANCE_TRANSITION = 'APPROVAL_FLOW__INVALID_INSTANCE_TRANSITION';
+    public const INVALID_INSTANCE_COMMAND = 'APPROVAL_FLOW__INVALID_INSTANCE_COMMAND';
+    public const UNCONTROLLED_INSTANCE_WRITE = 'APPROVAL_FLOW__UNCONTROLLED_INSTANCE_WRITE';
     public const RELEASE_VERIFICATION_FAILED = 'APPROVAL_FLOW__RELEASE_VERIFICATION_FAILED';
     public const RELEASE_NODE_NOT_FOUND = 'APPROVAL_FLOW__RELEASE_NODE_NOT_FOUND';
     public const PUBLICATION_CONTENT_CONFLICT = 'APPROVAL_FLOW__PUBLICATION_CONTENT_CONFLICT';
@@ -41,6 +47,65 @@ class ApprovalFlowException extends HttpException
     public static function missingPrivileges(array $privileges): MissingPrivilegeException
     {
         return new MissingPrivilegeException($privileges);
+    }
+
+    public static function instanceNotFound(string $instanceId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::INSTANCE_NOT_FOUND,
+            'Approval instance "{{ instanceId }}" was not found.',
+            ['instanceId' => $instanceId]
+        );
+    }
+
+    public static function instanceVersionConflict(string $instanceId, int $expectedVersion, int $actualVersion): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::INSTANCE_VERSION_CONFLICT,
+            'Approval instance "{{ instanceId }}" changed from expected version {{ expectedVersion }} to {{ actualVersion }}.',
+            ['instanceId' => $instanceId, 'expectedVersion' => $expectedVersion, 'actualVersion' => $actualVersion]
+        );
+    }
+
+    public static function instanceCommandConflict(string $instanceId, string $commandId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::INSTANCE_COMMAND_CONFLICT,
+            'Command "{{ commandId }}" was already used for another request on approval instance "{{ instanceId }}".',
+            ['instanceId' => $instanceId, 'commandId' => $commandId]
+        );
+    }
+
+    public static function invalidInstanceTransition(string $instanceId, string $status, string $operation): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::INVALID_INSTANCE_TRANSITION,
+            'Cannot {{ operation }} approval instance "{{ instanceId }}" in status "{{ status }}".',
+            ['instanceId' => $instanceId, 'status' => $status, 'operation' => $operation]
+        );
+    }
+
+    public static function invalidInstanceCommand(string $reason): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_INSTANCE_COMMAND,
+            'Invalid approval instance command: {{ reason }}',
+            ['reason' => $reason]
+        );
+    }
+
+    public static function uncontrolledInstanceWrite(): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::UNCONTROLLED_INSTANCE_WRITE,
+            'Approval instance state and immutable command receipts require a controlled command transaction.'
+        );
     }
 
     public static function publicationContentConflict(string $definitionId, string $expectedHash, string $actualHash): self

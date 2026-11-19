@@ -1,9 +1,9 @@
 # Approval Flow public surface
 
 The supported extension surface covers node declaration, configuration compilation, pure node entry and assembly.
-The DAL models `approval_flow_definition`, `approval_flow_draft` and `approval_flow_release` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
+The DAL models `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance` and `approval_flow_operation` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 They carry neither `@internal` nor `@final`; this does not authorize direct writes around the controlled draft path.
-No HTTP action routes, execution commands or supported PHP publication services are exposed by this increment.
+No HTTP action routes or supported PHP publication/runtime command services are exposed by this increment.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
 
 ## Node declarations
@@ -120,3 +120,21 @@ Whole-release verification runs for each call without a cache; performance and c
 Integration tests cover every changed frozen document, changed deployment bytes, permission-first reads, missing releases and independence from later draft edits.
 Actual DI assemblies exercise core and independently tagged business nodes, missing exact executor versions, missing artifact bindings, whole-release failure before entry and compiler drift during configuration restoration.
 The extraction retains the existing configuration validation, error causes, JSON shapes and immediate freezing tests.
+
+## Instance lifecycle boundary
+
+`ApprovalInstanceStatus` is the closed enum used by the instance and operation DAL models.
+The six representable statuses do not imply that all transitions have been implemented.
+`ApprovalInstanceService`, `ApprovalInstanceStore`, `ApprovalInstanceWriteGuard` and `ApprovalInstanceCommandResult` are internal; they add no plugin runtime or arbitrary mutation contract.
+The only implemented command is administrative suspension from running to suspended.
+It requires `approval_flow_instance:manage`, an expected aggregate version, a command identity and a reason.
+It preserves the original actor and Context, serializes writes with the instance row lock and atomically retains the original response and audit in `approval_flow_operation`.
+Receipts are reauthorized on every retry and bound to their original actor and payload.
+
+Generic instance insertion, update and deletion, and generic operation writes are rejected through the DAL/Sync write guard.
+The controlled path only updates instance status/version and inserts immutable operations; it cannot rebind releases or rewrite receipts.
+Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
+Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
+The original Context scope is restored and unused permits are removed when the write exits.
+There is no production instance creation or activation path, and no public command/query route.
+Business binding, runtime admission, tasks, effects and timers are not authorized by these DAL records or their enum values.

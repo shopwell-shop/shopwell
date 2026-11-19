@@ -16,6 +16,11 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\StartExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStore;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
@@ -45,6 +50,14 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
+
+    $services->set(ApprovalInstanceDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalOperationDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalInstanceWriteGuard::class)->tag('kernel.event_subscriber');
+    $services->set(ApprovalInstanceStore::class)
+        ->args([service(Connection::class), service('approval_flow_instance.repository'), service('approval_flow_operation.repository'), service(ApprovalInstanceWriteGuard::class)]);
+    $services->set(ApprovalInstanceService::class)
+        ->args([service(ApprovalInstanceStore::class)]);
 
     $services->set(ApprovalReleaseDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalReleaseWriteGuard::class)->tag('kernel.event_subscriber');
