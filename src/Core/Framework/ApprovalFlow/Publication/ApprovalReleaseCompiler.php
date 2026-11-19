@@ -10,7 +10,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Publication\Artifact\ArtifactManifestLo
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * @phpstan-type NodePlan object{nodes: list<object{type: string, typeVersion: string}>}&\stdClass
+ * @phpstan-import-type NodePlan from NodePlanCompiler
  *
  * @internal
  */

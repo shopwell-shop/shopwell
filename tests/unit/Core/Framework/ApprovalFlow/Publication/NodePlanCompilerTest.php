@@ -19,6 +19,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\CoreNodeCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompilerRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeConfigurationCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\NodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
@@ -192,7 +193,7 @@ class NodePlanCompilerTest extends TestCase
 
             return $configuration;
         });
-        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
+        $compiler = new NodePlanCompiler($graphCompiler, new NodeConfigurationCompiler(new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder()), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
 
         $first = $compiler->compile(new DraftGraph(GraphFixture::json()));
         $firstJson = $first->json;
@@ -221,7 +222,7 @@ class NodePlanCompilerTest extends TestCase
         $nodeCompiler = static::createStub(NodeCompiler::class);
         $nodeCompiler->method('getTypes')->willReturn(['core:start' => ['1.0.0']]);
         $nodeCompiler->method('compile')->willReturn($configuration);
-        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
+        $compiler = new NodePlanCompiler($graphCompiler, new NodeConfigurationCompiler(new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder()), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
 
         try {
             $compiler->compile(new DraftGraph(GraphFixture::json()));
@@ -273,7 +274,7 @@ class NodePlanCompilerTest extends TestCase
         $nodeCompiler = static::createStub(NodeCompiler::class);
         $nodeCompiler->method('getTypes')->willReturn(['core:start' => ['1.0.0']]);
         $nodeCompiler->method('compile')->willReturn($configuration);
-        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
+        $compiler = new NodePlanCompiler($graphCompiler, new NodeConfigurationCompiler(new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder()), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
 
         try {
             $compiler->compile(new DraftGraph(GraphFixture::json()));
@@ -380,7 +381,7 @@ class NodePlanCompilerTest extends TestCase
         $financeCompiler->method('getTypes')->willReturn(['finance:review' => ['1.0.0']]);
         $financeCompiler->method('compile')->willThrowException($failure);
 
-        return new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$coreCompilers->get('core:start', '1.0.0'), $financeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
+        return new NodePlanCompiler($graphCompiler, new NodeConfigurationCompiler(new NodeCompilerRegistry([$coreCompilers->get('core:start', '1.0.0'), $financeCompiler]), new GraphJsonDecoder()), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
     }
 
     private function financeContainer(): ContainerBuilder

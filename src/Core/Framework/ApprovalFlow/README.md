@@ -2,8 +2,8 @@
 
 Approval Flow is an independent approval module in the existing Core host.
 Its first integration is payment transfer approval.
-The current skeleton includes node declarations, exact version lookup, versioned draft JSON, pure graph mutations and read-only diagnostics.
-It does not yet publish or execute workflows.
+The current skeleton includes node declarations, versioned drafts, graph and configuration compilation, immutable compilation releases and verified pure node entry.
+It does not yet activate instances or commit approval tasks and decisions.
 
 ## Skeleton responsibilities
 
@@ -25,6 +25,7 @@ Keep business implementations and their DI in the owning business module.
 - `GraphPlanCompiler` derives graph indexes and a topological order from a freshly checked snapshot.
 - `Node/Compilation` dispatches exact-version configuration compilers; `Node/Configuration` owns the concrete built-in values.
 - `NodePlanCompiler` freezes the derived configurations with their structural graph-plan binding and checks exact executor availability.
+- `Execution/ApprovalReleaseLoader` verifies persisted releases; `Execution/ApprovalNodeEntry` restores one typed configuration and enters its exact pure executor.
 - `Execution/Executor` owns pure node-entry intents; `Execution/Effect` carries the controlled operations a future runtime must validate.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
@@ -214,11 +215,11 @@ An empty resolved candidate set must be handled by the future runtime using the 
 
 Effects do not grant execution authority and contain no instance, execution, task or token identity.
 The future runtime must bind each intent to its current execution, resolve live facts, validate all effects together and commit through the authoritative write boundary.
-No runtime calls these executors from a persisted plan yet; the current tests compose registered compilers and executors directly.
+`ApprovalNodeEntry` below connects persisted compilation records to these pure executors; no instance scheduler or authoritative runtime calls them yet.
 There is no HTTP route or command that accepts a constructed configuration or plan for execution.
 Exact service availability is only one prerequisite: a class name or version label is not an executable artifact pin.
 The compilation release operation below verifies retained artifact bytes and stores immutable records.
-Request/form dependencies, historical code loading, runtime configuration admission, task scheduling and commit authorization remain required before activation.
+Request/form dependencies, historical code loading, live runtime admission, task scheduling and commit authorization remain required before activation.
 
 ## Artifact verification and immutable release records
 
@@ -254,8 +255,37 @@ This is an in-process coordination boundary, not a sandbox against trusted PHP w
 Later draft edits cannot rewrite an earlier record.
 
 Publication currently means persisting an admitted compilation record.
-There is no activation endpoint or persisted-plan execution path.
+There is no activation endpoint or instance execution path.
 Request/form/user/policy dependencies, runtime admission, historical artifact loading and retention, worker capability checks and authoritative command commits must be completed before real approval execution.
+
+## Verified configuration restoration and pure entry
+
+`CompiledApprovalRelease` owns the complete frozen release content as readonly strings: `graphJson`, `contractJson`, `graphPlanJson`, `nodePlanJson`, `dependenciesJson` and `hash`.
+Its constructor derives those values once from the compiler stages without retaining their object hierarchy.
+Storage and execution consumers use this release boundary directly rather than traversing intermediate compiler results.
+The stored wire documents and hash formula are unchanged.
+
+`ApprovalReleaseLoader::load(releaseId, Context)` reads through the release service, preserving its privilege-first read boundary.
+It recompiles the saved graph against this deployment and compares every frozen document and the full content hash before returning the immutable compiled value.
+It does not read the current draft or replace a saved plan with a newly compiled variant.
+A content or dependency mismatch fails with `APPROVAL_FLOW__RELEASE_VERIFICATION_FAILED`, HTTP 409 and the affected part, without returning a partially admitted release.
+Missing exact declarations, compilers, executors, bindings or retained bytes fail through their existing explicit errors.
+The loader neither caches a successful check nor writes storage.
+This admits only releases that match the current deployment; historical artifact loading and worker readiness remain separate requirements.
+
+`ApprovalNodeEntry::enter(releaseId, nodeId, Context)` accepts identities rather than a caller-constructed plan or configuration.
+After whole-release verification, it finds the selected node in the freshly verified graph and uses the same exact-version `NodeCompiler` as publication to recover its typed configuration.
+`NodeConfigurationCompiler` shares business-error normalization and lossless object encoding between this path and `NodePlanCompiler`; plugins keep their existing compiler and executor contracts.
+The restored configuration's JSON must exactly match that node's frozen derived configuration before the executor is called.
+A stateful or nondeterministic compiler cannot replace the planned configuration after the whole-release check.
+Only one typed configuration is restored and used immediately, so a compiler reusing mutable objects cannot mutate a retained collection of runtime configurations.
+There is no PHP object deserialization, caller-selected class name or second decoder registration catalogue.
+An unknown node fails with `APPROVAL_FLOW__RELEASE_NODE_NOT_FOUND` rather than selecting another configuration.
+
+The returned advance, approval-request or completion effect is still an uncommitted intent.
+Release read privileges permit this internal inspection path; they do not authorize a task, decision, transition or business side effect.
+A future instance command must bind effects to locked current execution state, resolve live prerequisites and validate them before its authoritative commit.
+There is no HTTP endpoint for this path and no instance, task, scheduler or activation behavior in this increment.
 
 ## Implementation order
 

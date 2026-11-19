@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const RELEASE_VERIFICATION_FAILED = 'APPROVAL_FLOW__RELEASE_VERIFICATION_FAILED';
+    public const RELEASE_NODE_NOT_FOUND = 'APPROVAL_FLOW__RELEASE_NODE_NOT_FOUND';
     public const PUBLICATION_CONTENT_CONFLICT = 'APPROVAL_FLOW__PUBLICATION_CONTENT_CONFLICT';
     public const UNCONTROLLED_RELEASE_WRITE = 'APPROVAL_FLOW__UNCONTROLLED_RELEASE_WRITE';
     public const RELEASE_NOT_FOUND = 'APPROVAL_FLOW__RELEASE_NOT_FOUND';
@@ -48,6 +50,26 @@ class ApprovalFlowException extends HttpException
             self::PUBLICATION_CONTENT_CONFLICT,
             'Approval publication content changed for "{{ definitionId }}"; prepare a new preview.',
             ['definitionId' => $definitionId, 'expectedHash' => $expectedHash, 'actualHash' => $actualHash]
+        );
+    }
+
+    public static function releaseVerificationFailed(string $releaseId, string $part): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::RELEASE_VERIFICATION_FAILED,
+            'Approval release "{{ releaseId }}" does not match this deployment at "{{ part }}".',
+            ['releaseId' => $releaseId, 'part' => $part]
+        );
+    }
+
+    public static function releaseNodeNotFound(string $releaseId, string $nodeId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::RELEASE_NODE_NOT_FOUND,
+            'Approval release "{{ releaseId }}" has no node "{{ nodeId }}".',
+            ['releaseId' => $releaseId, 'nodeId' => $nodeId]
         );
     }
 

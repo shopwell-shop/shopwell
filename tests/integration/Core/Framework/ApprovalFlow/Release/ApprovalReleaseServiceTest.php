@@ -90,9 +90,9 @@ class ApprovalReleaseServiceTest extends TestCase
         static::assertSame($draft->revision, $stored->getDraftRevision());
         static::assertSame($content->hash, $stored->getContentHash());
         static::assertSame($content->graphJson, $stored->getGraphJson());
-        static::assertSame($content->nodePlan->graphPlan->snapshot->contractJson, $stored->getContractJson());
-        static::assertSame($content->nodePlan->graphPlan->json, $stored->getGraphPlanJson());
-        static::assertSame($content->nodePlan->json, $stored->getNodePlanJson());
+        static::assertSame($content->contractJson, $stored->getContractJson());
+        static::assertSame($content->graphPlanJson, $stored->getGraphPlanJson());
+        static::assertSame($content->nodePlanJson, $stored->getNodePlanJson());
         static::assertSame($content->dependenciesJson, $stored->getDependenciesJson());
         static::assertSame($draft->revision, $this->drafts->read($draft->definitionId, $context)->revision);
     }

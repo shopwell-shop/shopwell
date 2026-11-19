@@ -69,9 +69,9 @@ class ApprovalReleaseStore
                 'definitionId' => $definitionId,
                 'draftRevision' => $revision,
                 'graphJson' => $content->graphJson,
-                'contractJson' => $content->nodePlan->graphPlan->snapshot->contractJson,
-                'graphPlanJson' => $content->nodePlan->graphPlan->json,
-                'nodePlanJson' => $content->nodePlan->json,
+                'contractJson' => $content->contractJson,
+                'graphPlanJson' => $content->graphPlanJson,
+                'nodePlanJson' => $content->nodePlanJson,
                 'dependenciesJson' => $content->dependenciesJson,
                 'contentHash' => $content->hash,
             ]], $writeContext));

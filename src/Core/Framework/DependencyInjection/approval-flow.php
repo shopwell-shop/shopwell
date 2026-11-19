@@ -10,6 +10,8 @@ use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftStore;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
@@ -24,6 +26,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Mutation\GraphMutator;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\CoreNodeCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompilerRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeConfigurationCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\ApprovalReleaseCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\Artifact\ArtifactManifestLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
@@ -49,6 +52,10 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(Connection::class), service('approval_flow_release.repository')]);
     $services->set(ApprovalReleaseService::class)
         ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class)]);
+    $services->set(ApprovalReleaseLoader::class)
+        ->args([service(ApprovalReleaseService::class), service(ApprovalReleaseCompiler::class)]);
+    $services->set(ApprovalNodeEntry::class)
+        ->args([service(ApprovalReleaseLoader::class), service(NodeConfigurationCompiler::class), service(NodeExecutorRegistry::class), service(GraphJsonDecoder::class)]);
     $services->set(ApprovalFlowDefinition::class)
         ->tag('shopwell.entity.definition');
     $services->set(ApprovalDraftDefinition::class)
@@ -110,8 +117,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set(EndExecutor::class)->tag('approval_flow.node_executor');
     $services->set(NodeExecutorRegistry::class)
         ->args([tagged_iterator('approval_flow.node_executor')]);
+    $services->set(NodeConfigurationCompiler::class)
+        ->args([service(NodeCompilerRegistry::class), service(GraphJsonDecoder::class)]);
     $services->set(NodePlanCompiler::class)
-        ->args([service(GraphPlanCompiler::class), service(NodeCompilerRegistry::class), service(GraphJsonDecoder::class), service(NodeExecutorRegistry::class)]);
+        ->args([service(GraphPlanCompiler::class), service(NodeConfigurationCompiler::class), service(GraphJsonDecoder::class), service(NodeExecutorRegistry::class)]);
     $artifactSchema = (new Filesystem())->readFile(__DIR__ . '/../ApprovalFlow/Resources/schema/publication/1.0.0/artifact-manifest.schema.json');
     $services->set(ArtifactManifestLoader::class)
         ->args([

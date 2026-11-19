@@ -73,7 +73,7 @@ class ApprovalReleaseCompilerTest extends TestCase
         static::assertContains(EndExecutor::class, array_column($dependencies['services'], 'class'));
         static::assertSame(hash('sha256', $this->filesystem->readFile($this->directory . '/core.artifact')), $dependencies['artifacts'][0]['sha256']);
         static::assertSame($release->hash, $compiler->compile(new DraftGraph(str_replace('    ', '', GraphFixture::json())))->hash);
-        static::assertSame($release->nodePlan->graphPlan->snapshot->graphJson, $release->graphJson);
+        static::assertSame(GraphFixture::codec()->decodeDraft(GraphFixture::json())->json, $release->graphJson);
     }
 
     public function testBusinessServicesAreFrozenThroughTheirOwnTaggedAssembly(): void
@@ -124,7 +124,7 @@ class ApprovalReleaseCompilerTest extends TestCase
 
         $second = $compiler->compile(new DraftGraph(GraphFixture::json()));
 
-        static::assertSame($first->nodePlan->hash, $second->nodePlan->hash);
+        static::assertSame($first->nodePlanJson, $second->nodePlanJson);
         static::assertNotSame($first->hash, $second->hash);
     }
 

@@ -15,13 +15,24 @@ final readonly class CompiledApprovalRelease
 {
     public string $graphJson;
 
+    public string $contractJson;
+
+    public string $graphPlanJson;
+
+    public string $nodePlanJson;
+
     public string $hash;
 
     public function __construct(
-        public CompiledNodePlan $nodePlan,
+        CompiledNodePlan $nodePlan,
         public string $dependenciesJson,
     ) {
-        $this->graphJson = $nodePlan->graphPlan->snapshot->graphJson;
+        $graphPlan = $nodePlan->graphPlan;
+        $snapshot = $graphPlan->snapshot;
+        $this->graphJson = $snapshot->graphJson;
+        $this->contractJson = $snapshot->contractJson;
+        $this->graphPlanJson = $graphPlan->json;
+        $this->nodePlanJson = $nodePlan->json;
         $this->hash = Hasher::hash([
             'formatVersion' => '1.0.0',
             'nodePlanHash' => $nodePlan->hash,

@@ -47,7 +47,7 @@ A plugin may implement its own node compiler, configuration and executor and ret
 The current configuration classes identify the v1 core contract; future incompatible versions must retain their own configuration type and exact services.
 Executors are pure entry services, not authorization or persistence extension points.
 Effects are uncommitted proposals: the future runtime must supply execution identity, resolve candidates, revalidate transitions and validate the whole effect set before any writes.
-No runtime configuration decoder or persisted-plan execution endpoint exists yet.
+The internal entry path restores compiler-produced configurations from verified persisted releases; no supported runtime decoder or instance-execution endpoint exists yet.
 
 ## Internal adapters
 
@@ -96,10 +96,27 @@ The release DAL model follows the normal supported Definition/Entity/Collection 
 Publication requires the deployment-owned `APPROVAL_FLOW_ARTIFACT_MANIFEST` setting and freezes exact used-service bindings plus their retained artifact dependency closure.
 Opaque artifact versions can coexist; duplicate complete identities and duplicate service bindings fail.
 Deployment attests origins and closure completeness; SHA-256 verification covers retained bytes and does not establish loaded-code provenance, historical loading or worker readiness.
-These records grant no activation authority, and there is no activation or persisted-plan execution API.
+These records grant no activation authority, and there is no activation or instance-execution API.
 
 Artifact tests cover transitive closure, deterministic ordering, multiple retained versions, missing files/bindings/dependencies, changed bytes, cycles and conflicting declarations.
 Compiler tests use real core and tagged business services, and distinguish graph or artifact hash changes from formatting-only edits.
 Release integration tests cover immutable content, preview conflicts, privilege-first access, Administration actor/context preservation, DAL/Sync write rejection, transaction rollback and later draft edits.
 A separate publisher process proves contention and reuse after an older read snapshot; removing the deduplication current read makes that test fail.
 The release migration test creates an isolated database and verifies repeated execution preserves records, the unique key and foreign-key deletion policies.
+
+## Internal verified node entry
+
+`NodeConfigurationCompiler`, `ApprovalReleaseLoader` and `ApprovalNodeEntry` remain internal orchestration services.
+Plugins continue to implement `NodeCompiler`, `NodeConfiguration` and `NodeExecutor`; no additional decoder interface or service tag is required.
+`CompiledApprovalRelease` exposes the complete frozen documents and hash directly as readonly strings and does not expose intermediate compiler-stage objects.
+Its storage wire format and hash derivation remain unchanged.
+
+Loading a persisted release requires release read privileges and exact agreement with a fresh compilation of its saved graph, all frozen documents, current deployment bindings and full content hash.
+Only the selected node's typed configuration is restored, verified against its frozen output and immediately handed to its exact executor.
+No configuration collection escapes for later mutation, and no caller-supplied object grants execution authority.
+The returned effect remains uncommitted and cannot authorize instance state or business side effects.
+Whole-release verification runs for each call without a cache; performance and command-scoped admission will need verification with the future runtime.
+
+Integration tests cover every changed frozen document, changed deployment bytes, permission-first reads, missing releases and independence from later draft edits.
+Actual DI assemblies exercise core and independently tagged business nodes, missing exact executor versions, missing artifact bindings, whole-release failure before entry and compiler drift during configuration restoration.
+The extraction retains the existing configuration validation, error causes, JSON shapes and immediate freezing tests.

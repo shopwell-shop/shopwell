@@ -26,8 +26,11 @@ class CompiledApprovalReleaseTest extends TestCase
         $changedArtifact = new CompiledApprovalRelease($nodePlan, '{"artifact":"second"}');
         $changedPlan = new CompiledApprovalRelease(new CompiledNodePlan($graphPlan, '{"graphPlanHash":"changed"}'), $release->dependenciesJson);
 
+        static::assertArrayNotHasKey('nodePlan', get_object_vars($release));
         static::assertSame($snapshot->graphJson, $release->graphJson);
-        static::assertSame($nodePlan, $release->nodePlan);
+        static::assertSame($snapshot->contractJson, $release->contractJson);
+        static::assertSame($graphPlan->json, $release->graphPlanJson);
+        static::assertSame($nodePlan->json, $release->nodePlanJson);
         static::assertNotSame($release->hash, $changedArtifact->hash);
         static::assertNotSame($release->hash, $changedPlan->hash);
     }
