@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\CoreNodeType;
@@ -42,7 +43,7 @@ class CoreNodeCompilerTest extends TestCase
         static::assertInstanceOf(StartNodeConfiguration::class, $start);
         static::assertSame('payment:transfer', $start->requestType);
         static::assertInstanceOf(EndNodeConfiguration::class, $end);
-        static::assertSame(EndNodeConfiguration::APPROVED, $end->outcome);
+        static::assertSame(ApprovalOutcome::Approved, $end->outcome);
     }
 
     public function testCompilesApprovalWithStableAssigneeDeduplicationAndTypedFieldRules(): void
@@ -106,7 +107,7 @@ class CoreNodeCompilerTest extends TestCase
         $configuration = $this->compiler->compile(CoreNodeType::END, '1.0.0', '{"outcome":"rejected"}');
 
         static::assertInstanceOf(EndNodeConfiguration::class, $configuration);
-        static::assertSame(EndNodeConfiguration::REJECTED, $configuration->outcome);
+        static::assertSame(ApprovalOutcome::Rejected, $configuration->outcome);
     }
 
     public function testDoesNotSubstituteAnotherNodeVersion(): void

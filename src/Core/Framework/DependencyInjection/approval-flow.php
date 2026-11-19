@@ -10,6 +10,10 @@ use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftStore;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\StartExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
@@ -89,8 +93,13 @@ return static function (ContainerConfigurator $container): void {
         ->tag('approval_flow.node_compiler');
     $services->set(NodeCompilerRegistry::class)
         ->args([tagged_iterator('approval_flow.node_compiler')]);
+    $services->set(StartExecutor::class)->tag('approval_flow.node_executor');
+    $services->set(ApprovalExecutor::class)->tag('approval_flow.node_executor');
+    $services->set(EndExecutor::class)->tag('approval_flow.node_executor');
+    $services->set(NodeExecutorRegistry::class)
+        ->args([tagged_iterator('approval_flow.node_executor')]);
     $services->set(NodePlanCompiler::class)
-        ->args([service(GraphPlanCompiler::class), service(NodeCompilerRegistry::class), service(GraphJsonDecoder::class)]);
+        ->args([service(GraphPlanCompiler::class), service(NodeCompilerRegistry::class), service(GraphJsonDecoder::class), service(NodeExecutorRegistry::class)]);
     $services->set(GraphMutator::class)
         ->args([service(GraphCodec::class), service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
     $services->set(GraphDiagnoseCommand::class)

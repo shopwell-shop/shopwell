@@ -20,6 +20,9 @@ class ApprovalFlowException extends HttpException
     public const INVALID_NODE_TYPE = 'APPROVAL_FLOW__INVALID_NODE_TYPE';
     public const DUPLICATE_NODE_TYPE = 'APPROVAL_FLOW__DUPLICATE_NODE_TYPE';
     public const NODE_TYPE_NOT_FOUND = 'APPROVAL_FLOW__NODE_TYPE_NOT_FOUND';
+    public const NODE_EXECUTOR_NOT_FOUND = 'APPROVAL_FLOW__NODE_EXECUTOR_NOT_FOUND';
+    public const DUPLICATE_NODE_EXECUTOR = 'APPROVAL_FLOW__DUPLICATE_NODE_EXECUTOR';
+    public const INVALID_NODE_EXECUTOR = 'APPROVAL_FLOW__INVALID_NODE_EXECUTOR';
     public const NODE_COMPILER_NOT_FOUND = 'APPROVAL_FLOW__NODE_COMPILER_NOT_FOUND';
     public const DUPLICATE_NODE_COMPILER = 'APPROVAL_FLOW__DUPLICATE_NODE_COMPILER';
     public const INVALID_NODE_COMPILER = 'APPROVAL_FLOW__INVALID_NODE_COMPILER';
@@ -130,6 +133,36 @@ class ApprovalFlowException extends HttpException
             self::NODE_TYPE_NOT_FOUND,
             'Approval node "{{ type }}@{{ version }}" is not available.',
             ['type' => $type, 'version' => $version]
+        );
+    }
+
+    public static function nodeExecutorNotFound(string $type, string $version): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::NODE_EXECUTOR_NOT_FOUND,
+            'No executor is available for approval node "{{ type }}@{{ version }}".',
+            ['type' => $type, 'version' => $version]
+        );
+    }
+
+    public static function duplicateNodeExecutor(string $type, string $version, string $first, string $second): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::DUPLICATE_NODE_EXECUTOR,
+            'Approval node "{{ type }}@{{ version }}" has two executors: "{{ first }}" and "{{ second }}".',
+            ['type' => $type, 'version' => $version, 'first' => $first, 'second' => $second]
+        );
+    }
+
+    public static function invalidNodeExecutor(string $executor, string $reason): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_NODE_EXECUTOR,
+            'Invalid approval node executor "{{ executor }}": {{ reason }}',
+            ['executor' => $executor, 'reason' => $reason]
         );
     }
 

@@ -24,7 +24,8 @@ Keep business implementations and their DI in the owning business module.
 - `Publication` prepares immutable graph and declaration snapshots for subsequent compilation and executable dependency checks.
 - `GraphPlanCompiler` derives graph indexes and a topological order from a freshly checked snapshot.
 - `Node/Compilation` dispatches exact-version configuration compilers; `Node/Configuration` owns the concrete built-in values.
-- `NodePlanCompiler` freezes the derived configurations with their structural graph-plan binding.
+- `NodePlanCompiler` freezes the derived configurations with their structural graph-plan binding and checks exact executor availability.
+- `Execution/Executor` owns pure node-entry intents; `Execution/Effect` carries the controlled operations a future runtime must validate.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
 A loaded declaration does not establish executor availability, publication validity or authorization.
@@ -129,7 +130,7 @@ The readonly snapshot owns only strings, so subsequent edits or catalogue change
 It is an internal candidate value; constructing or retaining one grants no publication or execution authority.
 
 The final publication operation must check caller permissions, lock and reread the draft, compare its expected revision, rerun preflight and compile against the full exact executable dependency set.
-Executor, policy, assignee, form, request and runtime dependencies are outside this graph-only contract.
+Executor, policy, assignee, form, request and runtime dependencies are outside this graph-only contract; the later NodePlanCompiler checks exact executor service availability.
 A candidate hash is not a replacement for those checks.
 Release persistence and activation remain separate increments; no release rows or executable configuration handles are created here.
 
@@ -189,8 +190,33 @@ The derived approval value retains the veto rejection policy and explicit empty-
 The internal envelope schema is `Resources/schema/plan/1.0.0/node-plan.schema.json`.
 It validates the envelope shape, not a business compiler's semantics or execution authority.
 The graph snapshot remains authoritative; normalized user lists are derived values, not a second editable graph.
-This increment neither installs executors nor validates request/form services, deployed artifacts, user eligibility, conditional routing or runtime scheduling.
+NodePlanCompiler also requires an exact-version executor registration for each node, without invoking it.
+It does not validate request/form services, deployed artifacts, user eligibility, conditional routing or runtime scheduling.
 Exact executable dependency admission and immutable release publication remain required before execution.
+
+## Pure node entry
+
+Business modules register `NodeExecutor` implementations with `approval_flow.node_executor` in their own DI.
+Each service declares one namespaced type and one exact node version through `getType()` and `getVersion()`.
+The internal registry rejects duplicate or invalid identities and never substitutes another version.
+`enter(NodeConfiguration)` receives the typed result from the compiler for that same exact node identity.
+The executor checks the expected concrete configuration type and returns one controlled intent: `AdvanceEffect`, `RequestApprovalEffect` or `CompleteEffect`.
+There is no placeholder resume operation or caller-supplied execution context in this entry-only increment.
+
+The start executor requests advancement, the approval executor requests task planning, and the end executor requests a process outcome.
+`ApprovalOutcome` is a string-backed enum for the fixed process outcomes, approved and rejected.
+Both the end configuration and completion effect carry that enum; the compiler converts admitted wire strings, and JSON encoding retains the original wire values.
+Business-specific reasons belong to the owning business module rather than extending the framework's process outcomes.
+`ApprovalNodeConfiguration` and `ApprovalFieldConfiguration` are supported immutable values carried by approval intents.
+Their configured users are candidates, not evidence of existence, eligibility or permission.
+An empty resolved candidate set must be handled by the future runtime using the configured rule; entry does not auto-approve or create assignments.
+
+Effects do not grant execution authority and contain no instance, execution, task or token identity.
+The future runtime must bind each intent to its current execution, resolve live facts, validate all effects together and commit through the authoritative write boundary.
+No runtime calls these executors from a persisted plan yet; the current tests compose registered compilers and executors directly.
+There is no HTTP route or command that accepts a constructed configuration or plan for execution.
+Exact service availability is only one prerequisite: a class name or version label is not an executable artifact pin.
+Immutable releases, retained code artifacts, request/form dependencies, runtime configuration admission, task scheduling and commit authorization remain required increments.
 
 ## Implementation order
 
@@ -206,6 +232,8 @@ The legacy workflow menu is hidden through the existing menu visibility event; r
 ## Source calibration
 
 - ContentSystem `README.md`, `NAMING.md` and role suffix rules: responsibility and ownership.
+- ContentSystem result values and `ViolationSeverity`: narrow result contracts and string-backed enum values.
+- Legacy Workflow node executors and adjacent tests: per-node responsibilities only, without importing their runtime or write coupling.
 - `ContentSystemElementTypeRegistry` and its tests: loader aggregation and duplicate source reporting.
 - `YamlTypeLoader`: declaration loading and source tracking, without introducing its decorator hierarchy.
 - ContentSystem DI and Registry tests: actual tagged consumers and business-owned registrations.

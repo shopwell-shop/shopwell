@@ -6,6 +6,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
@@ -69,6 +74,32 @@ class NodePlanCompilerTest extends TestCase
         $compiler->compile(new DraftGraph(GraphFixture::json()));
     }
 
+    public function testRemovingAnExecutorBlocksAnOtherwiseCompilableGraph(): void
+    {
+        $container = $this->container();
+        $container->removeDefinition(ApprovalExecutor::class);
+        $container->compile();
+        $compiler = $container->get(NodePlanCompiler::class);
+        static::assertInstanceOf(NodePlanCompiler::class, $compiler);
+        $this->expectExceptionObject(ApprovalFlowException::nodeExecutorNotFound('core:approval', '1.0.0'));
+
+        $compiler->compile(new DraftGraph(GraphFixture::json()));
+    }
+
+    public function testCompilationChecksServiceAvailabilityWithoutExecutingTheNode(): void
+    {
+        $container = $this->container();
+        $container->removeDefinition(ApprovalExecutor::class);
+        $container->register(UncalledApprovalExecutor::class)->addTag('approval_flow.node_executor');
+        $container->compile();
+        $compiler = $container->get(NodePlanCompiler::class);
+        static::assertInstanceOf(NodePlanCompiler::class, $compiler);
+
+        $plan = $compiler->compile(new DraftGraph(GraphFixture::json()));
+
+        static::assertStringContainsString('"compilerId":"' . NodePlanCompiler::ID . '"', $plan->json);
+    }
+
     public function testSemanticFailureIdentifiesTheNodeConfigurationPath(): void
     {
         $container = $this->container();
@@ -123,6 +154,14 @@ class NodePlanCompilerTest extends TestCase
         static::assertNull($configuration->note);
         static::assertInstanceOf(\stdClass::class, $configuration->options);
         static::assertSame([], $configuration->groups);
+        $executors = $container->get(NodeExecutorRegistry::class);
+        static::assertInstanceOf(NodeExecutorRegistry::class, $executors);
+        $compiledConfiguration = (new FinanceNodeCompiler())->compile('finance:review', '1.0.0', '{"limit":0,"enabled":false}');
+
+        $effect = $executors->get('finance:review', '1.0.0')->enter($compiledConfiguration);
+
+        static::assertInstanceOf(CompleteEffect::class, $effect);
+        static::assertSame(ApprovalOutcome::Rejected, $effect->outcome);
     }
 
     public function testADeclarationWithoutItsBusinessCompilerCannotProduceANodePlan(): void
@@ -151,7 +190,7 @@ class NodePlanCompilerTest extends TestCase
 
             return $configuration;
         });
-        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder());
+        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
 
         $first = $compiler->compile(new DraftGraph(GraphFixture::json()));
         $firstJson = $first->json;
@@ -180,7 +219,7 @@ class NodePlanCompilerTest extends TestCase
         $nodeCompiler = static::createStub(NodeCompiler::class);
         $nodeCompiler->method('getTypes')->willReturn(['core:start' => ['1.0.0']]);
         $nodeCompiler->method('compile')->willReturn($configuration);
-        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder());
+        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
 
         try {
             $compiler->compile(new DraftGraph(GraphFixture::json()));
@@ -232,7 +271,7 @@ class NodePlanCompilerTest extends TestCase
         $nodeCompiler = static::createStub(NodeCompiler::class);
         $nodeCompiler->method('getTypes')->willReturn(['core:start' => ['1.0.0']]);
         $nodeCompiler->method('compile')->willReturn($configuration);
-        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder());
+        $compiler = new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$nodeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
 
         try {
             $compiler->compile(new DraftGraph(GraphFixture::json()));
@@ -339,7 +378,7 @@ class NodePlanCompilerTest extends TestCase
         $financeCompiler->method('getTypes')->willReturn(['finance:review' => ['1.0.0']]);
         $financeCompiler->method('compile')->willThrowException($failure);
 
-        return new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$coreCompilers->get('core:start', '1.0.0'), $financeCompiler]), new GraphJsonDecoder());
+        return new NodePlanCompiler($graphCompiler, new NodeCompilerRegistry([$coreCompilers->get('core:start', '1.0.0'), $financeCompiler]), new GraphJsonDecoder(), $container->get(NodeExecutorRegistry::class));
     }
 
     private function financeContainer(): ContainerBuilder
@@ -352,6 +391,8 @@ class NodePlanCompilerTest extends TestCase
             ])
             ->addTag('approval_flow.node_type_loader');
 
+        $container->register(FinanceNodeExecutor::class)->addTag('approval_flow.node_executor');
+
         return $container;
     }
 
@@ -363,6 +404,7 @@ class NodePlanCompilerTest extends TestCase
         $loader->load('approval-flow.php');
         $container->getDefinition(NodePlanCompiler::class)->setPublic(true);
         $container->getDefinition(GraphPlanCompiler::class)->setPublic(true);
+        $container->getDefinition(NodeExecutorRegistry::class)->setPublic(true);
 
         return $container;
     }
@@ -417,5 +459,53 @@ class MutableNodeConfiguration implements NodeConfiguration
     public function jsonSerialize(): array
     {
         return ['value' => $this->value];
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class FinanceNodeExecutor implements NodeExecutor
+{
+    public function getType(): string
+    {
+        return 'finance:review';
+    }
+
+    public function getVersion(): string
+    {
+        return '1.0.0';
+    }
+
+    public function enter(NodeConfiguration $configuration): CompleteEffect
+    {
+        if (!$configuration instanceof FinanceNodeConfiguration) {
+            throw new \RuntimeException('Expected finance configuration.');
+        }
+
+        return new CompleteEffect($configuration->enabled ? ApprovalOutcome::Approved : ApprovalOutcome::Rejected);
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+class UncalledApprovalExecutor implements NodeExecutor
+{
+    public function getType(): string
+    {
+        return 'core:approval';
+    }
+
+    public function getVersion(): string
+    {
+        return '1.0.0';
+    }
+
+    public function enter(NodeConfiguration $configuration): CompleteEffect
+    {
+        throw new \RuntimeException('Compilation must never execute nodes.');
     }
 }

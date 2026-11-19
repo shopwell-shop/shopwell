@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Node\Compilation;
 
 use Opis\JsonSchema\Exceptions\SchemaException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonException;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
@@ -60,7 +61,7 @@ class CoreNodeCompiler implements NodeCompiler
         }
         if ($type === CoreNodeType::END) {
             /** @var object{outcome: 'approved'|'rejected'}&\stdClass $configuration */
-            return new EndNodeConfiguration($configuration->outcome);
+            return new EndNodeConfiguration(ApprovalOutcome::from($configuration->outcome));
         }
 
         /** @var ApprovalConfiguration $configuration */

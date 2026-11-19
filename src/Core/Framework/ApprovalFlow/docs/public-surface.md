@@ -1,6 +1,6 @@
 # Approval Flow public surface
 
-The supported extension surface covers node declaration, configuration compilation and assembly.
+The supported extension surface covers node declaration, configuration compilation, pure node entry and assembly.
 The DAL models `approval_flow_definition` and `approval_flow_draft` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 They carry neither `@internal` nor `@final`; this does not authorize direct writes around the controlled draft path.
 No HTTP action routes, execution commands or publication services are exposed by this increment.
@@ -32,8 +32,22 @@ They remain stable for the compiled container lifetime; collisions fail rather t
 The host freezes each result immediately and reports malformed output or registration metadata as an internal compiler fault.
 Use the owning module's `HttpException` with status 400 or 422 for invalid configuration, optionally carrying a configuration-local `path`; the host adds the node path and retains the original cause.
 Other statuses and unexpected failures propagate unchanged.
-The supported contracts expose neither the internal core configuration classes nor the internal publication orchestration services.
+The supported compiler contract accepts business-owned configuration types without exposing internal publication orchestration services.
 Declaring a compiler does not establish runtime capability or a deployment artifact pin.
+
+## Node entry and effects
+
+- `NodeExecutor` declares one exact type/version and accepts a compiler-produced `NodeConfiguration` for that identity.
+- Register it with `approval_flow.node_executor`; static analysis enforces the interface.
+- `enter()` returns the closed union `AdvanceEffect|RequestApprovalEffect|CompleteEffect`, without infrastructure calls or storage changes.
+- `ApprovalNodeConfiguration` and `ApprovalFieldConfiguration` are supported immutable values for approval rules and candidates carried by `RequestApprovalEffect`.
+- `ApprovalOutcome` fixes approved/rejected process outcomes at the PHP type boundary; `CompleteEffect` accepts this enum rather than an arbitrary string.
+
+A plugin may implement its own node compiler, configuration and executor and return one of the controlled intents without importing internal framework types.
+The current configuration classes identify the v1 core contract; future incompatible versions must retain their own configuration type and exact services.
+Executors are pure entry services, not authorization or persistence extension points.
+Effects are uncommitted proposals: the future runtime must supply execution identity, resolve candidates, revalidate transitions and validate the whole effect set before any writes.
+No runtime configuration decoder or persisted-plan execution endpoint exists yet.
 
 ## Internal adapters
 
@@ -42,7 +56,8 @@ Declaring a compiler does not establish runtime capability or a deployment artif
 `GraphPublicationPreflight` and `GraphPublicationSnapshot` are internal graph preparation contracts.
 They freeze admitted graph and declaration bytes without establishing a published release, runtime configuration handle or executable dependency set.
 `GraphPlanCompiler`, `CompiledGraphPlan` and the versioned structural plan schema remain internal.
-`CoreNodeCompiler`, `NodeCompilerRegistry`, the concrete core configurations, `NodePlanCompiler`, `CompiledNodePlan` and its envelope schema also remain internal.
+`CoreNodeCompiler`, `NodeCompilerRegistry`, the start/end configuration values, `NodePlanCompiler`, `CompiledNodePlan` and its envelope schema also remain internal.
+`NodeExecutorRegistry`, `StartExecutor`, `ApprovalExecutor` and `EndExecutor` remain internal implementations; extensions implement NodeExecutor instead of inheriting them.
 Structural plan compilation rechecks its draft input and preserves graph identity; compiler versions and topological order do not grant runtime capability or scheduling guarantees.
 Ordinary repository and Sync writes to definitions and drafts are rejected; the storage adapter opens the internal scope only for admitted writes.
 The scope does not restrict trusted in-process PHP code that can also access the database directly.
@@ -64,7 +79,10 @@ Publication preflight tests cover complete graph admission, blocked incomplete g
 Integration tests prove preparation leaves saved draft bytes and revisions unchanged, and later draft edits cannot alter an earlier snapshot.
 Compiler tests cover graph and snapshot bindings, versioned wire shape, branch/merge topology, parallel connections, numeric/special IDs and independent business declarations through actual DI.
 Integration tests prove graph plan compilation leaves stored draft bytes/revisions unchanged on success and failure.
-Publication gates, executor pins, runtime behavior and transfer execution require their own future evidence.
+The exact executor availability gate is covered by real container removal and plugin registration tests; retained executable artifact pins, remaining publication gates, runtime behavior and transfer execution require future evidence.
 
 Node configuration tests cover real tagged business compilers, exact versions and missing registrations, semantic rules, deterministic byte freezing, mutable plugin results and rejected compiler outputs.
 Database integration verifies that success and semantic failure leave saved draft bytes and revisions unchanged.
+
+Node entry tests cover typed configuration mismatch, exact version coexistence, duplicate/invalid registration failures and the three core intents.
+Kernel integration composes actual registered compilers and executors and verifies saved draft bytes and revision remain unchanged.

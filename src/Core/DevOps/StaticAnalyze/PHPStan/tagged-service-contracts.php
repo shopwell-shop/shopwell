@@ -42,6 +42,7 @@ use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\AdapterFactoryInterface;
 use Shopwell\Core\Framework\Adapter\Twig\NamespaceHierarchy\TemplateNamespaceHierarchyBuilderInterface;
 use Shopwell\Core\Framework\Api\Cors\CorsHeaderProviderInterface;
 use Shopwell\Core\Framework\Api\Sync\AbstractFkResolver;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompiler;
 use Shopwell\Core\Framework\ContentSystem\Adapter\AbstractSpecificationSource;
@@ -108,6 +109,7 @@ return [
             'shopwell.workflow.execution.graph_rule' => GraphRuleInterface::class,
             'approval_flow.node_type_loader' => NodeTypeLoader::class,
             'approval_flow.node_compiler' => NodeCompiler::class,
+            'approval_flow.node_executor' => NodeExecutor::class,
             'content_system.binding_specification_loader' => AbstractContentSystemBindingSpecificationLoader::class,
             'content_system.config_serializer' => AbstractContentDataLoaderConfigSerializer::class,
             'content_system.data_loader' => AbstractContentDataLoader::class,

@@ -5,7 +5,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Node\Configuration;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * @internal
+ * Compiled approval rules shared by compilers, executors and task-planning intents.
  */
 #[Package('framework')]
 final readonly class ApprovalNodeConfiguration implements NodeConfiguration

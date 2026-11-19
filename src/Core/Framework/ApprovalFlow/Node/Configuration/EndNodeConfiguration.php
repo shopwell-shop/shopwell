@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Node\Configuration;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -12,22 +13,15 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 final readonly class EndNodeConfiguration implements NodeConfiguration
 {
-    public const APPROVED = 'approved';
-
-    public const REJECTED = 'rejected';
-
-    /**
-     * @param self::APPROVED|self::REJECTED $outcome
-     */
-    public function __construct(public string $outcome)
+    public function __construct(public ApprovalOutcome $outcome)
     {
     }
 
     /**
-     * @return array{outcome: self::APPROVED|self::REJECTED}
+     * @return array{outcome: 'approved'|'rejected'}
      */
     public function jsonSerialize(): array
     {
-        return ['outcome' => $this->outcome];
+        return ['outcome' => $this->outcome->value];
     }
 }

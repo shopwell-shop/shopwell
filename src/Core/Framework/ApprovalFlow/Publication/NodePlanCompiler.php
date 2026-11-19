@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Publication;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompiler;
@@ -29,6 +30,7 @@ class NodePlanCompiler
         private readonly GraphPlanCompiler $graphCompiler,
         private readonly NodeCompilerRegistry $nodeCompilers,
         private readonly GraphJsonDecoder $jsonDecoder,
+        private readonly NodeExecutorRegistry $nodeExecutors,
     ) {
     }
 
@@ -40,6 +42,7 @@ class NodePlanCompiler
         $nodes = [];
         foreach ($payload->nodes as $index => $node) {
             $compiler = $this->nodeCompilers->get($node->type, $node->typeVersion);
+            $this->nodeExecutors->get($node->type, $node->typeVersion);
             $json = json_encode($node->config, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_PRESERVE_ZERO_FRACTION);
             try {
                 $configuration = $compiler->compile($node->type, $node->typeVersion, $json);

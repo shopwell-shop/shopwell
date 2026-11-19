@@ -5,7 +5,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Node\Configuration;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * @internal
+ * A compiled field access rule carried by an approval intent.
  *
  * @codeCoverageIgnore
  */
