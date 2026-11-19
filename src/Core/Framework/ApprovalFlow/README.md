@@ -358,7 +358,22 @@ It requires every configured fixed assignee to identify an active Administration
 The command checks account status with a shared locking read to serialize against concurrent account changes.
 The task records retain the assignee's identity without a foreign key to the user record.
 The command writes a pending task per assignee, moves the execution to `awaiting_approval`, and commits the new instance version and receipt.
+It freezes the group's `ApprovalPolicy` on the execution.
+`ApprovalNodeConfiguration` requires at least one candidate and exactly one for single approval, including configurations constructed by custom compilers.
 A DAL write or event failure rolls back the command's writes, and the transaction is not automatically retried around callbacks.
+
+`ApprovalInstanceService::decide(instanceId, taskId, commandId, expectedVersion, outcome, reason, Context)` accepts a personal Administration decision.
+It requires `approval_flow_task:decide` on a user source; system and integration sources cannot cast personal votes.
+Under the instance lock, the task must belong to that instance and its assigned user must still have an active account.
+Ownership and current account status are checked before every receipt replay.
+The request hash binds the task, outcome, exact reason, version and actor.
+New votes require a pending task in an execution awaiting approval and a running instance at the expected version.
+They consume the frozen group policy without invoking the node executor again.
+Single approval completes on its only vote; all approval waits for every required vote; any approval completes on the first agreement.
+Every policy uses the declared rejection veto.
+Once a group reaches an outcome, its pending tasks are cancelled and the execution is completed with that outcome.
+Each changed task records its `completionCommandId`, linking the decision or cancellation to the same transaction's immutable operation receipt and actor.
+Decision notes may be empty and are retained verbatim.
 
 `ApprovalInstanceWriteGuard::write()` scopes each DAL batch to system scope on the original Context and grants one pending write permit.
 The guard consumes that permit at the start of `EntityWriteEvent`, before ordinary listeners run, and admits only the exact command objects and payloads from that batch.
@@ -373,5 +388,6 @@ This increment provides no production instance creation, activation, resume, ter
 Tests seed runtime facts explicitly and use real persisted releases to exercise the commit boundary; they do not simulate an admitted business start.
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Future progression and decision commands must check the instance's running status under the same lock.
-Task decisions, actor privileges for decisions, dynamic assignee sources, the empty-assignee skip policy and completion remain subsequent increments.
+The group decision completes only that node execution.
+Successor scheduling, instance completion, dynamic assignee sources, the empty-assignee skip policy, task queries and business result delivery remain subsequent increments.
 The command does not schedule approval-domain events or external effects; durable Outbox delivery remains a separate requirement when such delivery is introduced.

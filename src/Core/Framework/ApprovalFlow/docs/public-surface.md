@@ -136,6 +136,15 @@ Start entry is a system-only command for an existing running instance.
 It verifies the instance's bound release and records the start as completed and its single successor as waiting.
 Approval entry takes an execution identity, verifies that the execution belongs to the running instance, and requires a frozen approval effect.
 It stores pending task records for the fixed active assignees and moves the execution to awaiting approval.
+Its single, all or any policy is frozen on that execution using `ApprovalPolicy`.
+The configuration constructor rejects empty candidates and multiple candidates under single approval, including direct constructions by business compilers.
+An internal personal decision command requires an Administration user with `approval_flow_task:decide`.
+Under the instance lock, it checks the task's instance, assigned identity and the account's current active state before returning any receipt.
+New decisions require a pending task and an execution awaiting approval.
+The command records the vote and evaluates the frozen group policy.
+An agreement completes single/any approval; all approval waits for all votes; a rejection vetoes every policy.
+Completing a group records the execution outcome and cancels remaining pending tasks in the same transaction as its instance version and receipt.
+The task's `completionCommandId` links both personal decisions and cancellations to the original actor and reason.
 These commands require an expected aggregate version and a command identity.
 They preserve the original Context, serialize writes with the instance row lock and atomically retain the original response and audit in `approval_flow_operation`.
 Receipts are reauthorized on every retry and bound to their original actor and payload.
@@ -147,4 +156,5 @@ Each batch receives a one-use write permit which is consumed before ordinary DAL
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
 There is no production instance creation or activation path, and no public command/query route.
-Business binding, runtime admission, task decisions and timers require their own command contracts.
+Business binding, runtime admission, successor scheduling, instance completion and timers require their own command contracts.
+The decision command adds no public endpoint, external result delivery or business execution authority.

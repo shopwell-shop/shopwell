@@ -48,6 +48,9 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
         if ($userIds === []) {
             throw ApprovalFlowException::emptyApprovalAssignees();
         }
+        if ($policy === self::SINGLE && \count($userIds) !== 1) {
+            throw ApprovalFlowException::singleApprovalAssigneeRequired();
+        }
 
         // Copy list entries by value so callers cannot change the rules through array references.
         $this->userIds = array_map(static fn (string $userId): string => $userId, $userIds);

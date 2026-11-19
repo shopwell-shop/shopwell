@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
@@ -12,7 +13,9 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCom
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskCollection;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskStatus;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -37,6 +40,8 @@ class ApprovalInstanceStore
 
     public const ENTER_APPROVAL = 'enter-approval';
 
+    public const DECIDE = 'decide';
+
     private const START_SEQUENCE = 1;
 
     private const SYSTEM_ACTOR_JSON = '{"source":"system"}';
@@ -56,6 +61,7 @@ class ApprovalInstanceStore
         private readonly ApprovalNodeEntry $nodeEntry,
         private readonly EntityRepository $tasks,
         private readonly ApprovalAssigneeResolver $assigneeResolver,
+        private readonly ApprovalTaskDecisionStore $decisions,
     ) {
     }
 
@@ -144,15 +150,45 @@ class ApprovalInstanceStore
                     throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The node did not request approval.');
                 }
                 $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
-                $this->createApprovalTasks($executionId, $assignees, $context);
+                $this->createApprovalTasks($executionId, $assignees, ApprovalPolicy::from($effect->configuration->policy), $context);
 
                 return ApprovalInstanceStatus::Running;
             },
         );
     }
 
+    public function decide(string $instanceId, string $taskId, string $commandId, int $expectedVersion, ApprovalOutcome $outcome, string $reason, string $userId, string $actorJson, Context $context): ApprovalInstanceCommandResult
+    {
+        $requestHash = Hasher::hash([
+            'operation' => self::DECIDE,
+            'taskId' => $taskId,
+            'expectedVersion' => $expectedVersion,
+            'outcome' => $outcome->value,
+            'reason' => $reason,
+            'actorJson' => $actorJson,
+        ], 'sha256');
+
+        return $this->runCommand(
+            $instanceId,
+            $commandId,
+            $expectedVersion,
+            self::DECIDE,
+            $requestHash,
+            $reason,
+            $actorJson,
+            $context,
+            function () use ($instanceId, $taskId, $commandId, $outcome, $context): ApprovalInstanceStatus {
+                $this->decisions->decide($instanceId, $taskId, $commandId, $outcome, $context);
+
+                return ApprovalInstanceStatus::Running;
+            },
+            fn () => $this->decisions->requireAssignee($instanceId, $taskId, $userId),
+        );
+    }
+
     /**
      * @param \Closure(string): ApprovalInstanceStatus $apply
+     * @param (\Closure(): void)|null $authorize
      */
     private function runCommand(
         string $instanceId,
@@ -164,9 +200,13 @@ class ApprovalInstanceStore
         string $actorJson,
         Context $context,
         \Closure $apply,
+        ?\Closure $authorize = null,
     ): ApprovalInstanceCommandResult {
-        return RetryableTransaction::transactional($this->connection, function () use ($instanceId, $commandId, $expectedVersion, $operation, $requestHash, $reason, $actorJson, $context, $apply): ApprovalInstanceCommandResult {
+        return RetryableTransaction::transactional($this->connection, function () use ($instanceId, $commandId, $expectedVersion, $operation, $requestHash, $reason, $actorJson, $context, $apply, $authorize): ApprovalInstanceCommandResult {
             $instance = $this->lockInstance($instanceId);
+            if ($authorize !== null) {
+                $authorize();
+            }
             $receipt = $this->readReceipt($instanceId, $commandId, $requestHash);
             if ($receipt !== null) {
                 return $receipt;
@@ -210,7 +250,7 @@ class ApprovalInstanceStore
     /**
      * @param non-empty-list<string> $assignees
      */
-    private function createApprovalTasks(string $executionId, array $assignees, Context $context): void
+    private function createApprovalTasks(string $executionId, array $assignees, ApprovalPolicy $policy, Context $context): void
     {
         $tasks = [];
         foreach ($assignees as $assigneeId) {
@@ -225,10 +265,11 @@ class ApprovalInstanceStore
         $this->writeGuard->write($context, function (Context $writeContext) use ($tasks): void {
             $this->tasks->create($tasks, $writeContext);
         });
-        $this->writeGuard->write($context, function (Context $writeContext) use ($executionId): void {
+        $this->writeGuard->write($context, function (Context $writeContext) use ($executionId, $policy): void {
             $this->executions->update([[
                 'id' => $executionId,
                 'status' => ApprovalNodeExecutionStatus::AwaitingApproval->value,
+                'approvalPolicy' => $policy->value,
             ]], $writeContext);
         });
     }

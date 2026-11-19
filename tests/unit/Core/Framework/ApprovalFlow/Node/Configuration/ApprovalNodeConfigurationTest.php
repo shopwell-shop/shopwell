@@ -23,6 +23,13 @@ class ApprovalNodeConfigurationTest extends TestCase
         new ApprovalNodeConfiguration([], ApprovalNodeConfiguration::ALL, [], ApprovalNodeConfiguration::EMPTY_INCIDENT);
     }
 
+    public function testSingleApprovalCannotBeConstructedWithMultipleCandidates(): void
+    {
+        $this->expectExceptionObject(ApprovalFlowException::singleApprovalAssigneeRequired());
+
+        new ApprovalNodeConfiguration(['first', 'second'], ApprovalNodeConfiguration::SINGLE, [], ApprovalNodeConfiguration::EMPTY_INCIDENT);
+    }
+
     public function testConfigurationKeepsItsOwnCandidateAndFieldValues(): void
     {
         $userId = 'reviewer';

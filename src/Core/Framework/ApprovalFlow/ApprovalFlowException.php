@@ -17,6 +17,11 @@ class ApprovalFlowException extends HttpException
     public const ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__ASSIGNEE_UNAVAILABLE';
     public const EMPTY_APPROVAL_ASSIGNEES = 'APPROVAL_FLOW__EMPTY_APPROVAL_ASSIGNEES';
     public const INVALID_EXECUTION_ID = 'APPROVAL_FLOW__INVALID_EXECUTION_ID';
+    public const TASK_NOT_FOUND = 'APPROVAL_FLOW__TASK_NOT_FOUND';
+    public const TASK_NOT_PENDING = 'APPROVAL_FLOW__TASK_NOT_PENDING';
+    public const TASK_ASSIGNEE_REQUIRED = 'APPROVAL_FLOW__TASK_ASSIGNEE_REQUIRED';
+    public const TASK_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__TASK_OUTSIDE_SNAPSHOT';
+    public const SINGLE_APPROVAL_ASSIGNEE_REQUIRED = 'APPROVAL_FLOW__SINGLE_APPROVAL_ASSIGNEE_REQUIRED';
     public const UNSUPPORTED_START_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_START_ROUTE';
     public const INSTANCE_NOT_FOUND = 'APPROVAL_FLOW__INSTANCE_NOT_FOUND';
     public const INSTANCE_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__INSTANCE_OUTSIDE_SNAPSHOT';
@@ -165,6 +170,40 @@ class ApprovalFlowException extends HttpException
             self::INVALID_EXECUTION_ID,
             'Node execution ID "{{ executionId }}" is invalid.',
             ['executionId' => $executionId]
+        );
+    }
+
+    public static function taskNotFound(string $taskId): self
+    {
+        return new self(Response::HTTP_NOT_FOUND, self::TASK_NOT_FOUND, 'Approval task "{{ taskId }}" was not found on this instance.', ['taskId' => $taskId]);
+    }
+
+    public static function singleApprovalAssigneeRequired(): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::SINGLE_APPROVAL_ASSIGNEE_REQUIRED,
+            'Single approval configuration requires exactly one candidate.'
+        );
+    }
+
+    public static function taskNotPending(string $taskId): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::TASK_NOT_PENDING, 'Approval task "{{ taskId }}" is no longer pending.', ['taskId' => $taskId]);
+    }
+
+    public static function taskAssigneeRequired(): self
+    {
+        return new self(Response::HTTP_FORBIDDEN, self::TASK_ASSIGNEE_REQUIRED, 'The active assigned Administration user must make this decision.');
+    }
+
+    public static function taskOutsideSnapshot(string $taskId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::TASK_OUTSIDE_SNAPSHOT,
+            'Approval task "{{ taskId }}" is outside the current transaction snapshot. Retry the command in a new transaction.',
+            ['taskId' => $taskId]
         );
     }
 

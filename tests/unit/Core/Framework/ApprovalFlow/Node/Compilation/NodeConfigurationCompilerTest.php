@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompilerRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeConfigurationCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalNodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\NodeConfiguration;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
@@ -63,6 +64,21 @@ class NodeConfigurationCompilerTest extends TestCase
         $registered->method('compile')->willThrowException($cause);
         $compiler = new NodeConfigurationCompiler(new NodeCompilerRegistry([$registered]), new GraphJsonDecoder());
         $this->expectExceptionObject($cause);
+
+        $compiler->compile('finance:review', '1.0.0', '{}', '/nodes/1/config');
+    }
+
+    public function testBusinessCompilerCannotConstructAMultiAssigneeSingleApproval(): void
+    {
+        $registered = $this->nodeCompiler();
+        $registered->method('compile')->willReturnCallback(static fn (): ApprovalNodeConfiguration => new ApprovalNodeConfiguration(
+            ['first', 'second'],
+            ApprovalNodeConfiguration::SINGLE,
+            [],
+            ApprovalNodeConfiguration::EMPTY_INCIDENT,
+        ));
+        $compiler = new NodeConfigurationCompiler(new NodeCompilerRegistry([$registered]), new GraphJsonDecoder());
+        $this->expectExceptionObject(ApprovalFlowException::singleApprovalAssigneeRequired());
 
         $compiler->compile('finance:review', '1.0.0', '{}', '/nodes/1/config');
     }

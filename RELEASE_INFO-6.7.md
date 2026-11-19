@@ -23,7 +23,10 @@ The `approval_flow_instance`, `approval_flow_operation` and `approval_flow_execu
 Generic repository and Sync writes to these models are rejected.
 An internal system command can enter the start of an existing running instance, record its completion and queue a single successor as waiting in the same transaction as the version and receipt.
 Approval entry verifies the waiting execution against its bound release and records one pending `approval_flow_task` per configured active Administration account.
-Task decisions and public task queries remain unavailable.
+An internal personal decision command requires the active assignee and `approval_flow_task:decide`.
+It aggregates frozen single, all or any approval rules with rejection veto, records the node outcome and cancels remaining pending tasks atomically with the receipt.
+System and integration identities cannot cast personal votes.
+Public task queries, successor scheduling and business result delivery remain unavailable.
 Instance lifecycle management remains internal and does not enable business starts or approval decisions.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.

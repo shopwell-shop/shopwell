@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\EnumField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\AllowEmptyString;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\AllowHtml;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
@@ -57,7 +58,7 @@ class ApprovalOperationDefinition extends EntityDefinition
             (new StringField('operation', 'operation', 64))->addFlags(new Required()),
             (new StringField('request_hash', 'requestHash', 64))->addFlags(new Required()),
             (new LongTextField('actor_json', 'actorJson'))->addFlags(new Required(), new AllowHtml(sanitized: false)),
-            (new LongTextField('reason', 'reason'))->addFlags(new Required(), new AllowHtml(sanitized: false)),
+            (new LongTextField('reason', 'reason'))->addFlags(new Required(), new AllowEmptyString(), new AllowHtml(sanitized: false)),
             (new EnumField('previous_status', 'previousStatus', ApprovalInstanceStatus::Draft))->addFlags(new Required()),
             (new EnumField('status', 'status', ApprovalInstanceStatus::Draft))->addFlags(new Required()),
             (new IntField('previous_version', 'previousVersion', 1))->addFlags(new Required()),

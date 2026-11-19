@@ -2,7 +2,9 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Node;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceEntity;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -24,6 +26,10 @@ class ApprovalNodeExecutionEntity extends Entity
     protected int $sequence;
 
     protected ApprovalNodeExecutionStatus $status;
+
+    protected ?ApprovalPolicy $approvalPolicy = null;
+
+    protected ?ApprovalOutcome $outcome = null;
 
     protected ?ApprovalInstanceEntity $instance = null;
 
@@ -80,6 +86,26 @@ class ApprovalNodeExecutionEntity extends Entity
     public function getInstance(): ?ApprovalInstanceEntity
     {
         return $this->instance;
+    }
+
+    public function getApprovalPolicy(): ?ApprovalPolicy
+    {
+        return $this->approvalPolicy;
+    }
+
+    public function setApprovalPolicy(?ApprovalPolicy $approvalPolicy): void
+    {
+        $this->approvalPolicy = $approvalPolicy;
+    }
+
+    public function getOutcome(): ?ApprovalOutcome
+    {
+        return $this->outcome;
+    }
+
+    public function setOutcome(?ApprovalOutcome $outcome): void
+    {
+        $this->outcome = $outcome;
     }
 
     public function setInstance(?ApprovalInstanceEntity $instance): void

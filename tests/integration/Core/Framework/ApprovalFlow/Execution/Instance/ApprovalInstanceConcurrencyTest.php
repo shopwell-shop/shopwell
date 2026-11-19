@@ -7,14 +7,21 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\TransactionIsolationLevel;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\ApprovalRuntimeFixture;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\InstanceFixture;
+use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Graph\_fixtures\GraphFixture;
+use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\PublicationFixture;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\InputStream;
 use Symfony\Component\Process\Process;
 
@@ -79,6 +86,83 @@ class ApprovalInstanceConcurrencyTest extends TestCase
         yield 'same command replays its committed receipt' => [true];
         yield 'another suspension sees the committed version conflict' => [false];
         yield 'start entry waits for suspension and sees the committed version conflict' => [false, true];
+    }
+
+    #[DataProvider('groupPolicies')]
+    public function testConcurrentDecisionsUseTheLatestVotesDespiteAnOlderSnapshot(string $policy): void
+    {
+        $kernel = static::getContainer();
+        $connection = $kernel->get(Connection::class);
+        $filesystem = new Filesystem();
+        $directory = sys_get_temp_dir() . '/approval-votes-' . Uuid::randomHex();
+        $manifest = PublicationFixture::writeManifest($filesystem, $directory);
+        $runtime = ApprovalRuntimeFixture::container($kernel, $manifest);
+        $first = TestUser::createNewTestUser($connection)->getUserId();
+        $second = TestUser::createNewTestUser($connection)->getUserId();
+        $graph = str_replace(['"finance-user"', '"core:all"'], [json_encode($first, \JSON_THROW_ON_ERROR) . ',' . json_encode($second, \JSON_THROW_ON_ERROR), json_encode($policy, \JSON_THROW_ON_ERROR)], GraphFixture::json());
+        $releaseId = ApprovalRuntimeFixture::publish($kernel, $runtime, $graph);
+        $definitionId = $connection->fetchOne('SELECT definition_id FROM approval_flow_release WHERE id = :id', ['id' => Uuid::fromHexToBytes($releaseId)]);
+        $instanceId = InstanceFixture::create($connection, $releaseId, ApprovalInstanceStatus::Running);
+        $service = $runtime->get(ApprovalInstanceService::class);
+        $service->enterStart($instanceId, Uuid::randomHex(), 1, Context::createDefaultContext());
+        $executionId = $connection->fetchOne('SELECT id FROM approval_flow_execution WHERE instance_id = :instance AND node_id = :node', ['instance' => Uuid::fromHexToBytes($instanceId), 'node' => 'review']);
+        static::assertIsString($executionId);
+        $service->enterApproval($instanceId, Uuid::fromBytesToHex($executionId), Uuid::randomHex(), 2, Context::createDefaultContext());
+        $tasks = $connection->fetchAllKeyValue('SELECT assignee_id, id FROM approval_flow_task WHERE execution_id = :execution', ['execution' => $executionId]);
+        $source = new AdminApiSource($first);
+        $source->setPermissions([ApprovalInstanceService::DECIDE_PRIVILEGE]);
+        $input = new InputStream();
+        $writer = new Process([
+            \PHP_BINARY, '-d', 'xdebug.mode=off', __DIR__ . '/_fixtures/competing-decision.php',
+            $instanceId, Uuid::fromBytesToHex($tasks[Uuid::fromHexToBytes($second)]), $second,
+        ]);
+        $writer->setInput($input);
+        $writer->setTimeout(30);
+
+        try {
+            $writer->start();
+            $this->waitFor($writer, 'SNAPSHOT:pending');
+            $connection->beginTransaction();
+            $service->decide($instanceId, Uuid::fromBytesToHex($tasks[Uuid::fromHexToBytes($first)]), Uuid::randomHex(), 3, ApprovalOutcome::Approved, 'First reviewer.', Context::createDefaultContext($source));
+            $input->write("compete\n");
+            $this->waitFor($writer, 'BLOCKED');
+            $connection->commit();
+            $input->write("retry\n");
+            $input->close();
+
+            static::assertSame(0, $writer->wait(), $writer->getErrorOutput());
+            static::assertStringContainsString($policy === 'core:all' ? 'DECIDED:5' : 'CANCELLED', $writer->getOutput());
+            $execution = $connection->fetchAssociative('SELECT status, outcome FROM approval_flow_execution WHERE id = :id', ['id' => $executionId]);
+            static::assertSame(['status' => 'completed', 'outcome' => 'approved'], $execution);
+            $statuses = $connection->fetchFirstColumn('SELECT status FROM approval_flow_task WHERE execution_id = :id ORDER BY status', ['id' => $executionId]);
+            static::assertSame($policy === 'core:all' ? ['approved', 'approved'] : ['approved', 'cancelled'], $statuses);
+        } finally {
+            $input->close();
+            $writer->stop();
+            while ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+            $connection->executeStatement('DELETE FROM approval_flow_task WHERE execution_id = :id', ['id' => $executionId]);
+            $connection->delete('approval_flow_execution', ['instance_id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_operation', ['instance_id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_instance', ['id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_release', ['id' => Uuid::fromHexToBytes($releaseId)]);
+            $connection->delete('approval_flow_draft', ['definition_id' => $definitionId]);
+            $connection->delete('approval_flow_definition', ['id' => $definitionId]);
+            foreach ([$first, $second] as $userId) {
+                $key = ['id' => Uuid::fromHexToBytes($userId)];
+                $avatar = $connection->fetchOne('SELECT avatar_id FROM `user` WHERE id = :id', $key);
+                $connection->delete('user', $key);
+                $connection->delete('media', ['id' => $avatar]);
+            }
+            $filesystem->remove($directory);
+        }
+    }
+
+    public static function groupPolicies(): iterable
+    {
+        yield 'all keeps both committed votes' => ['core:all'];
+        yield 'any rejects a late vote after cancellation' => ['core:any'];
     }
 
     public function testCommandRequiresTheAdmittedInstanceToBeVisibleInItsTransaction(): void
