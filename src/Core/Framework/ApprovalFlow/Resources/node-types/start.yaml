@@ -1,0 +1,6 @@
+type: core:start
+version: 1.0.0
+labelSnippet: sw-approval-flow.node.start
+configurationSchema: start.json
+ports:
+  out: output

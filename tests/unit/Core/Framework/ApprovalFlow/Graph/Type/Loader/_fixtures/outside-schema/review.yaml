@@ -1,0 +1,6 @@
+type: test:review
+version: 1.0.0
+labelSnippet: test.review
+ports:
+  in: input
+configurationSchema: ../outside.json

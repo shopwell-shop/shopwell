@@ -1,0 +1,7 @@
+type: finance:review
+version: 1.0.0
+labelSnippet: finance.review
+configurationSchema: review.json
+ports:
+  in: input
+  out: output

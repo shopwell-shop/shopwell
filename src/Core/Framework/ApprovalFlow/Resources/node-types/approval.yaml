@@ -1,0 +1,7 @@
+type: core:approval
+version: 1.0.0
+labelSnippet: sw-approval-flow.node.approval
+configurationSchema: approval.json
+ports:
+  in: input
+  out: output

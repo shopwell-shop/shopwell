@@ -2,6 +2,13 @@
 
 ## Core
 
+### Approval Flow declaration skeleton
+
+The independent Approval Flow module provides exact-version node declarations through `NodeTypeLoader` and the `approval_flow.node_type_loader` service tag.
+Business modules register their loaders in their own DI; a declaration alone does not make a node executable.
+The legacy Workflow navigation is hidden during the replacement, while its existing routes and business execution remain available.
+The new Approval navigation and business pages will be added with their corresponding capabilities.
+
 ### Dynamic workflow reviewers
 
 Approval sources now include `core:initiator`, `core:roles` (`roleIds`) and `core:supervisors`.

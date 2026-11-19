@@ -81,6 +81,7 @@ class Framework extends Bundle
         $phpLoader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/DependencyInjection/'));
 
         $phpLoader->load('content-system.php');
+        $phpLoader->load('approval-flow.php');
         $phpLoader->load('workflow.php');
         $phpLoader->load('http_discovery.php');
         $phpLoader->load('acl.php');

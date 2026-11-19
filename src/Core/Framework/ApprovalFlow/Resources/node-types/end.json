@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "additionalProperties": false,
+    "$id": "urn:shopwell:approval-flow:node:end:1.0.0",
+    "properties": {
+        "outcome": {
+            "enum": [
+                "approved",
+                "rejected"
+            ]
+        }
+    },
+    "required": [
+        "outcome"
+    ]
+}

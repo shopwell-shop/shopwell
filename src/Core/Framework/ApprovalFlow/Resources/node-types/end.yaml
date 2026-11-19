@@ -1,0 +1,6 @@
+type: core:end
+version: 1.0.0
+labelSnippet: sw-approval-flow.node.end
+configurationSchema: end.json
+ports:
+  in: input
