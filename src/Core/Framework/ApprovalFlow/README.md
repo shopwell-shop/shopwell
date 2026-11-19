@@ -21,6 +21,7 @@ Keep business implementations and their DI in the owning business module.
 - `Mutation` edits detached drafts and returns the complete result with diagnostics and explicit removed fragments.
 - `Definition` and `Draft` define the DAL records for a flow identity and its current draft.
 - `ApprovalDraftService` owns draft admission, caller permissions and confirmed edits; `ApprovalDraftStore` isolates transactions, current row reads and DAL writes.
+- `Publication` prepares immutable graph and declaration snapshots for subsequent compilation and executable dependency checks.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
 A loaded declaration does not establish executor availability, publication validity or authorization.
@@ -104,11 +105,36 @@ Its internal scope is an in-process coordination mechanism, not a security sandb
 It performs no legacy Workflow conversion or compatibility reads.
 This increment adds no HTTP action endpoints or Administration pages.
 
+## Publication preflight
+
+`GraphPublicationPreflight::prepare()` accepts a detached `DraftGraph` and returns a `GraphPublicationSnapshot` after the existing diagnostics pass reports no violations.
+Incomplete configuration, disconnected or cyclic control flow, malformed structure and unavailable capabilities all block preparation.
+Failure returns `APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID` with the original diagnostic code, JSON Pointer and reason.
+The diagnostic service still reports the full list for editor presentation.
+Preflight never supplies configuration defaults, repairs a graph or writes a draft.
+
+The snapshot retains canonical graph JSON and a separate contract document containing the exact graph schema bytes and the used node declarations.
+Each captured declaration includes its exact type and version, complete configuration schema identity, bytes and SHA-256 hash, and declared port identities and directions.
+Declarations are deduplicated and sorted by exact identity; ports are sorted by identity.
+Unused declarations, deployment paths, snippet labels and draft-only schema rules do not affect the contract.
+Node and connection order, authored configuration and layout remain part of the graph.
+Objects, arrays, null, false and zero keep the Codec's existing wire semantics.
+
+`graphHash` covers canonical graph bytes; `hash` covers both graph and frozen contract bytes through a fixed JSON envelope.
+Changing a schema artifact changes the full hash even if its declared version stays the same.
+The readonly snapshot owns only strings, so subsequent edits or catalogue changes cannot change a captured value.
+It is an internal candidate value; constructing or retaining one grants no publication or execution authority.
+
+The final publication operation must check caller permissions, lock and reread the draft, compare its expected revision, rerun preflight and compile against the full exact executable dependency set.
+Executor, policy, assignee, form, request and runtime dependencies are outside this graph-only contract.
+A candidate hash is not a replacement for those checks.
+Release persistence and activation remain separate increments; no release rows or executable configuration handles are created here.
+
 ## Implementation order
 
 1. Validate declarations and real typed assembly with duplicate, missing and version coexistence cases.
 2. Verify the authoritative draft codec, pure mutation and diagnostics with shared schema fixtures and real tagged business nodes.
-3. Verify controlled draft persistence, then add publication gates and a minimal start → approval → end execution path.
+3. Verify controlled draft persistence and graph publication preflight, then add compilation, executable dependency gates and immutable releases.
 4. Prove new nodes, operations and transfer integration through the public seams before expanding complex execution semantics.
 
 Read the closest implementation and adjacent tests before each increment, and review naming, responsibility, failures and dependency direction alongside tests and lint.

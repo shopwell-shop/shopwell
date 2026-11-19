@@ -67,6 +67,16 @@ class ApprovalFlowException extends HttpException
         );
     }
 
+    public static function publicationGraphInvalid(string $code, string $path, string $reason): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            'APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID',
+            'Approval graph cannot be prepared for publication at "{{ path }}" ({{ code }}): {{ reason }}',
+            ['code' => $code, 'path' => $path, 'reason' => $reason]
+        );
+    }
+
     public static function invalidNodeType(string $source, string $reason, ?\Throwable $previous = null): self
     {
         return new self(

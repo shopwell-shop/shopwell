@@ -15,6 +15,19 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(ApprovalFlowException::class)]
 class ApprovalFlowExceptionTest extends TestCase
 {
+    public function testPublicationGraphFailureRetainsItsDiagnosticCodeAndPath(): void
+    {
+        $exception = ApprovalFlowException::publicationGraphInvalid('missing_node_type', '/nodes/1/type', 'Node declaration is unavailable.');
+
+        static::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $exception->getStatusCode());
+        static::assertSame('APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID', $exception->getErrorCode());
+        static::assertSame([
+            'code' => 'missing_node_type',
+            'path' => '/nodes/1/type',
+            'reason' => 'Node declaration is unavailable.',
+        ], $exception->getParameters());
+    }
+
     public function testMissingExactVersionIsAnExplicitSemanticError(): void
     {
         $exception = ApprovalFlowException::nodeTypeNotFound('finance:review', '1.0.0');

@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirecto
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Mutation\GraphMutator;
+use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -69,6 +70,14 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(NodeTypeRegistry::class), service(GraphSchemaValidator::class), $graphSchema, service(GraphJsonDecoder::class)]);
     $services->set(GraphCodec::class)
         ->args([service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
+    $services->set(GraphPublicationPreflight::class)
+        ->args([
+            service(GraphCodec::class),
+            service(GraphDiagnostics::class),
+            service(NodeTypeRegistry::class),
+            service(GraphJsonDecoder::class),
+            $graphSchema,
+        ]);
     $services->set(GraphMutator::class)
         ->args([service(GraphCodec::class), service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
     $services->set(GraphDiagnoseCommand::class)
