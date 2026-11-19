@@ -351,6 +351,13 @@ It takes the start node from the instance's verified release and validates the e
 Start entry requires one outgoing connection whose successor has no other incoming connection.
 It inserts a completed start and a waiting successor into `approval_flow_execution`, advances the instance version, and saves the operation receipt in one transaction.
 The waiting record identifies the node and incoming connection for later execution.
+
+`ApprovalInstanceService::enterApproval(instanceId, executionId, commandId, expectedVersion, Context)` enters a waiting execution owned by that running instance.
+The command uses the execution's node and instance's verified release to obtain a `RequestApprovalEffect`.
+It requires every configured fixed assignee to identify an active Administration account.
+The command checks account status with a shared locking read to serialize against concurrent account changes.
+The task records retain the assignee's identity without a foreign key to the user record.
+The command writes a pending task per assignee, moves the execution to `awaiting_approval`, and commits the new instance version and receipt.
 A DAL write or event failure rolls back the command's writes, and the transaction is not automatically retried around callbacks.
 
 `ApprovalInstanceWriteGuard::write()` scopes each DAL batch to system scope on the original Context and grants one pending write permit.
@@ -359,12 +366,12 @@ The guard consumes that permit at the start of `EntityWriteEvent`, before ordina
 A listener or success/error callback cannot use the same Context to obtain another write permit.
 The scope and any unused pending permit are restored or removed on success and failure.
 This uses object-keyed lifecycle tracking, as existing DAL validators do, without adding a public runtime callback contract.
-The guard rejects ordinary DAL and Sync writes to instance, operation and execution records, including through associations.
+The guard rejects ordinary DAL and Sync writes to instance, operation, execution and task records, including through associations.
 Trusted in-process PHP with database access remains outside this guard's protection.
 
 This increment provides no production instance creation, activation, resume, termination, decision or query endpoint.
 Tests seed runtime facts explicitly and use real persisted releases to exercise the commit boundary; they do not simulate an admitted business start.
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Future progression and decision commands must check the instance's running status under the same lock.
-Successor execution, task creation, persistent timers, task cancellation, transactional effect-set validation, request/form/participant admission and scheduling remain subsequent increments.
+Task decisions, actor privileges for decisions, dynamic assignee sources, the empty-assignee skip policy and completion remain subsequent increments.
 The command does not schedule approval-domain events or external effects; durable Outbox delivery remains a separate requirement when such delivery is introduced.

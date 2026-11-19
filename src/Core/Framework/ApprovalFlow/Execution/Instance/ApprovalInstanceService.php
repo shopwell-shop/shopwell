@@ -11,7 +11,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * Handles administrative suspension and system entry into the start node of an admitted instance.
+ * Handles administrative suspension and system node entry for an admitted instance.
  *
  * @internal
  *
@@ -30,14 +30,19 @@ class ApprovalInstanceService
 
     public function enterStart(string $instanceId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        if (!$context->getSource() instanceof SystemSource) {
-            throw ApprovalFlowException::missingPrivileges(['system']);
-        }
-        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($commandId)) {
-            throw ApprovalFlowException::invalidInstanceCommand('A positive aggregate version and valid instance and command IDs are required.');
-        }
+        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
 
         return $this->store->enterStart($instanceId, $commandId, $expectedVersion, $context);
+    }
+
+    public function enterApproval(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
+    {
+        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
+        if (!Uuid::isValid($executionId)) {
+            throw ApprovalFlowException::invalidExecutionId($executionId);
+        }
+
+        return $this->store->enterApproval($instanceId, $executionId, $commandId, $expectedVersion, $context);
     }
 
     public function suspend(string $instanceId, string $commandId, int $expectedVersion, string $reason, Context $context): ApprovalInstanceCommandResult
@@ -55,5 +60,15 @@ class ApprovalInstanceService
         $actorJson = json_encode($actor, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
 
         return $this->store->suspend($instanceId, $commandId, $expectedVersion, $reason, $actorJson, $context);
+    }
+
+    private function validateSystemCommand(string $instanceId, string $commandId, int $expectedVersion, Context $context): void
+    {
+        if (!$context->getSource() instanceof SystemSource) {
+            throw ApprovalFlowException::missingPrivileges(['system']);
+        }
+        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($commandId)) {
+            throw ApprovalFlowException::invalidInstanceCommand('A positive aggregate version and valid instance and command IDs are required.');
+        }
     }
 }

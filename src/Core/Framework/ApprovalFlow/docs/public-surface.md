@@ -1,7 +1,7 @@
 # Approval Flow public surface
 
 The supported extension surface covers node declaration, configuration compilation, pure node entry and assembly.
-The DAL models `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation` and `approval_flow_execution` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
+The DAL models `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 Writes use the controlled draft, release and instance paths.
 No HTTP action routes or supported PHP publication/runtime command services are exposed by this increment.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
@@ -134,15 +134,17 @@ The six representable statuses do not imply that all transitions have been imple
 Administrative suspension changes a running instance to suspended and requires `approval_flow_instance:manage` and a reason.
 Start entry is a system-only command for an existing running instance.
 It verifies the instance's bound release and records the start as completed and its single successor as waiting.
-Both commands require an expected aggregate version and a command identity.
+Approval entry takes an execution identity, verifies that the execution belongs to the running instance, and requires a frozen approval effect.
+It stores pending task records for the fixed active assignees and moves the execution to awaiting approval.
+These commands require an expected aggregate version and a command identity.
 They preserve the original Context, serialize writes with the instance row lock and atomically retain the original response and audit in `approval_flow_operation`.
 Receipts are reauthorized on every retry and bound to their original actor and payload.
 
-The DAL/Sync write guard rejects generic writes to instances, operations and executions.
-The controlled path updates instance status and version and inserts immutable receipts and node execution records.
+The DAL/Sync write guard rejects generic writes to instances, operations, executions and tasks.
+The controlled path updates instance status and version and inserts immutable receipts, node execution records and pending tasks.
 Executions in `approval_flow_execution` retain their instance, node, incoming connection, sequence and status.
 Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
 There is no production instance creation or activation path, and no public command/query route.
-Business binding, runtime admission, tasks, effects and timers are not authorized by these DAL records or their enum values.
+Business binding, runtime admission, task decisions and timers require their own command contracts.

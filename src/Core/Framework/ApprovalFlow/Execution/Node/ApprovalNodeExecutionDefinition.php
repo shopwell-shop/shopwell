@@ -19,7 +19,7 @@ use Shopwell\Core\Framework\Log\Package;
 /**
  * @codeCoverageIgnore
  *
- * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalStartNodeTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalNodeProgressionTest
  */
 #[Package('framework')]
 class ApprovalNodeExecutionDefinition extends EntityDefinition

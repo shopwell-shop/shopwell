@@ -22,6 +22,8 @@ Mismatched frozen content or restored configuration is rejected before entry.
 The `approval_flow_instance`, `approval_flow_operation` and `approval_flow_execution` DAL models retain instance state, immutable command receipts and node execution records.
 Generic repository and Sync writes to these models are rejected.
 An internal system command can enter the start of an existing running instance, record its completion and queue a single successor as waiting in the same transaction as the version and receipt.
+Approval entry verifies the waiting execution against its bound release and records one pending `approval_flow_task` per configured active Administration account.
+Task decisions and public task queries remain unavailable.
 Instance lifecycle management remains internal and does not enable business starts or approval decisions.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.

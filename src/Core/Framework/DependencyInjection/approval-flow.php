@@ -23,6 +23,8 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStor
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
@@ -56,7 +58,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalInstanceDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalNodeExecutionDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalOperationDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalTaskDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalInstanceWriteGuard::class)->tag('kernel.event_subscriber');
+    $services->set(ApprovalAssigneeResolver::class)->args([service(Connection::class)]);
     $services->set(ApprovalInstanceStore::class)
         ->args([
             service(Connection::class),
@@ -65,6 +69,8 @@ return static function (ContainerConfigurator $container): void {
             service(ApprovalInstanceWriteGuard::class),
             service('approval_flow_execution.repository'),
             service(ApprovalNodeEntry::class),
+            service('approval_flow_task.repository'),
+            service(ApprovalAssigneeResolver::class),
         ]);
     $services->set(ApprovalInstanceService::class)
         ->args([service(ApprovalInstanceStore::class)]);

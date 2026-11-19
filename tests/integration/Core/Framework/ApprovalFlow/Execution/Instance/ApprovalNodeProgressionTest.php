@@ -3,6 +3,8 @@
 namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\TransactionIsolationLevel;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
@@ -13,15 +15,18 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStat
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\ApprovalReleaseCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\InstanceFixture;
@@ -34,7 +39,7 @@ use Symfony\Component\Filesystem\Filesystem;
  * @internal
  */
 #[Package('framework')]
-class ApprovalStartNodeTest extends TestCase
+class ApprovalNodeProgressionTest extends TestCase
 {
     use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
@@ -56,7 +61,7 @@ class ApprovalStartNodeTest extends TestCase
     protected function setUp(): void
     {
         $this->filesystem = new Filesystem();
-        $this->directory = sys_get_temp_dir() . '/approval-start-' . Uuid::randomHex();
+        $this->directory = sys_get_temp_dir() . '/approval-progression-' . Uuid::randomHex();
         $manifest = PublicationFixture::writeManifest($this->filesystem, $this->directory);
         $kernel = static::getContainer();
         $this->connection = $kernel->get(Connection::class);
@@ -67,7 +72,7 @@ class ApprovalStartNodeTest extends TestCase
             ApprovalInstanceWriteGuard::class => $kernel->get(ApprovalInstanceWriteGuard::class),
         ];
         $definitions = $kernel->get(DefinitionInstanceRegistry::class);
-        foreach (['approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution'] as $entityName) {
+        foreach (['approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution', 'approval_flow_task'] as $entityName) {
             $services[$entityName . '.repository'] = $definitions->getRepository($entityName);
         }
         foreach ($services as $id => $service) {
@@ -125,6 +130,129 @@ class ApprovalStartNodeTest extends TestCase
         $this->expectExceptionObject(ApprovalFlowException::startNodeAlreadyEntered($this->instanceId));
 
         $this->service->enterStart($this->instanceId, Uuid::randomHex(), 2, $context);
+    }
+
+    public function testEnteringApprovalCreatesOneTaskPerPublishedAssignee(): void
+    {
+        $assignees = [$this->createUser(active: true), $this->createUser(active: true)];
+        $executionId = $this->queueApproval($assignees);
+        $commandId = Uuid::randomHex();
+        $context = Context::createDefaultContext();
+
+        $receipt = $this->service->enterApproval($this->instanceId, $executionId, $commandId, 2, $context);
+
+        static::assertSame(3, $receipt->aggregateVersion);
+        static::assertSame(['completed', 'awaiting_approval'], array_column($this->executions(), 'status'));
+        $repository = static::getContainer()->get(DefinitionInstanceRegistry::class)->getRepository('approval_flow_task');
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('executionId', $executionId), new EqualsFilter('status', 'pending'))->addAssociation('execution');
+        $tasks = $repository->search($criteria, $context);
+        $actualAssignees = [];
+        foreach ($tasks as $task) {
+            static::assertInstanceOf(ApprovalTaskEntity::class, $task);
+            static::assertSame($executionId, $task->getExecution()?->getId());
+            $actualAssignees[] = $task->getAssigneeId();
+        }
+        static::assertEqualsCanonicalizing($assignees, $actualAssignees);
+        static::assertEquals($receipt, $this->service->enterApproval($this->instanceId, $executionId, $commandId, 2, $context));
+        static::assertSame(2, $this->countTasks($executionId));
+        static::assertSame(2, $this->receiptCount());
+        $this->expectExceptionObject(ApprovalFlowException::invalidApprovalEntry($executionId, 'The current status is awaiting_approval.'));
+
+        $this->service->enterApproval($this->instanceId, $executionId, Uuid::randomHex(), 3, $context);
+    }
+
+    public function testInactiveAssigneeCannotSilentlyReduceTheApprovalGroup(): void
+    {
+        $inactive = $this->createUser(active: false);
+        $executionId = $this->queueApproval([$this->createUser(active: true), $inactive]);
+        $this->expectExceptionObject(ApprovalFlowException::assigneeUnavailable($inactive));
+
+        try {
+            $this->service->enterApproval($this->instanceId, $executionId, Uuid::randomHex(), 2, Context::createDefaultContext());
+        } finally {
+            static::assertSame(0, $this->countTasks($executionId));
+            static::assertSame(['completed', 'waiting'], array_column($this->executions(), 'status'));
+            static::assertSame(1, $this->receiptCount());
+        }
+    }
+
+    public function testExecutionFromAnotherInstanceCannotCreateTasks(): void
+    {
+        $executionId = $this->queueApproval([$this->createUser(active: true)]);
+        $other = InstanceFixture::create($this->connection, $this->releaseId, ApprovalInstanceStatus::Running);
+        $this->expectExceptionObject(ApprovalFlowException::executionNotFound($executionId, $other));
+
+        $this->service->enterApproval($other, $executionId, Uuid::randomHex(), 1, Context::createDefaultContext());
+    }
+
+    public function testAnOlderSnapshotCannotAssignADeactivatedUser(): void
+    {
+        $writer = DriverManager::getConnection($this->connection->getParams());
+        $isolation = $this->connection->getTransactionIsolation();
+        $this->connection->rollBack();
+        $assignee = null;
+        $avatarId = null;
+
+        try {
+            $assignee = TestUser::createNewTestUser($writer)->getUserId();
+            $userKey = ['id' => Uuid::fromHexToBytes($assignee)];
+            $avatarId = $writer->fetchOne('SELECT avatar_id FROM `user` WHERE id = :id', $userKey);
+            $this->connection->setTransactionIsolation(TransactionIsolationLevel::REPEATABLE_READ);
+            $this->connection->beginTransaction();
+            $executionId = $this->queueApproval([$assignee]);
+            static::assertSame(1, (int) $this->connection->fetchOne('SELECT active FROM `user` WHERE id = :id', $userKey));
+            $writer->update('user', ['active' => 0], $userKey);
+
+            $this->expectExceptionObject(ApprovalFlowException::assigneeUnavailable($assignee));
+            $this->service->enterApproval($this->instanceId, $executionId, Uuid::randomHex(), 2, Context::createDefaultContext());
+        } finally {
+            if ($this->connection->isTransactionActive()) {
+                $this->connection->rollBack();
+            }
+            $this->connection->setTransactionIsolation($isolation);
+            $this->connection->beginTransaction();
+            if ($assignee !== null) {
+                $writer->delete('user', ['id' => Uuid::fromHexToBytes($assignee)]);
+            }
+            if (\is_string($avatarId)) {
+                $writer->delete('media', ['id' => $avatarId]);
+            }
+            $writer->close();
+        }
+    }
+
+    public function testTaskRecordsRequireAnInstanceCommand(): void
+    {
+        $assignee = $this->createUser(active: true);
+        $executionId = $this->queueApproval([$assignee]);
+        $repository = static::getContainer()->get(DefinitionInstanceRegistry::class)->getRepository('approval_flow_task');
+        $this->expectExceptionObject(ApprovalFlowException::uncontrolledInstanceWrite());
+
+        $repository->create([[
+            'id' => Uuid::randomHex(),
+            'executionId' => $executionId,
+            'assigneeId' => $assignee,
+            'status' => 'pending',
+        ]], Context::createDefaultContext());
+    }
+
+    public function testReceiptFailureRollsBackTasksAndApprovalEntry(): void
+    {
+        $executionId = $this->queueApproval([$this->createUser(active: true)]);
+        $failure = new \RuntimeException('Approval command receipt failed.');
+        EventHookDispatcher::fromContainer(static::getContainer())->on('approval_flow_operation.written', static function () use ($failure): void {
+            throw $failure;
+        });
+        $this->expectExceptionObject($failure);
+
+        try {
+            $this->service->enterApproval($this->instanceId, $executionId, Uuid::randomHex(), 2, Context::createDefaultContext());
+        } finally {
+            static::assertSame(0, $this->countTasks($executionId));
+            static::assertSame(['completed', 'waiting'], array_column($this->executions(), 'status'));
+            static::assertSame(1, $this->receiptCount());
+            static::assertSame(2, (int) $this->connection->fetchOne('SELECT aggregate_version FROM approval_flow_instance WHERE id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
+        }
     }
 
     public function testAdministrativeManagementPrivilegeDoesNotAuthorizeNodeEntry(): void
@@ -235,6 +363,42 @@ class ApprovalStartNodeTest extends TestCase
         $compiled = $compiler->compile($draft->graph);
 
         return $publisher->publish($draft->definitionId, $draft->revision, $compiled->hash, $context)->id;
+    }
+
+    private function createUser(bool $active): string
+    {
+        $id = Uuid::randomHex();
+        $localeId = $this->connection->fetchOne('SELECT id FROM locale LIMIT 1');
+        static::assertIsString($localeId);
+        static::getContainer()->get(DefinitionInstanceRegistry::class)->getRepository('user')->create([[
+            'id' => $id,
+            'username' => $id,
+            'name' => 'Approval reviewer',
+            'email' => $id . '@example.test',
+            'password' => 'shopwell',
+            'active' => $active,
+            'localeId' => Uuid::fromBytesToHex($localeId),
+        ]], Context::createDefaultContext());
+
+        return $id;
+    }
+
+    /**
+     * @param non-empty-list<string> $assignees
+     */
+    private function queueApproval(array $assignees): string
+    {
+        $graph = str_replace('"finance-user"', implode(', ', array_map(static fn (string $id): string => json_encode($id, \JSON_THROW_ON_ERROR), $assignees)), GraphFixture::json());
+        $releaseId = $this->publish($graph);
+        $this->instanceId = InstanceFixture::create($this->connection, $releaseId, ApprovalInstanceStatus::Running);
+        $this->service->enterStart($this->instanceId, Uuid::randomHex(), 1, Context::createDefaultContext());
+
+        return Uuid::fromBytesToHex($this->executions()[1]['id']);
+    }
+
+    private function countTasks(string $executionId): int
+    {
+        return (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_task WHERE execution_id = :execution', ['execution' => Uuid::fromHexToBytes($executionId)]);
     }
 
     /**

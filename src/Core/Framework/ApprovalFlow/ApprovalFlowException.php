@@ -11,6 +11,12 @@ use Symfony\Component\HttpFoundation\Response;
 class ApprovalFlowException extends HttpException
 {
     public const START_NODE_ALREADY_ENTERED = 'APPROVAL_FLOW__START_NODE_ALREADY_ENTERED';
+    public const EXECUTION_NOT_FOUND = 'APPROVAL_FLOW__EXECUTION_NOT_FOUND';
+    public const EXECUTION_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__EXECUTION_OUTSIDE_SNAPSHOT';
+    public const INVALID_APPROVAL_ENTRY = 'APPROVAL_FLOW__INVALID_APPROVAL_ENTRY';
+    public const ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__ASSIGNEE_UNAVAILABLE';
+    public const EMPTY_APPROVAL_ASSIGNEES = 'APPROVAL_FLOW__EMPTY_APPROVAL_ASSIGNEES';
+    public const INVALID_EXECUTION_ID = 'APPROVAL_FLOW__INVALID_EXECUTION_ID';
     public const UNSUPPORTED_START_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_START_ROUTE';
     public const INSTANCE_NOT_FOUND = 'APPROVAL_FLOW__INSTANCE_NOT_FOUND';
     public const INSTANCE_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__INSTANCE_OUTSIDE_SNAPSHOT';
@@ -138,7 +144,66 @@ class ApprovalFlowException extends HttpException
         return new self(
             Response::HTTP_FORBIDDEN,
             self::UNCONTROLLED_INSTANCE_WRITE,
-            'Approval instance state, node executions and immutable command receipts require a controlled command transaction.'
+            'Approval instance state, node executions, tasks and immutable command receipts require a controlled command transaction.'
+        );
+    }
+
+    public static function executionNotFound(string $executionId, string $instanceId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::EXECUTION_NOT_FOUND,
+            'Node execution "{{ executionId }}" was not found on approval instance "{{ instanceId }}".',
+            ['executionId' => $executionId, 'instanceId' => $instanceId]
+        );
+    }
+
+    public static function invalidExecutionId(string $executionId): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_EXECUTION_ID,
+            'Node execution ID "{{ executionId }}" is invalid.',
+            ['executionId' => $executionId]
+        );
+    }
+
+    public static function executionOutsideSnapshot(string $executionId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::EXECUTION_OUTSIDE_SNAPSHOT,
+            'Node execution "{{ executionId }}" is outside the current transaction snapshot. Retry the command in a new transaction.',
+            ['executionId' => $executionId]
+        );
+    }
+
+    public static function invalidApprovalEntry(string $executionId, string $reason): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::INVALID_APPROVAL_ENTRY,
+            'Cannot enter approval execution "{{ executionId }}": {{ reason }}',
+            ['executionId' => $executionId, 'reason' => $reason]
+        );
+    }
+
+    public static function assigneeUnavailable(string $userId): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::ASSIGNEE_UNAVAILABLE,
+            'Approval assignee "{{ userId }}" does not identify an active Administration account.',
+            ['userId' => $userId]
+        );
+    }
+
+    public static function emptyApprovalAssignees(): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::EMPTY_APPROVAL_ASSIGNEES,
+            'Approval configuration requires at least one candidate.'
         );
     }
 

@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
@@ -28,6 +29,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
         ApprovalInstanceDefinition::ENTITY_NAME,
         ApprovalOperationDefinition::ENTITY_NAME,
         ApprovalNodeExecutionDefinition::ENTITY_NAME,
+        ApprovalTaskDefinition::ENTITY_NAME,
     ];
 
     /**
@@ -94,6 +96,10 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
             }
             if ($command->getEntityName() === ApprovalInstanceDefinition::ENTITY_NAME && $command instanceof UpdateCommand
                 && array_diff(array_keys($command->getPayload()), ['status', 'aggregate_version', 'updated_at']) === []) {
+                continue;
+            }
+            if ($command->getEntityName() === ApprovalNodeExecutionDefinition::ENTITY_NAME && $command instanceof UpdateCommand
+                && array_diff(array_keys($command->getPayload()), ['status', 'updated_at']) === []) {
                 continue;
             }
 

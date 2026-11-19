@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Node\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalFieldConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalNodeConfiguration;
 use Shopwell\Core\Framework\Log\Package;
@@ -15,6 +16,13 @@ use Shopwell\Core\Framework\Log\Package;
 #[CoversClass(ApprovalNodeConfiguration::class)]
 class ApprovalNodeConfigurationTest extends TestCase
 {
+    public function testRequiresAtLeastOneCandidate(): void
+    {
+        $this->expectExceptionObject(ApprovalFlowException::emptyApprovalAssignees());
+
+        new ApprovalNodeConfiguration([], ApprovalNodeConfiguration::ALL, [], ApprovalNodeConfiguration::EMPTY_INCIDENT);
+    }
+
     public function testConfigurationKeepsItsOwnCandidateAndFieldValues(): void
     {
         $userId = 'reviewer';

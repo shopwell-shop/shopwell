@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Node\Configuration;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -33,7 +34,7 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
     public array $fields;
 
     /**
-     * @param non-empty-list<string> $userIds
+     * @param list<string> $userIds
      * @param self::SINGLE|self::ALL|self::ANY $policy
      * @param list<ApprovalFieldConfiguration> $fields
      * @param self::EMPTY_INCIDENT|self::EMPTY_SKIP $emptyAssignees
@@ -44,6 +45,10 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
         array $fields,
         public string $emptyAssignees,
     ) {
+        if ($userIds === []) {
+            throw ApprovalFlowException::emptyApprovalAssignees();
+        }
+
         // Copy list entries by value so callers cannot change the rules through array references.
         $this->userIds = array_map(static fn (string $userId): string => $userId, $userIds);
         $this->fields = array_map(static fn (ApprovalFieldConfiguration $field): ApprovalFieldConfiguration => $field, $fields);

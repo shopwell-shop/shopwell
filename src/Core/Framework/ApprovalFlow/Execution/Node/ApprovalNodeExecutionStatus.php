@@ -8,5 +8,6 @@ use Shopwell\Core\Framework\Log\Package;
 enum ApprovalNodeExecutionStatus: string
 {
     case Waiting = 'waiting';
+    case AwaitingApproval = 'awaiting_approval';
     case Completed = 'completed';
 }

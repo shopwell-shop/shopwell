@@ -33,7 +33,7 @@ class Migration1795086729CreateApprovalFlowExecutionTable extends MigrationStep
                 UNIQUE KEY `uniq.approval_flow_execution.sequence` (`instance_id`, `sequence`),
                 CONSTRAINT `fk.approval_flow_execution.instance` FOREIGN KEY (`instance_id`) REFERENCES `approval_flow_instance` (`id`) ON DELETE RESTRICT,
                 CONSTRAINT `chk.approval_flow_execution.sequence` CHECK (`sequence` > 0),
-                CONSTRAINT `chk.approval_flow_execution.status` CHECK (`status` IN ('waiting', 'completed'))
+                CONSTRAINT `chk.approval_flow_execution.status` CHECK (`status` IN ('waiting', 'awaiting_approval', 'completed'))
             ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
         SQL);
     }
