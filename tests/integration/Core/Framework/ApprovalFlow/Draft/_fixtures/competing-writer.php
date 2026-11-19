@@ -38,7 +38,7 @@ try {
         $service->removeConnection($definitionId, 1, 'start-review', confirmRemoval: true, context: $context);
         throw new RuntimeException('A stale snapshot overwrote the committed edit.');
     } catch (ApprovalFlowException $exception) {
-        if ($exception->getErrorCode() !== 'APPROVAL_FLOW__DRAFT_REVISION_CONFLICT') {
+        if ($exception->getErrorCode() !== ApprovalFlowException::DRAFT_REVISION_CONFLICT) {
             throw $exception;
         }
         echo 'CONFLICT:' . $exception->getParameters()['actualRevision'] . \PHP_EOL;

@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Graph\Codec;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphViolation;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\ViolationCategory;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonException;
@@ -27,7 +28,7 @@ class GraphJsonExceptionTest extends TestCase
         static::assertSame($violation, $exception->violation);
         static::assertSame($previous, $exception->getPrevious());
         static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
-        static::assertSame('APPROVAL_FLOW__INVALID_GRAPH', $exception->getErrorCode());
+        static::assertSame(ApprovalFlowException::INVALID_GRAPH, $exception->getErrorCode());
         static::assertSame(['path' => '/config', 'reason' => 'Malformed JSON.'], $exception->getParameters());
     }
 }

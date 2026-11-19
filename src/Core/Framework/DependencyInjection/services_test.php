@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\App\Hmac\Guzzle\AuthMiddleware;
 use Shopwell\Core\Framework\App\Payment\Handler\AppPaymentHandler;
 use Shopwell\Core\Framework\App\Payment\Payload\PaymentPayloadService;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
+use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
 use Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface;
@@ -82,6 +83,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->alias('test.approval_flow.draft_service', ApprovalDraftService::class)->public();
     $services->alias('test.approval_flow.publication_preflight', GraphPublicationPreflight::class)->public();
+    $services->alias('test.approval_flow.graph_plan_compiler', GraphPlanCompiler::class)->public();
 
     $services->set(TestElementTypeLoader::class)
         ->tag('content_system.type_loader');

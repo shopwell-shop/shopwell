@@ -62,7 +62,8 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "minLength": 1
+                        "minLength": 1,
+                        "pattern": "^[^\u0000]"
                     },
                     "type": {
                         "type": "string",
@@ -152,7 +153,8 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "minLength": 1
+                        "minLength": 1,
+                        "pattern": "^[^\u0000]"
                     },
                     "source": {
                         "type": "string",

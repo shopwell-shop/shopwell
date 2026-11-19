@@ -27,6 +27,8 @@ The Registry caches only a complete successful load and never exposes a partiall
 `ApprovalDraftService`, `ApprovalDraftStore`, the write guard and revision-bearing draft results are internal while the controlled persistence contract is exercised.
 `GraphPublicationPreflight` and `GraphPublicationSnapshot` are internal graph preparation contracts.
 They freeze admitted graph and declaration bytes without establishing a published release, runtime configuration handle or executable dependency set.
+`GraphPlanCompiler`, `CompiledGraphPlan` and the versioned structural plan schema remain internal.
+Structural plan compilation rechecks its draft input and preserves graph identity; compiler versions and topological order do not grant runtime capability or scheduling guarantees.
 Ordinary repository and Sync writes to definitions and drafts are rejected; the storage adapter opens the internal scope only for admitted writes.
 The scope does not restrict trusted in-process PHP code that can also access the database directly.
 Graph values, codecs, pure mutations, diagnostics and the versioned draft wire schema remain internal while their contracts are exercised by real consumers.
@@ -45,4 +47,6 @@ Persistence integration tests cover DAL mapping, permissions, source/scope prese
 An independent writer process establishes an older read snapshot, proves real row contention through a lock timeout and then receives a revision conflict after the first writer commits.
 Publication preflight tests cover complete graph admission, blocked incomplete graphs, canonical hashing, exact used declaration capture, schema byte drift and business-owned tagged loader assembly.
 Integration tests prove preparation leaves saved draft bytes and revisions unchanged, and later draft edits cannot alter an earlier snapshot.
+Compiler tests cover graph and snapshot bindings, versioned wire shape, branch/merge topology, parallel connections, numeric/special IDs and independent business declarations through actual DI.
+Integration tests prove graph plan compilation leaves stored draft bytes/revisions unchanged on success and failure.
 Publication gates, executor pins, runtime behavior and transfer execution require their own future evidence.

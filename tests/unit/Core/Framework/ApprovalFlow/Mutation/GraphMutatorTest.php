@@ -47,7 +47,7 @@ class GraphMutatorTest extends TestCase
             $mutator->addConnection($graph, '{"id":"invalid","source":"start","target":"gone","sourcePort":"out","targetPort":"in","condition":{"kind":"always"},"extensions":{}}');
             static::fail('A dangling connection must be rejected.');
         } catch (ApprovalFlowException $exception) {
-            static::assertSame('APPROVAL_FLOW__INVALID_GRAPH', $exception->getErrorCode());
+            static::assertSame(ApprovalFlowException::INVALID_GRAPH, $exception->getErrorCode());
         }
         static::assertSame($original, $graph->json);
     }

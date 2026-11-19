@@ -15,12 +15,21 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(ApprovalFlowException::class)]
 class ApprovalFlowExceptionTest extends TestCase
 {
+    public function testInvalidGraphPlanIsAnInternalFault(): void
+    {
+        $exception = ApprovalFlowException::invalidGraphPlan('Boundary node is missing.');
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
+        static::assertSame(ApprovalFlowException::INVALID_GRAPH_PLAN, $exception->getErrorCode());
+        static::assertSame(['reason' => 'Boundary node is missing.'], $exception->getParameters());
+    }
+
     public function testPublicationGraphFailureRetainsItsDiagnosticCodeAndPath(): void
     {
         $exception = ApprovalFlowException::publicationGraphInvalid('missing_node_type', '/nodes/1/type', 'Node declaration is unavailable.');
 
         static::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $exception->getStatusCode());
-        static::assertSame('APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID', $exception->getErrorCode());
+        static::assertSame(ApprovalFlowException::PUBLICATION_GRAPH_INVALID, $exception->getErrorCode());
         static::assertSame([
             'code' => 'missing_node_type',
             'path' => '/nodes/1/type',
@@ -33,7 +42,7 @@ class ApprovalFlowExceptionTest extends TestCase
         $exception = ApprovalFlowException::nodeTypeNotFound('finance:review', '1.0.0');
 
         static::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $exception->getStatusCode());
-        static::assertSame('APPROVAL_FLOW__NODE_TYPE_NOT_FOUND', $exception->getErrorCode());
+        static::assertSame(ApprovalFlowException::NODE_TYPE_NOT_FOUND, $exception->getErrorCode());
         static::assertSame('Approval node "finance:review@1.0.0" is not available.', $exception->getMessage());
     }
 
@@ -42,7 +51,7 @@ class ApprovalFlowExceptionTest extends TestCase
         $exception = ApprovalFlowException::duplicateNodeType('finance:review', '1.0.0', 'core', 'plugin:finance');
 
         static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
-        static::assertSame('APPROVAL_FLOW__DUPLICATE_NODE_TYPE', $exception->getErrorCode());
+        static::assertSame(ApprovalFlowException::DUPLICATE_NODE_TYPE, $exception->getErrorCode());
         static::assertSame('Approval node "finance:review@1.0.0" is declared by both "core" and "plugin:finance".', $exception->getMessage());
     }
 
@@ -53,7 +62,7 @@ class ApprovalFlowExceptionTest extends TestCase
 
         static::assertSame($cause, $exception->getPrevious());
         static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
-        static::assertSame('APPROVAL_FLOW__INVALID_NODE_TYPE', $exception->getErrorCode());
+        static::assertSame(ApprovalFlowException::INVALID_NODE_TYPE, $exception->getErrorCode());
         static::assertSame('Invalid approval node declaration "plugin:finance/review.yaml": Invalid JSON', $exception->getMessage());
     }
 }

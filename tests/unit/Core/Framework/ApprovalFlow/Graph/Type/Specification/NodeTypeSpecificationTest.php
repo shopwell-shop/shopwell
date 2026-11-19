@@ -72,7 +72,7 @@ class NodeTypeSpecificationTest extends TestCase
             static::fail('Invalid JSON must be rejected.');
         } catch (ApprovalFlowException $exception) {
             static::assertInstanceOf(\JsonException::class, $exception->getPrevious());
-            static::assertSame('APPROVAL_FLOW__INVALID_NODE_TYPE', $exception->getErrorCode());
+            static::assertSame(ApprovalFlowException::INVALID_NODE_TYPE, $exception->getErrorCode());
         }
     }
 }

@@ -1,0 +1,101 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:shopwell:approval-flow:graph-plan:1.0.0",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "formatVersion",
+        "compilerId",
+        "compilerVersion",
+        "graphHash",
+        "snapshotHash",
+        "startNodeId",
+        "endNodeId",
+        "nodes",
+        "connections",
+        "topologicalOrder"
+    ],
+    "properties": {
+        "formatVersion": {
+            "const": "1.0.0"
+        },
+        "compilerId": {
+            "const": "core:graph-plan"
+        },
+        "compilerVersion": {
+            "const": "1.0.0"
+        },
+        "graphHash": {
+            "$ref": "#/$defs/hash"
+        },
+        "snapshotHash": {
+            "$ref": "#/$defs/hash"
+        },
+        "startNodeId": {
+            "$ref": "#/$defs/identity"
+        },
+        "endNodeId": {
+            "$ref": "#/$defs/identity"
+        },
+        "nodes": {
+            "type": "object",
+            "propertyNames": {
+                "$ref": "#/$defs/identity"
+            },
+            "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "index",
+                    "incoming",
+                    "outgoing"
+                ],
+                "properties": {
+                    "index": {
+                        "$ref": "#/$defs/index"
+                    },
+                    "incoming": {
+                        "$ref": "#/$defs/identities"
+                    },
+                    "outgoing": {
+                        "$ref": "#/$defs/identities"
+                    }
+                }
+            }
+        },
+        "connections": {
+            "type": "object",
+            "propertyNames": {
+                "$ref": "#/$defs/identity"
+            },
+            "additionalProperties": {
+                "$ref": "#/$defs/index"
+            }
+        },
+        "topologicalOrder": {
+            "$ref": "#/$defs/identities"
+        }
+    },
+    "$defs": {
+        "hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "identity": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\u0000]"
+        },
+        "index": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "identities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "$ref": "#/$defs/identity"
+            }
+        }
+    }
+}

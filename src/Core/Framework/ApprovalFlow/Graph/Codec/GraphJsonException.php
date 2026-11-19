@@ -17,7 +17,7 @@ final class GraphJsonException extends ApprovalFlowException
     {
         parent::__construct(
             Response::HTTP_BAD_REQUEST,
-            'APPROVAL_FLOW__INVALID_GRAPH',
+            self::INVALID_GRAPH,
             'Invalid approval graph at "{{ path }}": {{ reason }}',
             ['path' => $violation->path, 'reason' => $violation->message],
             $previous

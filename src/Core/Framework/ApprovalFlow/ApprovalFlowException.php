@@ -10,6 +10,17 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const DRAFT_NOT_FOUND = 'APPROVAL_FLOW__DRAFT_NOT_FOUND';
+    public const DRAFT_REVISION_CONFLICT = 'APPROVAL_FLOW__DRAFT_REVISION_CONFLICT';
+    public const REMOVAL_NOT_CONFIRMED = 'APPROVAL_FLOW__REMOVAL_NOT_CONFIRMED';
+    public const UNCONTROLLED_DRAFT_WRITE = 'APPROVAL_FLOW__UNCONTROLLED_DRAFT_WRITE';
+    public const INVALID_GRAPH = 'APPROVAL_FLOW__INVALID_GRAPH';
+    public const PUBLICATION_GRAPH_INVALID = 'APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID';
+    public const INVALID_GRAPH_PLAN = 'APPROVAL_FLOW__INVALID_GRAPH_PLAN';
+    public const INVALID_NODE_TYPE = 'APPROVAL_FLOW__INVALID_NODE_TYPE';
+    public const DUPLICATE_NODE_TYPE = 'APPROVAL_FLOW__DUPLICATE_NODE_TYPE';
+    public const NODE_TYPE_NOT_FOUND = 'APPROVAL_FLOW__NODE_TYPE_NOT_FOUND';
+
     /**
      * @param list<string> $privileges
      */
@@ -22,7 +33,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_NOT_FOUND,
-            'APPROVAL_FLOW__DRAFT_NOT_FOUND',
+            self::DRAFT_NOT_FOUND,
             'No approval draft exists for definition "{{ definitionId }}".',
             ['definitionId' => $definitionId]
         );
@@ -32,7 +43,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_CONFLICT,
-            'APPROVAL_FLOW__DRAFT_REVISION_CONFLICT',
+            self::DRAFT_REVISION_CONFLICT,
             'Approval draft "{{ definitionId }}" is at revision {{ actualRevision }}, expected {{ expectedRevision }}.',
             ['definitionId' => $definitionId, 'expectedRevision' => $expectedRevision, 'actualRevision' => $actualRevision]
         );
@@ -42,7 +53,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_CONFLICT,
-            'APPROVAL_FLOW__REMOVAL_NOT_CONFIRMED',
+            self::REMOVAL_NOT_CONFIRMED,
             'Confirm the removed graph fragments before saving the draft.'
         );
     }
@@ -51,7 +62,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_FORBIDDEN,
-            'APPROVAL_FLOW__UNCONTROLLED_DRAFT_WRITE',
+            self::UNCONTROLLED_DRAFT_WRITE,
             'Approval definitions and drafts must be written through the approval draft service.'
         );
     }
@@ -60,7 +71,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_BAD_REQUEST,
-            'APPROVAL_FLOW__INVALID_GRAPH',
+            self::INVALID_GRAPH,
             'Invalid approval graph at "{{ path }}": {{ reason }}',
             ['path' => $path, 'reason' => $reason],
             $previous
@@ -71,9 +82,19 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_UNPROCESSABLE_ENTITY,
-            'APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID',
+            self::PUBLICATION_GRAPH_INVALID,
             'Approval graph cannot be prepared for publication at "{{ path }}" ({{ code }}): {{ reason }}',
             ['code' => $code, 'path' => $path, 'reason' => $reason]
+        );
+    }
+
+    public static function invalidGraphPlan(string $reason): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_GRAPH_PLAN,
+            'Invalid compiled approval graph plan: {{ reason }}',
+            ['reason' => $reason]
         );
     }
 
@@ -81,7 +102,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_INTERNAL_SERVER_ERROR,
-            'APPROVAL_FLOW__INVALID_NODE_TYPE',
+            self::INVALID_NODE_TYPE,
             'Invalid approval node declaration "{{ source }}": {{ reason }}',
             ['source' => $source, 'reason' => $reason],
             $previous
@@ -92,7 +113,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_INTERNAL_SERVER_ERROR,
-            'APPROVAL_FLOW__DUPLICATE_NODE_TYPE',
+            self::DUPLICATE_NODE_TYPE,
             'Approval node "{{ type }}@{{ version }}" is declared by both "{{ first }}" and "{{ second }}".',
             ['type' => $type, 'version' => $version, 'first' => $firstSource, 'second' => $secondSource]
         );
@@ -102,7 +123,7 @@ class ApprovalFlowException extends HttpException
     {
         return new self(
             Response::HTTP_UNPROCESSABLE_ENTITY,
-            'APPROVAL_FLOW__NODE_TYPE_NOT_FOUND',
+            self::NODE_TYPE_NOT_FOUND,
             'Approval node "{{ type }}@{{ version }}" is not available.',
             ['type' => $type, 'version' => $version]
         );

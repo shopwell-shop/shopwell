@@ -95,7 +95,7 @@ class ApprovalDraftServiceTest extends TestCase
             $service->removeNode($draft->definitionId, 1, 'review', confirmRemoval: false, context: $context);
             static::fail('Expected removal to require confirmation.');
         } catch (ApprovalFlowException $exception) {
-            static::assertSame('APPROVAL_FLOW__REMOVAL_NOT_CONFIRMED', $exception->getErrorCode());
+            static::assertSame(ApprovalFlowException::REMOVAL_NOT_CONFIRMED, $exception->getErrorCode());
         }
         static::assertSame(1, $service->read($draft->definitionId, $context)->revision);
 
@@ -124,7 +124,7 @@ class ApprovalDraftServiceTest extends TestCase
             $service->addNode($draft->definitionId, 1, self::reviewNode('review'), $context);
             static::fail('Expected the duplicate node to be rejected.');
         } catch (ApprovalFlowException $exception) {
-            static::assertSame('APPROVAL_FLOW__INVALID_GRAPH', $exception->getErrorCode());
+            static::assertSame(ApprovalFlowException::INVALID_GRAPH, $exception->getErrorCode());
         }
 
         $reloaded = $service->read($draft->definitionId, $context);
@@ -142,7 +142,7 @@ class ApprovalDraftServiceTest extends TestCase
             $repository->update([['definitionId' => $draft->definitionId, 'revision' => 20]], Context::createDefaultContext());
             static::fail('Expected a controlled-write rejection.');
         } catch (ApprovalFlowException $exception) {
-            static::assertSame('APPROVAL_FLOW__UNCONTROLLED_DRAFT_WRITE', $exception->getErrorCode());
+            static::assertSame(ApprovalFlowException::UNCONTROLLED_DRAFT_WRITE, $exception->getErrorCode());
         }
 
         static::assertSame(1, $service->read($draft->definitionId, Context::createDefaultContext())->revision);
@@ -210,7 +210,7 @@ class ApprovalDraftServiceTest extends TestCase
             $service->removeNode($draft->definitionId, 1, 'review', confirmRemoval: true, context: $context);
             static::fail('Expected confirmation for an older revision to be rejected.');
         } catch (ApprovalFlowException $exception) {
-            static::assertSame('APPROVAL_FLOW__DRAFT_REVISION_CONFLICT', $exception->getErrorCode());
+            static::assertSame(ApprovalFlowException::DRAFT_REVISION_CONFLICT, $exception->getErrorCode());
         }
 
         static::assertSame($firstEdit->mutation->graph->json, $service->read($draft->definitionId, $context)->graph->json);
@@ -312,7 +312,7 @@ class ApprovalDraftServiceTest extends TestCase
             $this->service()->removeNode($draft->definitionId, 1, 'review', confirmRemoval: true, context: $context);
             static::fail('Expected missing capability to block the write.');
         } catch (ApprovalFlowException $exception) {
-            static::assertSame('APPROVAL_FLOW__INVALID_GRAPH', $exception->getErrorCode());
+            static::assertSame(ApprovalFlowException::INVALID_GRAPH, $exception->getErrorCode());
         }
 
         static::assertSame(1, $service->read($draft->definitionId, $context)->revision);

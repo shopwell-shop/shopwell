@@ -22,6 +22,7 @@ Keep business implementations and their DI in the owning business module.
 - `Definition` and `Draft` define the DAL records for a flow identity and its current draft.
 - `ApprovalDraftService` owns draft admission, caller permissions and confirmed edits; `ApprovalDraftStore` isolates transactions, current row reads and DAL writes.
 - `Publication` prepares immutable graph and declaration snapshots for subsequent compilation and executable dependency checks.
+- `GraphPlanCompiler` derives graph indexes and a topological order from a freshly checked snapshot.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
 A loaded declaration does not establish executor availability, publication validity or authorization.
@@ -130,11 +131,35 @@ Executor, policy, assignee, form, request and runtime dependencies are outside t
 A candidate hash is not a replacement for those checks.
 Release persistence and activation remain separate increments; no release rows or executable configuration handles are created here.
 
+## Graph plan compilation
+
+`GraphPlanCompiler::compile()` accepts `DraftGraph`, reruns publication preflight and derives a `CompiledGraphPlan` without storage or execution side effects.
+It accepts no caller-supplied snapshot as proof of admission.
+The versioned plan schema lives in `Resources/schema/plan/1.0.0/graph-plan.schema.json`.
+The plan records compiler identity/version, graph and full snapshot hashes, start/end identities, node/connection positions in the canonical graph, incoming/outgoing connection IDs and a topological order.
+Node configuration remains in the immutable graph snapshot rather than being copied into an independently editable plan.
+
+Indexes and topological discovery take O(nodes + connections) work after preflight.
+Node indexes preserve authored node order; connection indexes and each incoming/outgoing list preserve authored connection order.
+The topological pass uses FIFO discovery as prerequisites finish and examines outgoing connections in authored order.
+Parallel connections retain separate identities and count separately as graph dependencies.
+Numeric-looking, Unicode and special-character IDs remain string references; serialized index maps remain JSON objects.
+Node and connection IDs cannot start with U+0000, which PHP cannot represent as a public object key; the authoritative graph schema rejects them before compilation.
+Embedded U+0000 remains supported.
+Only JSON text and the immutable snapshot leave the compiler, so no mutable decoded graph is exposed.
+
+`CompiledGraphPlan::hash` is SHA-256 over the complete plan JSON, including its graph and declaration snapshot bindings.
+Formatting-equivalent drafts compile identically; changing graph content or captured declaration bytes invalidates the corresponding binding and plan hash.
+Compiler identity/version describes this plan derivation; it is not a deployment artifact digest.
+A topological order does not decide branch activation, joins, task order, approval policy or runtime scheduling.
+Those semantics and exact executable dependencies still require their own compilation/admission before an immutable release can be published.
+The internal plan value carries no execution authority.
+
 ## Implementation order
 
 1. Validate declarations and real typed assembly with duplicate, missing and version coexistence cases.
 2. Verify the authoritative draft codec, pure mutation and diagnostics with shared schema fixtures and real tagged business nodes.
-3. Verify controlled draft persistence and graph publication preflight, then add compilation, executable dependency gates and immutable releases.
+3. Verify controlled draft persistence, graph preflight and structural plan compilation, then add node semantics, exact executable dependency gates and immutable releases.
 4. Prove new nodes, operations and transfer integration through the public seams before expanding complex execution semantics.
 
 Read the closest implementation and adjacent tests before each increment, and review naming, responsibility, failures and dependency direction alongside tests and lint.
