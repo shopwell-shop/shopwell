@@ -25,6 +25,8 @@ use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Graph\_fixtures\GraphFixture;
+use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\FinanceNodeCompiler;
+use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\FinanceNodeExecutor;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -414,44 +416,6 @@ class NodePlanCompilerTest extends TestCase
  * @internal
  */
 #[Package('framework')]
-class FinanceNodeCompiler implements NodeCompiler
-{
-    public function getTypes(): array
-    {
-        return ['finance:review' => ['1.0.0']];
-    }
-
-    public function compile(string $type, string $version, string $configurationJson): NodeConfiguration
-    {
-        $data = json_decode($configurationJson, associative: true, flags: \JSON_THROW_ON_ERROR);
-        if (!\is_array($data) || !\is_int($data['limit'] ?? null) || !\is_bool($data['enabled'] ?? null)) {
-            throw new \RuntimeException('Invalid finance fixture configuration.');
-        }
-
-        return new FinanceNodeConfiguration($data['limit'], $data['enabled']);
-    }
-}
-
-/**
- * @internal
- */
-#[Package('framework')]
-final readonly class FinanceNodeConfiguration implements NodeConfiguration
-{
-    public function __construct(public int $limit, public bool $enabled)
-    {
-    }
-
-    public function jsonSerialize(): array
-    {
-        return ['limit' => $this->limit, 'enabled' => $this->enabled, 'note' => null, 'options' => new \stdClass(), 'groups' => []];
-    }
-}
-
-/**
- * @internal
- */
-#[Package('framework')]
 class MutableNodeConfiguration implements NodeConfiguration
 {
     public string $value = '';
@@ -459,32 +423,6 @@ class MutableNodeConfiguration implements NodeConfiguration
     public function jsonSerialize(): array
     {
         return ['value' => $this->value];
-    }
-}
-
-/**
- * @internal
- */
-#[Package('framework')]
-class FinanceNodeExecutor implements NodeExecutor
-{
-    public function getType(): string
-    {
-        return 'finance:review';
-    }
-
-    public function getVersion(): string
-    {
-        return '1.0.0';
-    }
-
-    public function enter(NodeConfiguration $configuration): CompleteEffect
-    {
-        if (!$configuration instanceof FinanceNodeConfiguration) {
-            throw new \RuntimeException('Expected finance configuration.');
-        }
-
-        return new CompleteEffect($configuration->enabled ? ApprovalOutcome::Approved : ApprovalOutcome::Rejected);
     }
 }
 

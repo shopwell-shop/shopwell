@@ -10,7 +10,11 @@ Business modules can also register `NodeCompiler` services with `approval_flow.n
 Configuration compilation rejects missing or conflicting compilers and invalid semantics.
 Register exact-version `NodeExecutor` entry services with `approval_flow.node_executor`; node-plan compilation now rejects missing executors without calling them.
 Executors return controlled advance, approval-request or completion intents; `ApprovalOutcome` represents approved/rejected outcomes as an enum.
-These services do not publish releases, establish executable artifact pins or authorize task creation and process execution.
+These entry services do not authorize task creation or process execution.
+Internal compilation publication now stores immutable `approval_flow_release` DAL records with expected-revision and full-preview-hash checks.
+Using publication requires a deployment-owned manifest configured through `APPROVAL_FLOW_ARTIFACT_MANIFEST`, binding actual service classes to retained artifact bytes and exact transitive dependencies.
+The deployment attests code origins and dependency completeness; byte verification does not prove loaded-code provenance, historical code loading or worker readiness.
+Ordinary repository and Sync writes cannot create or change release records, and publication grants no activation authority.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.
 Approval definitions and drafts now have DAL models; writes require the controlled draft path so graph admission, expected revisions and explicit removal confirmation cannot be skipped through ordinary repository or Sync calls.

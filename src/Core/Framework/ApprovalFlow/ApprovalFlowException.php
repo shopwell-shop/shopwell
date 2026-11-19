@@ -10,6 +10,11 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const PUBLICATION_CONTENT_CONFLICT = 'APPROVAL_FLOW__PUBLICATION_CONTENT_CONFLICT';
+    public const UNCONTROLLED_RELEASE_WRITE = 'APPROVAL_FLOW__UNCONTROLLED_RELEASE_WRITE';
+    public const RELEASE_NOT_FOUND = 'APPROVAL_FLOW__RELEASE_NOT_FOUND';
+    public const INVALID_ARTIFACT_MANIFEST = 'APPROVAL_FLOW__INVALID_ARTIFACT_MANIFEST';
+    public const ARTIFACT_SERVICE_NOT_FOUND = 'APPROVAL_FLOW__ARTIFACT_SERVICE_NOT_FOUND';
     public const DRAFT_NOT_FOUND = 'APPROVAL_FLOW__DRAFT_NOT_FOUND';
     public const DRAFT_REVISION_CONFLICT = 'APPROVAL_FLOW__DRAFT_REVISION_CONFLICT';
     public const REMOVAL_NOT_CONFIRMED = 'APPROVAL_FLOW__REMOVAL_NOT_CONFIRMED';
@@ -34,6 +39,56 @@ class ApprovalFlowException extends HttpException
     public static function missingPrivileges(array $privileges): MissingPrivilegeException
     {
         return new MissingPrivilegeException($privileges);
+    }
+
+    public static function publicationContentConflict(string $definitionId, string $expectedHash, string $actualHash): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::PUBLICATION_CONTENT_CONFLICT,
+            'Approval publication content changed for "{{ definitionId }}"; prepare a new preview.',
+            ['definitionId' => $definitionId, 'expectedHash' => $expectedHash, 'actualHash' => $actualHash]
+        );
+    }
+
+    public static function uncontrolledReleaseWrite(): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::UNCONTROLLED_RELEASE_WRITE,
+            'Approval releases allow controlled insertion only; their content cannot be updated or deleted.'
+        );
+    }
+
+    public static function releaseNotFound(string $releaseId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::RELEASE_NOT_FOUND,
+            'Approval release "{{ releaseId }}" was not found.',
+            ['releaseId' => $releaseId]
+        );
+    }
+
+    public static function invalidArtifactManifest(string $reason, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_ARTIFACT_MANIFEST,
+            'Invalid approval artifact manifest: {{ reason }}',
+            ['reason' => $reason],
+            $previous
+        );
+    }
+
+    public static function artifactServiceNotFound(string $service): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::ARTIFACT_SERVICE_NOT_FOUND,
+            'No retained artifact is bound to approval service "{{ service }}".',
+            ['service' => $service]
+        );
     }
 
     public static function draftNotFound(string $definitionId): self

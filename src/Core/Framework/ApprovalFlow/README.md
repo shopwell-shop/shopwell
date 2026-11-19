@@ -132,7 +132,8 @@ It is an internal candidate value; constructing or retaining one grants no publi
 The final publication operation must check caller permissions, lock and reread the draft, compare its expected revision, rerun preflight and compile against the full exact executable dependency set.
 Executor, policy, assignee, form, request and runtime dependencies are outside this graph-only contract; the later NodePlanCompiler checks exact executor service availability.
 A candidate hash is not a replacement for those checks.
-Release persistence and activation remain separate increments; no release rows or executable configuration handles are created here.
+This graph-only stage creates no release rows or executable configuration handles.
+The controlled release operation described below adds immutable compilation records; activation remains separate.
 
 ## Graph plan compilation
 
@@ -216,7 +217,45 @@ The future runtime must bind each intent to its current execution, resolve live 
 No runtime calls these executors from a persisted plan yet; the current tests compose registered compilers and executors directly.
 There is no HTTP route or command that accepts a constructed configuration or plan for execution.
 Exact service availability is only one prerequisite: a class name or version label is not an executable artifact pin.
-Immutable releases, retained code artifacts, request/form dependencies, runtime configuration admission, task scheduling and commit authorization remain required increments.
+The compilation release operation below verifies retained artifact bytes and stores immutable records.
+Request/form dependencies, historical code loading, runtime configuration admission, task scheduling and commit authorization remain required before activation.
+
+## Artifact verification and immutable release records
+
+`ApprovalReleaseCompiler::compile(DraftGraph)` freshly compiles the node plan, then freezes the deployment artifacts bound to the actual compilation and node services.
+Set `APPROVAL_FLOW_ARTIFACT_MANIFEST` to a deployment-owned JSON manifest path before using the publication service.
+The required configuration is resolved by Symfony DI; there is no empty default or request-supplied manifest path.
+The closed versioned schema is `Resources/schema/publication/1.0.0/artifact-manifest.schema.json`.
+Each artifact declares `id`, exact `version`, relative `file`, lowercase SHA-256 and exact `requires` references; each service class binds to one `id@version`.
+The deployment must attest the complete transitive code dependencies of these services, including their compilation chain and runtime libraries.
+The loader traverses the used closure, reads retained bytes through Filesystem and verifies their digests without caching an earlier result.
+Missing bindings, missing bytes, changed bytes, unavailable dependencies, cycles and duplicate identities or service bindings fail explicitly.
+Distinct exact versions of an opaque artifact may coexist; no latest-version substitution or package-manager version selection occurs.
+The frozen document sorts artifacts, bindings and dependency references, omits local paths and unused artifacts, and contributes to the full release hash alongside the node plan hash.
+
+The deployment owns the attestation of service origins and dependency completeness.
+Verifying retained bytes does not independently prove that loaded PHP came from them, that a build is reproducible or that historical code can be loaded by every worker.
+A class name, version label, individual source-file hash or composer.lock is not a substitute for a complete retained deployment artifact.
+The test fixtures explicitly use synthetic deployment attestations and provide no production provenance evidence.
+
+`ApprovalReleaseService::publish(definitionId, expectedRevision, expectedHash, Context)` requires draft read and release create privileges before accessing the draft or manifest.
+Its store locks the current draft row, checks the revision, recompiles those current bytes and compares the full preview hash.
+A changed revision or publication hash returns HTTP 409 without inserting a record.
+The same definition and content hash returns the original release ID and source revision; the deduplication lookup uses a locking current read even inside an older outer snapshot.
+Insertion through DAL preserves the original Context, including Administration user attribution.
+The transaction does not replay callbacks; failures roll back, and an enclosing transaction retains commit ownership and its locks.
+DAL events are synchronous and must not be treated as durable external delivery before the outer commit.
+
+The `approval_flow_release` DAL model retains graph, declaration contract, graph plan, node plan, dependency manifest, source revision, full content hash and creation attribution.
+`Migration1795081112CreateApprovalFlowReleaseTable` creates it through the normal migration runner, with a unique definition/content hash and a restrictive definition foreign key.
+Ordinary DAL and Sync insertion is rejected; the internal insert scope permits only insertion and never update or delete.
+This is an in-process coordination boundary, not a sandbox against trusted PHP with direct database access.
+`read(releaseId, Context)` requires release read privileges.
+Later draft edits cannot rewrite an earlier record.
+
+Publication currently means persisting an admitted compilation record.
+There is no activation endpoint or persisted-plan execution path.
+Request/form/user/policy dependencies, runtime admission, historical artifact loading and retention, worker capability checks and authoritative command commits must be completed before real approval execution.
 
 ## Implementation order
 

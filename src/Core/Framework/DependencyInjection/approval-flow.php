@@ -24,9 +24,15 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Mutation\GraphMutator;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\CoreNodeCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompilerRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Publication\ApprovalReleaseCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Publication\Artifact\ArtifactManifestLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
+use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
+use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseWriteGuard;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -37,6 +43,12 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
 
+    $services->set(ApprovalReleaseDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalReleaseWriteGuard::class)->tag('kernel.event_subscriber');
+    $services->set(ApprovalReleaseStore::class)
+        ->args([service(Connection::class), service('approval_flow_release.repository')]);
+    $services->set(ApprovalReleaseService::class)
+        ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class)]);
     $services->set(ApprovalFlowDefinition::class)
         ->tag('shopwell.entity.definition');
     $services->set(ApprovalDraftDefinition::class)
@@ -100,6 +112,23 @@ return static function (ContainerConfigurator $container): void {
         ->args([tagged_iterator('approval_flow.node_executor')]);
     $services->set(NodePlanCompiler::class)
         ->args([service(GraphPlanCompiler::class), service(NodeCompilerRegistry::class), service(GraphJsonDecoder::class), service(NodeExecutorRegistry::class)]);
+    $artifactSchema = (new Filesystem())->readFile(__DIR__ . '/../ApprovalFlow/Resources/schema/publication/1.0.0/artifact-manifest.schema.json');
+    $services->set(ArtifactManifestLoader::class)
+        ->args([
+            service('filesystem'),
+            service(GraphJsonDecoder::class),
+            service(GraphSchemaValidator::class),
+            $artifactSchema,
+            '%env(resolve:APPROVAL_FLOW_ARTIFACT_MANIFEST)%',
+        ]);
+    $services->set(ApprovalReleaseCompiler::class)
+        ->args([
+            service(NodePlanCompiler::class),
+            service(NodeCompilerRegistry::class),
+            service(NodeExecutorRegistry::class),
+            service(GraphJsonDecoder::class),
+            service(ArtifactManifestLoader::class),
+        ]);
     $services->set(GraphMutator::class)
         ->args([service(GraphCodec::class), service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
     $services->set(GraphDiagnoseCommand::class)

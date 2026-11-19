@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
 use Shopwell\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface;
 use Shopwell\Core\Framework\Test\Api\Acl\fixtures\AclTestController;
@@ -86,6 +87,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->alias('test.approval_flow.publication_preflight', GraphPublicationPreflight::class)->public();
     $services->alias('test.approval_flow.graph_plan_compiler', GraphPlanCompiler::class)->public();
     $services->alias('test.approval_flow.node_plan_compiler', NodePlanCompiler::class)->public();
+    $services->alias('test.approval_flow.release_store', ApprovalReleaseStore::class)->public();
 
     $services->set(TestElementTypeLoader::class)
         ->tag('content_system.type_loader');

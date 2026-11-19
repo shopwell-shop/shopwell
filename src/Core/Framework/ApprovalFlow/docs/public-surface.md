@@ -1,9 +1,9 @@
 # Approval Flow public surface
 
 The supported extension surface covers node declaration, configuration compilation, pure node entry and assembly.
-The DAL models `approval_flow_definition` and `approval_flow_draft` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
+The DAL models `approval_flow_definition`, `approval_flow_draft` and `approval_flow_release` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 They carry neither `@internal` nor `@final`; this does not authorize direct writes around the controlled draft path.
-No HTTP action routes, execution commands or publication services are exposed by this increment.
+No HTTP action routes, execution commands or supported PHP publication services are exposed by this increment.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
 
 ## Node declarations
@@ -59,7 +59,7 @@ They freeze admitted graph and declaration bytes without establishing a publishe
 `CoreNodeCompiler`, `NodeCompilerRegistry`, the start/end configuration values, `NodePlanCompiler`, `CompiledNodePlan` and its envelope schema also remain internal.
 `NodeExecutorRegistry`, `StartExecutor`, `ApprovalExecutor` and `EndExecutor` remain internal implementations; extensions implement NodeExecutor instead of inheriting them.
 Structural plan compilation rechecks its draft input and preserves graph identity; compiler versions and topological order do not grant runtime capability or scheduling guarantees.
-Ordinary repository and Sync writes to definitions and drafts are rejected; the storage adapter opens the internal scope only for admitted writes.
+Ordinary repository and Sync writes to definitions, drafts and releases are rejected; the storage adapter opens the internal scope only for admitted writes.
 The scope does not restrict trusted in-process PHP code that can also access the database directly.
 Graph values, codecs, pure mutations, diagnostics and the versioned draft wire schema remain internal while their contracts are exercised by real consumers.
 No executable graph or validated runtime configuration handle is exposed by this increment.
@@ -79,10 +79,27 @@ Publication preflight tests cover complete graph admission, blocked incomplete g
 Integration tests prove preparation leaves saved draft bytes and revisions unchanged, and later draft edits cannot alter an earlier snapshot.
 Compiler tests cover graph and snapshot bindings, versioned wire shape, branch/merge topology, parallel connections, numeric/special IDs and independent business declarations through actual DI.
 Integration tests prove graph plan compilation leaves stored draft bytes/revisions unchanged on success and failure.
-The exact executor availability gate is covered by real container removal and plugin registration tests; retained executable artifact pins, remaining publication gates, runtime behavior and transfer execution require future evidence.
+The exact executor availability gate is covered by real container removal and plugin registration tests.
+Deployment attestation and retained byte checks now cover compilation records; historical executable loading, remaining activation gates, runtime behavior and transfer execution require future evidence.
 
 Node configuration tests cover real tagged business compilers, exact versions and missing registrations, semantic rules, deterministic byte freezing, mutable plugin results and rejected compiler outputs.
 Database integration verifies that success and semantic failure leave saved draft bytes and revisions unchanged.
 
 Node entry tests cover typed configuration mismatch, exact version coexistence, duplicate/invalid registration failures and the three core intents.
 Kernel integration composes actual registered compilers and executors and verifies saved draft bytes and revision remain unchanged.
+
+## Internal compilation publication
+
+`ArtifactManifestLoader`, its versioned deployment manifest schema, `ApprovalReleaseCompiler` and `CompiledApprovalRelease` remain internal.
+`ApprovalReleaseService`, `ApprovalReleaseStore`, `PublishedApprovalRelease` and `ApprovalReleaseWriteGuard` also remain internal while their controlled publication contract is exercised.
+The release DAL model follows the normal supported Definition/Entity/Collection contracts; repository access does not authorize bypassing controlled insertion or changing existing content.
+Publication requires the deployment-owned `APPROVAL_FLOW_ARTIFACT_MANIFEST` setting and freezes exact used-service bindings plus their retained artifact dependency closure.
+Opaque artifact versions can coexist; duplicate complete identities and duplicate service bindings fail.
+Deployment attests origins and closure completeness; SHA-256 verification covers retained bytes and does not establish loaded-code provenance, historical loading or worker readiness.
+These records grant no activation authority, and there is no activation or persisted-plan execution API.
+
+Artifact tests cover transitive closure, deterministic ordering, multiple retained versions, missing files/bindings/dependencies, changed bytes, cycles and conflicting declarations.
+Compiler tests use real core and tagged business services, and distinguish graph or artifact hash changes from formatting-only edits.
+Release integration tests cover immutable content, preview conflicts, privilege-first access, Administration actor/context preservation, DAL/Sync write rejection, transaction rollback and later draft edits.
+A separate publisher process proves contention and reuse after an older read snapshot; removing the deduplication current read makes that test fail.
+The release migration test creates an isolated database and verifies repeated execution preserves records, the unique key and foreign-key deletion policies.
