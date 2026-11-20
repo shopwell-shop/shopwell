@@ -1,0 +1,4 @@
+type: payment:transfer
+version: 1.0.0
+labelSnippet: sw-finance.navigation.transfer
+formSchema: transfer.json

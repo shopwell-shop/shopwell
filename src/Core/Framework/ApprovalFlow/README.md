@@ -498,3 +498,21 @@ They do not continuously validate deployment or form availability; actual submis
 No instance is created or rebound by saving or activating a binding.
 Full verification that existing business requests keep their original release belongs to the subsequent submission implementation.
 Conditional routing, rollout, business adapters, field authorization, menu actions and workers are subsequent capabilities.
+
+## Business-owned binding validation
+
+After verifying the release, business identity and form reference, the binding service dispatches `ApprovalBindingValidationEvent` before saving or activating a revision.
+Listeners receive the exact business declaration, immutable verified graph JSON and the original `Context`.
+They may reject the binding with a business exception; they must not perform network calls or change business state.
+Validation runs inside the binding store's transaction and same-type reentry guard, including the first save.
+A failed validation rolls back the coordination row and leaves the previous active revision unchanged.
+
+Payment contributes `payment:transfer@1.0.0` through its own DI and resource directory.
+Its form declares integer amounts in currency minor units, within `PaymentTransferDraft::MAX_AMOUNT`, plus currency, a masked recipient label, a merchant account label and a nullable reason.
+The labels contain no raw account identities, ciphertext or credentials.
+The Payment subscriber rejects editable form rules and approvals configured to skip when assignees are unavailable.
+Payment currently admits only the standard core approval node for review work; a custom node declaring a request-approval effect is rejected because its raw configuration does not promise the core approval schema.
+Every path from start must reach a mandatory core approval before any node whose declaration allows a complete effect.
+Extension nodes with only advance effects can precede that approval without changes to the subscriber or shared skeleton.
+These rules validate configuration; they neither resolve live reviewers nor create an application, grant payout approval or switch the existing transfer interface.
+Business submission must revalidate its selected binding and freeze authoritative business inputs in its transaction.

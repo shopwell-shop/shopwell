@@ -4,6 +4,9 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeSourceDirectory;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\YamlApprovalBusinessTypeLoader;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseStore;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowRequestCatalogueEvent;
@@ -110,6 +113,7 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionEntity;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBindingSubscriber;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
@@ -138,6 +142,7 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
@@ -688,6 +693,11 @@ return static function (ContainerConfigurator $container): void {
     // it. They share the service as the only writer of the record and the resolver as the only way to
     // the credentials of the app
     $services->set(PaymentTransferApprovalEntity::class)->tag('shopwell.entity');
+    $services->set('payment.approval_flow.business_type_loader', YamlApprovalBusinessTypeLoader::class)->args([
+        service('filesystem'),
+        [inline_service(ApprovalBusinessTypeSourceDirectory::class)->args(['payment', __DIR__ . '/../Payment/Resources/approval-flow'])],
+    ])->tag('approval_flow.business_type_loader');
+    $services->set(PaymentTransferApprovalBindingSubscriber::class)->args([service(NodeTypeRegistry::class)])->tag('kernel.event_subscriber');
     $services->set(PaymentTransferResubmissionSubscriber::class)->args([service('payment_transfer_approval.repository')])->tag('kernel.event_subscriber');
     $services->set(PaymentTransferApprovalPolicy::class)->args([service(WorkflowDocumentCodec::class)]);
     $services->set(PaymentTransferApprovalStore::class)->args([service(Connection::class), service('payment_transfer_approval.repository')]);

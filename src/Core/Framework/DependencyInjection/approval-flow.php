@@ -75,7 +75,7 @@ return static function (ContainerConfigurator $container): void {
         service(Connection::class), service('approval_flow_binding.repository'), service('approval_flow_binding_head.repository'), service(ApprovalBindingWriteGuard::class), service(ClockInterface::class),
     ]);
     $services->set(ApprovalBindingService::class)->args([
-        service(ApprovalBindingStore::class), service(ApprovalBusinessTypeRegistry::class), service(ApprovalReleaseLoader::class),
+        service(ApprovalBindingStore::class), service(ApprovalBusinessTypeRegistry::class), service(ApprovalReleaseLoader::class), service('event_dispatcher'),
     ]);
 
     $services->set(ApprovalBusinessTypeRegistry::class)

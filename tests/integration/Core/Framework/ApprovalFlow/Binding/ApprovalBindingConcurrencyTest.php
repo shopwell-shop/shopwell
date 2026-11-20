@@ -51,17 +51,17 @@ class ApprovalBindingConcurrencyTest extends TestCase
 
         try {
             if ($mode === 'activate') {
-                $store->save($business, $releaseId, 0, $context);
+                $store->save($business, $releaseId, 0, $context, static function (): void {});
             }
             $writer->start();
             $this->waitFor($writer, $mode === 'activate' ? 'SNAPSHOT:1' : 'SNAPSHOT:0');
             $connection->beginTransaction();
             if ($mode === 'first-head') {
-                $store->save($business, $releaseId, 0, $context);
+                $store->save($business, $releaseId, 0, $context, static function (): void {});
                 $releaseId = ApprovalRuntimeFixture::publish($container, $runtime, GraphFixture::json());
                 $definitions[$releaseId] = $connection->fetchOne('SELECT definition_id FROM approval_flow_release WHERE id = :id', ['id' => Uuid::fromHexToBytes($releaseId)]);
             }
-            $store->save($business, $releaseId, $mode === 'save' ? 0 : 1, $context);
+            $store->save($business, $releaseId, $mode === 'save' ? 0 : 1, $context, static function (): void {});
             if ($mode !== 'save') {
                 $store->activate($type, 1, 0, $context, static function (): void {});
             }

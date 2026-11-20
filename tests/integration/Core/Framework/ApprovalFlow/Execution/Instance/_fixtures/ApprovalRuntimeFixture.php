@@ -29,6 +29,7 @@ final class ApprovalRuntimeFixture
     {
         $runtime = PublicationFixture::container($manifest);
         $services = [
+            'event_dispatcher' => $kernel->get('event_dispatcher'),
             ApprovalBindingWriteGuard::class => $kernel->get(ApprovalBindingWriteGuard::class),
             Connection::class => $kernel->get(Connection::class),
             ClockInterface::class => $kernel->get(ClockInterface::class),

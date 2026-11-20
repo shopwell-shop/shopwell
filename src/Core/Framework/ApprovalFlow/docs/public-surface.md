@@ -1,6 +1,6 @@
 # Approval Flow public surface
 
-The supported extension surface covers node and approval business type declaration, configuration compilation, pure node entry and assembly.
+The supported extension surface covers node and approval business type declaration, configuration compilation, pure node entry, assembly and business-owned binding validation.
 The DAL models `approval_flow_binding`, `approval_flow_binding_head`, `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 Writes use the controlled draft, release and instance paths.
 No HTTP action routes or supported PHP publication/runtime command services are exposed by this increment.
@@ -218,3 +218,17 @@ The binding head is an internal coordination row owned by the store; activation 
 They do not classify Context sources for ordinary configuration reads or writes.
 Personal task decisions, task ownership, management operations and system-only progression/delivery keep their existing business authorization.
 The binding and instance write guards use explicit WeakMap methods so object-key handling does not depend on an editor recognizing array-access syntax.
+
+## Binding validation event
+
+`ApprovalBindingValidationEvent` is a supported synchronous extension point for business-owned configuration rules.
+The internal binding service dispatches it on save and activation, after the complete release, start business identity and form reference have been verified.
+`businessType` is the exact immutable declaration, `graphJson` is the verified graph string, and `getContext()` returns the caller's original context.
+Listeners reject by throwing their business exception; they do not replace the graph, mutate business state or perform network calls.
+The event runs within the binding transaction and same-type operation guard; exceptions roll back the attempted configuration change.
+The event does not authorize submitting a request or executing its business result.
+
+Payment registers its transfer declaration and validation subscriber in its own DI.
+Its current financial policy admits standard core approvals and advance-only extensions, and rejects custom request-approval nodes whose compiled review rules cannot yet be inspected through this event.
+The shared binding service has no Payment dependency or financial rule.
+`PaymentTransferApprovalBindingSubscriber` is internal to Payment and is not a plugin inheritance contract.

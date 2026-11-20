@@ -34,7 +34,7 @@ try {
     fgets(\STDIN);
     try {
         if ($mode === 'save') {
-            $store->save($business, $releaseId, 0, $context);
+            $store->save($business, $releaseId, 0, $context, static function (): void {});
         } else {
             $store->activate($type, 2, 0, $context, $verify);
         }
@@ -45,7 +45,7 @@ try {
     fgets(\STDIN);
     try {
         if ($mode === 'save') {
-            $store->save($business, $releaseId, 0, $context);
+            $store->save($business, $releaseId, 0, $context, static function (): void {});
         } else {
             $store->activate($type, 2, 0, $context, $verify);
         }
@@ -66,7 +66,7 @@ try {
                     return [$this->specification];
                 }
             };
-            $service = new ApprovalBindingService($store, new ApprovalBusinessTypeRegistry([$loader]), $runtime->get(ApprovalReleaseLoader::class));
+            $service = new ApprovalBindingService($store, new ApprovalBusinessTypeRegistry([$loader]), $runtime->get(ApprovalReleaseLoader::class), $container->get('event_dispatcher'));
             $head = $service->activate($type, 2, 1, $context);
         } else {
             $head = $store->activate($type, 2, 1, $context, $verify);

@@ -42,9 +42,12 @@ class ApprovalBindingStore
     ) {
     }
 
-    public function save(ApprovalBusinessTypeSpecification $businessType, string $releaseId, int $expectedRevision, Context $context): ApprovalBindingEntity
+    /**
+     * @param \Closure(): void $verify Validates the release while the same-type operation guard is held.
+     */
+    public function save(ApprovalBusinessTypeSpecification $businessType, string $releaseId, int $expectedRevision, Context $context, \Closure $verify): ApprovalBindingEntity
     {
-        return $this->writeBinding($businessType->type, function () use ($businessType, $releaseId, $expectedRevision, $context): ApprovalBindingEntity {
+        return $this->writeBinding($businessType->type, function () use ($businessType, $releaseId, $expectedRevision, $context, $verify): ApprovalBindingEntity {
             // The unique type coordinates the first save too; a losing initializer waits for the current writer.
             $this->connection->executeStatement(
                 'INSERT INTO approval_flow_binding_head (id, business_type, latest_revision, active_revision, version, created_at)
@@ -56,6 +59,7 @@ class ApprovalBindingStore
             if ($expectedRevision !== $revision) {
                 throw ApprovalFlowException::bindingRevisionConflict($businessType->type, $expectedRevision, $revision);
             }
+            $verify();
             $id = Uuid::randomHex();
             $this->guard->write($context, function (Context $writeContext) use ($id, $businessType, $revision, $releaseId): void {
                 $this->bindings->create([[

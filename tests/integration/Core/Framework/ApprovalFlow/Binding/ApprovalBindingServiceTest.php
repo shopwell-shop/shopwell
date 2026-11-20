@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingStore;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingValidationEvent;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeSpecification;
@@ -264,6 +265,54 @@ class ApprovalBindingServiceTest extends TestCase
         static::assertSame(Context::SYSTEM_SCOPE, $context->getScope());
     }
 
+    public function testValidationListenerCannotSaveTheSameBusinessAgain(): void
+    {
+        $releaseId = $this->publish();
+        $context = Context::createDefaultContext();
+        $reenter = true;
+        $observedContexts = [];
+        EventHookDispatcher::fromContainer(static::getContainer())->on(ApprovalBindingValidationEvent::class, function (ApprovalBindingValidationEvent $event) use (&$reenter, &$observedContexts, $releaseId, $context): void {
+            $observedContexts[] = $event->getContext();
+            if ($reenter) {
+                $reenter = false;
+                $this->bindings->save('payment:transfer', '1.0.0', $releaseId, 0, $context);
+            }
+        });
+        try {
+            $this->bindings->save('payment:transfer', '1.0.0', $releaseId, 0, $context);
+            static::fail('Business validation must not reenter a binding write.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertEquals(ApprovalFlowException::bindingWriteInProgress('payment:transfer'), $exception);
+        }
+        static::assertSame([$context], $observedContexts);
+        static::assertSame(0, (int) static::getContainer()->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM approval_flow_binding_head'));
+        static::assertSame(1, $this->bindings->save('payment:transfer', '1.0.0', $releaseId, 0, $context)->getRevision());
+    }
+
+    public function testValidationListenerCannotActivateAnotherRevisionDuringSave(): void
+    {
+        $releaseId = $this->publish();
+        $context = Context::createDefaultContext();
+        $this->bindings->save('payment:transfer', '1.0.0', $releaseId, 0, $context);
+        $reenter = true;
+        EventHookDispatcher::fromContainer(static::getContainer())->on(ApprovalBindingValidationEvent::class, function () use (&$reenter, $context): void {
+            if ($reenter) {
+                $reenter = false;
+                $this->bindings->activate('payment:transfer', 1, 0, $context);
+            }
+        });
+        try {
+            $this->bindings->save('payment:transfer', '1.0.0', $releaseId, 1, $context);
+            static::fail('Business validation must not change the active binding.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertEquals(ApprovalFlowException::bindingWriteInProgress('payment:transfer'), $exception);
+        }
+        $head = $this->bindings->head('payment:transfer', $context);
+        static::assertSame(1, $head->getLatestRevision());
+        static::assertSame(0, $head->getVersion());
+        static::assertNull($head->getActiveRevision());
+    }
+
     private function service(ApprovalBusinessTypeSpecification $specification): ApprovalBindingService
     {
         $loader = new class($specification) implements ApprovalBusinessTypeLoader {
@@ -281,6 +330,7 @@ class ApprovalBindingServiceTest extends TestCase
             static::getContainer()->get(ApprovalBindingStore::class),
             new ApprovalBusinessTypeRegistry([$loader]),
             $this->runtime->get(ApprovalReleaseLoader::class),
+            static::getContainer()->get('event_dispatcher'),
         );
     }
 

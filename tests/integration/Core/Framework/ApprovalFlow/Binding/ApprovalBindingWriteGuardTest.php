@@ -41,7 +41,7 @@ class ApprovalBindingWriteGuardTest extends TestCase
         $this->releaseId = InstanceFixture::publish($container);
         $specification = new ApprovalBusinessTypeSpecification('payment:transfer', '1.0.0', 'transfer', 'test:payment', '{"$id":"payment:transfer","type":"object"}');
         $store = $container->get(ApprovalBindingStore::class);
-        $this->bindingId = $store->save($specification, $this->releaseId, 0, Context::createDefaultContext())->getId();
+        $this->bindingId = $store->save($specification, $this->releaseId, 0, Context::createDefaultContext(), static function (): void {})->getId();
         $this->headId = $store->head('payment:transfer', Context::createDefaultContext())->getId();
     }
 
@@ -123,7 +123,7 @@ class ApprovalBindingWriteGuardTest extends TestCase
         $this->expectExceptionObject(ApprovalFlowException::uncontrolledBindingWrite());
 
         $specification = new ApprovalBusinessTypeSpecification('payment:transfer', '1.0.0', 'transfer', 'test:payment', '{"$id":"payment:transfer","type":"object"}');
-        static::getContainer()->get(ApprovalBindingStore::class)->save($specification, $this->releaseId, 1, Context::createDefaultContext());
+        static::getContainer()->get(ApprovalBindingStore::class)->save($specification, $this->releaseId, 1, Context::createDefaultContext(), static function (): void {});
     }
 
     public function testAnEventCannotChangeTheAdmittedPayload(): void
@@ -138,7 +138,7 @@ class ApprovalBindingWriteGuardTest extends TestCase
         $this->expectExceptionObject(ApprovalFlowException::uncontrolledBindingWrite());
 
         $specification = new ApprovalBusinessTypeSpecification('payment:transfer', '1.0.0', 'transfer', 'test:payment', '{"$id":"payment:transfer","type":"object"}');
-        static::getContainer()->get(ApprovalBindingStore::class)->save($specification, $this->releaseId, 1, Context::createDefaultContext());
+        static::getContainer()->get(ApprovalBindingStore::class)->save($specification, $this->releaseId, 1, Context::createDefaultContext(), static function (): void {});
     }
 
     public function testTheWriteScopeCannotRenameTheBusinessType(): void

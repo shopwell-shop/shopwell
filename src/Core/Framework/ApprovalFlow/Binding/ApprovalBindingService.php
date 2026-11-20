@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\CoreNodeType;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Controls which immutable flow release a business type selects for future submissions.
@@ -27,25 +28,27 @@ class ApprovalBindingService
         private readonly ApprovalBindingStore $store,
         private readonly ApprovalBusinessTypeRegistry $businessTypes,
         private readonly ApprovalReleaseLoader $releases,
+        private readonly EventDispatcherInterface $events,
     ) {
     }
 
     public function save(string $type, string $businessVersion, string $releaseId, int $expectedRevision, Context $context): ApprovalBindingEntity
     {
         $businessType = $this->businessTypes->get($type, $businessVersion);
-        $this->verifyRelease($businessType, $releaseId);
 
-        return $this->store->save($businessType, $releaseId, $expectedRevision, $context);
+        return $this->store->save($businessType, $releaseId, $expectedRevision, $context, function () use ($businessType, $releaseId, $context): void {
+            $this->verifyRelease($businessType, $releaseId, $context);
+        });
     }
 
     public function activate(string $type, int $revision, int $expectedVersion, Context $context): ApprovalBindingHeadEntity
     {
-        return $this->store->activate($type, $revision, $expectedVersion, $context, function (string $businessVersion, string $formSchema, string $releaseId) use ($type): void {
+        return $this->store->activate($type, $revision, $expectedVersion, $context, function (string $businessVersion, string $formSchema, string $releaseId) use ($type, $context): void {
             $businessType = $this->businessTypes->get($type, $businessVersion);
             if ($formSchema !== $businessType->formSchema) {
                 throw ApprovalFlowException::bindingFormChanged($type, $businessVersion);
             }
-            $this->verifyRelease($businessType, $releaseId);
+            $this->verifyRelease($businessType, $releaseId, $context);
         });
     }
 
@@ -67,7 +70,7 @@ class ApprovalBindingService
         return $this->store->active($type, $context);
     }
 
-    private function verifyRelease(ApprovalBusinessTypeSpecification $businessType, string $releaseId): void
+    private function verifyRelease(ApprovalBusinessTypeSpecification $businessType, string $releaseId, Context $context): void
     {
         $release = $this->releases->load($releaseId);
         // The release loader has recompiled and verified the complete graph before these fields are used.
@@ -81,5 +84,7 @@ class ApprovalBindingService
         if ($graph->meta->formSchemaRef !== $businessType->formSchemaId) {
             throw ApprovalFlowException::bindingReleaseMismatch($businessType->type, 'formSchemaRef');
         }
+
+        $this->events->dispatch(new ApprovalBindingValidationEvent($businessType, $release->graphJson, $context));
     }
 }

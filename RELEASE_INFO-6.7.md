@@ -9,6 +9,10 @@ Business modules register their loaders in their own DI; a declaration alone doe
 Approval business types can be contributed through `ApprovalBusinessTypeLoader` and `approval_flow.business_type_loader`, then inspected with `approval-flow:business-types`.
 `ApprovalBusinessTypeSpecification` retains the business identity, exact version and form schema bytes.
 The business type catalogue grants no business submission or result execution authority; those implementation contracts are not exposed yet.
+Business modules can reject incompatible bindings through `ApprovalBindingValidationEvent`, dispatched after generic release validation on both save and activation.
+Listeners receive the exact business declaration, verified graph JSON and original context, and reject by throwing a business exception without writing business state.
+Payment now contributes `payment:transfer@1.0.0` with a minor-unit integer form and rules requiring mandatory approval and read-only transfer data.
+This declaration does not switch the existing transfer interface or authorize payout execution.
 Business modules can also register `NodeCompiler` services with `approval_flow.node_compiler` to compile exact node versions into typed `NodeConfiguration` values.
 Configuration compilation rejects missing or conflicting compilers and invalid semantics.
 Register exact-version `NodeExecutor` entry services with `approval_flow.node_executor`; node-plan compilation now rejects missing executors without calling them.
