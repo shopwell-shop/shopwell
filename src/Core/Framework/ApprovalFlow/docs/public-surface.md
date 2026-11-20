@@ -145,16 +145,22 @@ The command records the vote and evaluates the frozen group policy.
 An agreement completes single/any approval; all approval waits for all votes; a rejection vetoes every policy.
 Completing a group records the execution outcome and cancels remaining pending tasks in the same transaction as its instance version and receipt.
 The task's `completionCommandId` links both personal decisions and cancellations to the original actor and reason.
+System-only `advanceApproval` requires a completed approval group at the serial execution tail, with no other active execution or pending task.
+It queues one unconditional successor from the verified release after approval, and commits `completed/rejected` directly after veto.
+The committed successor prevents another command from expanding the same execution twice.
+System-only `enterEnd` accepts the waiting published end boundary at the tail and verifies its frozen completion effect before committing the execution and instance outcome.
+Both instance and receipt DAL models retain the optional `ApprovalOutcome`, distinct from lifecycle status.
+Receipt replay preserves the original outcome even when the instance has since completed.
 These commands require an expected aggregate version and a command identity.
 They preserve the original Context, serialize writes with the instance row lock and atomically retain the original response and audit in `approval_flow_operation`.
 Receipts are reauthorized on every retry and bound to their original actor and payload.
 
 The DAL/Sync write guard rejects generic writes to instances, operations, executions and tasks.
-The controlled path updates instance status and version and inserts immutable receipts, node execution records and pending tasks.
+The controlled path updates instance status, outcome and version and inserts immutable receipts, node execution records and pending tasks.
 Executions in `approval_flow_execution` retain their instance, node, incoming connection, sequence and status.
 Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
 There is no production instance creation or activation path, and no public command/query route.
-Business binding, runtime admission, successor scheduling, instance completion and timers require their own command contracts.
+Business binding, runtime admission, automatic scheduling, branch/join execution and timers require their own contracts.
 The decision command adds no public endpoint, external result delivery or business execution authority.

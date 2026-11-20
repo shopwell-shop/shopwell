@@ -165,6 +165,98 @@ class ApprovalInstanceConcurrencyTest extends TestCase
         yield 'any rejects a late vote after cancellation' => ['core:any'];
     }
 
+    #[DataProvider('progressionCommands')]
+    public function testConcurrentProgressionUsesTheCommittedTailAndTerminalReceipt(bool $end, bool $sameCommand): void
+    {
+        $kernel = static::getContainer();
+        $connection = $kernel->get(Connection::class);
+        $filesystem = new Filesystem();
+        $directory = sys_get_temp_dir() . '/approval-concurrent-completion-' . Uuid::randomHex();
+        $manifest = PublicationFixture::writeManifest($filesystem, $directory);
+        $runtime = ApprovalRuntimeFixture::container($kernel, $manifest);
+        $userId = TestUser::createNewTestUser($connection)->getUserId();
+        $graph = str_replace('"finance-user"', json_encode($userId, \JSON_THROW_ON_ERROR), GraphFixture::json());
+        $releaseId = ApprovalRuntimeFixture::publish($kernel, $runtime, $graph);
+        $definitionId = $connection->fetchOne('SELECT definition_id FROM approval_flow_release WHERE id = :id', ['id' => Uuid::fromHexToBytes($releaseId)]);
+        $instanceId = InstanceFixture::create($connection, $releaseId, ApprovalInstanceStatus::Running);
+        $service = $runtime->get(ApprovalInstanceService::class);
+        $context = Context::createDefaultContext();
+        $service->enterStart($instanceId, Uuid::randomHex(), 1, $context);
+        $execution = $connection->fetchOne('SELECT id FROM approval_flow_execution WHERE instance_id = :id AND `sequence` = 2', ['id' => Uuid::fromHexToBytes($instanceId)]);
+        static::assertIsString($execution);
+        $executionId = Uuid::fromBytesToHex($execution);
+        $service->enterApproval($instanceId, $executionId, Uuid::randomHex(), 2, $context);
+        $task = $connection->fetchOne('SELECT id FROM approval_flow_task WHERE execution_id = :id', ['id' => $execution]);
+        static::assertIsString($task);
+        $source = new AdminApiSource($userId);
+        $source->setPermissions([ApprovalInstanceService::DECIDE_PRIVILEGE]);
+        $service->decide($instanceId, Uuid::fromBytesToHex($task), Uuid::randomHex(), 3, ApprovalOutcome::Approved, '', Context::createDefaultContext($source));
+        $version = 4;
+        if ($end) {
+            $service->advanceApproval($instanceId, $executionId, Uuid::randomHex(), 4, $context);
+            $execution = $connection->fetchOne('SELECT id FROM approval_flow_execution WHERE instance_id = :id AND `sequence` = 3', ['id' => Uuid::fromHexToBytes($instanceId)]);
+            static::assertIsString($execution);
+            $executionId = Uuid::fromBytesToHex($execution);
+            $version = 5;
+        }
+        $commandId = Uuid::randomHex();
+        $input = new InputStream();
+        $writer = new Process([
+            \PHP_BINARY, '-d', 'xdebug.mode=off', __DIR__ . '/_fixtures/competing-progression.php',
+            $instanceId, $executionId, $sameCommand ? $commandId : Uuid::randomHex(), $manifest, $end ? 'end' : 'advance', (string) $version,
+        ]);
+        $writer->setInput($input);
+        $writer->setTimeout(30);
+
+        try {
+            $writer->start();
+            $this->waitFor($writer, 'SNAPSHOT:running');
+            $connection->beginTransaction();
+            if ($end) {
+                $service->enterEnd($instanceId, $executionId, $commandId, $version, $context);
+            } else {
+                $service->advanceApproval($instanceId, $executionId, $commandId, $version, $context);
+            }
+            $input->write("compete\n");
+            $this->waitFor($writer, 'BLOCKED');
+            $connection->commit();
+            $input->write("retry\n");
+            $input->close();
+
+            static::assertSame(0, $writer->wait(), $writer->getErrorOutput());
+            $expected = $end ? 'RECEIPT:completed:approved:6' : 'RECEIPT:running:none:5';
+            static::assertStringContainsString($sameCommand ? $expected : 'GUARDED', $writer->getOutput());
+            static::assertSame(3, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_execution WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($instanceId)]));
+            static::assertSame($version, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_operation WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($instanceId)]));
+        } finally {
+            $input->close();
+            $writer->stop();
+            while ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+            $connection->executeStatement('DELETE task FROM approval_flow_task task INNER JOIN approval_flow_execution execution ON execution.id = task.execution_id WHERE execution.instance_id = :id', ['id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_execution', ['instance_id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_operation', ['instance_id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_instance', ['id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_release', ['id' => Uuid::fromHexToBytes($releaseId)]);
+            $connection->delete('approval_flow_draft', ['definition_id' => $definitionId]);
+            $connection->delete('approval_flow_definition', ['id' => $definitionId]);
+            $key = ['id' => Uuid::fromHexToBytes($userId)];
+            $avatar = $connection->fetchOne('SELECT avatar_id FROM `user` WHERE id = :id', $key);
+            $connection->delete('user', $key);
+            $connection->delete('media', ['id' => $avatar]);
+            $filesystem->remove($directory);
+        }
+    }
+
+    public static function progressionCommands(): iterable
+    {
+        yield 'concurrent advancement replays the committed receipt' => [false, true];
+        yield 'a fresh command cannot duplicate the committed successor' => [false, false];
+        yield 'concurrent end replays the committed outcome' => [true, true];
+        yield 'a fresh command cannot reopen the completed instance' => [true, false];
+    }
+
     public function testCommandRequiresTheAdmittedInstanceToBeVisibleInItsTransaction(): void
     {
         $container = static::getContainer();

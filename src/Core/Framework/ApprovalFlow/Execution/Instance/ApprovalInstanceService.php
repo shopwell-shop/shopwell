@@ -12,13 +12,14 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * Handles administrative suspension and system node entry for an admitted instance.
+ * Authorizes personal decisions and system progression for an admitted instance.
  *
  * @internal
  *
  * @codeCoverageIgnore
  *
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceServiceTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalCompletionTest
  */
 #[Package('framework')]
 class ApprovalInstanceService
@@ -63,6 +64,26 @@ class ApprovalInstanceService
         $actorJson = json_encode($actor, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
 
         return $this->store->suspend($instanceId, $commandId, $expectedVersion, $reason, $actorJson, $context);
+    }
+
+    public function advanceApproval(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
+    {
+        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
+        if (!Uuid::isValid($executionId)) {
+            throw ApprovalFlowException::invalidExecutionId($executionId);
+        }
+
+        return $this->store->advanceApproval($instanceId, $executionId, $commandId, $expectedVersion, $context);
+    }
+
+    public function enterEnd(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
+    {
+        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
+        if (!Uuid::isValid($executionId)) {
+            throw ApprovalFlowException::invalidExecutionId($executionId);
+        }
+
+        return $this->store->enterEnd($instanceId, $executionId, $commandId, $expectedVersion, $context);
     }
 
     public function decide(string $instanceId, string $taskId, string $commandId, int $expectedVersion, ApprovalOutcome $outcome, string $reason, Context $context): ApprovalInstanceCommandResult

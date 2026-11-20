@@ -62,20 +62,9 @@ class ApprovalNodeEntry
         /** @var object{startNodeId: string} $plan */
         $plan = $this->jsonDecoder->decode($release->graphPlanJson);
 
-        $outgoing = [];
-        foreach ($graph->connections as $connection) {
-            if ($connection->source === $plan->startNodeId) {
-                $outgoing[] = $connection;
-            }
-        }
-        if (\count($outgoing) !== 1) {
+        $route = $this->singleSuccessor($plan->startNodeId, $graph);
+        if ($route === null) {
             throw ApprovalFlowException::unsupportedStartRoute($releaseId);
-        }
-        $edge = $outgoing[0];
-        foreach ($graph->connections as $connection) {
-            if ($connection->target === $edge->target && $connection->id !== $edge->id) {
-                throw ApprovalFlowException::unsupportedStartRoute($releaseId);
-            }
         }
 
         $effect = $this->enterNode($releaseId, $plan->startNodeId, $release, $graph);
@@ -83,7 +72,70 @@ class ApprovalNodeEntry
             throw ApprovalFlowException::invalidGraphPlan('The start node must advance to its successor.');
         }
 
-        return ['startNodeId' => $plan->startNodeId, 'connectionId' => $edge->id, 'nextNodeId' => $edge->target];
+        return ['startNodeId' => $plan->startNodeId, ...$route];
+    }
+
+    /**
+     * Reads a published route without re-entering the completed node's executor.
+     *
+     * @return array{connectionId: string, nextNodeId: string}
+     */
+    public function successor(string $releaseId, string $nodeId, Context $context): array
+    {
+        $release = $this->releases->load($releaseId, $context);
+        /** @var GraphPayload $graph */
+        $graph = $this->jsonDecoder->decode($release->graphJson);
+        $route = $this->singleSuccessor($nodeId, $graph);
+        if ($route === null) {
+            throw ApprovalFlowException::unsupportedNodeRoute($releaseId, $nodeId);
+        }
+
+        return $route;
+    }
+
+    public function enterEnd(string $releaseId, string $nodeId, Context $context): CompleteEffect
+    {
+        $release = $this->releases->load($releaseId, $context);
+        /** @var object{endNodeId: string} $plan */
+        $plan = $this->jsonDecoder->decode($release->graphPlanJson);
+        if ($nodeId !== $plan->endNodeId) {
+            throw ApprovalFlowException::invalidGraphPlan('Only the published end boundary may complete the process.');
+        }
+        /** @var GraphPayload $graph */
+        $graph = $this->jsonDecoder->decode($release->graphJson);
+        $effect = $this->enterNode($releaseId, $nodeId, $release, $graph);
+        if (!$effect instanceof CompleteEffect) {
+            throw ApprovalFlowException::invalidGraphPlan('The end boundary must provide a process outcome.');
+        }
+
+        return $effect;
+    }
+
+    /**
+     * @param GraphPayload $graph
+     *
+     * @return array{connectionId: string, nextNodeId: string}|null
+     */
+    private function singleSuccessor(string $nodeId, \stdClass $graph): ?array
+    {
+        $outgoing = [];
+        foreach ($graph->connections as $connection) {
+            if ($connection->source === $nodeId) {
+                $outgoing[] = $connection;
+            }
+        }
+        // Release verification admits only unconditional connections in this runtime increment.
+        if (\count($outgoing) !== 1) {
+            return null;
+        }
+        $edge = $outgoing[0];
+        foreach ($graph->connections as $connection) {
+            if ($connection->target === $edge->target && $connection->id !== $edge->id) {
+                return null;
+            }
+        }
+
+        return ['connectionId' => $edge->id, 'nextNodeId' => $edge->target];
     }
 
     /**

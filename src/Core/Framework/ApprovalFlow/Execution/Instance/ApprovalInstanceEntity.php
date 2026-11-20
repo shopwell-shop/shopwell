@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -18,6 +19,8 @@ class ApprovalInstanceEntity extends Entity
     protected string $releaseId;
 
     protected ApprovalInstanceStatus $status;
+
+    protected ?ApprovalOutcome $outcome = null;
 
     protected int $aggregateVersion;
 
@@ -41,6 +44,16 @@ class ApprovalInstanceEntity extends Entity
     public function setStatus(ApprovalInstanceStatus $status): void
     {
         $this->status = $status;
+    }
+
+    public function getOutcome(): ?ApprovalOutcome
+    {
+        return $this->outcome;
+    }
+
+    public function setOutcome(?ApprovalOutcome $outcome): void
+    {
+        $this->outcome = $outcome;
     }
 
     public function getAggregateVersion(): int

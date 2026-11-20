@@ -26,8 +26,11 @@ Approval entry verifies the waiting execution against its bound release and reco
 An internal personal decision command requires the active assignee and `approval_flow_task:decide`.
 It aggregates frozen single, all or any approval rules with rejection veto, records the node outcome and cancels remaining pending tasks atomically with the receipt.
 System and integration identities cannot cast personal votes.
-Public task queries, successor scheduling and business result delivery remain unavailable.
-Instance lifecycle management remains internal and does not enable business starts or approval decisions.
+System progression now queues a single unconditional successor after approval or records a completed rejection after veto.
+End entry verifies the published end boundary and requires all other execution and task work to be settled before committing the instance outcome.
+Instance and receipt DAL models expose the optional outcome separately from lifecycle status; retry receipts retain their original result.
+Public task queries, automatic scheduling and business result delivery remain unavailable.
+Instance lifecycle management remains internal and does not enable business starts or public approval decisions.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.
 Approval definitions and drafts now have DAL models; writes require the controlled draft path so graph admission, expected revisions and explicit removal confirmation cannot be skipped through ordinary repository or Sync calls.

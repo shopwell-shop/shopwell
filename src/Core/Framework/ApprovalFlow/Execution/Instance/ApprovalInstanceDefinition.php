@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\EnumField;
@@ -45,6 +46,7 @@ class ApprovalInstanceDefinition extends EntityDefinition
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
             (new FkField('release_id', 'releaseId', ApprovalReleaseDefinition::class))->addFlags(new Required()),
             (new EnumField('status', 'status', ApprovalInstanceStatus::Draft))->addFlags(new Required()),
+            new EnumField('outcome', 'outcome', ApprovalOutcome::Approved),
             (new IntField('aggregate_version', 'aggregateVersion', 1))->addFlags(new Required()),
             new ManyToOneAssociationField('release', 'release_id', ApprovalReleaseDefinition::class, 'id', false),
         ]);

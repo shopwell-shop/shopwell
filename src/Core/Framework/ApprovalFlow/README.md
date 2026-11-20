@@ -337,7 +337,7 @@ Only System sources and Administration sources with that privilege are accepted.
 The reason must contain non-whitespace text and fit within 1000 characters; it is preserved verbatim.
 
 The store locks the instance row and reads its current state, then checks `(instanceId, commandId)` using a current locking read.
-A matching request hash returns the original status and version, even if later commands have advanced the instance.
+A matching request hash returns the original status, version and optional process outcome, even if later commands have advanced the instance.
 When joining an existing transaction, a new command requires the locked instance to be visible to the caller's read snapshot so that the DAL can load and update it.
 A snapshot taken before the instance was admitted returns a conflict and the command can be retried in a new transaction.
 The hash includes the operation, expected version, exact reason and original source/user/integration identity.
@@ -375,6 +375,23 @@ Once a group reaches an outcome, its pending tasks are cancelled and the executi
 Each changed task records its `completionCommandId`, linking the decision or cancellation to the same transaction's immutable operation receipt and actor.
 Decision notes may be empty and are retained verbatim.
 
+`ApprovalInstanceService::advanceApproval(instanceId, executionId, commandId, expectedVersion, Context)` is a system-only progression command.
+It requires a completed approval group with a frozen policy and outcome at the current serial execution tail.
+All other executions must be completed and no task may remain pending.
+An approved group queues the verified release's single unconditional successor, whose node must have no other incoming connection.
+The approval executor is not entered again.
+The committed successor becomes the new tail, preventing a fresh command from expanding the same approval twice.
+A rejected group completes the instance as `completed` with `outcome=rejected`, without entering the approved path or requiring deployment artifacts again.
+
+`ApprovalInstanceService::enterEnd(instanceId, executionId, commandId, expectedVersion, Context)` is a system-only command for a waiting execution at the serial tail.
+Only the verified release's end boundary may complete through this command.
+The runtime verifies its frozen `CompleteEffect` and checks that no other execution or pending task remains active.
+It completes the end execution and commits the instance's `completed` status, outcome, version and immutable receipt together.
+The instance and receipt store `ApprovalOutcome` separately from lifecycle status.
+Retries return that receipt's original outcome, including a null outcome from an earlier nonterminal command.
+These commands perform one explicit step per call; no background scheduler is installed by this increment.
+Branch selection, fan-out and joins remain unsupported and cannot be collapsed into an arbitrary single successor.
+
 `ApprovalInstanceWriteGuard::write()` scopes each DAL batch to system scope on the original Context and grants one pending write permit.
 The guard consumes that permit at the start of `EntityWriteEvent`, before ordinary listeners run, and admits only the exact command objects and payloads from that batch.
 `PreWriteValidationEvent` rejects unadmitted or changed commands; their weakly held identities remain valid for the DAL's own retry of the same batch.
@@ -387,7 +404,7 @@ Trusted in-process PHP with database access remains outside this guard's protect
 This increment provides no production instance creation, activation, resume, termination, decision or query endpoint.
 Tests seed runtime facts explicitly and use real persisted releases to exercise the commit boundary; they do not simulate an admitted business start.
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
-Future progression and decision commands must check the instance's running status under the same lock.
-The group decision completes only that node execution.
-Successor scheduling, instance completion, dynamic assignee sources, the empty-assignee skip policy, task queries and business result delivery remain subsequent increments.
+Progression and decision commands check the instance's running status under the same lock.
+The personal group decision completes only that node execution; system progression separately schedules its successor or commits the rejection outcome.
+Dynamic assignee sources, the empty-assignee skip policy, task queries, automatic scheduling and business result delivery remain subsequent increments.
 The command does not schedule approval-domain events or external effects; durable Outbox delivery remains a separate requirement when such delivery is introduced.

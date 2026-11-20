@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Operation;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -20,6 +21,7 @@ final readonly class ApprovalInstanceCommandResult
         public string $commandId,
         public ApprovalInstanceStatus $status,
         public int $aggregateVersion,
+        public ?ApprovalOutcome $outcome = null,
     ) {
     }
 }

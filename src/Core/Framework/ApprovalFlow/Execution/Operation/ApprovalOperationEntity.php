@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Operation;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
@@ -28,6 +29,8 @@ class ApprovalOperationEntity extends Entity
     protected ApprovalInstanceStatus $previousStatus;
 
     protected ApprovalInstanceStatus $status;
+
+    protected ?ApprovalOutcome $outcome = null;
 
     protected int $previousVersion;
 
@@ -113,6 +116,16 @@ class ApprovalOperationEntity extends Entity
     public function setStatus(ApprovalInstanceStatus $status): void
     {
         $this->status = $status;
+    }
+
+    public function getOutcome(): ?ApprovalOutcome
+    {
+        return $this->outcome;
+    }
+
+    public function setOutcome(?ApprovalOutcome $outcome): void
+    {
+        $this->outcome = $outcome;
     }
 
     public function getPreviousVersion(): int

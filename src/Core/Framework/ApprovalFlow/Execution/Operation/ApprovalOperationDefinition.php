@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Operation;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -61,6 +62,7 @@ class ApprovalOperationDefinition extends EntityDefinition
             (new LongTextField('reason', 'reason'))->addFlags(new Required(), new AllowEmptyString(), new AllowHtml(sanitized: false)),
             (new EnumField('previous_status', 'previousStatus', ApprovalInstanceStatus::Draft))->addFlags(new Required()),
             (new EnumField('status', 'status', ApprovalInstanceStatus::Draft))->addFlags(new Required()),
+            new EnumField('outcome', 'outcome', ApprovalOutcome::Approved),
             (new IntField('previous_version', 'previousVersion', 1))->addFlags(new Required()),
             (new IntField('aggregate_version', 'aggregateVersion', 1))->addFlags(new Required()),
             new ManyToOneAssociationField('instance', 'instance_id', ApprovalInstanceDefinition::class, 'id', false),

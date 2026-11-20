@@ -23,6 +23,8 @@ class ApprovalFlowException extends HttpException
     public const TASK_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__TASK_OUTSIDE_SNAPSHOT';
     public const SINGLE_APPROVAL_ASSIGNEE_REQUIRED = 'APPROVAL_FLOW__SINGLE_APPROVAL_ASSIGNEE_REQUIRED';
     public const UNSUPPORTED_START_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_START_ROUTE';
+    public const UNSUPPORTED_NODE_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_NODE_ROUTE';
+    public const INVALID_NODE_PROGRESSION = 'APPROVAL_FLOW__INVALID_NODE_PROGRESSION';
     public const INSTANCE_NOT_FOUND = 'APPROVAL_FLOW__INSTANCE_NOT_FOUND';
     public const INSTANCE_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__INSTANCE_OUTSIDE_SNAPSHOT';
     public const INSTANCE_VERSION_CONFLICT = 'APPROVAL_FLOW__INSTANCE_VERSION_CONFLICT';
@@ -150,6 +152,26 @@ class ApprovalFlowException extends HttpException
             Response::HTTP_FORBIDDEN,
             self::UNCONTROLLED_INSTANCE_WRITE,
             'Approval instance state, node executions, tasks and immutable command receipts require a controlled command transaction.'
+        );
+    }
+
+    public static function unsupportedNodeRoute(string $releaseId, string $nodeId): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::UNSUPPORTED_NODE_ROUTE,
+            'Node "{{ nodeId }}" in approval release "{{ releaseId }}" requires a single unconditional edge into a node with no other incoming edges.',
+            ['releaseId' => $releaseId, 'nodeId' => $nodeId]
+        );
+    }
+
+    public static function invalidNodeProgression(string $executionId, string $reason): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::INVALID_NODE_PROGRESSION,
+            'Node execution "{{ executionId }}" cannot progress: {{ reason }}',
+            ['executionId' => $executionId, 'reason' => $reason]
         );
     }
 

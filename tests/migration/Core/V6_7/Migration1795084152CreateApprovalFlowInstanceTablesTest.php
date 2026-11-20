@@ -48,11 +48,11 @@ class Migration1795084152CreateApprovalFlowInstanceTablesTest extends TestCase
         $commandId = Uuid::randomBytes();
         $this->connection->insert('approval_flow_release', ['id' => $releaseId]);
         $this->connection->insert('approval_flow_instance', [
-            'id' => $instanceId, 'release_id' => $releaseId, 'status' => 'suspended', 'aggregate_version' => 2, 'created_at' => '2026-11-19 00:00:00.000',
+            'id' => $instanceId, 'release_id' => $releaseId, 'status' => 'completed', 'outcome' => 'rejected', 'aggregate_version' => 2, 'created_at' => '2026-11-19 00:00:00.000',
         ]);
         $this->connection->insert('approval_flow_operation', [
-            'instance_id' => $instanceId, 'command_id' => $commandId, 'operation' => 'suspend', 'request_hash' => str_repeat('a', 64),
-            'actor_json' => '{"source":"system"}', 'reason' => 'Review required.', 'previous_status' => 'running', 'status' => 'suspended',
+            'instance_id' => $instanceId, 'command_id' => $commandId, 'operation' => 'enter-end', 'request_hash' => str_repeat('a', 64),
+            'actor_json' => '{"source":"system"}', 'reason' => 'Published end.', 'previous_status' => 'running', 'status' => 'completed', 'outcome' => 'rejected',
             'previous_version' => 1, 'aggregate_version' => 2, 'created_at' => '2026-11-19 00:00:00.000',
         ]);
 
@@ -60,6 +60,8 @@ class Migration1795084152CreateApprovalFlowInstanceTablesTest extends TestCase
 
         static::assertSame($instanceId, $this->connection->fetchOne('SELECT id FROM approval_flow_instance'));
         static::assertSame($commandId, $this->connection->fetchOne('SELECT command_id FROM approval_flow_operation'));
+        static::assertSame('rejected', $this->connection->fetchOne('SELECT outcome FROM approval_flow_instance'));
+        static::assertSame('rejected', $this->connection->fetchOne('SELECT outcome FROM approval_flow_operation'));
         $schema = $this->connection->createSchemaManager();
         $instance = $schema->introspectTableByUnquotedName('approval_flow_instance');
         $operation = $schema->introspectTableByUnquotedName('approval_flow_operation');
