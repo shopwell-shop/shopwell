@@ -419,13 +419,18 @@ class ApprovalNodeProgressionTest extends TestCase
         }
     }
 
-    public function testAdministrativeManagementPrivilegeDoesNotAuthorizeNodeEntry(): void
+    public function testInternalNodeEntryRetainsTheCallingAdministrator(): void
     {
         $source = new AdminApiSource(Uuid::randomHex());
-        $source->setPermissions([ApprovalInstanceService::MANAGE_PRIVILEGE]);
-        $this->expectException(MissingPrivilegeException::class);
+        $context = Context::createDefaultContext($source);
+        $commandId = Uuid::randomHex();
 
-        $this->service->enterStart($this->instanceId, Uuid::randomHex(), 0, Context::createDefaultContext($source));
+        $this->service->enterStart($this->instanceId, $commandId, 1, $context);
+
+        $actor = $this->connection->fetchOne('SELECT actor_json FROM approval_flow_operation WHERE command_id = :id', ['id' => Uuid::fromHexToBytes($commandId)]);
+        static::assertIsString($actor);
+        static::assertSame(['source' => 'admin-api', 'userId' => $source->getUserId(), 'integrationId' => null], json_decode($actor, associative: true, flags: \JSON_THROW_ON_ERROR));
+        static::assertSame(Context::USER_SCOPE, $context->getScope());
     }
 
     public function testSuspendedInstanceCannotEnterStart(): void

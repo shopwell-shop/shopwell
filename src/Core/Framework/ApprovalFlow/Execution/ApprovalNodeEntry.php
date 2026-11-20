@@ -22,11 +22,14 @@ use Shopwell\Core\Framework\Log\Package;
  * @phpstan-import-type GraphPayload from GraphDiagnostics
  * @phpstan-import-type NodePlan from NodePlanCompiler
  *
+ * @phpstan-type EnteredSerialRoute array{nodes: non-empty-list<array{nodeId: string, connectionId: string}>, effect: RequestApprovalEffect|CompleteEffect}
+ *
  * @internal
  *
  * @codeCoverageIgnore
  *
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntryTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalSerialProgressionTest
  */
 #[Package('framework')]
 class ApprovalNodeEntry
@@ -90,6 +93,41 @@ class ApprovalNodeEntry
         }
 
         return $route;
+    }
+
+    /**
+     * Enters serial successors once, stopping at the first approval or the published end boundary.
+     *
+     * @return EnteredSerialRoute
+     */
+    public function enterSuccessors(string $releaseId, string $completedNodeId): array
+    {
+        $release = $this->releases->load($releaseId);
+        /** @var GraphPayload $graph */
+        $graph = $this->jsonDecoder->decode($release->graphJson);
+        /** @var object{endNodeId: string} $plan */
+        $plan = $this->jsonDecoder->decode($release->graphPlanJson);
+        $nodes = [];
+        $nodeId = $completedNodeId;
+
+        // Publication preflight proves acyclicity; each admitted edge selects one successor without a join.
+        while (true) {
+            $route = $this->singleSuccessor($nodeId, $graph);
+            if ($route === null) {
+                throw ApprovalFlowException::unsupportedNodeRoute($releaseId, $nodeId);
+            }
+            $nodeId = $route['nextNodeId'];
+            $effect = $this->enterNode($releaseId, $nodeId, $release, $graph);
+            $nodes[] = ['nodeId' => $nodeId, 'connectionId' => $route['connectionId']];
+            if ($effect instanceof AdvanceEffect) {
+                continue;
+            }
+            if ($effect instanceof CompleteEffect && $nodeId !== $plan->endNodeId) {
+                throw ApprovalFlowException::invalidGraphPlan('Only the published end boundary may complete the process.');
+            }
+
+            return ['nodes' => $nodes, 'effect' => $effect];
+        }
     }
 
     public function enterEnd(string $releaseId, string $nodeId): CompleteEffect

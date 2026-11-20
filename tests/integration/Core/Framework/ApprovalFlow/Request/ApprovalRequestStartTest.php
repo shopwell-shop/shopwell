@@ -188,7 +188,7 @@ class ApprovalRequestStartTest extends TestCase
         $this->requests->start($id, $this->context);
     }
 
-    public function testTaggedAdvanceNodesRunBeforeTheFirstApprovalWithoutCoreChanges(): void
+    public function testTaggedAdvanceNodesRunBeforeAndAfterApprovalWithoutCoreChanges(): void
     {
         $manifest = PublicationFixture::writeManifest($this->filesystem, $this->directory, [PreparationNodeCompiler::class, PreparationNodeExecutor::class]);
         $runtime = ApprovalRuntimeFixture::container(static::getContainer(), $manifest, static function (ContainerBuilder $runtime): void {
@@ -227,6 +227,17 @@ class ApprovalRequestStartTest extends TestCase
         $edge->source = 'prepare';
         $edge->target = 'review';
         $graph->connections[] = $edge;
+        $finish = clone $node;
+        $finish->id = 'finish';
+        $finish->config = (object) ['label' => 'Finish'];
+        $graph->nodes[] = $finish;
+        static::assertInstanceOf(\stdClass::class, $graph->connections[1]);
+        $graph->connections[1]->target = 'finish';
+        $edge = clone $edge;
+        $edge->id = 'finish-end';
+        $edge->source = 'finish';
+        $edge->target = 'end';
+        $graph->connections[] = $edge;
         $draft = $runtime->get(ApprovalDraftService::class)->create('Preparation extension', json_encode($graph, \JSON_THROW_ON_ERROR), Context::createDefaultContext());
         $compiled = $runtime->get(ApprovalReleaseCompiler::class)->compile($draft->graph);
         $releaseId = $runtime->get(ApprovalReleaseService::class)->publish($draft->definitionId, $draft->revision, $compiled->hash, Context::createDefaultContext())->id;
@@ -245,6 +256,19 @@ class ApprovalRequestStartTest extends TestCase
         $executor = $runtime->get(PreparationNodeExecutor::class);
         static::assertInstanceOf(PreparationNodeExecutor::class, $executor);
         static::assertSame(['Validate', 'Prepare'], $executor->enteredLabels);
+        $taskId = $this->connection->fetchOne('SELECT id FROM approval_flow_task');
+        static::assertIsString($taskId);
+        $source = new AdminApiSource($this->reviewerId);
+        $source->setPermissions([ApprovalInstanceService::DECIDE_PRIVILEGE]);
+        $instances = $runtime->get(ApprovalInstanceService::class);
+        $instances->decide($receipt->instanceId, Uuid::fromBytesToHex($taskId), Uuid::randomHex(), 2, ApprovalOutcome::Approved, '', Context::createDefaultContext($source));
+        $executionId = $this->connection->fetchOne('SELECT execution_id FROM approval_flow_task');
+        static::assertIsString($executionId);
+        $completed = $instances->progress($receipt->instanceId, Uuid::fromBytesToHex($executionId), Uuid::randomHex(), 3, Context::createDefaultContext());
+
+        static::assertSame(ApprovalOutcome::Approved, $completed->outcome);
+        static::assertSame(['Validate', 'Prepare', 'Finish'], $executor->enteredLabels);
+        static::assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
     }
 
     public function testAnUnsupportedInitialSplitLeavesNoPartialExecutions(): void

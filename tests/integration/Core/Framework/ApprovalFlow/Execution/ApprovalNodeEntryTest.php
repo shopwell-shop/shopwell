@@ -106,6 +106,16 @@ class ApprovalNodeEntryTest extends TestCase
         static::assertSame(1, $executor->calls);
     }
 
+    public function testSerialProgressionCannotCompleteAtABusinessNode(): void
+    {
+        $this->registerFinance(FinanceNodeCompiler::class);
+        $graph = $this->filesystem->readFile(\dirname(__DIR__, 5) . '/unit/Core/Framework/ApprovalFlow/Graph/_fixtures/finance-transfer.json');
+        $release = $this->publish($graph);
+        $this->expectExceptionObject(ApprovalFlowException::invalidGraphPlan('Only the published end boundary may complete the process.'));
+
+        $this->container->get(ApprovalNodeEntry::class)->enterSuccessors($release->id, 'start');
+    }
+
     public function testCorruptUnrelatedContentPreventsTheSelectedExecutorFromEntering(): void
     {
         $this->registerFinance(FinanceNodeCompiler::class);

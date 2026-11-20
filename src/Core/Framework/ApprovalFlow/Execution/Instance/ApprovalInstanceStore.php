@@ -3,10 +3,13 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
+use Shopwell\Core\Framework\Api\Context\SystemSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
@@ -26,6 +29,8 @@ use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
+ * @phpstan-import-type EnteredSerialRoute from ApprovalNodeEntry
+ *
  * @internal
  *
  * @codeCoverageIgnore
@@ -34,10 +39,14 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalNodeProgressionTest
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalCompletionTest
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Request\ApprovalRequestStartTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalSerialProgressionTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalProgressionRunnerTest
  */
 #[Package('framework')]
 class ApprovalInstanceStore
 {
+    public const PROGRESS = 'progress';
+
     public const START = 'start';
 
     public const SUSPEND = 'suspend';
@@ -53,8 +62,6 @@ class ApprovalInstanceStore
     public const ENTER_END = 'enter-end';
 
     private const START_SEQUENCE = 1;
-
-    private const SYSTEM_ACTOR_JSON = '{"source":"system"}';
 
     /**
      * @var array<string, true>
@@ -79,6 +86,37 @@ class ApprovalInstanceStore
         private readonly ApprovalTaskDecisionStore $decisions,
         private readonly ApprovalResultStore $results,
     ) {
+    }
+
+    /**
+     * Candidate discovery only; the command rechecks all state under the instance lock.
+     *
+     * @return list<array{instanceId: string, executionId: string, version: int}>
+     */
+    public function pendingProgressions(?string $after, int $limit): array
+    {
+        $parameters = ['running' => ApprovalInstanceStatus::Running->value, 'completed' => ApprovalNodeExecutionStatus::Completed->value, 'limit' => $limit];
+        $cursor = '';
+        if ($after !== null) {
+            $cursor = ' AND i.id > :after';
+            $parameters['after'] = Uuid::fromHexToBytes($after);
+        }
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT i.id, i.aggregate_version, e.id AS execution_id
+             FROM approval_flow_instance i INNER JOIN approval_flow_execution e ON e.instance_id = i.id
+             WHERE i.status = :running AND e.status = :completed AND e.approval_policy IS NOT NULL AND e.outcome IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM approval_flow_execution later WHERE later.instance_id = i.id AND later.`sequence` > e.`sequence`)' .
+               $cursor . '
+             ORDER BY i.id LIMIT :limit',
+            $parameters,
+            ['limit' => ParameterType::INTEGER],
+        );
+        $pending = [];
+        foreach ($rows as $row) {
+            $pending[] = ['instanceId' => Uuid::fromBytesToHex($row['id']), 'executionId' => Uuid::fromBytesToHex($row['execution_id']), 'version' => (int) $row['aggregate_version']];
+        }
+
+        return $pending;
     }
 
     public function start(string $instanceId, string $commandId, int $expectedVersion, string $actorJson, Context $context): ApprovalInstanceCommandResult
@@ -118,7 +156,8 @@ class ApprovalInstanceStore
 
     public function enterStart(string $instanceId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $requestHash = Hasher::hash(['operation' => self::ENTER_START, 'expectedVersion' => $expectedVersion], 'sha256');
+        $actorJson = $this->actorJson($context);
+        $requestHash = Hasher::hash(['operation' => self::ENTER_START, 'expectedVersion' => $expectedVersion, 'actorJson' => $actorJson], 'sha256');
 
         return $this->runCommand(
             $instanceId,
@@ -127,7 +166,7 @@ class ApprovalInstanceStore
             self::ENTER_START,
             $requestHash,
             'Enter the published start node.',
-            self::SYSTEM_ACTOR_JSON,
+            $actorJson,
             $context,
             function (string $releaseId) use ($instanceId, $context): ApprovalInstanceStatus {
                 $started = $this->connection->fetchOne(
@@ -166,7 +205,8 @@ class ApprovalInstanceStore
 
     public function enterApproval(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $requestHash = Hasher::hash(['operation' => self::ENTER_APPROVAL, 'expectedVersion' => $expectedVersion, 'executionId' => $executionId], 'sha256');
+        $actorJson = $this->actorJson($context);
+        $requestHash = Hasher::hash(['operation' => self::ENTER_APPROVAL, 'expectedVersion' => $expectedVersion, 'executionId' => $executionId, 'actorJson' => $actorJson], 'sha256');
 
         return $this->runCommand(
             $instanceId,
@@ -175,7 +215,7 @@ class ApprovalInstanceStore
             self::ENTER_APPROVAL,
             $requestHash,
             'Create tasks for node execution ' . $executionId . '.',
-            self::SYSTEM_ACTOR_JSON,
+            $actorJson,
             $context,
             function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus {
                 $nodeId = $this->waitingNode($instanceId, $executionId);
@@ -222,7 +262,8 @@ class ApprovalInstanceStore
 
     public function advanceApproval(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $requestHash = Hasher::hash(['operation' => self::ADVANCE_APPROVAL, 'executionId' => $executionId, 'expectedVersion' => $expectedVersion], 'sha256');
+        $actorJson = $this->actorJson($context);
+        $requestHash = Hasher::hash(['operation' => self::ADVANCE_APPROVAL, 'executionId' => $executionId, 'expectedVersion' => $expectedVersion, 'actorJson' => $actorJson], 'sha256');
 
         return $this->runCommand(
             $instanceId,
@@ -231,15 +272,10 @@ class ApprovalInstanceStore
             self::ADVANCE_APPROVAL,
             $requestHash,
             'Advance completed approval ' . $executionId . '.',
-            self::SYSTEM_ACTOR_JSON,
+            $actorJson,
             $context,
             function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus|ApprovalOutcome {
-                $execution = $this->lockExecution($instanceId, $executionId);
-                if (ApprovalNodeExecutionStatus::from($execution['status']) !== ApprovalNodeExecutionStatus::Completed || $execution['approval_policy'] === null || $execution['outcome'] === null) {
-                    throw ApprovalFlowException::invalidNodeProgression($executionId, 'A completed approval group and its frozen outcome are required.');
-                }
-                $this->requireSerialTail($instanceId, $executionId);
-                $this->requireSettledWork($instanceId, $executionId);
+                $execution = $this->completedApproval($instanceId, $executionId);
                 $outcome = ApprovalOutcome::from($execution['outcome']);
                 if ($outcome === ApprovalOutcome::Rejected) {
                     return $outcome;
@@ -262,9 +298,36 @@ class ApprovalInstanceStore
         );
     }
 
+    public function progress(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
+    {
+        $actorJson = $this->actorJson($context);
+        $requestHash = Hasher::hash(['operation' => self::PROGRESS, 'executionId' => $executionId, 'expectedVersion' => $expectedVersion, 'actorJson' => $actorJson], 'sha256');
+
+        return $this->runCommand(
+            $instanceId,
+            $commandId,
+            $expectedVersion,
+            self::PROGRESS,
+            $requestHash,
+            'Progress completed approval ' . $executionId . ' to its next wait or end boundary.',
+            $actorJson,
+            $context,
+            function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus|ApprovalOutcome {
+                $execution = $this->completedApproval($instanceId, $executionId);
+                if (ApprovalOutcome::from($execution['outcome']) === ApprovalOutcome::Rejected) {
+                    return ApprovalOutcome::Rejected;
+                }
+                $route = $this->nodeEntry->enterSuccessors($releaseId, $execution['node_id']);
+
+                return $this->saveSerialRoute($instanceId, $route, $execution['sequence'] + 1, $context);
+            },
+        );
+    }
+
     public function enterEnd(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $requestHash = Hasher::hash(['operation' => self::ENTER_END, 'executionId' => $executionId, 'expectedVersion' => $expectedVersion], 'sha256');
+        $actorJson = $this->actorJson($context);
+        $requestHash = Hasher::hash(['operation' => self::ENTER_END, 'executionId' => $executionId, 'expectedVersion' => $expectedVersion, 'actorJson' => $actorJson], 'sha256');
 
         return $this->runCommand(
             $instanceId,
@@ -273,7 +336,7 @@ class ApprovalInstanceStore
             self::ENTER_END,
             $requestHash,
             'Enter the published end at execution ' . $executionId . '.',
-            self::SYSTEM_ACTOR_JSON,
+            $actorJson,
             $context,
             function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalOutcome {
                 $execution = $this->lockExecution($instanceId, $executionId);
@@ -347,44 +410,83 @@ class ApprovalInstanceStore
         }
     }
 
+    private function actorJson(Context $context): string
+    {
+        $source = $context->getSource();
+        $actor = match (true) {
+            $source instanceof AdminApiSource => ['source' => 'admin-api', 'userId' => $source->getUserId(), 'integrationId' => $source->getIntegrationId()],
+            $source instanceof SystemSource => ['source' => 'system'],
+            default => ['source' => $source::class],
+        };
+
+        return json_encode($actor, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+    }
+
     private function startApprovalRoute(string $instanceId, string $releaseId, Context $context): ApprovalInstanceStatus
     {
-        $route = $this->nodeEntry->enterStart($releaseId);
-        $executions = [[
+        $start = $this->nodeEntry->enterStart($releaseId);
+        $route = $this->nodeEntry->enterSuccessors($releaseId, $start['startNodeId']);
+        if (!$route['effect'] instanceof RequestApprovalEffect) {
+            throw ApprovalFlowException::invalidGraphPlan('The initial route must reach an approval node before completing.');
+        }
+        $this->saveSerialRoute($instanceId, $route, self::START_SEQUENCE + 1, $context, [[
             'id' => Uuid::randomHex(),
             'instanceId' => $instanceId,
-            'nodeId' => $route['startNodeId'],
+            'nodeId' => $start['startNodeId'],
             'sequence' => self::START_SEQUENCE,
             'status' => ApprovalNodeExecutionStatus::Completed->value,
-        ]];
-        $sequence = self::START_SEQUENCE + 1;
-        // The verified release is acyclic; every supported edge selects one successor without a join.
-        while (true) {
-            $executionId = Uuid::randomHex();
-            $effect = $this->nodeEntry->enter($releaseId, $route['nextNodeId']);
+        ]]);
+
+        return ApprovalInstanceStatus::Running;
+    }
+
+    /**
+     * @param EnteredSerialRoute $route
+     * @param list<array<string, mixed>> $executions
+     */
+    private function saveSerialRoute(string $instanceId, array $route, int $sequence, Context $context, array $executions = []): ApprovalInstanceStatus|ApprovalOutcome
+    {
+        $effect = $route['effect'];
+        $last = array_key_last($route['nodes']);
+        $boundaryExecutionId = Uuid::randomHex();
+        foreach ($route['nodes'] as $index => $node) {
+            $executionId = $index === $last ? $boundaryExecutionId : Uuid::randomHex();
             $executions[] = [
                 'id' => $executionId,
                 'instanceId' => $instanceId,
-                'nodeId' => $route['nextNodeId'],
-                'incomingConnectionId' => $route['connectionId'],
+                'nodeId' => $node['nodeId'],
+                'incomingConnectionId' => $node['connectionId'],
                 'sequence' => $sequence,
-                'status' => $effect instanceof AdvanceEffect ? ApprovalNodeExecutionStatus::Completed->value : ApprovalNodeExecutionStatus::Waiting->value,
+                'status' => $index === $last && $effect instanceof RequestApprovalEffect ? ApprovalNodeExecutionStatus::Waiting->value : ApprovalNodeExecutionStatus::Completed->value,
+                'outcome' => $index === $last && $effect instanceof CompleteEffect ? $effect->outcome->value : null,
             ];
-            if ($effect instanceof RequestApprovalEffect) {
-                $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
-                $this->writeGuard->write($context, function (Context $writeContext) use ($executions): void {
-                    $this->executions->create($executions, $writeContext);
-                });
-                $this->createApprovalTasks($executionId, $assignees, ApprovalPolicy::from($effect->configuration->policy), $context);
-
-                return ApprovalInstanceStatus::Running;
-            }
-            if (!$effect instanceof AdvanceEffect) {
-                throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The initial route must reach an approval node before completing.');
-            }
-            $route = $this->nodeEntry->successor($releaseId, $route['nextNodeId']);
             ++$sequence;
         }
+        $this->writeGuard->write($context, function (Context $writeContext) use ($executions): void {
+            $this->executions->create($executions, $writeContext);
+        });
+        if ($effect instanceof CompleteEffect) {
+            return $effect->outcome;
+        }
+        $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
+        $this->createApprovalTasks($boundaryExecutionId, $assignees, ApprovalPolicy::from($effect->configuration->policy), $context);
+
+        return ApprovalInstanceStatus::Running;
+    }
+
+    /**
+     * @return array{node_id: string, status: string, sequence: int, approval_policy: string, outcome: string}
+     */
+    private function completedApproval(string $instanceId, string $executionId): array
+    {
+        $execution = $this->lockExecution($instanceId, $executionId);
+        if (ApprovalNodeExecutionStatus::from($execution['status']) !== ApprovalNodeExecutionStatus::Completed || $execution['approval_policy'] === null || $execution['outcome'] === null) {
+            throw ApprovalFlowException::invalidNodeProgression($executionId, 'A completed approval group and its frozen outcome are required.');
+        }
+        $this->requireSerialTail($instanceId, $executionId);
+        $this->requireSettledWork($instanceId, $executionId);
+
+        return $execution;
     }
 
     private function waitingNode(string $instanceId, string $executionId): string

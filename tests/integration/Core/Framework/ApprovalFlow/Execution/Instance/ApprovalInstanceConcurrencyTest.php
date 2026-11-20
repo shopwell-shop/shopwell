@@ -166,7 +166,7 @@ class ApprovalInstanceConcurrencyTest extends TestCase
     }
 
     #[DataProvider('progressionCommands')]
-    public function testConcurrentProgressionUsesTheCommittedTailAndTerminalReceipt(bool $end, bool $sameCommand): void
+    public function testConcurrentProgressionUsesTheCommittedTailAndTerminalReceipt(bool $end, bool $sameCommand, bool $serial = false): void
     {
         $kernel = static::getContainer();
         $connection = $kernel->get(Connection::class);
@@ -203,7 +203,7 @@ class ApprovalInstanceConcurrencyTest extends TestCase
         $input = new InputStream();
         $writer = new Process([
             \PHP_BINARY, '-d', 'xdebug.mode=off', __DIR__ . '/_fixtures/competing-progression.php',
-            $instanceId, $executionId, $sameCommand ? $commandId : Uuid::randomHex(), $manifest, $end ? 'end' : 'advance', (string) $version,
+            $instanceId, $executionId, $sameCommand ? $commandId : Uuid::randomHex(), $manifest, $serial ? 'progress' : ($end ? 'end' : 'advance'), (string) $version,
         ]);
         $writer->setInput($input);
         $writer->setTimeout(30);
@@ -212,7 +212,9 @@ class ApprovalInstanceConcurrencyTest extends TestCase
             $writer->start();
             $this->waitFor($writer, 'SNAPSHOT:running');
             $connection->beginTransaction();
-            if ($end) {
+            if ($serial) {
+                $service->progress($instanceId, $executionId, $commandId, $version, $context);
+            } elseif ($end) {
                 $service->enterEnd($instanceId, $executionId, $commandId, $version, $context);
             } else {
                 $service->advanceApproval($instanceId, $executionId, $commandId, $version, $context);
@@ -224,7 +226,7 @@ class ApprovalInstanceConcurrencyTest extends TestCase
             $input->close();
 
             static::assertSame(0, $writer->wait(), $writer->getErrorOutput());
-            $expected = $end ? 'RECEIPT:completed:approved:6' : 'RECEIPT:running:none:5';
+            $expected = $serial ? 'RECEIPT:completed:approved:5' : ($end ? 'RECEIPT:completed:approved:6' : 'RECEIPT:running:none:5');
             static::assertStringContainsString($sameCommand ? $expected : 'GUARDED', $writer->getOutput());
             static::assertSame(3, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_execution WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($instanceId)]));
             static::assertSame($version, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_operation WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($instanceId)]));
@@ -253,6 +255,8 @@ class ApprovalInstanceConcurrencyTest extends TestCase
 
     public static function progressionCommands(): iterable
     {
+        yield 'concurrent serial progression replays its terminal receipt' => [false, true, true];
+        yield 'another serial command cannot duplicate completion' => [false, false, true];
         yield 'concurrent advancement replays the committed receipt' => [false, true];
         yield 'a fresh command cannot duplicate the committed successor' => [false, false];
         yield 'concurrent end replays the committed outcome' => [true, true];

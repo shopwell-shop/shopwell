@@ -3,7 +3,8 @@
 Approval Flow is an independent approval module in the existing Core host.
 Its first integration is payment transfer approval.
 The current skeleton includes node and approval business type declarations, versioned drafts, immutable compilation releases, verified node entry, internal serial approval commands and terminal result delivery work.
-Business submission and automatic scheduling remain subsequent increments.
+Payment transfer submission now starts the initial approval tasks; committed group outcomes are advanced by the host scheduler.
+Business result delivery and payout execution remain subsequent increments.
 
 ## Skeleton responsibilities
 
@@ -379,8 +380,11 @@ A new suspension requires the expected aggregate version and `running` status.
 It changes the instance to `suspended`, increments the version once and inserts an immutable operation record in the same transaction.
 The operation records both versions and statuses, actor, reason and request hash, serving as this command's audit and retry receipt.
 
-`ApprovalInstanceService::enterStart(instanceId, commandId, expectedVersion, Context)` uses the same lock, version and receipt checks for system commands.
-It takes the start node from the instance's verified release and validates the exact executor's effect.
+`ApprovalInstanceService::enterStart(instanceId, commandId, expectedVersion, Context)` uses the same lock, version and receipt checks for internal progression.
+Internal start, approval entry, progression and end commands retain the supplied Context and leave authorization to their actual entry point, like OrderTransactionStateHandler.
+They do not require a SystemSource or repeat ID validation already performed by UUID conversion.
+Their audit and request hash retain the caller source and Administration identity.
+Start entry takes the start node from the instance's verified release and validates the exact executor's effect.
 Start entry requires one outgoing connection whose successor has no other incoming connection.
 It inserts a completed start and a waiting successor into `approval_flow_execution`, advances the instance version, and saves the operation receipt in one transaction.
 The waiting record identifies the node and incoming connection for later execution.
@@ -408,7 +412,7 @@ Once a group reaches an outcome, its pending tasks are cancelled and the executi
 Each changed task records its `completionCommandId`, linking the decision or cancellation to the same transaction's immutable operation receipt and actor.
 Decision notes may be empty and are retained verbatim.
 
-`ApprovalInstanceService::advanceApproval(instanceId, executionId, commandId, expectedVersion, Context)` is a system-only progression command.
+`ApprovalInstanceService::advanceApproval(instanceId, executionId, commandId, expectedVersion, Context)` is an internal progression command.
 It requires a completed approval group with a frozen policy and outcome at the current serial execution tail.
 All other executions must be completed and no task may remain pending.
 An approved group queues the verified release's single unconditional successor, whose node must have no other incoming connection.
@@ -416,13 +420,13 @@ The approval executor is not entered again.
 The committed successor becomes the new tail, preventing a fresh command from expanding the same approval twice.
 A rejected group completes the instance as `completed` with `outcome=rejected`, without entering the approved path or requiring deployment artifacts again.
 
-`ApprovalInstanceService::enterEnd(instanceId, executionId, commandId, expectedVersion, Context)` is a system-only command for a waiting execution at the serial tail.
+`ApprovalInstanceService::enterEnd(instanceId, executionId, commandId, expectedVersion, Context)` is an internal command for a waiting execution at the serial tail.
 Only the verified release's end boundary may complete through this command.
 The runtime verifies its frozen `CompleteEffect` and checks that no other execution or pending task remains active.
 It completes the end execution and commits the instance's `completed` status, outcome, version and immutable receipt together.
 The instance and receipt store `ApprovalOutcome` separately from lifecycle status.
 Retries return that receipt's original outcome, including a null outcome from an earlier nonterminal command.
-These commands perform one explicit step per call; no background scheduler is installed by this increment.
+These commands remain available for individual internal steps; the scheduled progression path below advances a completed group to its next approval or end boundary.
 Branch selection, fan-out and joins remain unsupported and cannot be collapsed into an arbitrary single successor.
 
 `ApprovalInstanceWriteGuard::write()` scopes each DAL batch to system scope on the original Context and grants one pending write permit.
@@ -439,8 +443,8 @@ No activation, resume, termination, decision or query endpoint is installed.
 Runtime command tests also seed execution facts explicitly to exercise their commit boundaries independently.
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Progression and decision commands check the instance's running status under the same lock.
-The personal group decision completes only that node execution; system progression separately schedules its successor or commits the rejection outcome.
-Dynamic assignee sources, the empty-assignee skip policy, task queries, automatic scheduling and business result delivery remain subsequent increments.
+The personal group decision completes only that node execution; scheduled progression separately enters its successors or commits the rejection outcome.
+Dynamic assignee sources, the empty-assignee skip policy, task queries and business result delivery remain subsequent increments.
 
 ## Terminal results and delivery work
 
@@ -558,8 +562,31 @@ Payment calls this operation inside its submission transaction, so a failed firs
 A repeated start returns its original receipt before current instance state or deployment verification, even after later suspension or missing deployment artifacts.
 It does not recreate tasks, re-enter plugin executors or switch to a newer active binding.
 An in-memory per-instance command guard rejects recursive commands from DAL events; database row locks serialize independent processes.
-Tests exercise two tagged advance-only plugin nodes before the first approval and the existing personal decision command against a generated task.
-The current traversal reloads and verifies the frozen release at each node operation; large-graph performance has not been measured.
+Tests exercise tagged advance-only plugin nodes before and after the first approval, a personal decision against a generated task and terminal result creation.
+Initial start verifies the release once for start entry and once for the complete successor route; later progression verifies it once for the route.
+There is no cross-command admission cache; large-graph performance has not been measured.
 
 This is still an internal integration path without Administration pages, business result delivery or payout execution.
 Entry-point resource authorization remains the responsibility of the future action endpoint, as with the existing business-owned paths.
+
+## Scheduled serial progression
+
+`ApprovalInstanceService::progress(instanceId, executionId, commandId, expectedVersion, Context)` advances a completed approval group under the existing instance lock.
+After approval it enters the single unconditional route, completing pure advance nodes and stopping at the next approval or the published end boundary.
+The route is loaded and verified once per call; plugin executors remain pure and cannot perform external effects.
+Only the published end may return a terminal completion along this path.
+A rejection completes the instance without requiring deployment artifacts or entering the approved route.
+Executions, new tasks, the instance version, receipt and any terminal result/outbox record commit in one transaction.
+A failed progression rolls back that transaction and preserves the earlier personal decisions for retry.
+
+`ApprovalProgressionRunner` scans running instances whose latest execution is a completed approval group with a frozen outcome.
+The host task `approval_flow.progress` runs every minute and uses the completed execution ID as its command ID.
+Candidates are read in pages of 100 ordered by instance ID; each command rechecks current facts under its instance lock.
+A failed candidate is logged and does not prevent later pages from running; subsequent task runs retry it from current storage.
+Concurrent stale candidates lose through the existing version or terminal-state checks instead of creating duplicate work.
+No new queue table is needed: the committed approval group is the durable continuation point.
+
+Deployments must register scheduled tasks with `bin/console scheduled-task:register` and run the normal scheduled-task runner and Messenger worker.
+Tests cover host task discovery, registered handler execution, repeat runs, suspended instances, failure recovery, 101 candidates across pages and competing processes.
+Actual broker delivery, multi-worker throughput and latency have not been measured.
+This task advances serial approval work only; it does not deliver business results or execute transfers.

@@ -31,7 +31,6 @@ class ApprovalFlowException extends HttpException
     public const INVALID_APPROVAL_ENTRY = 'APPROVAL_FLOW__INVALID_APPROVAL_ENTRY';
     public const ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__ASSIGNEE_UNAVAILABLE';
     public const EMPTY_APPROVAL_ASSIGNEES = 'APPROVAL_FLOW__EMPTY_APPROVAL_ASSIGNEES';
-    public const INVALID_EXECUTION_ID = 'APPROVAL_FLOW__INVALID_EXECUTION_ID';
     public const TASK_NOT_FOUND = 'APPROVAL_FLOW__TASK_NOT_FOUND';
     public const TASK_NOT_PENDING = 'APPROVAL_FLOW__TASK_NOT_PENDING';
     public const TASK_ASSIGNEE_REQUIRED = 'APPROVAL_FLOW__TASK_ASSIGNEE_REQUIRED';
@@ -328,16 +327,6 @@ class ApprovalFlowException extends HttpException
             self::EXECUTION_NOT_FOUND,
             'Node execution "{{ executionId }}" was not found on approval instance "{{ instanceId }}".',
             ['executionId' => $executionId, 'instanceId' => $instanceId]
-        );
-    }
-
-    public static function invalidExecutionId(string $executionId): self
-    {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::INVALID_EXECUTION_ID,
-            'Node execution ID "{{ executionId }}" is invalid.',
-            ['executionId' => $executionId]
         );
     }
 

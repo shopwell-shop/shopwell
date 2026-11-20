@@ -19,6 +19,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftStore;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalProgressionRunner;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffectValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
@@ -61,6 +62,8 @@ use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestStore;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultOutbox;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
+use Shopwell\Core\Framework\ApprovalFlow\ScheduledTask\ProgressApprovalFlowsTask;
+use Shopwell\Core\Framework\ApprovalFlow\ScheduledTask\ProgressApprovalFlowsTaskHandler;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -70,6 +73,14 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
+
+    $services->set(ApprovalProgressionRunner::class)->args([
+        service(ApprovalInstanceStore::class), service(ApprovalInstanceService::class), service('logger'),
+    ]);
+    $services->set(ProgressApprovalFlowsTask::class)->tag('shopwell.scheduled.task');
+    $services->set(ProgressApprovalFlowsTaskHandler::class)
+        ->args([service('scheduled_task.repository'), service('logger'), service(ApprovalProgressionRunner::class)])
+        ->tag('messenger.message_handler');
 
     $services->set(ApprovalRequestDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalRequestStore::class)->args([

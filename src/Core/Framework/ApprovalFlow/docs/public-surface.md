@@ -139,7 +139,8 @@ Loading a persisted release requires exact agreement with a fresh compilation of
 Only the selected node's typed configuration is restored, verified against its frozen output and immediately handed to its exact executor.
 No configuration collection escapes for later mutation, and no caller-supplied object grants execution authority.
 The declaration and compiled-rule checks validate the returned effect, which remains uncommitted and cannot authorize instance state or business side effects.
-Whole-release verification runs for each call without a cache; performance and command-scoped admission will need verification with the future runtime.
+Whole-release verification runs for each entry call without a cross-command cache.
+The internal serial route operation verifies once before traversing its successors; large-graph performance remains unmeasured.
 
 Integration tests cover every changed frozen document, changed deployment bytes, missing releases and independence from later draft edits.
 Actual DI assemblies exercise core and independently tagged business nodes, missing exact executor versions, missing artifact bindings, whole-release failure before entry and compiler drift during configuration restoration.
@@ -151,8 +152,10 @@ The extraction retains the existing configuration validation, error causes, JSON
 The six representable statuses do not imply that all transitions have been implemented.
 `ApprovalInstanceService`, `ApprovalInstanceStore`, `ApprovalInstanceWriteGuard` and `ApprovalInstanceCommandResult` are internal; they add no plugin runtime or arbitrary mutation contract.
 Administrative suspension changes a running instance to suspended and requires `approval_flow_instance:manage` and a reason.
-Start entry is a system-only command for an existing running instance.
-It verifies the instance's bound release and records the start as completed and its single successor as waiting.
+Start entry is an internal command for an existing running instance.
+Start, approval entry, progression and end commands leave authorization to the actual entry point, preserve the original Context and record its actor in both audit and request hash.
+They do not impose a SystemSource whitelist.
+Start entry verifies the instance's bound release and records the start as completed and its single successor as waiting.
 Approval entry takes an execution identity, verifies that the execution belongs to the running instance, and requires a frozen approval effect.
 It stores pending task records for the fixed active assignees and moves the execution to awaiting approval.
 Its single, all or any policy is frozen on that execution using `ApprovalPolicy`.
@@ -164,15 +167,16 @@ The command records the vote and evaluates the frozen group policy.
 An agreement completes single/any approval; all approval waits for all votes; a rejection vetoes every policy.
 Completing a group records the execution outcome and cancels remaining pending tasks in the same transaction as its instance version and receipt.
 The task's `completionCommandId` links both personal decisions and cancellations to the original actor and reason.
-System-only `advanceApproval` requires a completed approval group at the serial execution tail, with no other active execution or pending task.
+Internal `advanceApproval` requires a completed approval group at the serial execution tail, with no other active execution or pending task.
 It queues one unconditional successor from the verified release after approval, and commits `completed/rejected` directly after veto.
 The committed successor prevents another command from expanding the same execution twice.
-System-only `enterEnd` accepts the waiting published end boundary at the tail and verifies its frozen completion effect before committing the execution and instance outcome.
+Internal `enterEnd` accepts the waiting published end boundary at the tail and verifies its frozen completion effect before committing the execution and instance outcome.
 Both instance and receipt DAL models retain the optional `ApprovalOutcome`, distinct from lifecycle status.
 Receipt replay preserves the original outcome even when the instance has since completed.
 These commands require an expected aggregate version and a command identity.
 They preserve the original Context, serialize writes with the instance row lock and atomically retain the original response and audit in `approval_flow_operation`.
-Receipts are reauthorized on every retry and bound to their original actor and payload.
+Personal decisions and suspension recheck their authorization before receipt replay; internal progression retains its entry-point authorization boundary.
+Receipts are bound to their original actor and payload.
 
 The DAL/Sync write guard rejects generic writes to instances, operations, executions and tasks.
 The controlled path updates instance status, outcome and version and inserts immutable receipts, node execution records and pending tasks.
@@ -181,7 +185,11 @@ Each batch receives a one-use write permit which is consumed before ordinary DAL
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
 An internal business admission path creates draft instances and starts them through the original initiator; there is no activation endpoint or public command/query route.
-Automatic scheduling, branch/join execution and timers require their own contracts.
+The internal `approval_flow.progress` scheduled task scans completed approval groups and calls `progress` to enter the next serial approval or published end.
+It uses keyset pages of 100, retries failed continuations on subsequent runs and preserves already committed personal votes.
+Its runner and task services introduce no public PHP extension contract, HTTP route or additional service tag.
+Deployments require normal scheduled-task registration, the task runner and Messenger worker.
+Branch/join execution and timers require their own contracts.
 The decision command adds no public endpoint, external result delivery or business execution authority.
 
 ## Terminal result boundary
@@ -216,7 +224,8 @@ An active binding is a saved selection, not proof of business permission, curren
 Draft, release and binding services leave transport ACL to their actual entry points and retain normal DAL authorization for entity writes.
 The binding head is an internal coordination row owned by the store; activation is not a public API or a DAL head-update permission.
 They do not classify Context sources for ordinary configuration reads or writes.
-Personal task decisions, task ownership, management operations and system-only progression/delivery keep their existing business authorization.
+Personal task decisions, task ownership and management operations keep their existing business authorization.
+Internal progression leaves authorization to its actual entry point; result delivery retains its existing system-only lease boundary.
 The binding and instance write guards use explicit WeakMap methods so object-key handling does not depend on an editor recognizing array-access syntax.
 
 ## Binding validation event

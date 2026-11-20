@@ -7,7 +7,6 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
-use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
@@ -23,6 +22,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Framework\Uuid\UuidException;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\ApprovalRuntimeFixture;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\InstanceFixture;
@@ -284,24 +284,35 @@ class ApprovalCompletionTest extends TestCase
         }
     }
 
-    #[DataProvider('systemCommands')]
-    public function testAdministrationPrivilegesCannotRunSystemProgression(bool $end): void
+    #[DataProvider('progressionCommands')]
+    public function testInternalProgressionRecordsTheCallingAdministrator(bool $end): void
     {
-        $source = new AdminApiSource($this->userId);
-        $source->setIsAdmin(true);
-        $this->expectException(MissingPrivilegeException::class);
+        $executionId = $this->completeApproval(ApprovalOutcome::Approved);
+        $version = 4;
+        if ($end) {
+            $this->service->advanceApproval($this->instanceId, $executionId, Uuid::randomHex(), 4, Context::createDefaultContext());
+            $executionId = Uuid::fromBytesToHex($this->executions()[2]['id']);
+            $version = 5;
+        }
+        $context = Context::createDefaultContext(new AdminApiSource($this->userId));
+        $commandId = Uuid::randomHex();
 
         if ($end) {
-            $this->service->enterEnd('invalid', 'invalid', 'invalid', 0, Context::createDefaultContext($source));
+            $this->service->enterEnd($this->instanceId, $executionId, $commandId, $version, $context);
         } else {
-            $this->service->advanceApproval('invalid', 'invalid', 'invalid', 0, Context::createDefaultContext($source));
+            $this->service->advanceApproval($this->instanceId, $executionId, $commandId, $version, $context);
         }
+
+        $actor = $this->connection->fetchOne('SELECT actor_json FROM approval_flow_operation WHERE command_id = :id', ['id' => Uuid::fromHexToBytes($commandId)]);
+        static::assertIsString($actor);
+        static::assertSame(['source' => 'admin-api', 'userId' => $this->userId, 'integrationId' => null], json_decode($actor, associative: true, flags: \JSON_THROW_ON_ERROR));
+        static::assertSame(Context::USER_SCOPE, $context->getScope());
     }
 
-    #[DataProvider('systemCommands')]
+    #[DataProvider('progressionCommands')]
     public function testInvalidExecutionIdentityIsRejected(bool $end): void
     {
-        $this->expectExceptionObject(ApprovalFlowException::invalidExecutionId('invalid'));
+        $this->expectExceptionObject(UuidException::invalidUuid('invalid'));
 
         if ($end) {
             $this->service->enterEnd($this->instanceId, 'invalid', Uuid::randomHex(), 1, Context::createDefaultContext());
@@ -310,7 +321,7 @@ class ApprovalCompletionTest extends TestCase
         }
     }
 
-    public static function systemCommands(): iterable
+    public static function progressionCommands(): iterable
     {
         yield 'advance approval' => [false];
         yield 'enter end' => [true];

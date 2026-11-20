@@ -19,6 +19,9 @@ $runtime = ApprovalRuntimeFixture::container($kernel, $manifest);
 $service = $runtime->get(ApprovalInstanceService::class);
 $context = Context::createDefaultContext();
 $execute = static function (int $expectedVersion) use ($service, $instanceId, $executionId, $commandId, $context, $stage): ApprovalInstanceCommandResult {
+    if ($stage === 'progress') {
+        return $service->progress($instanceId, $executionId, $commandId, $expectedVersion, $context);
+    }
     if ($stage === 'end') {
         return $service->enterEnd($instanceId, $executionId, $commandId, $expectedVersion, $context);
     }
@@ -53,7 +56,7 @@ try {
             $execute((int) $version + 1);
             throw new RuntimeException('A new command expanded or completed the execution twice.');
         } catch (ApprovalFlowException $exception) {
-            $expected = $stage === 'end' ? ApprovalFlowException::INVALID_INSTANCE_TRANSITION : ApprovalFlowException::INVALID_NODE_PROGRESSION;
+            $expected = ($stage === 'end' || $stage === 'progress') ? ApprovalFlowException::INVALID_INSTANCE_TRANSITION : ApprovalFlowException::INVALID_NODE_PROGRESSION;
             if ($exception->getErrorCode() !== $expected) {
                 throw $exception;
             }

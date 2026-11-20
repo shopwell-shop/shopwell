@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * Authorizes personal decisions and system progression for an admitted instance.
+ * Authorizes personal decisions and delegates internal progression with the caller's Context.
  *
  * @internal
  *
@@ -20,6 +20,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  *
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceServiceTest
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalCompletionTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalSerialProgressionTest
  */
 #[Package('framework')]
 class ApprovalInstanceService
@@ -34,18 +35,11 @@ class ApprovalInstanceService
 
     public function enterStart(string $instanceId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
-
         return $this->store->enterStart($instanceId, $commandId, $expectedVersion, $context);
     }
 
     public function enterApproval(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
-        if (!Uuid::isValid($executionId)) {
-            throw ApprovalFlowException::invalidExecutionId($executionId);
-        }
-
         return $this->store->enterApproval($instanceId, $executionId, $commandId, $expectedVersion, $context);
     }
 
@@ -68,21 +62,16 @@ class ApprovalInstanceService
 
     public function advanceApproval(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
-        if (!Uuid::isValid($executionId)) {
-            throw ApprovalFlowException::invalidExecutionId($executionId);
-        }
-
         return $this->store->advanceApproval($instanceId, $executionId, $commandId, $expectedVersion, $context);
+    }
+
+    public function progress(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
+    {
+        return $this->store->progress($instanceId, $executionId, $commandId, $expectedVersion, $context);
     }
 
     public function enterEnd(string $instanceId, string $executionId, string $commandId, int $expectedVersion, Context $context): ApprovalInstanceCommandResult
     {
-        $this->validateSystemCommand($instanceId, $commandId, $expectedVersion, $context);
-        if (!Uuid::isValid($executionId)) {
-            throw ApprovalFlowException::invalidExecutionId($executionId);
-        }
-
         return $this->store->enterEnd($instanceId, $executionId, $commandId, $expectedVersion, $context);
     }
 
@@ -98,15 +87,5 @@ class ApprovalInstanceService
         $actorJson = json_encode(['source' => 'admin-api', 'userId' => $source->getUserId(), 'integrationId' => null], \JSON_THROW_ON_ERROR);
 
         return $this->store->decide($instanceId, $taskId, $commandId, $expectedVersion, $outcome, $reason, $source->getUserId(), $actorJson, $context);
-    }
-
-    private function validateSystemCommand(string $instanceId, string $commandId, int $expectedVersion, Context $context): void
-    {
-        if (!$context->getSource() instanceof SystemSource) {
-            throw ApprovalFlowException::missingPrivileges(['system']);
-        }
-        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($commandId)) {
-            throw ApprovalFlowException::invalidInstanceCommand('A positive aggregate version and valid instance and command IDs are required.');
-        }
     }
 }
