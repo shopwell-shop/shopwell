@@ -46,6 +46,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultHandler;
 use Shopwell\Core\Framework\ContentSystem\Adapter\AbstractSpecificationSource;
 use Shopwell\Core\Framework\ContentSystem\Binding\Loader\AbstractContentSystemBindingSpecificationLoader;
 use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\AbstractContentDataLoader;
@@ -112,6 +113,7 @@ return [
             'approval_flow.business_type_loader' => ApprovalBusinessTypeLoader::class,
             'approval_flow.node_compiler' => NodeCompiler::class,
             'approval_flow.node_executor' => NodeExecutor::class,
+            'approval_flow.result_handler' => ApprovalResultHandler::class,
             'content_system.binding_specification_loader' => AbstractContentSystemBindingSpecificationLoader::class,
             'content_system.config_serializer' => AbstractContentDataLoaderConfigSerializer::class,
             'content_system.data_loader' => AbstractContentDataLoader::class,

@@ -10,6 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const RESULT_HANDLER_NOT_FOUND = 'APPROVAL_FLOW__RESULT_HANDLER_NOT_FOUND';
+    public const DUPLICATE_RESULT_HANDLER = 'APPROVAL_FLOW__DUPLICATE_RESULT_HANDLER';
+    public const RESULT_REQUEST_NOT_FOUND = 'APPROVAL_FLOW__RESULT_REQUEST_NOT_FOUND';
+
     public const REQUEST_NOT_FOUND = 'APPROVAL_FLOW__REQUEST_NOT_FOUND';
     public const INSTANCE_COMMAND_IN_PROGRESS = 'APPROVAL_FLOW__INSTANCE_COMMAND_IN_PROGRESS';
     public const REQUEST_ACTOR_REQUIRED = 'APPROVAL_FLOW__REQUEST_ACTOR_REQUIRED';
@@ -77,6 +81,21 @@ class ApprovalFlowException extends HttpException
     public const DUPLICATE_NODE_COMPILER = 'APPROVAL_FLOW__DUPLICATE_NODE_COMPILER';
     public const INVALID_NODE_COMPILER = 'APPROVAL_FLOW__INVALID_NODE_COMPILER';
     public const INVALID_NODE_CONFIGURATION = 'APPROVAL_FLOW__INVALID_NODE_CONFIGURATION';
+
+    public static function resultHandlerNotFound(string $type, string $version): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::RESULT_HANDLER_NOT_FOUND, 'No result handler is installed for approval business type "{{ type }}@{{ version }}".', ['type' => $type, 'version' => $version]);
+    }
+
+    public static function duplicateResultHandler(string $type, string $version, string $first, string $second): self
+    {
+        return new self(Response::HTTP_INTERNAL_SERVER_ERROR, self::DUPLICATE_RESULT_HANDLER, 'Result handlers "{{ first }}" and "{{ second }}" both handle "{{ type }}@{{ version }}".', ['type' => $type, 'version' => $version, 'first' => $first, 'second' => $second]);
+    }
+
+    public static function resultRequestNotFound(string $instanceId): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::RESULT_REQUEST_NOT_FOUND, 'The business request or binding for approval instance "{{ instanceId }}" is unavailable.', ['instanceId' => $instanceId]);
+    }
 
     public static function requestNotFound(string $requestId): self
     {

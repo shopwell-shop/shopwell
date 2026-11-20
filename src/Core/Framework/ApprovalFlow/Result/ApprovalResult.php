@@ -6,9 +6,7 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * Immutable core completion facts; business submission identity is not installed yet.
- *
- * @internal
+ * Immutable completion facts delivered with the original business request.
  *
  * @codeCoverageIgnore
  */

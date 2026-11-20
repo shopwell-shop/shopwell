@@ -60,8 +60,12 @@ use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestStore;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDispatcher;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultHandlerRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultOutbox;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
+use Shopwell\Core\Framework\ApprovalFlow\ScheduledTask\DeliverApprovalResultsTask;
+use Shopwell\Core\Framework\ApprovalFlow\ScheduledTask\DeliverApprovalResultsTaskHandler;
 use Shopwell\Core\Framework\ApprovalFlow\ScheduledTask\ProgressApprovalFlowsTask;
 use Shopwell\Core\Framework\ApprovalFlow\ScheduledTask\ProgressApprovalFlowsTaskHandler;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -110,6 +114,15 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalNodeExecutionDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalOperationDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalTaskDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(DeliverApprovalResultsTask::class)->tag('shopwell.scheduled.task');
+    $services->set(DeliverApprovalResultsTaskHandler::class)
+        ->args([service('scheduled_task.repository'), service('logger'), service(ApprovalResultDispatcher::class)])
+        ->tag('messenger.message_handler');
+    $services->set(ApprovalResultHandlerRegistry::class)->args([tagged_iterator('approval_flow.result_handler')]);
+    $services->set(ApprovalResultDispatcher::class)->args([
+        service(ApprovalResultOutbox::class), service('approval_flow_request.repository'), service('approval_flow_binding.repository'),
+        service(ApprovalResultHandlerRegistry::class), service('logger'),
+    ]);
     $services->set(ApprovalResultDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalResultStore::class)->args([
         service(Connection::class), service('approval_flow_result.repository'), service(ApprovalInstanceWriteGuard::class), service(ClockInterface::class),

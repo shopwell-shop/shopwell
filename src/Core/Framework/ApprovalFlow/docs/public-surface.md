@@ -35,7 +35,8 @@ The schema root and identity are checked on declaration construction; full schem
 Business type declarations do not establish service availability, artifact retention, business authorization or consumer routing.
 Source and label snippet are diagnostic and display metadata, independent of catalogue admission.
 The start-node configuration uses `businessType` for the namespaced business identity.
-There is no supported business adapter, access policy or result handler implementation interface yet.
+Business adapter and access policy implementation interfaces remain subsequent increments.
+The supported result handler contract is described under terminal results below.
 The diagnostic command `approval-flow:business-types` reads declarations only and fails before displaying an invalid partial catalogue.
 `YamlApprovalBusinessTypeLoader`, `ApprovalBusinessTypeSourceDirectory` and `ApprovalBusinessTypeListCommand` are internal adapters.
 Plugins implement the public loader contract instead of depending on these file or console adapters.
@@ -199,16 +200,24 @@ Terminal commands append that result and pending delivery work atomically with t
 Generic DAL/Sync writes cannot create, update or delete result facts.
 The raw `approval_flow_outbox` work table has no DAL model and is owned by the internal delivery adapter.
 
-`ApprovalResultStore`, `ApprovalResultOutbox`, `ApprovalResult` and `ApprovalResultDelivery` remain internal.
-The minimal snapshot contains the result ID, instance, release, command, aggregate version, outcome and UTC completion time.
-It does not yet provide the business identity, round, binding/form revisions or consumer principal required by the planned public business result contract.
-No supported handler registration or result event is introduced by this increment.
+`ApprovalResultStore`, `ApprovalResultOutbox`, `ApprovalResultDelivery`, `ApprovalResultDispatcher` and `ApprovalResultHandlerRegistry` remain internal.
+`ApprovalResult` is a supported immutable value containing the result ID, instance, release, command, aggregate version, outcome and UTC completion time.
+Business modules implement `ApprovalResultHandler` and register it with `approval_flow.result_handler` in their own DI; static analysis enforces the tag's interface contract.
+The exact type/version returned by the handler identifies its business contract and is matched against the request's frozen binding.
+Duplicate complete identities fail, and a newer handler cannot replace a missing exact version.
+`handle(ApprovalResult, ApprovalRequestEntity, Context)` receives the original request, including its business identity, submission round, business revision, binding and frozen read-only form.
+The handler must atomically commit its business change with stable result-ID deduplication before returning; it must perform no network operation under its business lock.
+The contract does not expose editable form revisions, remote consumer principals or retained artifact loading for result handlers.
 
 System-only delivery claims use independent committed transactions, skip locked work and retain the result ID across bounded retries.
 A live lease and matching attempt are required to acknowledge or reschedule work; old or expired workers cannot settle a new attempt.
 The adapter retains failed deliveries without changing the completed approval instance.
-There is no automatic worker or callback, and no consumer-free success path.
-Future external consumers must deduplicate by the result ID because the delivery contract is at least once.
+The internal `approval_flow.deliver_results` scheduled task invokes the dispatcher once per minute with a limit of 100 claimed deliveries.
+No matching request or exact handler means a retry, never an acknowledgement without a consumer.
+The dispatcher acknowledges only after the business handler returns; failed or expired confirmations do not count as delivered.
+Consumers must deduplicate by the result ID because the delivery contract is at least once.
+Payment supplies a real handler that saves an immutable decision for the original transfer request, with its revision check and deduplication under the transfer lock.
+That decision does not execute a payout or change the legacy Workflow integration.
 
 ## Internal business binding management
 
@@ -247,7 +256,8 @@ The shared binding service has no Payment dependency or financial rule.
 The `approval_flow_request` DAL model uses normal Definition/Entity/Collection contracts and retains the business identity, submission round and revision, selected immutable binding, instance, initiator and raw form JSON.
 Generic DAL and Sync writes are rejected; the request service owns creation together with a draft instance.
 Its dedicated write scope retains the original Context and DAL creation permissions.
-No public submission route, business adapter interface or consumer tag is introduced.
+There is no public submission route or business adapter interface.
+Result consumer registration is described under terminal results below.
 
 `ApprovalRequestService`, `ApprovalRequestStore` and the binding service's submission selection remain internal.
 They accept trusted business-generated data; callers own resource authorization, serialization of their business identity and atomic evidence freezing.

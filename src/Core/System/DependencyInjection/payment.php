@@ -120,6 +120,8 @@ use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultEntity;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultHandler;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferResubmissionSubscriber;
@@ -697,6 +699,10 @@ return static function (ContainerConfigurator $container): void {
     // it. They share the service as the only writer of the record and the resolver as the only way to
     // the credentials of the app
     $services->set(PaymentTransferApprovalEntity::class)->tag('shopwell.entity');
+    $services->set(PaymentTransferApprovalResultEntity::class)->tag('shopwell.entity');
+    $services->set(PaymentTransferApprovalResultHandler::class)->args([
+        service(Connection::class), service('payment_transfer_approval_result.repository'), service(PaymentTransferApprovalRequestStore::class),
+    ])->tag('approval_flow.result_handler');
     $services->set(PaymentTransferApprovalRequestEntity::class)->tag('shopwell.entity');
     $services->set(PaymentTransferApprovalRequestStore::class)->args([
         service(Connection::class), service('payment_transfer_approval_request.repository'), service(PaymentTransferApprovalStore::class),

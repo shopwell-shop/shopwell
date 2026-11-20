@@ -4,7 +4,7 @@ Approval Flow is an independent approval module in the existing Core host.
 Its first integration is payment transfer approval.
 The current skeleton includes node and approval business type declarations, versioned drafts, immutable compilation releases, verified node entry, internal serial approval commands and terminal result delivery work.
 Payment transfer submission now starts the initial approval tasks; committed group outcomes are advanced by the host scheduler.
-Business result delivery and payout execution remain subsequent increments.
+Committed approval results are delivered to the owning business module; payout execution remains a subsequent increment.
 
 ## Skeleton responsibilities
 
@@ -30,7 +30,7 @@ Keep business implementations and their DI in the owning business module.
 - `Execution/Instance` owns instance storage and controlled suspension; `Execution/Operation` retains the immutable command response and audit.
 - `Execution/Executor` owns pure node-entry intents; `Execution/Effect` carries the controlled operations a future runtime must validate.
 - `Binding` owns approval business type identities and their form schema declarations.
-- `Result` retains terminal facts and independently leased delivery work, without invoking business consumers yet.
+- `Result` retains terminal facts and independently leased delivery work, and invokes the exact-version business handler before acknowledging delivery.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
 A loaded declaration does not establish executor availability, publication validity or authorization.
@@ -84,7 +84,8 @@ File read failures retain the declaration source and original filesystem cause.
 Automatic business directory discovery is not installed yet.
 
 A catalogue entry grants no submission, binding activation, artifact availability, field access or result execution authority.
-No business adapter, access policy or result handler interface is exposed before its actual transaction and authorization contract is implemented.
+Business adapter and access policy interfaces remain subsequent increments.
+The supported result handler and its transaction contract are described under terminal results below.
 The container test contributes two expense business type versions through only the supported loader and value types; no framework configuration change or transfer-specific dependency is needed.
 
 ## Draft graph boundary
@@ -444,7 +445,7 @@ Runtime command tests also seed execution facts explicitly to exercise their com
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Progression and decision commands check the instance's running status under the same lock.
 The personal group decision completes only that node execution; scheduled progression separately enters its successors or commits the rejection outcome.
-Dynamic assignee sources, the empty-assignee skip policy, task queries and business result delivery remain subsequent increments.
+Dynamic assignee sources, the empty-assignee skip policy and task queries remain subsequent increments.
 
 ## Terminal results and delivery work
 
@@ -455,9 +456,9 @@ Receipt replay returns before recording another result.
 Failure to write either the result or delivery work rolls back the instance transition, executions and command receipt.
 Generic DAL/Sync inserts, updates and deletes of results are rejected by the instance write guard.
 
-`ApprovalResultStore`, `ApprovalResultOutbox`, `ApprovalResult` and `ApprovalResultDelivery` are internal infrastructure contracts.
-The result value is a core completion snapshot, not the complete public business result envelope.
-Business reference, submission round, binding revision, form revision and authorized consumer routing remain part of the business admission increment.
+`ApprovalResultStore`, `ApprovalResultOutbox` and `ApprovalResultDelivery` are internal infrastructure contracts.
+The supported immutable `ApprovalResult` carries core completion facts; handlers also receive the original `ApprovalRequestEntity` with its business identity, submission round, frozen business revision, binding and form.
+This is the current read-only form contract; editable form revisions and remote consumers remain later work.
 The work table follows the existing Webhook delivery-table pattern and has no generic DAL CRUD model.
 
 `ApprovalResultOutbox::claim(Context)` accepts only a system source and returns at most one committed delivery lease.
@@ -471,9 +472,29 @@ Claim, acknowledgement and retry require an independent transaction and reject a
 This prevents a caller from acting on work or reporting confirmation before its database commit.
 Delivery failures change only work state and do not reopen completed instances or rewrite their results.
 
-No automatic worker, callback or external delivery is installed yet.
-Without an admitted business reference and consumer route, pending work must not be acknowledged automatically.
-A future consumer must deduplicate by the stable result ID: a remote effect followed by a crash before acknowledgement can be delivered again.
+The scheduled task `approval_flow.deliver_results` invokes `ApprovalResultDispatcher` every minute, claiming at most 100 deliveries per run.
+Register scheduled tasks and run the normal task runner and Messenger worker to enable it.
+The dispatcher loads the original request and binding through DAL and selects the exact business type/version from `ApprovalResultHandlerRegistry`.
+Register an `ApprovalResultHandler` with `approval_flow.result_handler` in the owning business module's DI.
+`getType()` and `getVersion()` identify the exact business contract; duplicate identities fail the complete catalogue and no newer-version fallback is allowed.
+Missing requests, bindings or handlers cannot become successful deliveries.
+
+`handle(result, request, Context)` must commit the business change and its result-ID deduplication record together before returning.
+Only then does the dispatcher acknowledge the current lease; exceptions schedule bounded retries and leave the approval instance completed.
+A crash between the business commit and acknowledgement may deliver the same stable result ID again.
+The handler must replay its prior success even if the live business record later changes.
+Network side effects require the business's own durable outbox and must not run under the business row lock.
+The handler is an exclusive business application boundary, rather than a broadcast notification whose listener presence could be mistaken for successful consumption.
+
+Payment registers `payment:transfer@1.0.0` through its own DI without a transfer branch in Framework.
+Its handler locks the transfer, checks the original request and current business snapshot against the submitted revision, and inserts an immutable `payment_transfer_approval_result` through DAL.
+The same row is the business approval decision and its inbox deduplication record; it does not change the payout lifecycle or invoke a channel.
+Unavailable recipients/accounts or changed transfer facts leave the result pending for bounded retry instead of applying it to different inputs.
+Existing receipts replay before rechecking live facts, so a redelivery after the business commit does not fail because those facts changed later.
+Ordinary Administration writes, updates and deletes cannot replace that decision.
+The migration adds a new table without converting legacy Workflow records.
+
+Handler identity is selected by the frozen business version; deployment artifact pins for handler code, editable form results and remote delivery are not implemented by this increment.
 The lease prevents a stale local confirmation; it does not provide exactly-once external execution.
 
 ## Versioned business bindings
@@ -566,7 +587,7 @@ Tests exercise tagged advance-only plugin nodes before and after the first appro
 Initial start verifies the release once for start entry and once for the complete successor route; later progression verifies it once for the route.
 There is no cross-command admission cache; large-graph performance has not been measured.
 
-This is still an internal integration path without Administration pages, business result delivery or payout execution.
+This is still an internal integration path without Administration pages or payout execution.
 Entry-point resource authorization remains the responsibility of the future action endpoint, as with the existing business-owned paths.
 
 ## Scheduled serial progression
@@ -589,4 +610,4 @@ No new queue table is needed: the committed approval group is the durable contin
 Deployments must register scheduled tasks with `bin/console scheduled-task:register` and run the normal scheduled-task runner and Messenger worker.
 Tests cover host task discovery, registered handler execution, repeat runs, suspended instances, failure recovery, 101 candidates across pages and competing processes.
 Actual broker delivery, multi-worker throughput and latency have not been measured.
-This task advances serial approval work only; it does not deliver business results or execute transfers.
+This task advances serial approval work only; `approval_flow.deliver_results` separately applies business results without executing transfers.

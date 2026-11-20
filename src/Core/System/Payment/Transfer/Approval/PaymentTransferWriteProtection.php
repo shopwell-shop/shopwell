@@ -27,7 +27,7 @@ final class PaymentTransferWriteProtection implements EventSubscriberInterface
     public function validate(PreWriteValidationEvent $event): void
     {
         foreach ($event->getCommands() as $command) {
-            if (!\in_array($command->getEntityName(), ['payment_transfer', 'payment_transfer_approval', 'payment_transfer_approval_request'], true)) {
+            if (!\in_array($command->getEntityName(), ['payment_transfer', 'payment_transfer_approval', 'payment_transfer_approval_request', 'payment_transfer_approval_result'], true)) {
                 continue;
             }
             // Scope alone is insufficient: the generic transition route temporarily uses system scope.

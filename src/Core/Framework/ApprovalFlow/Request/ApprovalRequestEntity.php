@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Request;
 
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -25,6 +26,8 @@ class ApprovalRequestEntity extends Entity
     protected string $bindingId;
 
     protected string $instanceId;
+
+    protected ?ApprovalInstanceEntity $instance = null;
 
     protected string $initiatorId;
 
@@ -88,6 +91,16 @@ class ApprovalRequestEntity extends Entity
     public function setInstanceId(string $instanceId): void
     {
         $this->instanceId = $instanceId;
+    }
+
+    public function getInstance(): ?ApprovalInstanceEntity
+    {
+        return $this->instance;
+    }
+
+    public function setInstance(?ApprovalInstanceEntity $instance): void
+    {
+        $this->instance = $instance;
     }
 
     public function getInitiatorId(): string
