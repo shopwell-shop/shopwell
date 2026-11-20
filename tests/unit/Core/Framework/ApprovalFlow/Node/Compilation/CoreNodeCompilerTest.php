@@ -37,11 +37,11 @@ class CoreNodeCompilerTest extends TestCase
 
     public function testCompilesStartAndEndWithoutResolvingBusinessServices(): void
     {
-        $start = $this->compiler->compile(CoreNodeType::START, '1.0.0', '{"requestType":"payment:transfer"}');
+        $start = $this->compiler->compile(CoreNodeType::START, '1.0.0', '{"businessType":"payment:transfer"}');
         $end = $this->compiler->compile(CoreNodeType::END, '1.0.0', '{"outcome":"approved"}');
 
         static::assertInstanceOf(StartNodeConfiguration::class, $start);
-        static::assertSame('payment:transfer', $start->requestType);
+        static::assertSame('payment:transfer', $start->businessType);
         static::assertInstanceOf(EndNodeConfiguration::class, $end);
         static::assertSame(ApprovalOutcome::Approved, $end->outcome);
     }
@@ -92,9 +92,9 @@ class CoreNodeCompilerTest extends TestCase
         yield 'list is not an object configuration' => [CoreNodeType::START, '[]', ''];
         yield 'null is not an object configuration' => [CoreNodeType::START, 'null', ''];
         yield 'malformed JSON' => [CoreNodeType::START, '{', ''];
-        yield 'duplicate raw keys' => [CoreNodeType::START, '{"requestType":"payment:transfer","requestType":"payment:other"}', '/requestType'];
-        yield 'missing request type' => [CoreNodeType::START, '{}', ''];
-        yield 'present wrong type is not coerced' => [CoreNodeType::START, '{"requestType":17}', '/requestType'];
+        yield 'duplicate raw keys' => [CoreNodeType::START, '{"businessType":"payment:transfer","businessType":"payment:other"}', '/businessType'];
+        yield 'missing business type' => [CoreNodeType::START, '{}', ''];
+        yield 'present wrong type is not coerced' => [CoreNodeType::START, '{"businessType":17}', '/businessType'];
         yield 'unknown field is not discarded' => [CoreNodeType::END, '{"outcome":"approved","ignored":true}', ''];
         yield 'single policy cannot contain two users' => [CoreNodeType::APPROVAL, '{"assignees":[{"kind":"core:users","userIds":["one","two"]}],"policy":{"kind":"core:single","reject":"veto"},"fields":[],"emptyAssignees":"incident"}', '/policy/kind'];
         yield 'required field must be editable' => [CoreNodeType::APPROVAL, '{"assignees":[{"kind":"core:users","userIds":["one"]}],"policy":{"kind":"core:any","reject":"veto"},"fields":[{"field":"form.amount","access":"readOnly","required":true}],"emptyAssignees":"incident"}', '/fields/0/required'];
@@ -114,6 +114,6 @@ class CoreNodeCompilerTest extends TestCase
     {
         $this->expectExceptionObject(ApprovalFlowException::nodeCompilerNotFound(CoreNodeType::START, '2.0.0'));
 
-        $this->compiler->compile(CoreNodeType::START, '2.0.0', '{"requestType":"payment:transfer"}');
+        $this->compiler->compile(CoreNodeType::START, '2.0.0', '{"businessType":"payment:transfer"}');
     }
 }

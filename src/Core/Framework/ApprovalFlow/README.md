@@ -2,8 +2,8 @@
 
 Approval Flow is an independent approval module in the existing Core host.
 Its first integration is payment transfer approval.
-The current skeleton includes node declarations, versioned drafts, graph and configuration compilation, immutable compilation releases, verified pure node entry and an internal instance suspension command.
-It does not yet activate instances or commit approval tasks and decisions.
+The current skeleton includes node and approval business type declarations, versioned drafts, immutable compilation releases, verified node entry, internal serial approval commands and terminal result delivery work.
+Business admission, binding activation and automatic scheduling remain subsequent increments.
 
 ## Skeleton responsibilities
 
@@ -28,6 +28,8 @@ Keep business implementations and their DI in the owning business module.
 - `Execution/ApprovalReleaseLoader` verifies persisted releases; `Execution/ApprovalNodeEntry` restores one typed configuration and enters its exact pure executor.
 - `Execution/Instance` owns instance storage and controlled suspension; `Execution/Operation` retains the immutable command response and audit.
 - `Execution/Executor` owns pure node-entry intents; `Execution/Effect` carries the controlled operations a future runtime must validate.
+- `Binding` owns approval business type identities and their form schema declarations.
+- `Result` retains terminal facts and independently leased delivery work, without invoking business consumers yet.
 - `Framework/DependencyInjection/approval-flow.php` assembles framework services through the existing host.
 
 A loaded declaration does not establish executor availability, publication validity or authorization.
@@ -54,6 +56,35 @@ No recursive removal of `required` constraints occurs.
 The loader reads declarations at the directory's top level in filename order.
 Automatic module directory discovery is not implemented by this increment.
 The public and internal boundaries are listed in [public-surface](docs/public-surface.md).
+
+## Approval business types
+
+Business modules implement `ApprovalBusinessTypeLoader` and tag the service with `approval_flow.business_type_loader` in their own DI.
+The framework assembles `ApprovalBusinessTypeRegistry` through the tagged iterator and installs no business types itself.
+The supported loader returns immutable `ApprovalBusinessTypeSpecification` values; it need not import the internal YAML adapter.
+
+Each specification declares `type`, an exact `version`, `labelSnippet`, `source` and raw object `formSchema`.
+The source and label snippet carry diagnostic and display metadata; blank values do not prevent catalogue loading.
+Start-node configuration references the declared identity through `businessType`.
+The schema must declare an object and a nonempty `$id`; its exact original bytes determine `formSchemaHash` and retain empty JSON objects and lists.
+This is declaration shape validation; full form schema compilation, data validation and access rules belong to business admission.
+
+The Registry resolves only `type@version`, rejects a duplicate with both sources and caches only a complete successful catalogue.
+Declarations remain stable for the compiled container lifetime; there is no request-time registration or fallback to a newer version.
+Run `bin/console approval-flow:business-types` to inspect business type identities, form schema IDs and sources without reading business records.
+Invalid catalogues fail before displaying a partial list.
+
+The internal `YamlApprovalBusinessTypeLoader` reads explicitly supplied `ApprovalBusinessTypeSourceDirectory` entries in top-level filename order.
+Its declarations accept only `type`, `version`, `labelSnippet` and `formSchema`.
+`formSchema` names an adjacent JSON file.
+Missing optional directories contribute nothing; malformed declarations, unknown fields and schema paths outside the declaration directory fail with source-aware errors.
+Schema confinement compares resolved physical paths, so an adjacent symlink cannot read a schema outside that directory; a symlinked declaration directory is allowed.
+File read failures retain the declaration source and original filesystem cause.
+Automatic business directory discovery is not installed yet.
+
+A catalogue entry grants no submission, binding activation, artifact availability, field access or result execution authority.
+No business adapter, access policy or result handler interface is exposed before its actual transaction and authorization contract is implemented.
+The container test contributes two expense business type versions through only the supported loader and value types; no framework configuration change or transfer-specific dependency is needed.
 
 ## Draft graph boundary
 

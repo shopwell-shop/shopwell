@@ -60,8 +60,8 @@ class YamlNodeTypeLoader implements NodeTypeLoader
             throw ApprovalFlowException::invalidNodeType($source, 'Unknown declaration field');
         }
         foreach (['type', 'version', 'labelSnippet', 'configurationSchema'] as $field) {
-            if (!isset($data[$field]) || !\is_string($data[$field]) || trim($data[$field]) === '') {
-                throw ApprovalFlowException::invalidNodeType($source, $field . ' must be a nonempty string');
+            if (!isset($data[$field]) || !\is_string($data[$field])) {
+                throw ApprovalFlowException::invalidNodeType($source, $field . ' must be a string');
             }
         }
         $schemaFile = $data['configurationSchema'];

@@ -33,7 +33,7 @@ class NodeEntryTest extends TestCase
         $compiler = static::getContainer()->get(CoreNodeCompiler::class);
         $executors = static::getContainer()->get(NodeExecutorRegistry::class);
 
-        $start = $compiler->compile('core:start', '1.0.0', '{"requestType":"payment:transfer"}');
+        $start = $compiler->compile('core:start', '1.0.0', '{"businessType":"payment:transfer"}');
         $approval = $compiler->compile('core:approval', '1.0.0', '{"assignees":[{"kind":"core:users","userIds":["finance-user"]},{"kind":"core:users","userIds":["finance-user"]}],"policy":{"kind":"core:all","reject":"veto"},"fields":[],"emptyAssignees":"incident"}');
         $end = $compiler->compile('core:end', '1.0.0', '{"outcome":"approved"}');
         $startEffect = $executors->get('core:start', '1.0.0')->enter($start);

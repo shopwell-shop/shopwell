@@ -4,7 +4,7 @@
     "additionalProperties": false,
     "$id": "urn:shopwell:approval-flow:node:start:1.0.0:draft",
     "properties": {
-        "requestType": {
+        "businessType": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
         }

@@ -56,8 +56,8 @@ class CoreNodeCompiler implements NodeCompiler
         $configuration = $this->decode($type, $version, $configurationJson);
 
         if ($type === CoreNodeType::START) {
-            /** @var object{requestType: string}&\stdClass $configuration */
-            return new StartNodeConfiguration($configuration->requestType);
+            /** @var object{businessType: string}&\stdClass $configuration */
+            return new StartNodeConfiguration($configuration->businessType);
         }
         if ($type === CoreNodeType::END) {
             /** @var object{outcome: 'approved'|'rejected'}&\stdClass $configuration */

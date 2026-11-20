@@ -52,6 +52,9 @@ class ApprovalFlowException extends HttpException
     public const INVALID_NODE_TYPE = 'APPROVAL_FLOW__INVALID_NODE_TYPE';
     public const DUPLICATE_NODE_TYPE = 'APPROVAL_FLOW__DUPLICATE_NODE_TYPE';
     public const NODE_TYPE_NOT_FOUND = 'APPROVAL_FLOW__NODE_TYPE_NOT_FOUND';
+    public const INVALID_BUSINESS_TYPE = 'APPROVAL_FLOW__INVALID_BUSINESS_TYPE';
+    public const DUPLICATE_BUSINESS_TYPE = 'APPROVAL_FLOW__DUPLICATE_BUSINESS_TYPE';
+    public const BUSINESS_TYPE_NOT_FOUND = 'APPROVAL_FLOW__BUSINESS_TYPE_NOT_FOUND';
     public const NODE_EXECUTOR_NOT_FOUND = 'APPROVAL_FLOW__NODE_EXECUTOR_NOT_FOUND';
     public const DUPLICATE_NODE_EXECUTOR = 'APPROVAL_FLOW__DUPLICATE_NODE_EXECUTOR';
     public const INVALID_NODE_EFFECT = 'APPROVAL_FLOW__INVALID_NODE_EFFECT';
@@ -422,6 +425,37 @@ class ApprovalFlowException extends HttpException
             self::INVALID_GRAPH_PLAN,
             'Invalid compiled approval graph plan: {{ reason }}',
             ['reason' => $reason]
+        );
+    }
+
+    public static function invalidBusinessType(string $source, string $reason, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_BUSINESS_TYPE,
+            'Invalid approval business type declaration "{{ source }}": {{ reason }}',
+            ['source' => $source, 'reason' => $reason],
+            $previous
+        );
+    }
+
+    public static function duplicateBusinessType(string $type, string $version, string $firstSource, string $secondSource): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::DUPLICATE_BUSINESS_TYPE,
+            'Approval business type "{{ type }}@{{ version }}" is declared by both "{{ first }}" and "{{ second }}".',
+            ['type' => $type, 'version' => $version, 'first' => $firstSource, 'second' => $secondSource]
+        );
+    }
+
+    public static function businessTypeNotFound(string $type, string $version): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::BUSINESS_TYPE_NOT_FOUND,
+            'Approval business type "{{ type }}@{{ version }}" is not available.',
+            ['type' => $type, 'version' => $version]
         );
     }
 

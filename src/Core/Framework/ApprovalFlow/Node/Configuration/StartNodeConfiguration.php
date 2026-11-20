@@ -12,15 +12,15 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 final readonly class StartNodeConfiguration implements NodeConfiguration
 {
-    public function __construct(public string $requestType)
+    public function __construct(public string $businessType)
     {
     }
 
     /**
-     * @return array{requestType: string}
+     * @return array{businessType: string}
      */
     public function jsonSerialize(): array
     {
-        return ['requestType' => $this->requestType];
+        return ['businessType' => $this->businessType];
     }
 }

@@ -58,7 +58,7 @@ class NodePlanCompilerTest extends TestCase
         static::assertSame(NodePlanCompiler::ID, $plan['compilerId']);
         static::assertSame($compiled->graphPlan->hash, $plan['graphPlanHash']);
         static::assertSame([
-            ['nodeId' => 'start', 'type' => 'core:start', 'typeVersion' => '1.0.0', 'configuration' => ['requestType' => 'payment:transfer']],
+            ['nodeId' => 'start', 'type' => 'core:start', 'typeVersion' => '1.0.0', 'configuration' => ['businessType' => 'payment:transfer']],
             ['nodeId' => 'review', 'type' => 'core:approval', 'typeVersion' => '1.0.0', 'configuration' => ['userIds' => ['finance-user'], 'policy' => 'core:all', 'reject' => 'veto', 'fields' => [], 'emptyAssignees' => 'incident']],
             ['nodeId' => 'end', 'type' => 'core:end', 'typeVersion' => '1.0.0', 'configuration' => ['outcome' => 'approved']],
         ], $plan['nodes']);

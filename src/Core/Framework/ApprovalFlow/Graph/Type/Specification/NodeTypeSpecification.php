@@ -44,9 +44,6 @@ final readonly class NodeTypeSpecification
         if (!preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version)) {
             throw ApprovalFlowException::invalidNodeType($source, 'version must be an exact major.minor.patch version');
         }
-        if (trim($source) === '' || trim($labelSnippet) === '') {
-            throw ApprovalFlowException::invalidNodeType($source, 'source and labelSnippet must be nonempty');
-        }
         foreach ($ports as $id => $direction) {
             if (!\is_string($id) || $id === '' || !\in_array($direction, ['input', 'output'], true)) {
                 throw ApprovalFlowException::invalidNodeType($source, 'ports must map names to input or output');

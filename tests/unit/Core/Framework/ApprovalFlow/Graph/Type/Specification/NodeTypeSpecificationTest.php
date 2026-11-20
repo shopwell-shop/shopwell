@@ -17,6 +17,15 @@ use Shopwell\Core\Framework\Log\Package;
 #[CoversClass(NodeTypeSpecification::class)]
 class NodeTypeSpecificationTest extends TestCase
 {
+    public function testDisplayMetadataDoesNotControlNodeAdmission(): void
+    {
+        $type = new NodeTypeSpecification('test:review', '1.0.0', '', '', '{"$id":"urn:test:review","type":"object"}', [], [NodeEffectType::Advance]);
+
+        static::assertSame('', $type->labelSnippet);
+        static::assertSame('', $type->source);
+        static::assertSame('urn:test:review', $type->configurationSchemaId);
+    }
+
     public function testDeclarationKeepsItsOwnEffectValues(): void
     {
         $effect = NodeEffectType::Advance;

@@ -1,0 +1,10 @@
+{
+    "$id": "urn:finance:expense:1",
+    "type": "object",
+    "properties": {
+        "amountMinor": {"type": "integer", "minimum": 1},
+        "metadata": {"type": "object", "properties": {}}
+    },
+    "required": ["amountMinor"],
+    "additionalProperties": false
+}

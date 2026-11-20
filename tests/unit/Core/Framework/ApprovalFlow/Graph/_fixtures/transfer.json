@@ -12,7 +12,7 @@
             "type": "core:start",
             "typeVersion": "1.0.0",
             "config": {
-                "requestType": "payment:transfer"
+                "businessType": "payment:transfer"
             },
             "ports": [
                 {

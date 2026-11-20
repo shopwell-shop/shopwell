@@ -21,6 +21,24 @@ use Symfony\Component\Filesystem\Filesystem;
 #[CoversClass(YamlNodeTypeLoader::class)]
 class YamlNodeTypeLoaderTest extends TestCase
 {
+    public function testBlankLabelDoesNotBlockALoadableNode(): void
+    {
+        $filesystem = new Filesystem();
+        $directory = sys_get_temp_dir() . '/approval-node-label-' . bin2hex(random_bytes(8));
+        $filesystem->mkdir($directory);
+        $filesystem->dumpFile($directory . '/node.json', '{"$id":"urn:test:node","type":"object"}');
+        $filesystem->dumpFile($directory . '/node.yaml', "type: test:node\nversion: 1.0.0\nlabelSnippet: ''\nconfigurationSchema: node.json\nports: {in: input}\nallowedEffects: [advance]");
+        $loader = new YamlNodeTypeLoader($filesystem, [new NodeTypeSourceDirectory('test', $directory)]);
+
+        try {
+            $types = $loader->load();
+            static::assertCount(1, $types);
+            static::assertSame('', $types[0]->labelSnippet);
+        } finally {
+            $filesystem->remove($directory);
+        }
+    }
+
     public function testLoadsBuiltInDeclarationsAndRetainsTheirSchemaArtifacts(): void
     {
         $directory = \dirname(__DIR__, 8) . '/src/Core/Framework/ApprovalFlow/Resources/node-types';
@@ -45,7 +63,7 @@ class YamlNodeTypeLoaderTest extends TestCase
         $directory = \dirname(__DIR__, 8) . '/src/Core/Framework/ApprovalFlow/Resources/node-types';
         $loader = new YamlNodeTypeLoader(new Filesystem(), [new NodeTypeSourceDirectory('core', $directory)]);
         $examples = [
-            'core:start' => '{"requestType":"payment:transfer"}',
+            'core:start' => '{"businessType":"payment:transfer"}',
             'core:end' => '{"outcome":"approved"}',
             'core:approval' => '{"assignees":[{"kind":"core:users","userIds":["reviewer"]}],"policy":{"kind":"core:all","reject":"veto"},"fields":[],"emptyAssignees":"incident"}',
         ];

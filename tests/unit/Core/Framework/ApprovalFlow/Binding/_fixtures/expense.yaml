@@ -1,0 +1,4 @@
+type: finance:expense
+version: 1.0.0
+labelSnippet: finance.approval.expense
+formSchema: expense.json

@@ -6,6 +6,9 @@
 
 The independent Approval Flow module provides exact-version node declarations through `NodeTypeLoader` and the `approval_flow.node_type_loader` service tag.
 Business modules register their loaders in their own DI; a declaration alone does not make a node executable.
+Approval business types can be contributed through `ApprovalBusinessTypeLoader` and `approval_flow.business_type_loader`, then inspected with `approval-flow:business-types`.
+`ApprovalBusinessTypeSpecification` retains the business identity, exact version and form schema bytes.
+The business type catalogue grants no business submission or result execution authority; those implementation contracts are not exposed yet.
 Business modules can also register `NodeCompiler` services with `approval_flow.node_compiler` to compile exact node versions into typed `NodeConfiguration` values.
 Configuration compilation rejects missing or conflicting compilers and invalid semantics.
 Register exact-version `NodeExecutor` entry services with `approval_flow.node_executor`; node-plan compilation now rejects missing executors without calling them.

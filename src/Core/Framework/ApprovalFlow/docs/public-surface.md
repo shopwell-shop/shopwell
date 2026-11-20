@@ -1,6 +1,6 @@
 # Approval Flow public surface
 
-The supported extension surface covers node declaration, configuration compilation, pure node entry and assembly.
+The supported extension surface covers node and approval business type declaration, configuration compilation, pure node entry and assembly.
 The DAL models `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 Writes use the controlled draft, release and instance paths.
 No HTTP action routes or supported PHP publication/runtime command services are exposed by this increment.
@@ -20,6 +20,25 @@ The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diag
 A consumer cannot infer executability or authorization from the presence of a declaration.
 Loaders must be deterministic for the lifetime of the compiled container; there is no request-time registration or hot replacement API.
 The Registry caches only a complete successful load and never exposes a partially loaded catalogue.
+
+## Approval business types
+
+- `ApprovalBusinessTypeLoader::load()` returns a list of `ApprovalBusinessTypeSpecification` values; register it with `approval_flow.business_type_loader` in the owning business module.
+- The service tag's interface contract is registered in static analysis alongside the existing node loader contracts.
+- `ApprovalBusinessTypeSpecification` carries the exact business type/version, label snippet, source and form schema bytes.
+- `formSchemaId` and `formSchemaHash` derive from the supplied schema; the hash retains the original bytes, including JSON map/list distinctions.
+- `ApprovalBusinessTypeRegistry::all()` returns a complete catalogue keyed by `type@version`; `get(type, version)` never substitutes another version.
+
+Duplicate exact versions fail with both declaration sources, including subsequent reads after a failed load.
+Loaders must remain deterministic for the compiled container lifetime.
+The schema root and identity are checked on declaration construction; full schema compilation, form data validation and field authorization are not provided by the catalogue.
+Business type declarations do not establish service availability, artifact retention, business authorization or consumer routing.
+Source and label snippet are diagnostic and display metadata, independent of catalogue admission.
+The start-node configuration uses `businessType` for the namespaced business identity.
+There is no supported business adapter, access policy or result handler implementation interface yet.
+The diagnostic command `approval-flow:business-types` reads declarations only and fails before displaying an invalid partial catalogue.
+`YamlApprovalBusinessTypeLoader`, `ApprovalBusinessTypeSourceDirectory` and `ApprovalBusinessTypeListCommand` are internal adapters.
+Plugins implement the public loader contract instead of depending on these file or console adapters.
 
 ## Node configuration compilers
 

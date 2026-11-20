@@ -4,6 +4,8 @@ namespace Shopwell\Core\Framework\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\Command\ApprovalBusinessTypeListCommand;
 use Shopwell\Core\Framework\ApprovalFlow\Definition\ApprovalFlowDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\Command\GraphDiagnoseCommand;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
@@ -60,6 +62,12 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
+
+    $services->set(ApprovalBusinessTypeRegistry::class)
+        ->args([tagged_iterator('approval_flow.business_type_loader')]);
+    $services->set(ApprovalBusinessTypeListCommand::class)
+        ->args([service(ApprovalBusinessTypeRegistry::class)])
+        ->tag('console.command');
 
     $services->set(ApprovalInstanceDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalNodeExecutionDefinition::class)->tag('shopwell.entity.definition');
