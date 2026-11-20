@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
@@ -32,10 +33,13 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceServiceTest
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalNodeProgressionTest
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalCompletionTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Request\ApprovalRequestStartTest
  */
 #[Package('framework')]
 class ApprovalInstanceStore
 {
+    public const START = 'start';
+
     public const SUSPEND = 'suspend';
 
     public const ENTER_START = 'enter-start';
@@ -51,6 +55,11 @@ class ApprovalInstanceStore
     private const START_SEQUENCE = 1;
 
     private const SYSTEM_ACTOR_JSON = '{"source":"system"}';
+
+    /**
+     * @var array<string, true>
+     */
+    private array $activeCommands = [];
 
     /**
      * @param EntityRepository<ApprovalInstanceCollection> $instances
@@ -70,6 +79,24 @@ class ApprovalInstanceStore
         private readonly ApprovalTaskDecisionStore $decisions,
         private readonly ApprovalResultStore $results,
     ) {
+    }
+
+    public function start(string $instanceId, string $commandId, int $expectedVersion, string $actorJson, Context $context): ApprovalInstanceCommandResult
+    {
+        $requestHash = Hasher::hash(['operation' => self::START, 'expectedVersion' => $expectedVersion, 'actorJson' => $actorJson], 'sha256');
+
+        return $this->runCommand(
+            $instanceId,
+            $commandId,
+            $expectedVersion,
+            self::START,
+            $requestHash,
+            'Start the admitted request and create its initial approval tasks.',
+            $actorJson,
+            $context,
+            fn (string $releaseId): ApprovalInstanceStatus => $this->startApprovalRoute($instanceId, $releaseId, $context),
+            from: ApprovalInstanceStatus::Draft,
+        );
     }
 
     public function suspend(string $instanceId, string $commandId, int $expectedVersion, string $reason, string $actorJson, Context $context): ApprovalInstanceCommandResult
@@ -286,29 +313,78 @@ class ApprovalInstanceStore
         Context $context,
         \Closure $apply,
         ?\Closure $authorize = null,
+        ApprovalInstanceStatus $from = ApprovalInstanceStatus::Running,
     ): ApprovalInstanceCommandResult {
-        return RetryableTransaction::transactional($this->connection, function () use ($instanceId, $commandId, $expectedVersion, $operation, $requestHash, $reason, $actorJson, $context, $apply, $authorize): ApprovalInstanceCommandResult {
-            $instance = $this->lockInstance($instanceId);
-            if ($authorize !== null) {
-                $authorize();
-            }
-            $receipt = $this->readReceipt($instanceId, $commandId, $requestHash);
-            if ($receipt !== null) {
-                return $receipt;
-            }
+        if (isset($this->activeCommands[$instanceId])) {
+            throw ApprovalFlowException::instanceCommandInProgress($instanceId);
+        }
+        $this->activeCommands[$instanceId] = true;
+        try {
+            return RetryableTransaction::transactional($this->connection, function () use ($instanceId, $commandId, $expectedVersion, $operation, $requestHash, $reason, $actorJson, $context, $apply, $authorize, $from): ApprovalInstanceCommandResult {
+                $instance = $this->lockInstance($instanceId);
+                if ($authorize !== null) {
+                    $authorize();
+                }
+                $receipt = $this->readReceipt($instanceId, $commandId, $requestHash);
+                if ($receipt !== null) {
+                    return $receipt;
+                }
 
-            $this->requireRunning($instanceId, $instance['status'], $instance['version'], $expectedVersion, $operation);
-            $transition = $apply($instance['releaseId']);
-            $outcome = $transition instanceof ApprovalOutcome ? $transition : null;
-            $status = $transition instanceof ApprovalInstanceStatus ? $transition : ApprovalInstanceStatus::Completed;
-            $result = new ApprovalInstanceCommandResult($instanceId, $commandId, $status, $expectedVersion + 1, $outcome);
-            $this->saveCommand($result, $operation, $requestHash, $reason, $actorJson, $context);
-            if ($outcome !== null) {
-                $this->results->record($instanceId, $instance['releaseId'], $commandId, $result->aggregateVersion, $outcome, $context);
-            }
+                $this->requireState($instanceId, $instance['status'], $instance['version'], $expectedVersion, $operation, $from);
+                $transition = $apply($instance['releaseId']);
+                $outcome = $transition instanceof ApprovalOutcome ? $transition : null;
+                $status = $transition instanceof ApprovalInstanceStatus ? $transition : ApprovalInstanceStatus::Completed;
+                $result = new ApprovalInstanceCommandResult($instanceId, $commandId, $status, $expectedVersion + 1, $outcome);
+                $this->saveCommand($result, $operation, $requestHash, $reason, $actorJson, $instance['status'], $context);
+                if ($outcome !== null) {
+                    $this->results->record($instanceId, $instance['releaseId'], $commandId, $result->aggregateVersion, $outcome, $context);
+                }
 
-            return $result;
-        });
+                return $result;
+            });
+        } finally {
+            unset($this->activeCommands[$instanceId]);
+        }
+    }
+
+    private function startApprovalRoute(string $instanceId, string $releaseId, Context $context): ApprovalInstanceStatus
+    {
+        $route = $this->nodeEntry->enterStart($releaseId);
+        $executions = [[
+            'id' => Uuid::randomHex(),
+            'instanceId' => $instanceId,
+            'nodeId' => $route['startNodeId'],
+            'sequence' => self::START_SEQUENCE,
+            'status' => ApprovalNodeExecutionStatus::Completed->value,
+        ]];
+        $sequence = self::START_SEQUENCE + 1;
+        // The verified release is acyclic; every supported edge selects one successor without a join.
+        while (true) {
+            $executionId = Uuid::randomHex();
+            $effect = $this->nodeEntry->enter($releaseId, $route['nextNodeId']);
+            $executions[] = [
+                'id' => $executionId,
+                'instanceId' => $instanceId,
+                'nodeId' => $route['nextNodeId'],
+                'incomingConnectionId' => $route['connectionId'],
+                'sequence' => $sequence,
+                'status' => $effect instanceof AdvanceEffect ? ApprovalNodeExecutionStatus::Completed->value : ApprovalNodeExecutionStatus::Waiting->value,
+            ];
+            if ($effect instanceof RequestApprovalEffect) {
+                $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
+                $this->writeGuard->write($context, function (Context $writeContext) use ($executions): void {
+                    $this->executions->create($executions, $writeContext);
+                });
+                $this->createApprovalTasks($executionId, $assignees, ApprovalPolicy::from($effect->configuration->policy), $context);
+
+                return ApprovalInstanceStatus::Running;
+            }
+            if (!$effect instanceof AdvanceEffect) {
+                throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The initial route must reach an approval node before completing.');
+            }
+            $route = $this->nodeEntry->successor($releaseId, $route['nextNodeId']);
+            ++$sequence;
+        }
     }
 
     private function waitingNode(string $instanceId, string $executionId): string
@@ -450,12 +526,12 @@ class ApprovalInstanceStore
         return new ApprovalInstanceCommandResult($instanceId, $commandId, ApprovalInstanceStatus::from($receipt['status']), (int) $receipt['aggregate_version'], $outcome);
     }
 
-    private function requireRunning(string $instanceId, ApprovalInstanceStatus $status, int $version, int $expectedVersion, string $operation): void
+    private function requireState(string $instanceId, ApprovalInstanceStatus $status, int $version, int $expectedVersion, string $operation, ApprovalInstanceStatus $from): void
     {
         if ($version !== $expectedVersion) {
             throw ApprovalFlowException::instanceVersionConflict($instanceId, $expectedVersion, $version);
         }
-        if ($status !== ApprovalInstanceStatus::Running) {
+        if ($status !== $from) {
             throw ApprovalFlowException::invalidInstanceTransition($instanceId, $status->value, $operation);
         }
 
@@ -471,7 +547,7 @@ class ApprovalInstanceStore
         }
     }
 
-    private function saveCommand(ApprovalInstanceCommandResult $result, string $operation, string $requestHash, string $reason, string $actorJson, Context $context): void
+    private function saveCommand(ApprovalInstanceCommandResult $result, string $operation, string $requestHash, string $reason, string $actorJson, ApprovalInstanceStatus $previousStatus, Context $context): void
     {
         $this->writeGuard->write($context, function (Context $writeContext) use ($result): void {
             $this->instances->update([[
@@ -481,7 +557,7 @@ class ApprovalInstanceStore
                 'outcome' => $result->outcome?->value,
             ]], $writeContext);
         });
-        $this->writeGuard->write($context, function (Context $writeContext) use ($result, $operation, $requestHash, $reason, $actorJson): void {
+        $this->writeGuard->write($context, function (Context $writeContext) use ($result, $operation, $requestHash, $reason, $actorJson, $previousStatus): void {
             $this->operations->create([[
                 'instanceId' => $result->instanceId,
                 'commandId' => $result->commandId,
@@ -489,7 +565,7 @@ class ApprovalInstanceStore
                 'requestHash' => $requestHash,
                 'actorJson' => $actorJson,
                 'reason' => $reason,
-                'previousStatus' => ApprovalInstanceStatus::Running->value,
+                'previousStatus' => $previousStatus->value,
                 'status' => $result->status->value,
                 'previousVersion' => $result->aggregateVersion - 1,
                 'aggregateVersion' => $result->aggregateVersion,

@@ -536,9 +536,9 @@ Ordinary DAL/Sync writes and borrowed listener contexts cannot create or rewrite
 
 Payment owns `PaymentTransferApprovalRequestService::submit(transferId, Context)` and constructs the form from the locked transfer, recipient and account.
 Only a created, unexecuted transfer without a legacy approval may acquire a new request.
-An existing request is returned before rechecking current binding or mutable business eligibility, so retry preserves its original snapshot.
+An existing request replays its start command before being returned, without rechecking the current binding or mutable business eligibility, so retry preserves its original snapshot.
 The form contains integer minor-unit amounts, a masked recipient label and an account display name; private evidence stays in `payment_transfer_approval_request` with the recipient identity still encrypted.
-Request, draft instance and private evidence commit or roll back together, without channel calls.
+Request, private evidence, initial executions, reviewer tasks and the running instance commit or roll back together, without channel calls.
 Payment currently uses submission round 1 because reapplication creates another transfer record.
 
 Both Payment approval entry points lock the same transfer row and reject a committed binding in the other system.
@@ -547,6 +547,19 @@ The new path covers validation, DAL events and private freeze; the legacy path c
 The old store owns this temporary coordination while both implementations coexist; it is not a new shared-framework extension contract.
 Generic DAL updates or deletes of private evidence are rejected by Payment's existing write protection.
 
-This increment installs an internal admission path only.
-It leaves the instance in draft and does not advance start nodes, resolve reviewers, create tasks, switch Administration pages, deliver business results or execute a payout.
+`ApprovalRequestService::start(requestId, Context)` starts an admitted draft only for its original Administration initiator.
+The immutable request ID also identifies its single start command; the existing instance transaction locks the instance, checks version 1 and commits version 2 with its start receipt.
+The command enters the frozen release's start node, follows serial advance-only nodes and stops at the first approval, resolving active users and creating their tasks with the frozen approval policy.
+It uses the original Context and instance write gate; the shared skeleton has no Payment dependency.
+Initial splits, joins and completion before approval are explicitly rejected in this increment.
+A failure leaves no partial executions, tasks or receipt; an already admitted request remains draft and can be retried.
+Payment calls this operation inside its submission transaction, so a failed first start rolls back admission and private evidence too.
+
+A repeated start returns its original receipt before current instance state or deployment verification, even after later suspension or missing deployment artifacts.
+It does not recreate tasks, re-enter plugin executors or switch to a newer active binding.
+An in-memory per-instance command guard rejects recursive commands from DAL events; database row locks serialize independent processes.
+Tests exercise two tagged advance-only plugin nodes before the first approval and the existing personal decision command against a generated task.
+The current traversal reloads and verifies the frozen release at each node operation; large-graph performance has not been measured.
+
+This is still an internal integration path without Administration pages, business result delivery or payout execution.
 Entry-point resource authorization remains the responsibility of the future action endpoint, as with the existing business-owned paths.

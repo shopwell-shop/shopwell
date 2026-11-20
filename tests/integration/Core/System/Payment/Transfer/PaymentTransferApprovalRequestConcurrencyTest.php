@@ -42,7 +42,19 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
         $manifest = PublicationFixture::writeManifest($filesystem, $directory);
         $runtime = ApprovalRuntimeFixture::container($container, $manifest);
         $bindings = $runtime->get(ApprovalBindingService::class);
-        $releaseId = ApprovalRuntimeFixture::publish($container, $runtime, GraphFixture::json());
+        $reviewerId = Uuid::randomHex();
+        $localeId = $connection->fetchOne('SELECT id FROM locale LIMIT 1');
+        static::assertIsString($localeId);
+        $container->get('user.repository')->create([[
+            'id' => $reviewerId,
+            'username' => $reviewerId,
+            'name' => 'Approval reviewer',
+            'email' => $reviewerId . '@example.test',
+            'password' => 'shopwell',
+            'active' => true,
+            'localeId' => Uuid::fromBytesToHex($localeId),
+        ]], Context::createDefaultContext());
+        $releaseId = ApprovalRuntimeFixture::publish($container, $runtime, str_replace('finance-user', $reviewerId, GraphFixture::json()));
         $definitionId = $connection->fetchOne('SELECT definition_id FROM approval_flow_release WHERE id = :id', ['id' => Uuid::fromHexToBytes($releaseId)]);
         $system = Context::createDefaultContext();
         $bindings->save('payment:transfer', '1.0.0', $releaseId, 0, $system);
@@ -107,6 +119,8 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
                 static::assertNotNull($request);
                 static::assertStringContainsString('"id":"' . $request->getId() . '"', $writer->getOutput());
                 static::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_request WHERE business_id = :id', ['id' => $transfer->id]));
+                static::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_task WHERE assignee_id = :id', ['id' => Uuid::fromHexToBytes($reviewerId)]));
+                static::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_operation WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($request->getInstanceId())]));
             }
         } finally {
             $input->close();
@@ -117,7 +131,12 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
             $connection->delete('payment_transfer_approval_request', ['id' => Uuid::fromHexToBytes($transfer->id)]);
             $connection->delete('payment_transfer_approval', ['id' => Uuid::fromHexToBytes($transfer->id)]);
             $connection->delete('approval_flow_request', ['business_type' => 'payment:transfer', 'business_id' => $transfer->id]);
+            $connection->executeStatement('DELETE t FROM approval_flow_task t INNER JOIN approval_flow_execution e ON e.id = t.execution_id INNER JOIN approval_flow_instance i ON i.id = e.instance_id WHERE i.release_id = :id', ['id' => Uuid::fromHexToBytes($releaseId)]);
+            foreach (['approval_flow_execution', 'approval_flow_operation'] as $table) {
+                $connection->executeStatement('DELETE child FROM ' . $table . ' child INNER JOIN approval_flow_instance i ON i.id = child.instance_id WHERE i.release_id = :id', ['id' => Uuid::fromHexToBytes($releaseId)]);
+            }
             $connection->delete('approval_flow_instance', ['release_id' => Uuid::fromHexToBytes($releaseId)]);
+            $connection->delete('user', ['id' => Uuid::fromHexToBytes($reviewerId)]);
             $connection->delete('approval_flow_binding_head', ['business_type' => 'payment:transfer']);
             $connection->delete('approval_flow_binding', ['business_type' => 'payment:transfer']);
             $connection->delete('approval_flow_release', ['id' => Uuid::fromHexToBytes($releaseId)]);

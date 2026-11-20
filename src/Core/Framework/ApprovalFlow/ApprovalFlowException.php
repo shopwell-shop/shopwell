@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const REQUEST_NOT_FOUND = 'APPROVAL_FLOW__REQUEST_NOT_FOUND';
+    public const INSTANCE_COMMAND_IN_PROGRESS = 'APPROVAL_FLOW__INSTANCE_COMMAND_IN_PROGRESS';
     public const REQUEST_ACTOR_REQUIRED = 'APPROVAL_FLOW__REQUEST_ACTOR_REQUIRED';
     public const REQUEST_INITIATOR_REQUIRED = 'APPROVAL_FLOW__REQUEST_INITIATOR_REQUIRED';
     public const INVALID_REQUEST_FORM = 'APPROVAL_FLOW__INVALID_REQUEST_FORM';
@@ -76,6 +78,16 @@ class ApprovalFlowException extends HttpException
     public const DUPLICATE_NODE_COMPILER = 'APPROVAL_FLOW__DUPLICATE_NODE_COMPILER';
     public const INVALID_NODE_COMPILER = 'APPROVAL_FLOW__INVALID_NODE_COMPILER';
     public const INVALID_NODE_CONFIGURATION = 'APPROVAL_FLOW__INVALID_NODE_CONFIGURATION';
+
+    public static function requestNotFound(string $requestId): self
+    {
+        return new self(Response::HTTP_NOT_FOUND, self::REQUEST_NOT_FOUND, 'Approval request "{{ requestId }}" was not found.', ['requestId' => $requestId]);
+    }
+
+    public static function instanceCommandInProgress(string $instanceId): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::INSTANCE_COMMAND_IN_PROGRESS, 'Approval instance "{{ instanceId }}" is already being changed by this operation.', ['instanceId' => $instanceId]);
+    }
 
     public static function requestActorRequired(): self
     {

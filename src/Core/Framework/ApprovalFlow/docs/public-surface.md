@@ -180,7 +180,7 @@ Executions in `approval_flow_execution` retain their instance, node, incoming co
 Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
-An internal business admission path creates draft instances; there is no activation endpoint or public command/query route.
+An internal business admission path creates draft instances and starts them through the original initiator; there is no activation endpoint or public command/query route.
 Automatic scheduling, branch/join execution and timers require their own contracts.
 The decision command adds no public endpoint, external result delivery or business execution authority.
 
@@ -243,9 +243,14 @@ No public submission route, business adapter interface or consumer tag is introd
 `ApprovalRequestService`, `ApprovalRequestStore` and the binding service's submission selection remain internal.
 They accept trusted business-generated data; callers own resource authorization, serialization of their business identity and atomic evidence freezing.
 `find(..., Context)` is an initiator-bound submission retry lookup and is not a general request query contract.
+`start(requestId, Context)` verifies the original initiator and uses the immutable request ID as its single draft-to-running command identity.
+The existing instance transaction saves initial serial executions, first reviewer tasks, version 2 and its receipt atomically.
+Retries replay that receipt without entering nodes again, and unsupported initial splits, joins or completion before approval fail without partial writes.
+Same-instance command recursion from DAL events is rejected before a second transaction starts.
+These internal operations do not add a public command or extension contract.
 The shared skeleton has no Payment dependency.
 
 Payment registers its private evidence entity and submission services in Payment DI.
 Private snapshot fields are not API-visible, and the existing Payment write protection rejects their mutation or deletion.
-`PaymentTransferApprovalRequestService` is an internal integration entry point; it does not grant payment authority or activate the instance.
+`PaymentTransferApprovalRequestService` is an internal integration entry point that admits and starts an approval in one business transaction; it does not grant payment authority.
 Its per-transfer coordination with the legacy approval store is temporary until the replacement workflow is complete.

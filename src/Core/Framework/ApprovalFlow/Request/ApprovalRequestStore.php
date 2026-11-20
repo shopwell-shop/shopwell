@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Request;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
@@ -76,6 +77,19 @@ class ApprovalRequestStore
         return $request;
     }
 
+    public function read(string $requestId): ApprovalRequestEntity
+    {
+        $row = $this->connection->fetchAssociative(
+            'SELECT * FROM approval_flow_request WHERE id = :id LOCK IN SHARE MODE',
+            ['id' => Uuid::fromHexToBytes($requestId)],
+        );
+        if ($row === false) {
+            throw ApprovalFlowException::requestNotFound($requestId);
+        }
+
+        return $this->hydrate($row);
+    }
+
     /**
      * Current read after the business owner has serialized this submission identity.
      */
@@ -88,6 +102,15 @@ class ApprovalRequestStore
         if ($row === false) {
             return null;
         }
+
+        return $this->hydrate($row);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function hydrate(array $row): ApprovalRequestEntity
+    {
         $request = new ApprovalRequestEntity();
         $request->assign([
             'id' => Uuid::fromBytesToHex($row['id']),

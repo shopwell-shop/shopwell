@@ -76,7 +76,7 @@ return static function (ContainerConfigurator $container): void {
         service(Connection::class), service('approval_flow_request.repository'), service(ApprovalInstanceWriteGuard::class), service(ClockInterface::class),
     ]);
     $services->set(ApprovalRequestService::class)->args([
-        service(ApprovalRequestStore::class), service(ApprovalBindingService::class), service(GraphSchemaValidator::class),
+        service(ApprovalRequestStore::class), service(ApprovalBindingService::class), service(GraphSchemaValidator::class), service(ApprovalInstanceStore::class),
     ]);
 
     $services->set(ApprovalBindingDefinition::class)->tag('shopwell.entity.definition');

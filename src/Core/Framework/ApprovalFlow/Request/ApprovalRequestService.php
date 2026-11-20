@@ -6,6 +6,8 @@ use Opis\JsonSchema\Exceptions\SchemaException;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStore;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -18,6 +20,7 @@ use Shopwell\Core\Framework\Log\Package;
  * @codeCoverageIgnore
  *
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Request\ApprovalRequestServiceTest
+ * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Request\ApprovalRequestStartTest
  */
 #[Package('framework')]
 class ApprovalRequestService
@@ -26,6 +29,7 @@ class ApprovalRequestService
         private readonly ApprovalRequestStore $store,
         private readonly ApprovalBindingService $bindings,
         private readonly GraphSchemaValidator $schemas,
+        private readonly ApprovalInstanceStore $instances,
     ) {
     }
 
@@ -58,6 +62,22 @@ class ApprovalRequestService
         }
 
         return $request;
+    }
+
+    public function start(string $requestId, Context $context): ApprovalInstanceCommandResult
+    {
+        $initiatorId = $this->initiatorId($context);
+
+        return $this->store->transactional(function () use ($requestId, $context, $initiatorId): ApprovalInstanceCommandResult {
+            $request = $this->store->read($requestId);
+            if ($request->getInitiatorId() !== $initiatorId) {
+                throw ApprovalFlowException::requestInitiatorRequired($requestId);
+            }
+            $actorJson = json_encode(['source' => 'admin-api', 'userId' => $initiatorId, 'integrationId' => null], \JSON_THROW_ON_ERROR);
+
+            // The immutable request identity also identifies its single draft-to-running command.
+            return $this->instances->start($request->getInstanceId(), $requestId, expectedVersion: 1, actorJson: $actorJson, context: $context);
+        });
     }
 
     private function initiatorId(Context $context): string

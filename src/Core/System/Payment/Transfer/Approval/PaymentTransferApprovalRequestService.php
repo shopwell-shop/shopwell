@@ -36,6 +36,8 @@ class PaymentTransferApprovalRequestService
         return $this->store->transactional($transferId, function () use ($transferId, $context): ApprovalRequestEntity {
             $existing = $this->requests->find(self::BUSINESS_TYPE, $transferId, 1, $context);
             if ($existing !== null) {
+                $this->requests->start($existing->getId(), $context);
+
                 return $existing;
             }
             if ($this->legacyApprovals->get($transferId) !== null) {
@@ -59,6 +61,7 @@ class PaymentTransferApprovalRequestService
             $revision = Hasher::hash(json_encode($snapshot, \JSON_THROW_ON_ERROR), 'sha256');
             $request = $this->requests->create(self::BUSINESS_TYPE, $transferId, 1, $revision, $formJson, $context);
             $this->store->freeze($transferId, $request->getId(), $snapshot);
+            $this->requests->start($request->getId(), $context);
 
             return $request;
         });

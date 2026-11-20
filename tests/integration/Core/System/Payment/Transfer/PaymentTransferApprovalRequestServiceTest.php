@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseStore;
 use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntime;
@@ -58,6 +59,8 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
 
     private string $releaseId;
 
+    private string $reviewerId;
+
     protected function setUp(): void
     {
         $container = static::getContainer();
@@ -65,7 +68,9 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
         $this->directory = sys_get_temp_dir() . '/transfer-request-' . Uuid::randomHex();
         $runtime = ApprovalRuntimeFixture::container($container, PublicationFixture::writeManifest($this->filesystem, $this->directory));
         $bindings = $this->bindings = $runtime->get(ApprovalBindingService::class);
-        $releaseId = $this->releaseId = ApprovalRuntimeFixture::publish($container, $runtime, GraphFixture::json());
+        $this->reviewerId = TestUser::createNewTestUser($container->get(Connection::class))->getUserId();
+        $graph = str_replace('finance-user', $this->reviewerId, GraphFixture::json());
+        $releaseId = $this->releaseId = ApprovalRuntimeFixture::publish($container, $runtime, $graph);
         $bindings->save('payment:transfer', '1.0.0', $releaseId, 0, Context::createDefaultContext());
         $bindings->activate('payment:transfer', 1, 0, Context::createDefaultContext());
         $this->service = new PaymentTransferApprovalRequestService(
@@ -105,6 +110,61 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
         static::assertSame(0, $container->get(PaymentTransferService::class)->getById($transfer->id)->submitAttempts);
     }
 
+    public function testSubmissionStartsTheInstanceAndCreatesTheReviewersTask(): void
+    {
+        $container = static::getContainer();
+        $transfer = PaymentTransferApprovalFixture::create($container);
+        $request = $this->service->submit($transfer->id, $this->context);
+        $connection = $container->get(Connection::class);
+
+        static::assertSame('running', $connection->fetchOne('SELECT status FROM approval_flow_instance WHERE id = :id', ['id' => Uuid::fromHexToBytes($request->getInstanceId())]));
+        static::assertSame(Uuid::fromHexToBytes($this->reviewerId), $connection->fetchOne('SELECT assignee_id FROM approval_flow_task WHERE status = :status', ['status' => 'pending']));
+        static::assertSame(2, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_execution'));
+        static::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_operation'));
+        static::assertSame(0, $container->get(PaymentTransferService::class)->getById($transfer->id)->submitAttempts);
+    }
+
+    public function testUnavailableReviewerRollsBackTheSubmissionAndAllowsRetry(): void
+    {
+        $container = static::getContainer();
+        $transfer = PaymentTransferApprovalFixture::create($container);
+        $container->get('user.repository')->update([['id' => $this->reviewerId, 'active' => false]], Context::createDefaultContext());
+        try {
+            $this->service->submit($transfer->id, $this->context);
+            static::fail('A failed start must roll back the business submission.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertSame(ApprovalFlowException::ASSIGNEE_UNAVAILABLE, $exception->getErrorCode());
+        }
+        $connection = $container->get(Connection::class);
+        foreach (['approval_flow_request', 'approval_flow_instance', 'approval_flow_execution', 'approval_flow_task', 'approval_flow_operation', 'payment_transfer_approval_request'] as $table) {
+            static::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM ' . $table), $table);
+        }
+        $container->get('user.repository')->update([['id' => $this->reviewerId, 'active' => true]], Context::createDefaultContext());
+        $this->service->submit($transfer->id, $this->context);
+        static::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_task'));
+    }
+
+    public function testFailedTaskListenerRollsBackTheBusinessSubmission(): void
+    {
+        $container = static::getContainer();
+        $transfer = PaymentTransferApprovalFixture::create($container);
+        EventHookDispatcher::fromContainer($container)->on('approval_flow_task.written', static function (): void {
+            throw new \RuntimeException('Task listener failed.');
+        }, once: true);
+        try {
+            $this->service->submit($transfer->id, $this->context);
+            static::fail('A failed task write must roll back the business evidence too.');
+        } catch (\RuntimeException $exception) {
+            static::assertSame('Task listener failed.', $exception->getMessage());
+        }
+        $connection = $container->get(Connection::class);
+        static::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_request'));
+        static::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM payment_transfer_approval_request'));
+        static::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_instance'));
+        $this->service->submit($transfer->id, $this->context);
+        static::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_task'));
+    }
+
     public function testRepeatedSubmissionReturnsTheOriginalRequest(): void
     {
         $container = static::getContainer();
@@ -121,6 +181,8 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
         static::assertSame($first->getInstanceId(), $second->getInstanceId());
         static::assertSame(1, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM approval_flow_request'));
         static::assertSame(1, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM payment_transfer_approval_request'));
+        static::assertSame(1, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM approval_flow_task'));
+        static::assertSame(1, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM approval_flow_operation'));
     }
 
     public function testLegacySubmissionCannotBindATransferAlreadyInTheNewFlow(): void
