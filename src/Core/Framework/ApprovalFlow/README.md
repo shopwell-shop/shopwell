@@ -4,7 +4,7 @@ Approval Flow is an independent approval module in the existing Core host.
 Its first integration is payment transfer approval.
 The current skeleton includes node and approval business type declarations, versioned drafts, immutable compilation releases, verified node entry, internal serial approval commands and terminal result delivery work.
 Payment transfer submission now starts the initial approval tasks; committed group outcomes are advanced by the host scheduler.
-Committed approval results are delivered to the owning business module; payout execution remains a subsequent increment.
+Committed approval results are delivered to the owning business module; an applied approval can authorize the existing payout entry point after its inputs are rechecked.
 
 ## Skeleton responsibilities
 
@@ -493,6 +493,16 @@ Unavailable recipients/accounts or changed transfer facts leave the result pendi
 Existing receipts replay before rechecking live facts, so a redelivery after the business commit does not fail because those facts changed later.
 Ordinary Administration writes, updates and deletes cannot replace that decision.
 The migration adds a new table without converting legacy Workflow records.
+
+Payment's existing submission preflight and atomic attempt claim both call `PaymentTransferApprovalService::assertApproved()`.
+For a transfer with an Approval Flow submission, `PaymentTransferApprovalResultVerifier` requires the original request's applied `Approved` decision.
+A pending, rejected or not-yet-delivered decision cannot authorize a payout or select the legacy Workflow path.
+Only transfers without a new submission use their existing Workflow approval binding; there is no conversion or missing-capability fallback.
+Under the transfer lock, the verifier reads the current business revision and decision, then rechecks the current transfer, recipient and active merchant account.
+It compares that snapshot with the submitted revision and the outgoing transfer's financial inputs and reason before returning the approved recipient.
+The same check runs inside the attempt claim; failure rolls back the claim before any channel call.
+The verifier does not duplicate the submitter's app ownership, state or prior-attempt checks.
+Approval result delivery still does not submit a payout automatically, and the Administration creation and approval pages remain later work.
 
 Handler identity is selected by the frozen business version; deployment artifact pins for handler code, editable form results and remote delivery are not implemented by this increment.
 The lease prevents a stale local confirmation; it does not provide exactly-once external execution.

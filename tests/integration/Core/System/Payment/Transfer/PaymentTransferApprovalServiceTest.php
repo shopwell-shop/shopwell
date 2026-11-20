@@ -36,6 +36,7 @@ use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalException;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultVerifier;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
@@ -240,6 +241,7 @@ class PaymentTransferApprovalServiceTest extends TestCase
             $container->get(PaymentTransferService::class),
             $container->get(PaymentTransferPresenter::class),
             $container->get('event_dispatcher'),
+            $container->get(PaymentTransferApprovalResultVerifier::class),
         );
     }
 

@@ -218,6 +218,10 @@ The dispatcher acknowledges only after the business handler returns; failed or e
 Consumers must deduplicate by the result ID because the delivery contract is at least once.
 Payment supplies a real handler that saves an immutable decision for the original transfer request, with its revision check and deduplication under the transfer lock.
 That decision does not execute a payout or change the legacy Workflow integration.
+Payment's existing submission preflight and atomic attempt claim now require this applied approval for transfers with an Approval Flow submission.
+The internal `PaymentTransferApprovalResultVerifier` compares the current business snapshot with the original revision and the outgoing transfer inputs under the transfer lock.
+Missing, pending, rejected or changed evidence blocks execution and rolls back the claim; only transfers without a new submission use their existing Workflow approval binding.
+No public submission route, new extension interface or automatic payout trigger is introduced.
 
 ## Internal business binding management
 

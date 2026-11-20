@@ -122,6 +122,7 @@ use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalReques
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultHandler;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultVerifier;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferResubmissionSubscriber;
@@ -707,6 +708,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PaymentTransferApprovalRequestStore::class)->args([
         service(Connection::class), service('payment_transfer_approval_request.repository'), service(PaymentTransferApprovalStore::class),
     ]);
+    $services->set(PaymentTransferApprovalResultVerifier::class)->args([service(PaymentTransferApprovalRequestStore::class)]);
     $services->set(PaymentTransferApprovalRequestService::class)->args([
         service(PaymentTransferApprovalRequestStore::class),
         service(ApprovalRequestService::class),
@@ -731,6 +733,7 @@ return static function (ContainerConfigurator $container): void {
         service(PaymentTransferService::class),
         service(PaymentTransferPresenter::class),
         service('event_dispatcher'),
+        service(PaymentTransferApprovalResultVerifier::class),
     ])->tag('kernel.event_listener', ['event' => WorkflowRequestCatalogueEvent::class, 'method' => 'restrictRequestCatalogue']);
     $services->set(PaymentTransferWriteProtection::class)->tag('kernel.event_subscriber');
 

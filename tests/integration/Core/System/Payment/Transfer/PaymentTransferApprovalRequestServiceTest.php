@@ -25,6 +25,7 @@ use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalExcept
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultVerifier;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
@@ -381,6 +382,7 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
             $container->get(PaymentTransferService::class),
             $container->get(PaymentTransferPresenter::class),
             $container->get('event_dispatcher'),
+            $container->get(PaymentTransferApprovalResultVerifier::class),
         );
     }
 }

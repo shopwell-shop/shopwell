@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Transfer\Approval;
 
 use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -49,6 +50,27 @@ class PaymentTransferApprovalRequestStore
                 return $submit();
             });
         });
+    }
+
+    /**
+     * A missing outcome means the new approval has not delivered its business decision yet.
+     *
+     * @return array{revision: string, outcome: ApprovalOutcome|null}|null
+     */
+    public function getApproval(string $transferId): ?array
+    {
+        $row = $this->connection->fetchAssociative(
+            'SELECT request.business_revision, result.outcome FROM payment_transfer_approval_request evidence
+             INNER JOIN approval_flow_request request ON request.id = evidence.request_id
+             LEFT JOIN payment_transfer_approval_result result ON result.id = evidence.id AND result.request_id = evidence.request_id
+             WHERE evidence.id = :id LOCK IN SHARE MODE',
+            ['id' => Uuid::fromHexToBytes($transferId)],
+        );
+        if ($row === false) {
+            return null;
+        }
+
+        return ['revision' => $row['business_revision'], 'outcome' => $row['outcome'] === null ? null : ApprovalOutcome::from($row['outcome'])];
     }
 
     /**

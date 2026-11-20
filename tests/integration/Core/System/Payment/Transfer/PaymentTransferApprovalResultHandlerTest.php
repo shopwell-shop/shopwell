@@ -21,6 +21,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\MessageQueue\ScheduledTask\Registry\TaskRegistry;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalException;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
@@ -200,6 +201,41 @@ class PaymentTransferApprovalResultHandlerTest extends TestCase
             static::assertSame(DeliverApprovalResultsTask::class, $this->connection->fetchOne('SELECT scheduled_task_class FROM scheduled_task WHERE name = :name', ['name' => DeliverApprovalResultsTask::getTaskName()]));
         } finally {
             $this->connection->rollBack();
+        }
+    }
+
+    public function testConcurrentClaimRejectsChangedFactsFromAnOlderSnapshot(): void
+    {
+        $this->complete(ApprovalOutcome::Approved);
+        $context = Context::createDefaultContext();
+        $delivery = static::getContainer()->get(ApprovalResultOutbox::class)->claim($context);
+        static::assertNotNull($delivery);
+        $input = new InputStream();
+        $writer = new Process([\PHP_BINARY, '-d', 'xdebug.mode=off', __DIR__ . '/_fixtures/competing-approval-execution.php', $this->transfer->id]);
+        $writer->setInput($input);
+        $writer->setTimeout(30);
+        try {
+            $writer->start();
+            static::assertTrue($writer->waitUntil(static fn (): bool => str_contains($writer->getOutput(), 'SNAPSHOT')), $writer->getErrorOutput());
+            $this->connection->beginTransaction();
+            static::getContainer()->get(PaymentTransferApprovalResultHandler::class)->handle($delivery->result, $this->request, $context);
+            $identity = static::getContainer()->get(PaymentCredentialCipher::class)->encryptValue('Changed before the payout claim');
+            static::getContainer()->get('payment_transfer_recipient.repository')->update([['id' => $this->transfer->recipientId, 'identityValue' => $identity]], $context);
+            $input->write("compete\n");
+            static::assertTrue($writer->waitUntil(static fn (): bool => str_contains($writer->getOutput(), 'BLOCKED')), $writer->getErrorOutput());
+            $this->connection->commit();
+            $input->write("retry\n");
+            $input->close();
+
+            static::assertSame(0, $writer->wait(), $writer->getErrorOutput());
+            static::assertStringContainsString('REJECTED', $writer->getOutput());
+            static::assertSame(0, (int) $this->connection->fetchOne('SELECT submit_attempts FROM payment_transfer WHERE id = :id', ['id' => Uuid::fromHexToBytes($this->transfer->id)]));
+        } finally {
+            $input->close();
+            $writer->stop();
+            if ($this->connection->isTransactionActive()) {
+                $this->connection->rollBack();
+            }
         }
     }
 

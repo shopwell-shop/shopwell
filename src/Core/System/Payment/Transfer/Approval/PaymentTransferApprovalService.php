@@ -50,6 +50,7 @@ class PaymentTransferApprovalService
         private readonly PaymentTransferService $transfers,
         private readonly PaymentTransferPresenter $presenter,
         private readonly EventDispatcherInterface $events,
+        private readonly PaymentTransferApprovalResultVerifier $results,
     ) {
     }
 
@@ -70,6 +71,11 @@ class PaymentTransferApprovalService
 
     public function assertApproved(PaymentTransferEntity $transfer): PaymentTransferRecipientEntity
     {
+        $recipient = $this->results->recipient($transfer);
+        if ($recipient !== null) {
+            return $recipient;
+        }
+
         $approval = $this->store->get($transfer->id);
         if ($approval === null) {
             throw PaymentTransferApprovalException::blocked('not_started');

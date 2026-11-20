@@ -42,6 +42,8 @@ Business modules can implement `ApprovalResultHandler` and register `approval_fl
 The handler receives the immutable result and original request; it must commit its business update and result-ID deduplication atomically before returning.
 The scheduled task `approval_flow.deliver_results` retries failed applications and acknowledges only after a handler completes.
 Payment saves the decision for the original transfer request without executing a payout.
+Transfers submitted through Approval Flow can use the existing payout entry point only after their applied approval and unchanged business inputs are checked again inside the atomic attempt claim.
+Pending, rejected and not-yet-delivered decisions cannot authorize a payout.
 The scheduled task `approval_flow.progress` now advances committed serial approval outcomes to the next approval or published end, preserving saved decisions when progression must be retried.
 Register scheduled tasks and run the normal scheduled-task runner and Messenger worker to enable this continuation.
 Internal progression preserves the caller Context; authorization belongs to its actual entry point, while personal decisions retain their assignee checks.
