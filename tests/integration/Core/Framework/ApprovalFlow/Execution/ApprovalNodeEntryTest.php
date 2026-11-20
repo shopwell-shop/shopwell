@@ -77,9 +77,9 @@ class ApprovalNodeEntryTest extends TestCase
         $connection = static::getContainer()->get(Connection::class);
         $before = $connection->fetchAssociative('SELECT * FROM approval_flow_release WHERE id = :id', ['id' => Uuid::fromHexToBytes($release->id)]);
 
-        $start = $entry->enter($release->id, 'start', $context);
-        $review = $entry->enter($release->id, 'review', $context);
-        $end = $entry->enter($release->id, 'end', $context);
+        $start = $entry->enter($release->id, 'start');
+        $review = $entry->enter($release->id, 'review');
+        $end = $entry->enter($release->id, 'end');
 
         static::assertInstanceOf(AdvanceEffect::class, $start);
         static::assertInstanceOf(RequestApprovalEffect::class, $review);
@@ -97,7 +97,7 @@ class ApprovalNodeEntryTest extends TestCase
         $graph = $this->filesystem->readFile(\dirname(__DIR__, 5) . '/unit/Core/Framework/ApprovalFlow/Graph/_fixtures/finance-transfer.json');
         $release = $this->publish($graph);
 
-        $effect = $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review', Context::createDefaultContext());
+        $effect = $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review');
 
         static::assertInstanceOf(CompleteEffect::class, $effect);
         static::assertSame(ApprovalOutcome::Rejected, $effect->outcome);
@@ -114,7 +114,7 @@ class ApprovalNodeEntryTest extends TestCase
         static::getContainer()->get(Connection::class)->update('approval_flow_release', ['contract_json' => '{}'], ['id' => Uuid::fromHexToBytes($release->id)]);
 
         try {
-            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review', Context::createDefaultContext());
+            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review');
             static::fail('The entire release must be verified before entering a selected node.');
         } catch (ApprovalFlowException $exception) {
             static::assertSame(ApprovalFlowException::RELEASE_VERIFICATION_FAILED, $exception->getErrorCode());
@@ -132,7 +132,7 @@ class ApprovalNodeEntryTest extends TestCase
         $release = $this->publish($graph);
 
         try {
-            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review', Context::createDefaultContext());
+            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review');
             static::fail('The actual typed configuration must match the frozen node plan.');
         } catch (ApprovalFlowException $exception) {
             static::assertSame(ApprovalFlowException::RELEASE_VERIFICATION_FAILED, $exception->getErrorCode());
@@ -154,7 +154,7 @@ class ApprovalNodeEntryTest extends TestCase
         $this->filesystem->dumpFile($path, json_encode($manifest, \JSON_THROW_ON_ERROR));
 
         try {
-            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review', Context::createDefaultContext());
+            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'review');
             static::fail('Every used executor artifact must be bound before any node enters.');
         } catch (ApprovalFlowException $exception) {
             static::assertSame(ApprovalFlowException::ARTIFACT_SERVICE_NOT_FOUND, $exception->getErrorCode());
@@ -174,7 +174,7 @@ class ApprovalNodeEntryTest extends TestCase
         $runtime->set(ApprovalReleaseStore::class, static::getContainer()->get(ApprovalReleaseStore::class));
         $this->expectExceptionObject(ApprovalFlowException::nodeExecutorNotFound('core:end', '1.0.0'));
 
-        $runtime->get(ApprovalNodeEntry::class)->enter($release->id, 'end', Context::createDefaultContext());
+        $runtime->get(ApprovalNodeEntry::class)->enter($release->id, 'end');
     }
 
     public function testUnknownNodeDoesNotUseAnotherNodesConfiguration(): void
@@ -182,7 +182,7 @@ class ApprovalNodeEntryTest extends TestCase
         $release = $this->publish(GraphFixture::json());
         $this->expectExceptionObject(ApprovalFlowException::releaseNodeNotFound($release->id, 'missing'));
 
-        $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'missing', Context::createDefaultContext());
+        $this->container->get(ApprovalNodeEntry::class)->enter($release->id, 'missing');
     }
 
     public function testApprovalExecutorCannotSkipApprovalByReturningCompletion(): void
@@ -226,7 +226,7 @@ class ApprovalNodeEntryTest extends TestCase
         $runtime->set(ApprovalReleaseStore::class, static::getContainer()->get(ApprovalReleaseStore::class));
         $this->expectExceptionObject(ApprovalFlowException::releaseVerificationFailed($release->id, 'contractJson'));
 
-        $runtime->get(ApprovalNodeEntry::class)->enter($release->id, 'review', Context::createDefaultContext());
+        $runtime->get(ApprovalNodeEntry::class)->enter($release->id, 'review');
     }
 
     private function assertInvalidEffect(PublishedApprovalRelease $release, string $nodeId, string $reason): void
@@ -235,7 +235,7 @@ class ApprovalNodeEntryTest extends TestCase
         $parameters = ['id' => Uuid::fromHexToBytes($release->id)];
         $before = $connection->fetchAssociative('SELECT * FROM approval_flow_release WHERE id = :id', $parameters);
         try {
-            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, $nodeId, Context::createDefaultContext());
+            $this->container->get(ApprovalNodeEntry::class)->enter($release->id, $nodeId);
             static::fail('Invalid executor output must not escape the verified entry boundary.');
         } catch (ApprovalFlowException $exception) {
             static::assertSame(ApprovalFlowException::INVALID_NODE_EFFECT, $exception->getErrorCode());

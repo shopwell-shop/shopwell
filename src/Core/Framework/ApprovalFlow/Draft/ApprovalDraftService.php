@@ -2,10 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Draft;
 
-use Shopwell\Core\Framework\Api\Context\AdminApiSource;
-use Shopwell\Core\Framework\Api\Context\SystemSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
-use Shopwell\Core\Framework\ApprovalFlow\Definition\ApprovalFlowDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
@@ -35,7 +32,6 @@ class ApprovalDraftService
 
     public function create(string $name, string $graphJson, Context $context): ApprovalDraft
     {
-        $this->requirePrivileges($context, ApprovalFlowDefinition::ENTITY_NAME . ':create', ApprovalDraftDefinition::ENTITY_NAME . ':create');
         $graph = new DraftGraph($this->codec->encodeDraft(new DraftGraph($graphJson)));
         $draft = new ApprovalDraft(Uuid::randomHex(), 1, $graph, $this->diagnostics->analyze($graph));
 
@@ -46,7 +42,6 @@ class ApprovalDraftService
 
     public function read(string $definitionId, Context $context): ApprovalDraft
     {
-        $this->requirePrivileges($context, ApprovalDraftDefinition::ENTITY_NAME . ':read');
         $stored = $this->store->read($definitionId, $context);
         $graph = $this->codec->decodeDraft($stored->getGraphJson());
 
@@ -83,8 +78,6 @@ class ApprovalDraftService
         \Closure $mutate,
         bool $confirmRemoval = false,
     ): ApprovalDraftEdit {
-        $this->requirePrivileges($context, ApprovalDraftDefinition::ENTITY_NAME . ':read', ApprovalDraftDefinition::ENTITY_NAME . ':update');
-
         return $this->store->update($definitionId, $expectedRevision, $context, static function (string $graphJson, int $revision) use ($mutate, $confirmRemoval): array {
             $mutation = $mutate(new DraftGraph($graphJson));
 
@@ -97,22 +90,5 @@ class ApprovalDraftService
                 'result' => new ApprovalDraftEdit($revision, $mutation),
             ];
         });
-    }
-
-    private function requirePrivileges(Context $context, string ...$privileges): void
-    {
-        $source = $context->getSource();
-        if ($source instanceof SystemSource) {
-            return;
-        }
-
-        $missing = array_values(array_filter(
-            $privileges,
-            static fn (string $privilege): bool => !$source instanceof AdminApiSource || !$source->isAllowed($privilege),
-        ));
-
-        if ($missing !== []) {
-            throw ApprovalFlowException::missingPrivileges($missing);
-        }
     }
 }

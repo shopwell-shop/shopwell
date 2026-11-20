@@ -4,6 +4,11 @@ namespace Shopwell\Core\Framework\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingHeadDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingStore;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\Command\ApprovalBusinessTypeListCommand;
 use Shopwell\Core\Framework\ApprovalFlow\Definition\ApprovalFlowDefinition;
@@ -63,6 +68,16 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
 
+    $services->set(ApprovalBindingDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalBindingHeadDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalBindingWriteGuard::class)->tag('kernel.event_subscriber');
+    $services->set(ApprovalBindingStore::class)->args([
+        service(Connection::class), service('approval_flow_binding.repository'), service('approval_flow_binding_head.repository'), service(ApprovalBindingWriteGuard::class), service(ClockInterface::class),
+    ]);
+    $services->set(ApprovalBindingService::class)->args([
+        service(ApprovalBindingStore::class), service(ApprovalBusinessTypeRegistry::class), service(ApprovalReleaseLoader::class),
+    ]);
+
     $services->set(ApprovalBusinessTypeRegistry::class)
         ->args([tagged_iterator('approval_flow.business_type_loader')]);
     $services->set(ApprovalBusinessTypeListCommand::class)
@@ -111,7 +126,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalReleaseService::class)
         ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class)]);
     $services->set(ApprovalReleaseLoader::class)
-        ->args([service(ApprovalReleaseService::class), service(ApprovalReleaseCompiler::class)]);
+        ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class)]);
     $services->set(NodeEffectValidator::class);
     // Only node entry requires deployment artifacts.
     $services->set(ApprovalNodeEntry::class)

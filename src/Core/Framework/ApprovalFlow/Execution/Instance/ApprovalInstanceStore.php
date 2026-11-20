@@ -111,7 +111,7 @@ class ApprovalInstanceStore
                     throw ApprovalFlowException::startNodeAlreadyEntered($instanceId);
                 }
 
-                $transition = $this->nodeEntry->enterStart($releaseId, $context);
+                $transition = $this->nodeEntry->enterStart($releaseId);
                 $this->writeGuard->write($context, function (Context $writeContext) use ($instanceId, $transition): void {
                     $this->executions->create([
                         [
@@ -152,7 +152,7 @@ class ApprovalInstanceStore
             $context,
             function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus {
                 $nodeId = $this->waitingNode($instanceId, $executionId);
-                $effect = $this->nodeEntry->enter($releaseId, $nodeId, $context);
+                $effect = $this->nodeEntry->enter($releaseId, $nodeId);
                 if (!$effect instanceof RequestApprovalEffect) {
                     throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The node did not request approval.');
                 }
@@ -218,7 +218,7 @@ class ApprovalInstanceStore
                     return $outcome;
                 }
 
-                $route = $this->nodeEntry->successor($releaseId, $execution['node_id'], $context);
+                $route = $this->nodeEntry->successor($releaseId, $execution['node_id']);
                 $this->writeGuard->write($context, function (Context $writeContext) use ($instanceId, $execution, $route): void {
                     $this->executions->create([[
                         'id' => Uuid::randomHex(),
@@ -255,7 +255,7 @@ class ApprovalInstanceStore
                 }
                 $this->requireSerialTail($instanceId, $executionId);
                 $this->requireSettledWork($instanceId, $executionId);
-                $effect = $this->nodeEntry->enterEnd($releaseId, $execution['node_id'], $context);
+                $effect = $this->nodeEntry->enterEnd($releaseId, $execution['node_id']);
                 $this->writeGuard->write($context, function (Context $writeContext) use ($executionId, $effect): void {
                     $this->executions->update([[
                         'id' => $executionId,

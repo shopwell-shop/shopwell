@@ -3,7 +3,7 @@
 Approval Flow is an independent approval module in the existing Core host.
 Its first integration is payment transfer approval.
 The current skeleton includes node and approval business type declarations, versioned drafts, immutable compilation releases, verified node entry, internal serial approval commands and terminal result delivery work.
-Business admission, binding activation and automatic scheduling remain subsequent increments.
+Business submission and automatic scheduling remain subsequent increments.
 
 ## Skeleton responsibilities
 
@@ -20,7 +20,7 @@ Keep business implementations and their DI in the owning business module.
 - `Diagnostics` reports structure defects, incomplete drafts and missing capabilities without rewriting input.
 - `Mutation` edits detached drafts and returns the complete result with diagnostics and explicit removed fragments.
 - `Definition` and `Draft` define the DAL records for a flow identity and its current draft.
-- `ApprovalDraftService` owns draft admission, caller permissions and confirmed edits; `ApprovalDraftStore` isolates transactions, current row reads and DAL writes.
+- `ApprovalDraftService` owns draft admission and confirmed edits; `ApprovalDraftStore` isolates transactions, current row reads and DAL writes.
 - `Publication` prepares immutable graph and declaration snapshots for subsequent compilation and executable dependency checks.
 - `GraphPlanCompiler` derives graph indexes and a topological order from a freshly checked snapshot.
 - `Node/Compilation` dispatches exact-version configuration compilers; `Node/Configuration` owns the concrete built-in values.
@@ -114,9 +114,9 @@ A clean graph report only describes the implemented graph checks and never grant
 ## Controlled draft persistence
 
 `ApprovalDraftService::create()` admits a draft JSON document and creates its definition and revision 1 atomically.
-It requires both `approval_flow_definition:create` and `approval_flow_draft:create`.
-`read()` requires `approval_flow_draft:read`; each edit requires both draft read and update privileges.
-An Admin API source must hold those privileges, a system source may perform internal work, and customer or unrecognized sources are rejected.
+Draft, release and binding services are internal orchestration services; they do not repeat transport ACL or classify caller sources.
+DAL writes retain the existing `AclWriteValidator` checks and the supplied Context.
+Future HTTP actions must declare their route ACL before calling these services; no new public action is exposed here.
 The original Context and source reach DAL and its events; the internal write scope is restored on success and failure.
 
 The stored graph is canonical JSON text with a database `JSON_VALID` constraint.
@@ -165,7 +165,7 @@ Changing a schema artifact changes the full hash even if its declared version st
 The readonly snapshot owns only strings, so subsequent edits or catalogue changes cannot change a captured value.
 It is an internal candidate value; constructing or retaining one grants no publication or execution authority.
 
-The final publication operation must check caller permissions, lock and reread the draft, compare its expected revision, rerun preflight and compile against the full exact executable dependency set.
+The final publication operation must lock and reread the draft, compare its expected revision, rerun preflight and compile against the full exact executable dependency set.
 Executor, policy, assignee, form, request and runtime dependencies are outside this graph-only contract; the later NodePlanCompiler checks exact executor service availability.
 A candidate hash is not a replacement for those checks.
 This graph-only stage creates no release rows or executable configuration handles.
@@ -274,7 +274,8 @@ Verifying retained bytes does not independently prove that loaded PHP came from 
 A class name, version label, individual source-file hash or composer.lock is not a substitute for a complete retained deployment artifact.
 The test fixtures explicitly use synthetic deployment attestations and provide no production provenance evidence.
 
-`ApprovalReleaseService::publish(definitionId, expectedRevision, expectedHash, Context)` requires draft read and release create privileges before accessing the draft or manifest.
+`ApprovalReleaseService::publish(definitionId, expectedRevision, expectedHash, Context)` performs controlled publication without repeating transport ACL.
+The DAL retains release create authorization for Administration sources.
 Its store locks the current draft row, checks the revision, recompiles those current bytes and compares the full preview hash.
 A changed revision or publication hash returns HTTP 409 without inserting a record.
 The same definition and content hash returns the original release ID and source revision; the deduplication lookup uses a locking current read even inside an older outer snapshot.
@@ -286,11 +287,11 @@ The `approval_flow_release` DAL model retains graph, declaration contract, graph
 `Migration1795081112CreateApprovalFlowReleaseTable` creates it through the normal migration runner, with a unique definition/content hash and a restrictive definition foreign key.
 Ordinary DAL and Sync insertion is rejected; the internal insert scope permits only insertion and never update or delete.
 This is an in-process coordination boundary, not a sandbox against trusted PHP with direct database access.
-`read(releaseId, Context)` requires release read privileges.
+`read(releaseId, Context)` is an internal repository read; API callers require authorization at the transport boundary.
 Later draft edits cannot rewrite an earlier record.
 
 Publication currently means persisting an admitted compilation record.
-There is no activation endpoint or instance execution path.
+There is no public activation or instance-execution endpoint.
 Request/form/user/policy dependencies, runtime admission, historical artifact loading and retention, worker capability checks and authoritative command commits must be completed before real approval execution.
 
 ## Verified configuration restoration and pure entry
@@ -300,7 +301,8 @@ Its constructor derives those values once from the compiler stages without retai
 Storage and execution consumers use this release boundary directly rather than traversing intermediate compiler results.
 The stored wire documents and hash formula are unchanged.
 
-`ApprovalReleaseLoader::load(releaseId, Context)` reads through the release service, preserving its privilege-first read boundary.
+`ApprovalReleaseLoader::load(releaseId)` reads frozen compilation content through the release store using a shared locking read.
+This current read sees releases published after an enclosing repeatable-read snapshot.
 It recompiles the saved graph against this deployment and compares every frozen document and the full content hash before returning the immutable compiled value.
 It does not read the current draft or replace a saved plan with a newly compiled variant.
 A content or dependency mismatch fails with `APPROVAL_FLOW__RELEASE_VERIFICATION_FAILED`, HTTP 409 and the affected part, without returning a partially admitted release.
@@ -327,7 +329,7 @@ A completion effect from `EndNodeConfiguration` must preserve its frozen outcome
 Business nodes may compute an outcome when their declaration permits completion; this output check does not establish that the process can finish.
 
 The returned advance, approval-request or completion effect is still an uncommitted intent.
-Release read privileges permit this internal inspection path; they do not authorize a task, decision, transition or business side effect.
+This internal inspection path does not authorize a task, decision, transition or business side effect.
 A future instance command must bind effects to locked current execution state, resolve live prerequisites and validate them before its authoritative commit.
 There is no HTTP endpoint for this path and no instance, task, scheduler or activation behavior in this increment.
 
@@ -468,3 +470,31 @@ No automatic worker, callback or external delivery is installed yet.
 Without an admitted business reference and consumer route, pending work must not be acknowledged automatically.
 A future consumer must deduplicate by the stable result ID: a remote effect followed by a crash before acknowledgement can be delivered again.
 The lease prevents a stale local confirmation; it does not provide exactly-once external execution.
+
+## Versioned business bindings
+
+`ApprovalBindingService::save(type, businessVersion, releaseId, expectedRevision, Context)` saves the next immutable configuration for one business type.
+It freezes the exact business version and form schema bytes, ID and hash alongside the selected release ID.
+The release is verified with the current deployment, its start node must name the same business type, and its `meta.formSchemaRef` must name that form schema.
+A release currently carries only a form reference; this check does not claim to verify a form hash absent from the release contract.
+
+Saving does not enable the new configuration.
+`head(type, Context)` reports the latest saved revision, nullable active revision and activation version.
+`activate(type, revision, expectedVersion, Context)` selects a saved revision after verifying the frozen business form and release again.
+Each successful activation increments the version, including a return to an older revision.
+The revision and activation version protect different changes; an intervening save does not change the active selection.
+
+The store locks the per-type head and reads the target revision with current locking reads.
+A unique-key upsert initializes the coordination row inside the save transaction.
+Immutable binding inserts use the DAL; the store updates the locked coordination head directly so DAL existence reads cannot hide a head created after an older transaction snapshot.
+Ordinary DAL and Sync writes to the head are rejected; internal pointer changes emit no DAL head-written event.
+The head's composite foreign key prevents selecting a revision belonging to another business type.
+Same-type save/activation reentry is rejected until the current operation returns, including calls made from DAL listeners.
+The write guard admits one binding insert batch and checks its command identities and payloads; a known scope name or event callback cannot reuse that admission.
+
+`read(type, revision, Context)` reads saved history; `active(type, Context)` reads the saved active selection.
+These internal configuration reads grant no business submission or execution authority.
+They do not continuously validate deployment or form availability; actual submission must validate its selected configuration again.
+No instance is created or rebound by saving or activating a binding.
+Full verification that existing business requests keep their original release belongs to the subsequent submission implementation.
+Conditional routing, rollout, business adapters, field authorization, menu actions and workers are subsequent capabilities.

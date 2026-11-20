@@ -68,11 +68,11 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
      */
     public function write(Context $context, \Closure $write): void
     {
-        $this->pendingWrites[$context] = true;
+        $this->pendingWrites->offsetSet($context, true);
         try {
             $context->scope(Context::SYSTEM_SCOPE, $write);
         } finally {
-            unset($this->pendingWrites[$context]);
+            $this->pendingWrites->offsetUnset($context);
         }
     }
 
@@ -86,9 +86,9 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
             return;
         }
         $context = $event->getContext();
-        $allowed = $context->getScope() === Context::SYSTEM_SCOPE && isset($this->pendingWrites[$context]);
+        $allowed = $context->getScope() === Context::SYSTEM_SCOPE && $this->pendingWrites->offsetExists($context);
         // Consume before ordinary listeners run; system scope alone never authorizes another batch.
-        unset($this->pendingWrites[$context]);
+        $this->pendingWrites->offsetUnset($context);
         if (!$allowed) {
             throw ApprovalFlowException::uncontrolledInstanceWrite();
         }
@@ -112,7 +112,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
             throw ApprovalFlowException::uncontrolledInstanceWrite();
         }
         foreach ($commands as $command) {
-            $this->admittedCommands[$command] = $command->getPayload();
+            $this->admittedCommands->offsetSet($command, $command->getPayload());
         }
     }
 
@@ -122,7 +122,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
             if (!\in_array($command->getEntityName(), self::ENTITIES, true)) {
                 continue;
             }
-            if (!isset($this->admittedCommands[$command]) || $this->admittedCommands[$command] !== $command->getPayload()) {
+            if (!$this->admittedCommands->offsetExists($command) || $this->admittedCommands->offsetGet($command) !== $command->getPayload()) {
                 throw ApprovalFlowException::uncontrolledInstanceWrite();
             }
             // Keep the exact command identity for DAL deadlock retries; weak keys expire with the batch.

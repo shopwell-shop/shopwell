@@ -80,6 +80,31 @@ class ApprovalReleaseStore
         });
     }
 
+    /**
+     * @return array{graphJson: string, contractJson: string, graphPlanJson: string, nodePlanJson: string, dependenciesJson: string, contentHash: string}
+     */
+    public function readContent(string $releaseId): array
+    {
+        // A current read also sees releases published after an enclosing repeatable-read snapshot.
+        $stored = $this->connection->fetchAssociative(
+            'SELECT graph_json, contract_json, graph_plan_json, node_plan_json, dependencies_json, content_hash
+             FROM approval_flow_release WHERE id = :id LOCK IN SHARE MODE',
+            ['id' => Uuid::fromHexToBytes($releaseId)],
+        );
+        if ($stored === false) {
+            throw ApprovalFlowException::releaseNotFound($releaseId);
+        }
+
+        return [
+            'graphJson' => $stored['graph_json'],
+            'contractJson' => $stored['contract_json'],
+            'graphPlanJson' => $stored['graph_plan_json'],
+            'nodePlanJson' => $stored['node_plan_json'],
+            'dependenciesJson' => $stored['dependencies_json'],
+            'contentHash' => $stored['content_hash'],
+        ];
+    }
+
     public function read(string $releaseId, Context $context): ApprovalReleaseEntity
     {
         return $this->repository->search(new Criteria([$releaseId]), $context)->first() ?? throw ApprovalFlowException::releaseNotFound($releaseId);

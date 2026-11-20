@@ -5,8 +5,6 @@ namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Release;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
-use Shopwell\Core\Framework\Api\Context\SalesChannelApiSource;
-use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Api\Sync\SyncOperation;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraft;
@@ -128,25 +126,6 @@ class ApprovalReleaseServiceTest extends TestCase
         static::assertSame(0, $this->releaseCount($draft));
     }
 
-    public function testPublishPermissionTakesPrecedenceOverDraftLookupAndArtifactLoading(): void
-    {
-        $source = new AdminApiSource(Uuid::randomHex());
-        $source->setPermissions(['approval_flow_draft:read']);
-        $context = Context::createDefaultContext($source);
-        $this->filesystem->remove($this->directory . '/manifest.json');
-        $this->expectExceptionObject(new MissingPrivilegeException(['approval_flow_release:create']));
-
-        $this->publisher->publish(Uuid::randomHex(), 1, str_repeat('a', 64), $context);
-    }
-
-    public function testReadPermissionTakesPrecedenceOverReleaseLookup(): void
-    {
-        $context = Context::createDefaultContext(new SalesChannelApiSource(Uuid::randomHex()));
-        $this->expectExceptionObject(new MissingPrivilegeException(['approval_flow_release:read']));
-
-        $this->publisher->read(Uuid::randomHex(), $context);
-    }
-
     public function testLaterDraftEditsDoNotChangeTheRelease(): void
     {
         $context = Context::createDefaultContext();
@@ -241,7 +220,7 @@ class ApprovalReleaseServiceTest extends TestCase
             'email' => $userId . '@example.com',
         ]], $systemContext);
         $source = new AdminApiSource($userId);
-        $source->setPermissions(['approval_flow_definition:create', 'approval_flow_draft:create', 'approval_flow_draft:read', 'approval_flow_release:create', 'approval_flow_release:read']);
+        $source->setPermissions(['approval_flow_definition:create', 'approval_flow_draft:create', 'approval_flow_release:create']);
         $context = Context::createDefaultContext($source);
         $draft = $this->drafts->create('Transfer approval', GraphFixture::json(), $context);
         $content = $this->compiler->compile($draft->graph);

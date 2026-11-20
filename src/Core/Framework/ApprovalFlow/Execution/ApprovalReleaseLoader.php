@@ -6,8 +6,7 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\ApprovalReleaseCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\CompiledApprovalRelease;
-use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
-use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -23,22 +22,22 @@ use Shopwell\Core\Framework\Log\Package;
 class ApprovalReleaseLoader
 {
     public function __construct(
-        private readonly ApprovalReleaseService $releases,
+        private readonly ApprovalReleaseStore $releases,
         private readonly ApprovalReleaseCompiler $compiler,
     ) {
     }
 
-    public function load(string $releaseId, Context $context): CompiledApprovalRelease
+    public function load(string $releaseId): CompiledApprovalRelease
     {
-        $stored = $this->releases->read($releaseId, $context);
-        $compiled = $this->compiler->compile(new DraftGraph($stored->getGraphJson()));
+        $stored = $this->releases->readContent($releaseId);
+        $compiled = $this->compiler->compile(new DraftGraph($stored['graphJson']));
         $parts = [
-            'graphJson' => [$stored->getGraphJson(), $compiled->graphJson],
-            'contractJson' => [$stored->getContractJson(), $compiled->contractJson],
-            'graphPlanJson' => [$stored->getGraphPlanJson(), $compiled->graphPlanJson],
-            'nodePlanJson' => [$stored->getNodePlanJson(), $compiled->nodePlanJson],
-            'dependenciesJson' => [$stored->getDependenciesJson(), $compiled->dependenciesJson],
-            'contentHash' => [$stored->getContentHash(), $compiled->hash],
+            'graphJson' => [$stored['graphJson'], $compiled->graphJson],
+            'contractJson' => [$stored['contractJson'], $compiled->contractJson],
+            'graphPlanJson' => [$stored['graphPlanJson'], $compiled->graphPlanJson],
+            'nodePlanJson' => [$stored['nodePlanJson'], $compiled->nodePlanJson],
+            'dependenciesJson' => [$stored['dependenciesJson'], $compiled->dependenciesJson],
+            'contentHash' => [$stored['contentHash'], $compiled->hash],
         ];
         foreach ($parts as $part => [$expected, $actual]) {
             if ($expected !== $actual) {

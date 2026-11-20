@@ -10,6 +10,14 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const BINDING_WRITE_IN_PROGRESS = 'APPROVAL_FLOW__BINDING_WRITE_IN_PROGRESS';
+    public const BINDING_NOT_FOUND = 'APPROVAL_FLOW__BINDING_NOT_FOUND';
+    public const ACTIVE_BINDING_NOT_FOUND = 'APPROVAL_FLOW__ACTIVE_BINDING_NOT_FOUND';
+    public const BINDING_REVISION_CONFLICT = 'APPROVAL_FLOW__BINDING_REVISION_CONFLICT';
+    public const BINDING_VERSION_CONFLICT = 'APPROVAL_FLOW__BINDING_VERSION_CONFLICT';
+    public const BINDING_RELEASE_MISMATCH = 'APPROVAL_FLOW__BINDING_RELEASE_MISMATCH';
+    public const BINDING_FORM_CHANGED = 'APPROVAL_FLOW__BINDING_FORM_CHANGED';
+    public const UNCONTROLLED_BINDING_WRITE = 'APPROVAL_FLOW__UNCONTROLLED_BINDING_WRITE';
     public const START_NODE_ALREADY_ENTERED = 'APPROVAL_FLOW__START_NODE_ALREADY_ENTERED';
     public const EXECUTION_NOT_FOUND = 'APPROVAL_FLOW__EXECUTION_NOT_FOUND';
     public const EXECUTION_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__EXECUTION_OUTSIDE_SNAPSHOT';
@@ -70,6 +78,86 @@ class ApprovalFlowException extends HttpException
     public static function missingPrivileges(array $privileges): MissingPrivilegeException
     {
         return new MissingPrivilegeException($privileges);
+    }
+
+    public static function bindingWriteInProgress(string $type): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::BINDING_WRITE_IN_PROGRESS,
+            'Approval binding "{{ type }}" is already being changed by this operation.',
+            ['type' => $type]
+        );
+    }
+
+    public static function bindingNotFound(string $type, int $revision): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::BINDING_NOT_FOUND,
+            'Approval binding "{{ type }}" revision {{ revision }} was not found.',
+            ['type' => $type, 'revision' => $revision]
+        );
+    }
+
+    public static function activeBindingNotFound(string $type): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::ACTIVE_BINDING_NOT_FOUND,
+            'No active approval binding is available for "{{ type }}".',
+            ['type' => $type]
+        );
+    }
+
+    public static function bindingRevisionConflict(string $type, int $expectedRevision, int $actualRevision): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::BINDING_REVISION_CONFLICT,
+            'Approval binding "{{ type }}" changed from expected revision {{ expectedRevision }} to {{ actualRevision }}.',
+            ['type' => $type, 'expectedRevision' => $expectedRevision, 'actualRevision' => $actualRevision]
+        );
+    }
+
+    public static function bindingVersionConflict(string $type, int $expectedVersion, int $actualVersion): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::BINDING_VERSION_CONFLICT,
+            'Approval binding "{{ type }}" activation changed from expected version {{ expectedVersion }} to {{ actualVersion }}.',
+            ['type' => $type, 'expectedVersion' => $expectedVersion, 'actualVersion' => $actualVersion]
+        );
+    }
+
+    public static function bindingReleaseMismatch(string $type, string $field): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::BINDING_RELEASE_MISMATCH,
+            'Approval release does not match business type "{{ type }}" at "{{ field }}".',
+            ['type' => $type, 'field' => $field]
+        );
+    }
+
+    public static function bindingFormChanged(string $type, string $version): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::BINDING_FORM_CHANGED,
+            'Approval business form "{{ type }}@{{ version }}" differs from the saved binding.',
+            ['type' => $type, 'version' => $version]
+        );
+    }
+
+    public static function uncontrolledBindingWrite(): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::UNCONTROLLED_BINDING_WRITE,
+            'Approval bindings must be changed through the controlled binding service.',
+            []
+        );
     }
 
     public static function instanceNotFound(string $instanceId): self

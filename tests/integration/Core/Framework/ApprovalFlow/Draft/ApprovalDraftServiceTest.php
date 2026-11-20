@@ -5,8 +5,6 @@ namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Draft;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
-use Shopwell\Core\Framework\Api\Context\SalesChannelApiSource;
-use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Api\Sync\SyncOperation;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftEntity;
@@ -104,14 +102,6 @@ class ApprovalDraftServiceTest extends TestCase
         static::assertCount(2, $edit->mutation->removedConnections);
         static::assertSame($preview->removedNodes, $edit->mutation->removedNodes);
         static::assertSame($preview->graph->json, $service->read($draft->definitionId, $context)->graph->json);
-    }
-
-    public function testMissingUpdatePrivilegeTakesPrecedenceOverDraftLookup(): void
-    {
-        $context = $this->designerContext(['approval_flow_draft:read']);
-        $this->expectExceptionObject(new MissingPrivilegeException(['approval_flow_draft:update']));
-
-        $this->service()->addNode(Uuid::randomHex(), 1, self::reviewNode('second-review'), $context);
     }
 
     public function testAnInvalidEditLeavesGraphAndRevisionUnchanged(): void
@@ -321,14 +311,6 @@ class ApprovalDraftServiceTest extends TestCase
         static::assertStringContainsString('"options":{}', $restored->mutation->removedNodes[0]);
     }
 
-    public function testCustomerContextCannotReadAnApprovalDraft(): void
-    {
-        $context = Context::createDefaultContext(new SalesChannelApiSource(Uuid::randomHex()));
-        $this->expectExceptionObject(new MissingPrivilegeException(['approval_flow_draft:read']));
-
-        $this->service()->read(Uuid::randomHex(), $context);
-    }
-
     public function testDalEventsAndPersistedActorKeepTheCallerIdentity(): void
     {
         $context = $this->designerContext();
@@ -353,10 +335,7 @@ class ApprovalDraftServiceTest extends TestCase
         static::assertSame(Context::USER_SCOPE, $context->getScope());
     }
 
-    /**
-     * @param list<string> $privileges
-     */
-    private function designerContext(array $privileges = ['approval_flow_definition:create', 'approval_flow_draft:create', 'approval_flow_draft:read', 'approval_flow_draft:update']): Context
+    private function designerContext(): Context
     {
         $userId = Uuid::randomHex();
         $systemContext = Context::createDefaultContext();
@@ -371,7 +350,7 @@ class ApprovalDraftServiceTest extends TestCase
             'email' => $userId . '@example.com',
         ]], $systemContext);
         $source = new AdminApiSource($userId);
-        $source->setPermissions($privileges);
+        $source->setPermissions(['approval_flow_definition:create', 'approval_flow_draft:create', 'approval_flow_draft:update']);
 
         return Context::createDefaultContext($source);
     }

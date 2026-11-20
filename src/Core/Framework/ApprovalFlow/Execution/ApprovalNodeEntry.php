@@ -14,7 +14,6 @@ use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeConfigurationCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\CompiledApprovalRelease;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -42,9 +41,9 @@ class ApprovalNodeEntry
     ) {
     }
 
-    public function enter(string $releaseId, string $nodeId, Context $context): AdvanceEffect|RequestApprovalEffect|CompleteEffect
+    public function enter(string $releaseId, string $nodeId): AdvanceEffect|RequestApprovalEffect|CompleteEffect
     {
-        $release = $this->releases->load($releaseId, $context);
+        $release = $this->releases->load($releaseId);
         /** @var GraphPayload $graph */
         $graph = $this->jsonDecoder->decode($release->graphJson);
 
@@ -54,9 +53,9 @@ class ApprovalNodeEntry
     /**
      * @return array{startNodeId: string, connectionId: string, nextNodeId: string}
      */
-    public function enterStart(string $releaseId, Context $context): array
+    public function enterStart(string $releaseId): array
     {
-        $release = $this->releases->load($releaseId, $context);
+        $release = $this->releases->load($releaseId);
         /** @var GraphPayload $graph */
         $graph = $this->jsonDecoder->decode($release->graphJson);
         /** @var object{startNodeId: string} $plan */
@@ -80,9 +79,9 @@ class ApprovalNodeEntry
      *
      * @return array{connectionId: string, nextNodeId: string}
      */
-    public function successor(string $releaseId, string $nodeId, Context $context): array
+    public function successor(string $releaseId, string $nodeId): array
     {
-        $release = $this->releases->load($releaseId, $context);
+        $release = $this->releases->load($releaseId);
         /** @var GraphPayload $graph */
         $graph = $this->jsonDecoder->decode($release->graphJson);
         $route = $this->singleSuccessor($nodeId, $graph);
@@ -93,9 +92,9 @@ class ApprovalNodeEntry
         return $route;
     }
 
-    public function enterEnd(string $releaseId, string $nodeId, Context $context): CompleteEffect
+    public function enterEnd(string $releaseId, string $nodeId): CompleteEffect
     {
-        $release = $this->releases->load($releaseId, $context);
+        $release = $this->releases->load($releaseId);
         /** @var object{endNodeId: string} $plan */
         $plan = $this->jsonDecoder->decode($release->graphPlanJson);
         if ($nodeId !== $plan->endNodeId) {

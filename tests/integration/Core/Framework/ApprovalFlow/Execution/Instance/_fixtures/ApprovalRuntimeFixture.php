@@ -4,7 +4,9 @@ namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Insta
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\ApprovalReleaseCompiler;
@@ -27,18 +29,20 @@ final class ApprovalRuntimeFixture
     {
         $runtime = PublicationFixture::container($manifest);
         $services = [
+            ApprovalBindingWriteGuard::class => $kernel->get(ApprovalBindingWriteGuard::class),
             Connection::class => $kernel->get(Connection::class),
             ClockInterface::class => $kernel->get(ClockInterface::class),
             ApprovalReleaseStore::class => $kernel->get(ApprovalReleaseStore::class),
             ApprovalInstanceWriteGuard::class => $kernel->get(ApprovalInstanceWriteGuard::class),
         ];
         $definitions = $kernel->get(DefinitionInstanceRegistry::class);
-        foreach (['approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution', 'approval_flow_task', 'approval_flow_result'] as $entityName) {
+        foreach (['approval_flow_binding', 'approval_flow_binding_head', 'approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution', 'approval_flow_task', 'approval_flow_result'] as $entityName) {
             $services[$entityName . '.repository'] = $definitions->getRepository($entityName);
         }
         foreach ($services as $id => $service) {
             $runtime->register($id)->setSynthetic(true)->setPublic(true);
         }
+        $runtime->getDefinition(ApprovalReleaseLoader::class)->setPublic(true);
         $runtime->getDefinition(ApprovalInstanceService::class)->setPublic(true);
         $runtime->getDefinition(ApprovalReleaseService::class)->setPublic(true);
         $runtime->compile();

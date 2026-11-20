@@ -5,8 +5,6 @@ namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Api\Context\AdminApiSource;
-use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
@@ -79,7 +77,7 @@ class ApprovalReleaseLoaderTest extends TestCase
         $connection = static::getContainer()->get(Connection::class);
         $before = $connection->fetchAssociative('SELECT * FROM approval_flow_release WHERE id = :id', ['id' => Uuid::fromHexToBytes($release->id)]);
 
-        $loaded = $this->loader->load($release->id, $context);
+        $loaded = $this->loader->load($release->id);
 
         static::assertSame($compiled->hash, $loaded->hash);
         static::assertSame($compiled->graphJson, $loaded->graphJson);
@@ -97,7 +95,7 @@ class ApprovalReleaseLoaderTest extends TestCase
         static::getContainer()->get(Connection::class)->update('approval_flow_release', [$column => $value], ['id' => Uuid::fromHexToBytes($release->id)]);
         $this->expectExceptionObject(ApprovalFlowException::releaseVerificationFailed($release->id, $part));
 
-        $this->loader->load($release->id, $context);
+        $this->loader->load($release->id);
     }
 
     public static function changedPartProvider(): \Generator
@@ -122,16 +120,7 @@ class ApprovalReleaseLoaderTest extends TestCase
         $this->filesystem->dumpFile($this->directory . '/manifest.json', json_encode($manifest, \JSON_THROW_ON_ERROR));
         $this->expectExceptionObject(ApprovalFlowException::releaseVerificationFailed($release->id, 'dependenciesJson'));
 
-        $this->loader->load($release->id, $context);
-    }
-
-    public function testReadPrivilegesAreCheckedBeforeLookupOrArtifactAccess(): void
-    {
-        $context = Context::createDefaultContext(new AdminApiSource(Uuid::randomHex()));
-        $this->filesystem->remove($this->directory . '/manifest.json');
-        $this->expectExceptionObject(new MissingPrivilegeException(['approval_flow_release:read']));
-
-        $this->loader->load(Uuid::randomHex(), $context);
+        $this->loader->load($release->id);
     }
 
     public function testMissingReleaseDoesNotBecomeAnEmptyPlan(): void
@@ -139,6 +128,6 @@ class ApprovalReleaseLoaderTest extends TestCase
         $id = Uuid::randomHex();
         $this->expectExceptionObject(ApprovalFlowException::releaseNotFound($id));
 
-        $this->loader->load($id, Context::createDefaultContext());
+        $this->loader->load($id);
     }
 }

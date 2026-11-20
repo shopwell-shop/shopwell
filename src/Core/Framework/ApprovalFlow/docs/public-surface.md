@@ -1,7 +1,7 @@
 # Approval Flow public surface
 
 The supported extension surface covers node and approval business type declaration, configuration compilation, pure node entry and assembly.
-The DAL models `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
+The DAL models `approval_flow_binding`, `approval_flow_binding_head`, `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 Writes use the controlled draft, release and instance paths.
 No HTTP action routes or supported PHP publication/runtime command services are exposed by this increment.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
@@ -97,7 +97,7 @@ The specification and YAML tests cover stable identity, schema shape, exact byte
 The wiring test compiles a real Symfony container with core and business-owned declarations, without changing framework configuration for the business node.
 Graph tests additionally cover explicit draft rules, closed wire shapes, exact missing versions, JSON value preservation, safe numeric lexemes, duplicate keys, graph references, control-flow diagnostics and atomic mutations with complete loss records.
 The graph wiring test exercises the same independently registered finance source through the actual codec and mutator services.
-Persistence integration tests cover DAL mapping, permissions, source/scope preservation, revision conflicts, removal confirmation, complete rollback, direct-write rejection and plugin loss/restoration.
+Persistence integration tests cover DAL mapping, DAL write permissions, source/scope preservation, revision conflicts, removal confirmation, complete rollback, direct-write rejection and plugin loss/restoration.
 An independent writer process establishes an older read snapshot, proves real row contention through a lock timeout and then receives a revision conflict after the first writer commits.
 Publication preflight tests cover complete graph admission, blocked incomplete graphs, canonical hashing, exact used declaration capture, schema byte drift and business-owned tagged loader assembly.
 Integration tests prove preparation leaves saved draft bytes and revisions unchanged, and later draft edits cannot alter an earlier snapshot.
@@ -120,11 +120,11 @@ The release DAL model follows the normal supported Definition/Entity/Collection 
 Publication requires the deployment-owned `APPROVAL_FLOW_ARTIFACT_MANIFEST` setting and freezes exact used-service bindings plus their retained artifact dependency closure.
 Opaque artifact versions can coexist; duplicate complete identities and duplicate service bindings fail.
 Deployment attests origins and closure completeness; SHA-256 verification covers retained bytes and does not establish loaded-code provenance, historical loading or worker readiness.
-These records grant no activation authority, and there is no activation or instance-execution API.
+These records grant no activation authority, and there is no public activation or instance-execution HTTP API.
 
 Artifact tests cover transitive closure, deterministic ordering, multiple retained versions, missing files/bindings/dependencies, changed bytes, cycles and conflicting declarations.
 Compiler tests use real core and tagged business services, and distinguish graph or artifact hash changes from formatting-only edits.
-Release integration tests cover immutable content, preview conflicts, privilege-first access, Administration actor/context preservation, DAL/Sync write rejection, transaction rollback and later draft edits.
+Release integration tests cover immutable content, preview conflicts, DAL write authorization, Administration actor/context preservation, DAL/Sync write rejection, transaction rollback and later draft edits.
 A separate publisher process proves contention and reuse after an older read snapshot; removing the deduplication current read makes that test fail.
 The release migration test creates an isolated database and verifies repeated execution preserves records, the unique key and foreign-key deletion policies.
 
@@ -135,13 +135,13 @@ Plugins continue to implement `NodeCompiler`, `NodeConfiguration` and `NodeExecu
 `CompiledApprovalRelease` exposes the complete frozen documents and hash directly as readonly strings and does not expose intermediate compiler-stage objects.
 Its storage wire format and hash derivation remain unchanged.
 
-Loading a persisted release requires release read privileges and exact agreement with a fresh compilation of its saved graph, all frozen documents, current deployment bindings and full content hash.
+Loading a persisted release requires exact agreement with a fresh compilation of its saved graph, all frozen documents, current deployment bindings and full content hash.
 Only the selected node's typed configuration is restored, verified against its frozen output and immediately handed to its exact executor.
 No configuration collection escapes for later mutation, and no caller-supplied object grants execution authority.
 The declaration and compiled-rule checks validate the returned effect, which remains uncommitted and cannot authorize instance state or business side effects.
 Whole-release verification runs for each call without a cache; performance and command-scoped admission will need verification with the future runtime.
 
-Integration tests cover every changed frozen document, changed deployment bytes, permission-first reads, missing releases and independence from later draft edits.
+Integration tests cover every changed frozen document, changed deployment bytes, missing releases and independence from later draft edits.
 Actual DI assemblies exercise core and independently tagged business nodes, missing exact executor versions, missing artifact bindings, whole-release failure before entry and compiler drift during configuration restoration.
 The extraction retains the existing configuration validation, error causes, JSON shapes and immediate freezing tests.
 
@@ -201,3 +201,20 @@ A live lease and matching attempt are required to acknowledge or reschedule work
 The adapter retains failed deliveries without changing the completed approval instance.
 There is no automatic worker or callback, and no consumer-free success path.
 Future external consumers must deduplicate by the result ID because the delivery contract is at least once.
+
+## Internal business binding management
+
+`ApprovalBindingService`, `ApprovalBindingStore` and `ApprovalBindingWriteGuard` are internal while real business submission is developed.
+The two DAL models use the normal Definition/Entity/Collection contracts; repository visibility does not authorize bypassing controlled writes.
+No new route, loader interface, adapter interface or service tag is introduced.
+
+Saving a revision freezes exact business identity/version, authored form bytes and the chosen release.
+Activation rechecks that declaration and release and updates the per-type active revision using an expected activation version.
+Form matching checks the graph's form reference, not an independent form version/hash inside the release; that release contract does not exist yet.
+An active binding is a saved selection, not proof of business permission, current runtime readiness, validated form data or successful result delivery.
+
+Draft, release and binding services leave transport ACL to their actual entry points and retain normal DAL authorization for entity writes.
+The binding head is an internal coordination row owned by the store; activation is not a public API or a DAL head-update permission.
+They do not classify Context sources for ordinary configuration reads or writes.
+Personal task decisions, task ownership, management operations and system-only progression/delivery keep their existing business authorization.
+The binding and instance write guards use explicit WeakMap methods so object-key handling does not depend on an editor recognizing array-access syntax.
