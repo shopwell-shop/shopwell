@@ -55,6 +55,9 @@ use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestStore;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultOutbox;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
@@ -67,6 +70,14 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
+
+    $services->set(ApprovalRequestDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalRequestStore::class)->args([
+        service(Connection::class), service('approval_flow_request.repository'), service(ApprovalInstanceWriteGuard::class), service(ClockInterface::class),
+    ]);
+    $services->set(ApprovalRequestService::class)->args([
+        service(ApprovalRequestStore::class), service(ApprovalBindingService::class), service(GraphSchemaValidator::class),
+    ]);
 
     $services->set(ApprovalBindingDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalBindingHeadDefinition::class)->tag('shopwell.entity.definition');

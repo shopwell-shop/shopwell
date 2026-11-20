@@ -7,6 +7,7 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeSourceDirectory;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\YamlApprovalBusinessTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
 use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseStore;
 use Shopwell\Core\Framework\Workflow\Publication\WorkflowRequestCatalogueEvent;
@@ -116,6 +117,9 @@ use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBindingSubscriber;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestEntity;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferResubmissionSubscriber;
@@ -693,6 +697,16 @@ return static function (ContainerConfigurator $container): void {
     // it. They share the service as the only writer of the record and the resolver as the only way to
     // the credentials of the app
     $services->set(PaymentTransferApprovalEntity::class)->tag('shopwell.entity');
+    $services->set(PaymentTransferApprovalRequestEntity::class)->tag('shopwell.entity');
+    $services->set(PaymentTransferApprovalRequestStore::class)->args([
+        service(Connection::class), service('payment_transfer_approval_request.repository'), service(PaymentTransferApprovalStore::class),
+    ]);
+    $services->set(PaymentTransferApprovalRequestService::class)->args([
+        service(PaymentTransferApprovalRequestStore::class),
+        service(ApprovalRequestService::class),
+        service(PaymentTransferApprovalStore::class),
+        service(PaymentTransferPresenter::class),
+    ]);
     $services->set('payment.approval_flow.business_type_loader', YamlApprovalBusinessTypeLoader::class)->args([
         service('filesystem'),
         [inline_service(ApprovalBusinessTypeSourceDirectory::class)->args(['payment', __DIR__ . '/../Payment/Resources/approval-flow'])],

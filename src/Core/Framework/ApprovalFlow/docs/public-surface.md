@@ -180,8 +180,8 @@ Executions in `approval_flow_execution` retain their instance, node, incoming co
 Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
-There is no production instance creation or activation path, and no public command/query route.
-Business binding, runtime admission, automatic scheduling, branch/join execution and timers require their own contracts.
+An internal business admission path creates draft instances; there is no activation endpoint or public command/query route.
+Automatic scheduling, branch/join execution and timers require their own contracts.
 The decision command adds no public endpoint, external result delivery or business execution authority.
 
 ## Terminal result boundary
@@ -232,3 +232,20 @@ Payment registers its transfer declaration and validation subscriber in its own 
 Its current financial policy admits standard core approvals and advance-only extensions, and rejects custom request-approval nodes whose compiled review rules cannot yet be inspected through this event.
 The shared binding service has no Payment dependency or financial rule.
 `PaymentTransferApprovalBindingSubscriber` is internal to Payment and is not a plugin inheritance contract.
+
+## Internal request admission
+
+The `approval_flow_request` DAL model uses normal Definition/Entity/Collection contracts and retains the business identity, submission round and revision, selected immutable binding, instance, initiator and raw form JSON.
+Generic DAL and Sync writes are rejected; the request service owns creation together with a draft instance.
+Its dedicated write scope retains the original Context and DAL creation permissions.
+No public submission route, business adapter interface or consumer tag is introduced.
+
+`ApprovalRequestService`, `ApprovalRequestStore` and the binding service's submission selection remain internal.
+They accept trusted business-generated data; callers own resource authorization, serialization of their business identity and atomic evidence freezing.
+`find(..., Context)` is an initiator-bound submission retry lookup and is not a general request query contract.
+The shared skeleton has no Payment dependency.
+
+Payment registers its private evidence entity and submission services in Payment DI.
+Private snapshot fields are not API-visible, and the existing Payment write protection rejects their mutation or deletion.
+`PaymentTransferApprovalRequestService` is an internal integration entry point; it does not grant payment authority or activate the instance.
+Its per-transfer coordination with the legacy approval store is temporary until the replacement workflow is complete.

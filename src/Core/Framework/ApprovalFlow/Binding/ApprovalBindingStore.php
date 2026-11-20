@@ -137,6 +137,38 @@ class ApprovalBindingStore
         return $this->read($type, $revision, $context);
     }
 
+    public function activeForSubmission(string $type): ApprovalBindingEntity
+    {
+        if (!$this->connection->isTransactionActive()) {
+            throw ApprovalFlowException::requestTransactionRequired();
+        }
+        // Hold the selected head until the request and business freeze commit together.
+        $row = $this->connection->fetchAssociative(
+            'SELECT b.* FROM approval_flow_binding_head h
+             INNER JOIN approval_flow_binding b ON b.business_type = h.business_type AND b.revision = h.active_revision
+             WHERE h.business_type = :type LOCK IN SHARE MODE',
+            ['type' => $type],
+        );
+        if ($row === false) {
+            throw ApprovalFlowException::activeBindingNotFound($type);
+        }
+        $binding = new ApprovalBindingEntity();
+        $binding->assign([
+            'id' => Uuid::fromBytesToHex($row['id']),
+            'businessType' => $row['business_type'],
+            'businessVersion' => $row['business_version'],
+            'revision' => (int) $row['revision'],
+            'releaseId' => Uuid::fromBytesToHex($row['release_id']),
+            'formSchemaId' => $row['form_schema_id'],
+            'formSchemaHash' => $row['form_schema_hash'],
+            'formSchema' => $row['form_schema'],
+            'createdById' => $row['created_by_id'] === null ? null : Uuid::fromBytesToHex($row['created_by_id']),
+            'createdAt' => new \DateTimeImmutable($row['created_at']),
+        ]);
+
+        return $binding;
+    }
+
     /**
      * @template T
      *

@@ -4,7 +4,9 @@ namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Insta
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
@@ -12,6 +14,8 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWrit
 use Shopwell\Core\Framework\ApprovalFlow\Publication\ApprovalReleaseCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestStore;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\PublicationFixture;
@@ -30,6 +34,8 @@ final class ApprovalRuntimeFixture
         $runtime = PublicationFixture::container($manifest);
         $services = [
             'event_dispatcher' => $kernel->get('event_dispatcher'),
+            ApprovalRequestStore::class => $kernel->get(ApprovalRequestStore::class),
+            ApprovalBusinessTypeRegistry::class => $kernel->get(ApprovalBusinessTypeRegistry::class),
             ApprovalBindingWriteGuard::class => $kernel->get(ApprovalBindingWriteGuard::class),
             Connection::class => $kernel->get(Connection::class),
             ClockInterface::class => $kernel->get(ClockInterface::class),
@@ -43,6 +49,8 @@ final class ApprovalRuntimeFixture
         foreach ($services as $id => $service) {
             $runtime->register($id)->setSynthetic(true)->setPublic(true);
         }
+        $runtime->getDefinition(ApprovalBindingService::class)->setPublic(true);
+        $runtime->getDefinition(ApprovalRequestService::class)->setPublic(true);
         $runtime->getDefinition(ApprovalReleaseLoader::class)->setPublic(true);
         $runtime->getDefinition(ApprovalInstanceService::class)->setPublic(true);
         $runtime->getDefinition(ApprovalReleaseService::class)->setPublic(true);

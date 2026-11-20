@@ -27,7 +27,7 @@ final class PaymentTransferWriteProtection implements EventSubscriberInterface
     public function validate(PreWriteValidationEvent $event): void
     {
         foreach ($event->getCommands() as $command) {
-            if (!\in_array($command->getEntityName(), ['payment_transfer', 'payment_transfer_approval'], true)) {
+            if (!\in_array($command->getEntityName(), ['payment_transfer', 'payment_transfer_approval', 'payment_transfer_approval_request'], true)) {
                 continue;
             }
             // Scope alone is insufficient: the generic transition route temporarily uses system scope.
@@ -37,7 +37,7 @@ final class PaymentTransferWriteProtection implements EventSubscriberInterface
             if (!$command instanceof UpdateCommand) {
                 continue;
             }
-            if ($command->getEntityName() === 'payment_transfer_approval'
+            if ($command->getEntityName() !== 'payment_transfer'
                 || array_intersect(array_keys($command->getPayload()), ['payment_app_id', 'account_id', 'recipient_id', 'out_no', 'transfer_no', 'amount', 'currency', 'provider', 'channel', 'channel_params']) !== []) {
                 throw PaymentTransferApprovalException::blocked('immutable_transfer');
             }

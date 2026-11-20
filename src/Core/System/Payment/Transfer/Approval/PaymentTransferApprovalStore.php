@@ -21,10 +21,37 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 class PaymentTransferApprovalStore
 {
     /**
+     * @var array<string, true>
+     */
+    private array $activeSubmissions = [];
+
+    /**
      * @param EntityRepository<PaymentTransferApprovalCollection> $repository
      */
     public function __construct(private readonly Connection $connection, private readonly EntityRepository $repository)
     {
+    }
+
+    /**
+     * Both approval entry points share this guard: row locks alone permit same-connection event reentry.
+     *
+     * @template T
+     *
+     * @param \Closure(): T $submit
+     *
+     * @return T
+     */
+    public function submitting(string $transferId, \Closure $submit): mixed
+    {
+        if (isset($this->activeSubmissions[$transferId])) {
+            throw PaymentTransferApprovalException::blocked('submission_in_progress');
+        }
+        $this->activeSubmissions[$transferId] = true;
+        try {
+            return $submit();
+        } finally {
+            unset($this->activeSubmissions[$transferId]);
+        }
     }
 
     public function get(string $transferId): ?PaymentTransferApprovalEntity
@@ -70,6 +97,9 @@ class PaymentTransferApprovalStore
     {
         if ($this->connection->fetchOne('SELECT id FROM payment_transfer WHERE id = :id FOR UPDATE', ['id' => Uuid::fromHexToBytes($transferId)], ['id' => ParameterType::BINARY]) === false) {
             throw PaymentTransferApprovalException::blocked('missing_transfer');
+        }
+        if ($this->connection->fetchOne('SELECT id FROM payment_transfer_approval_request WHERE id = :id FOR UPDATE', ['id' => Uuid::fromHexToBytes($transferId)], ['id' => ParameterType::BINARY]) !== false) {
+            throw PaymentTransferApprovalException::blocked('approval_already_started');
         }
     }
 }

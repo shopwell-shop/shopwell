@@ -334,46 +334,49 @@ class PaymentTransferApprovalService
                 }
             }
             $transfer = $this->booking->book($draft);
-            $this->store->lock($transfer->id);
-            $existing = $this->store->get($transfer->id);
-            if ($existing !== null) {
-                if ($previousTransferId !== null && ($existing->initiatorId !== $source->getUserId() || ($existing->snapshot['previousTransferId'] ?? null) !== $previousTransferId)) {
-                    throw PaymentTransferApprovalException::blocked('reapplication_requires_new_transfer');
+
+            return $this->store->submitting($transfer->id, function () use ($transfer, $context, $source, $release, $runtime, $previous, $previousTransferId): PaymentTransferEntity {
+                $this->store->lock($transfer->id);
+                $existing = $this->store->get($transfer->id);
+                if ($existing !== null) {
+                    if ($previousTransferId !== null && ($existing->initiatorId !== $source->getUserId() || ($existing->snapshot['previousTransferId'] ?? null) !== $previousTransferId)) {
+                        throw PaymentTransferApprovalException::blocked('reapplication_requires_new_transfer');
+                    }
+
+                    return $transfer;
                 }
+                // Only a new unexecuted transfer can acquire an approval binding.
+                if ($transfer->submitAttempts !== 0 || $transfer->statusMachineState?->getTechnicalName() !== 'created') {
+                    throw PaymentTransferApprovalException::blocked('transfer_already_started');
+                }
+                $app = $this->booking->resolveApp($transfer->paymentAppId);
+                $recipient = $this->transfers->recipientOf($app, $transfer);
+                $approval = new PaymentTransferApprovalEntity();
+                $approval->id = $transfer->id;
+                $approval->releaseId = $release->getId();
+                $approval->initiatorId = (string) $source->getUserId();
+                $approval->snapshot = $this->policy->snapshot($transfer, $recipient);
+                if ($previous !== null) {
+                    $approval->snapshot['previousTransferId'] = $previous->id;
+                    $approval->snapshot['previousTransferNo'] = $previous->transferNo;
+                }
+                $approval->snapshot['recipientLabel'] = trim(($recipient->holderName ?? '') . ' ' . $this->presenter->recipient($recipient)['maskedIdentity']);
+                $accountName = null;
+                foreach ($app->accounts ?? [] as $authorization) {
+                    if ($authorization->account?->id === $transfer->accountId) {
+                        $accountName = $authorization->account->name;
+                        break;
+                    }
+                }
+                if ($accountName === null) {
+                    throw PaymentTransferApprovalException::blocked('payment_account_unavailable');
+                }
+                $approval->snapshot['paymentAccountLabel'] = $accountName;
+                $approval->instanceId = $runtime->start($release, $this->workflowData($transfer->amount, $transfer->currency, $approval->snapshot['recipientLabel'], $accountName, $approval->snapshot['reason']), $transfer->transferNo, $context);
+                $this->store->create($approval);
 
                 return $transfer;
-            }
-            // Only a new unexecuted transfer can acquire an approval binding.
-            if ($transfer->submitAttempts !== 0 || $transfer->statusMachineState?->getTechnicalName() !== 'created') {
-                throw PaymentTransferApprovalException::blocked('transfer_already_started');
-            }
-            $app = $this->booking->resolveApp($transfer->paymentAppId);
-            $recipient = $this->transfers->recipientOf($app, $transfer);
-            $approval = new PaymentTransferApprovalEntity();
-            $approval->id = $transfer->id;
-            $approval->releaseId = $release->getId();
-            $approval->initiatorId = (string) $source->getUserId();
-            $approval->snapshot = $this->policy->snapshot($transfer, $recipient);
-            if ($previous !== null) {
-                $approval->snapshot['previousTransferId'] = $previous->id;
-                $approval->snapshot['previousTransferNo'] = $previous->transferNo;
-            }
-            $approval->snapshot['recipientLabel'] = trim(($recipient->holderName ?? '') . ' ' . $this->presenter->recipient($recipient)['maskedIdentity']);
-            $accountName = null;
-            foreach ($app->accounts ?? [] as $authorization) {
-                if ($authorization->account?->id === $transfer->accountId) {
-                    $accountName = $authorization->account->name;
-                    break;
-                }
-            }
-            if ($accountName === null) {
-                throw PaymentTransferApprovalException::blocked('payment_account_unavailable');
-            }
-            $approval->snapshot['paymentAccountLabel'] = $accountName;
-            $approval->instanceId = $runtime->start($release, $this->workflowData($transfer->amount, $transfer->currency, $approval->snapshot['recipientLabel'], $accountName, $approval->snapshot['reason']), $transfer->transferNo, $context);
-            $this->store->create($approval);
-
-            return $transfer;
+            });
         });
     }
 

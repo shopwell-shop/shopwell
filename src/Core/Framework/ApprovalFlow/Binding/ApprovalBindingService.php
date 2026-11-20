@@ -70,6 +70,18 @@ class ApprovalBindingService
         return $this->store->active($type, $context);
     }
 
+    public function forSubmission(string $type, Context $context): ApprovalBindingEntity
+    {
+        $binding = $this->store->activeForSubmission($type);
+        $businessType = $this->businessTypes->get($type, $binding->getBusinessVersion());
+        if ($binding->getFormSchema() !== $businessType->formSchema) {
+            throw ApprovalFlowException::bindingFormChanged($type, $businessType->version);
+        }
+        $this->verifyRelease($businessType, $binding->getReleaseId(), $context);
+
+        return $binding;
+    }
+
     private function verifyRelease(ApprovalBusinessTypeSpecification $businessType, string $releaseId, Context $context): void
     {
         $release = $this->releases->load($releaseId);

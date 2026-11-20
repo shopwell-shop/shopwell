@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
@@ -26,8 +27,15 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 #[Package('framework')]
 final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
 {
+    public const REQUEST_SCOPE = 'approval_flow_request';
+
+    private const COMMAND_WRITE = 'command';
+
+    private const REQUEST_WRITE = 'request';
+
     private const ENTITIES = [
         ApprovalInstanceDefinition::ENTITY_NAME,
+        ApprovalRequestDefinition::ENTITY_NAME,
         ApprovalOperationDefinition::ENTITY_NAME,
         ApprovalNodeExecutionDefinition::ENTITY_NAME,
         ApprovalTaskDefinition::ENTITY_NAME,
@@ -35,7 +43,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
     ];
 
     /**
-     * @var \WeakMap<Context, true>
+     * @var \WeakMap<Context, self::COMMAND_WRITE|self::REQUEST_WRITE>
      */
     private \WeakMap $pendingWrites;
 
@@ -68,12 +76,15 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
      */
     public function write(Context $context, \Closure $write): void
     {
-        $this->pendingWrites->offsetSet($context, true);
-        try {
-            $context->scope(Context::SYSTEM_SCOPE, $write);
-        } finally {
-            $this->pendingWrites->offsetUnset($context);
-        }
+        $this->runWrite($context, $write, self::COMMAND_WRITE);
+    }
+
+    /**
+     * @param \Closure(Context): void $write
+     */
+    public function create(Context $context, \Closure $write): void
+    {
+        $this->runWrite($context, $write, self::REQUEST_WRITE);
     }
 
     public function admitWrite(EntityWriteEvent $event): void
@@ -86,13 +97,28 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
             return;
         }
         $context = $event->getContext();
-        $allowed = $context->getScope() === Context::SYSTEM_SCOPE && $this->pendingWrites->offsetExists($context);
+        $mode = $this->pendingWrites->offsetExists($context) ? $this->pendingWrites->offsetGet($context) : null;
+        $expectedScope = $mode === self::REQUEST_WRITE ? self::REQUEST_SCOPE : Context::SYSTEM_SCOPE;
+        $allowed = $context->getScope() === $expectedScope && $mode !== null;
         // Consume before ordinary listeners run; system scope alone never authorizes another batch.
         $this->pendingWrites->offsetUnset($context);
         if (!$allowed) {
             throw ApprovalFlowException::uncontrolledInstanceWrite();
         }
         foreach ($commands as $command) {
+            if ($mode === self::REQUEST_WRITE) {
+                if (!$command instanceof InsertCommand || !\in_array($command->getEntityName(), [ApprovalRequestDefinition::ENTITY_NAME, ApprovalInstanceDefinition::ENTITY_NAME], true)) {
+                    throw ApprovalFlowException::uncontrolledInstanceWrite();
+                }
+                if ($command->getEntityName() === ApprovalInstanceDefinition::ENTITY_NAME
+                    && (($command->getPayload()['status'] ?? null) !== ApprovalInstanceStatus::Draft->value || ($command->getPayload()['aggregate_version'] ?? null) !== 1 || ($command->getPayload()['outcome'] ?? null) !== null)) {
+                    throw ApprovalFlowException::uncontrolledInstanceWrite();
+                }
+                continue;
+            }
+            if ($command->getEntityName() === ApprovalRequestDefinition::ENTITY_NAME) {
+                throw ApprovalFlowException::uncontrolledInstanceWrite();
+            }
             if ($command instanceof InsertCommand && $command->getEntityName() !== ApprovalInstanceDefinition::ENTITY_NAME) {
                 continue;
             }
@@ -126,6 +152,20 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
                 throw ApprovalFlowException::uncontrolledInstanceWrite();
             }
             // Keep the exact command identity for DAL deadlock retries; weak keys expire with the batch.
+        }
+    }
+
+    /**
+     * @param \Closure(Context): void $write
+     * @param self::COMMAND_WRITE|self::REQUEST_WRITE $mode
+     */
+    private function runWrite(Context $context, \Closure $write, string $mode): void
+    {
+        $this->pendingWrites->offsetSet($context, $mode);
+        try {
+            $context->scope($mode === self::REQUEST_WRITE ? self::REQUEST_SCOPE : Context::SYSTEM_SCOPE, $write);
+        } finally {
+            $this->pendingWrites->offsetUnset($context);
         }
     }
 }

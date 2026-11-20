@@ -10,6 +10,11 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const REQUEST_ACTOR_REQUIRED = 'APPROVAL_FLOW__REQUEST_ACTOR_REQUIRED';
+    public const REQUEST_INITIATOR_REQUIRED = 'APPROVAL_FLOW__REQUEST_INITIATOR_REQUIRED';
+    public const INVALID_REQUEST_FORM = 'APPROVAL_FLOW__INVALID_REQUEST_FORM';
+    public const REQUEST_TRANSACTION_REQUIRED = 'APPROVAL_FLOW__REQUEST_TRANSACTION_REQUIRED';
+
     public const BINDING_WRITE_IN_PROGRESS = 'APPROVAL_FLOW__BINDING_WRITE_IN_PROGRESS';
     public const BINDING_NOT_FOUND = 'APPROVAL_FLOW__BINDING_NOT_FOUND';
     public const ACTIVE_BINDING_NOT_FOUND = 'APPROVAL_FLOW__ACTIVE_BINDING_NOT_FOUND';
@@ -71,6 +76,26 @@ class ApprovalFlowException extends HttpException
     public const DUPLICATE_NODE_COMPILER = 'APPROVAL_FLOW__DUPLICATE_NODE_COMPILER';
     public const INVALID_NODE_COMPILER = 'APPROVAL_FLOW__INVALID_NODE_COMPILER';
     public const INVALID_NODE_CONFIGURATION = 'APPROVAL_FLOW__INVALID_NODE_CONFIGURATION';
+
+    public static function requestActorRequired(): self
+    {
+        return new self(Response::HTTP_FORBIDDEN, self::REQUEST_ACTOR_REQUIRED, 'An administration user is required to submit an approval request.');
+    }
+
+    public static function requestInitiatorRequired(string $requestId): self
+    {
+        return new self(Response::HTTP_FORBIDDEN, self::REQUEST_INITIATOR_REQUIRED, 'Only the initiator may retry approval request "{{ requestId }}".', ['requestId' => $requestId]);
+    }
+
+    public static function invalidRequestForm(string $path, string $reason, ?\Throwable $previous = null): self
+    {
+        return new self(Response::HTTP_UNPROCESSABLE_ENTITY, self::INVALID_REQUEST_FORM, 'Invalid approval form at "{{ path }}": {{ reason }}', ['path' => $path, 'reason' => $reason], $previous);
+    }
+
+    public static function requestTransactionRequired(): self
+    {
+        return new self(Response::HTTP_INTERNAL_SERVER_ERROR, self::REQUEST_TRANSACTION_REQUIRED, 'Selecting a submission binding requires an active transaction.');
+    }
 
     /**
      * @param list<string> $privileges
