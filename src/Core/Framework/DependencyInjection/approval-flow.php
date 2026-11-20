@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\ApprovalFlow\Definition\ApprovalFlowDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\Command\GraphDiagnoseCommand;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
@@ -47,6 +48,9 @@ use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultOutbox;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -61,6 +65,11 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalNodeExecutionDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalOperationDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalTaskDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalResultDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalResultStore::class)->args([
+        service(Connection::class), service('approval_flow_result.repository'), service(ApprovalInstanceWriteGuard::class), service(ClockInterface::class),
+    ]);
+    $services->set(ApprovalResultOutbox::class)->args([service(Connection::class), service(ClockInterface::class)]);
     $services->set(ApprovalInstanceWriteGuard::class)->tag('kernel.event_subscriber');
     $services->set(ApprovalAssigneeResolver::class)->args([service(Connection::class)]);
     $services->set(ApprovalDecisionEvaluator::class);
@@ -82,6 +91,7 @@ return static function (ContainerConfigurator $container): void {
             service('approval_flow_task.repository'),
             service(ApprovalAssigneeResolver::class),
             service(ApprovalTaskDecisionStore::class),
+            service(ApprovalResultStore::class),
         ]);
     $services->set(ApprovalInstanceService::class)
         ->args([service(ApprovalInstanceStore::class)]);

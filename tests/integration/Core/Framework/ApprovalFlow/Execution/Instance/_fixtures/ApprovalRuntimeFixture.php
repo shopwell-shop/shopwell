@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures;
 
 use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
@@ -27,11 +28,12 @@ final class ApprovalRuntimeFixture
         $runtime = PublicationFixture::container($manifest);
         $services = [
             Connection::class => $kernel->get(Connection::class),
+            ClockInterface::class => $kernel->get(ClockInterface::class),
             ApprovalReleaseStore::class => $kernel->get(ApprovalReleaseStore::class),
             ApprovalInstanceWriteGuard::class => $kernel->get(ApprovalInstanceWriteGuard::class),
         ];
         $definitions = $kernel->get(DefinitionInstanceRegistry::class);
-        foreach (['approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution', 'approval_flow_task'] as $entityName) {
+        foreach (['approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution', 'approval_flow_task', 'approval_flow_result'] as $entityName) {
             $services[$entityName . '.repository'] = $definitions->getRepository($entityName);
         }
         foreach ($services as $id => $service) {

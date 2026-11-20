@@ -407,4 +407,33 @@ Suspension does not rewrite execution or task facts and does not require loading
 Progression and decision commands check the instance's running status under the same lock.
 The personal group decision completes only that node execution; system progression separately schedules its successor or commits the rejection outcome.
 Dynamic assignee sources, the empty-assignee skip policy, task queries, automatic scheduling and business result delivery remain subsequent increments.
-The command does not schedule approval-domain events or external effects; durable Outbox delivery remains a separate requirement when such delivery is introduced.
+
+## Terminal results and delivery work
+
+A command that completes the instance also appends one immutable `approval_flow_result` and one pending `approval_flow_outbox` row in that same transaction.
+The result retains a stable ID, instance, bound release, terminal command, aggregate version, outcome and UTC completion time.
+Its instance uniqueness and receipt foreign key retain one terminal result per instance and the original audit reference.
+Receipt replay returns before recording another result.
+Failure to write either the result or delivery work rolls back the instance transition, executions and command receipt.
+Generic DAL/Sync inserts, updates and deletes of results are rejected by the instance write guard.
+
+`ApprovalResultStore`, `ApprovalResultOutbox`, `ApprovalResult` and `ApprovalResultDelivery` are internal infrastructure contracts.
+The result value is a core completion snapshot, not the complete public business result envelope.
+Business reference, submission round, binding revision, form revision and authorized consumer routing remain part of the business admission increment.
+The work table follows the existing Webhook delivery-table pattern and has no generic DAL CRUD model.
+
+`ApprovalResultOutbox::claim(Context)` accepts only a system source and returns at most one committed delivery lease.
+It uses a current `FOR UPDATE SKIP LOCKED` read and increments the attempt when pending work becomes due or a previous lease has expired.
+The same result ID is retained across attempts; the attempt fences acknowledgements and retries from older workers.
+The lease lasts 60 seconds, and a live attempt may be acknowledged or rescheduled only before expiry.
+Acknowledgement and retry read the clock after acquiring the row lock, so lock waits cannot preserve an expired lease.
+Retry delays are 5, 30, 300 and 1800 seconds; the fifth failed attempt is retained as failed.
+An expired fifth lease is also marked failed during the next claim instead of being delivered indefinitely.
+Claim, acknowledgement and retry require an independent transaction and reject an already active caller transaction.
+This prevents a caller from acting on work or reporting confirmation before its database commit.
+Delivery failures change only work state and do not reopen completed instances or rewrite their results.
+
+No automatic worker, callback or external delivery is installed yet.
+Without an admitted business reference and consumer route, pending work must not be acknowledged automatically.
+A future consumer must deduplicate by the stable result ID: a remote effect followed by a crash before acknowledgement can be delivered again.
+The lease prevents a stale local confirmation; it does not provide exactly-once external execution.

@@ -164,3 +164,21 @@ The original Context scope is restored and unused permits are removed when the w
 There is no production instance creation or activation path, and no public command/query route.
 Business binding, runtime admission, automatic scheduling, branch/join execution and timers require their own contracts.
 The decision command adds no public endpoint, external result delivery or business execution authority.
+
+## Terminal result boundary
+
+The `approval_flow_result` DAL model stores one immutable result per completed instance, linked to the bound release and terminal command receipt.
+Terminal commands append that result and pending delivery work atomically with the instance transition.
+Generic DAL/Sync writes cannot create, update or delete result facts.
+The raw `approval_flow_outbox` work table has no DAL model and is owned by the internal delivery adapter.
+
+`ApprovalResultStore`, `ApprovalResultOutbox`, `ApprovalResult` and `ApprovalResultDelivery` remain internal.
+The minimal snapshot contains the result ID, instance, release, command, aggregate version, outcome and UTC completion time.
+It does not yet provide the business identity, round, binding/form revisions or consumer principal required by the planned public business result contract.
+No supported handler registration or result event is introduced by this increment.
+
+System-only delivery claims use independent committed transactions, skip locked work and retain the result ID across bounded retries.
+A live lease and matching attempt are required to acknowledge or reschedule work; old or expired workers cannot settle a new attempt.
+The adapter retains failed deliveries without changing the completed approval instance.
+There is no automatic worker or callback, and no consumer-free success path.
+Future external consumers must deduplicate by the result ID because the delivery contract is at least once.

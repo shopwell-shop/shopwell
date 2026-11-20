@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
@@ -30,6 +31,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
         ApprovalOperationDefinition::ENTITY_NAME,
         ApprovalNodeExecutionDefinition::ENTITY_NAME,
         ApprovalTaskDefinition::ENTITY_NAME,
+        ApprovalResultDefinition::ENTITY_NAME,
     ];
 
     /**

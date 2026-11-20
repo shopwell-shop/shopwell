@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
@@ -15,6 +16,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceServ
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
@@ -113,6 +115,14 @@ class ApprovalCompletionTest extends TestCase
         static::assertEquals($completed, $this->service->enterEnd($this->instanceId, $endId, $endCommand, 5, $context));
         static::assertEquals($advanced, $this->service->advanceApproval($this->instanceId, $executionId, $advanceCommand, 4, $context));
         static::assertSame(5, $this->receiptCount());
+        $result = $this->connection->fetchAssociative('SELECT id, release_id, command_id, aggregate_version, outcome FROM approval_flow_result WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]);
+        static::assertNotFalse($result);
+        static::assertSame(Uuid::fromHexToBytes($this->releaseId), $result['release_id']);
+        static::assertSame(Uuid::fromHexToBytes($endCommand), $result['command_id']);
+        static::assertSame(6, (int) $result['aggregate_version']);
+        static::assertSame('approved', $result['outcome']);
+        static::assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
+        static::assertSame('pending', $this->connection->fetchOne('SELECT status FROM approval_flow_outbox WHERE result_id = :id', ['id' => $result['id']]));
     }
 
     public function testVetoCompletesAsRejectedWithoutEnteringTheApprovedEnd(): void
@@ -129,6 +139,7 @@ class ApprovalCompletionTest extends TestCase
         static::assertSame(['start', 'review'], array_column($this->executions(), 'node_id'));
         static::assertSame('rejected', $this->connection->fetchOne('SELECT outcome FROM approval_flow_instance WHERE id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
         static::assertEquals($receipt, $this->service->advanceApproval($this->instanceId, $executionId, $command, 4, $context));
+        static::assertSame('rejected', $this->connection->fetchOne('SELECT outcome FROM approval_flow_result WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
         $this->expectExceptionObject(ApprovalFlowException::invalidInstanceTransition($this->instanceId, 'completed', 'advance-approval'));
 
         $this->service->advanceApproval($this->instanceId, $executionId, Uuid::randomHex(), 5, $context);
@@ -438,6 +449,55 @@ class ApprovalCompletionTest extends TestCase
             static::assertSame('running', $instance['status']);
             static::assertNull($instance['outcome']);
             static::assertSame($version, (int) $instance['aggregate_version']);
+            static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
+        }
+    }
+
+    public function testResultWriteFailureRollsBackTheEndAndItsImmutableResult(): void
+    {
+        $executionId = $this->completeApproval(ApprovalOutcome::Approved);
+        $context = Context::createDefaultContext();
+        $this->service->advanceApproval($this->instanceId, $executionId, Uuid::randomHex(), 4, $context);
+        $endId = Uuid::fromBytesToHex($this->executions()[2]['id']);
+        $failure = new \RuntimeException('Result persistence failed.');
+        EventHookDispatcher::fromContainer(static::getContainer())->on('approval_flow_result.written', static function () use ($failure): void {
+            throw $failure;
+        });
+        $this->expectExceptionObject($failure);
+
+        try {
+            $this->service->enterEnd($this->instanceId, $endId, Uuid::randomHex(), 5, $context);
+        } finally {
+            static::assertSame('waiting', $this->executions()[2]['status']);
+            static::assertSame(4, $this->receiptCount());
+            static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
+        }
+    }
+
+    public function testOutboxInsertFailureRollsBackTheTerminalCommand(): void
+    {
+        $executionId = $this->completeApproval(ApprovalOutcome::Approved);
+        $context = Context::createDefaultContext();
+        $this->service->advanceApproval($this->instanceId, $executionId, Uuid::randomHex(), 4, $context);
+        $endId = Uuid::fromBytesToHex($this->executions()[2]['id']);
+        $connection = $this->connection;
+        EventHookDispatcher::fromContainer(static::getContainer())->on('approval_flow_result.written', static function (EntityWrittenEvent $event) use ($connection): void {
+            $id = $event->getIds()[0];
+            // A fixture listener takes the work key, forcing the following outbox insertion to fail.
+            $connection->insert('approval_flow_outbox', [
+                'result_id' => Uuid::fromHexToBytes($id), 'status' => 'pending', 'attempt' => 0,
+                'next_attempt_at' => '2026-11-20 00:00:00.000', 'created_at' => '2026-11-20 00:00:00.000',
+            ]);
+        });
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        try {
+            $this->service->enterEnd($this->instanceId, $endId, Uuid::randomHex(), 5, $context);
+        } finally {
+            static::assertSame('waiting', $this->executions()[2]['status']);
+            static::assertSame(4, $this->receiptCount());
+            static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result WHERE instance_id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
+            static::assertSame('running', $this->connection->fetchOne('SELECT status FROM approval_flow_instance WHERE id = :id', ['id' => Uuid::fromHexToBytes($this->instanceId)]));
         }
     }
 

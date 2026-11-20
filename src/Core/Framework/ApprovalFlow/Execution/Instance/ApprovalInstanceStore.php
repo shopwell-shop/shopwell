@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
+use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -67,6 +68,7 @@ class ApprovalInstanceStore
         private readonly EntityRepository $tasks,
         private readonly ApprovalAssigneeResolver $assigneeResolver,
         private readonly ApprovalTaskDecisionStore $decisions,
+        private readonly ApprovalResultStore $results,
     ) {
     }
 
@@ -301,6 +303,9 @@ class ApprovalInstanceStore
             $status = $transition instanceof ApprovalInstanceStatus ? $transition : ApprovalInstanceStatus::Completed;
             $result = new ApprovalInstanceCommandResult($instanceId, $commandId, $status, $expectedVersion + 1, $outcome);
             $this->saveCommand($result, $operation, $requestHash, $reason, $actorJson, $context);
+            if ($outcome !== null) {
+                $this->results->record($instanceId, $instance['releaseId'], $commandId, $result->aggregateVersion, $outcome, $context);
+            }
 
             return $result;
         });

@@ -235,6 +235,8 @@ class ApprovalInstanceConcurrencyTest extends TestCase
                 $connection->rollBack();
             }
             $connection->executeStatement('DELETE task FROM approval_flow_task task INNER JOIN approval_flow_execution execution ON execution.id = task.execution_id WHERE execution.instance_id = :id', ['id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->executeStatement('DELETE delivery FROM approval_flow_outbox delivery INNER JOIN approval_flow_result result ON result.id = delivery.result_id WHERE result.instance_id = :id', ['id' => Uuid::fromHexToBytes($instanceId)]);
+            $connection->delete('approval_flow_result', ['instance_id' => Uuid::fromHexToBytes($instanceId)]);
             $connection->delete('approval_flow_execution', ['instance_id' => Uuid::fromHexToBytes($instanceId)]);
             $connection->delete('approval_flow_operation', ['instance_id' => Uuid::fromHexToBytes($instanceId)]);
             $connection->delete('approval_flow_instance', ['id' => Uuid::fromHexToBytes($instanceId)]);

@@ -29,6 +29,9 @@ System and integration identities cannot cast personal votes.
 System progression now queues a single unconditional successor after approval or records a completed rejection after veto.
 End entry verifies the published end boundary and requires all other execution and task work to be settled before committing the instance outcome.
 Instance and receipt DAL models expose the optional outcome separately from lifecycle status; retry receipts retain their original result.
+Terminal commands also persist one immutable `approval_flow_result` and pending result delivery work in the same transaction.
+The internal delivery adapter provides committed system-only leases, attempt fencing and bounded retries without changing the completed instance.
+This core snapshot does not yet include business submission identity or expose a public result handler contract.
 Public task queries, automatic scheduling and business result delivery remain unavailable.
 Instance lifecycle management remains internal and does not enable business starts or public approval decisions.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.

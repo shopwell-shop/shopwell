@@ -25,6 +25,9 @@ class ApprovalFlowException extends HttpException
     public const UNSUPPORTED_START_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_START_ROUTE';
     public const UNSUPPORTED_NODE_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_NODE_ROUTE';
     public const INVALID_NODE_PROGRESSION = 'APPROVAL_FLOW__INVALID_NODE_PROGRESSION';
+    public const RESULT_DELIVERY_TRANSACTION_ACTIVE = 'APPROVAL_FLOW__RESULT_DELIVERY_TRANSACTION_ACTIVE';
+    public const INVALID_RESULT_DELIVERY = 'APPROVAL_FLOW__INVALID_RESULT_DELIVERY';
+    public const RESULT_TRANSACTION_REQUIRED = 'APPROVAL_FLOW__RESULT_TRANSACTION_REQUIRED';
     public const INSTANCE_NOT_FOUND = 'APPROVAL_FLOW__INSTANCE_NOT_FOUND';
     public const INSTANCE_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__INSTANCE_OUTSIDE_SNAPSHOT';
     public const INSTANCE_VERSION_CONFLICT = 'APPROVAL_FLOW__INSTANCE_VERSION_CONFLICT';
@@ -151,8 +154,23 @@ class ApprovalFlowException extends HttpException
         return new self(
             Response::HTTP_FORBIDDEN,
             self::UNCONTROLLED_INSTANCE_WRITE,
-            'Approval instance state, node executions, tasks and immutable command receipts require a controlled command transaction.'
+            'Approval instance state, node executions, tasks, results and immutable command receipts require a controlled command transaction.'
         );
+    }
+
+    public static function resultDeliveryTransactionActive(): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::RESULT_DELIVERY_TRANSACTION_ACTIVE, 'Approval result delivery requires its own committed transaction.');
+    }
+
+    public static function invalidResultDelivery(): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, self::INVALID_RESULT_DELIVERY, 'A valid result ID and an attempt within the delivery limit are required.');
+    }
+
+    public static function resultTransactionRequired(): self
+    {
+        return new self(Response::HTTP_INTERNAL_SERVER_ERROR, self::RESULT_TRANSACTION_REQUIRED, 'Approval result recording requires the instance command transaction.');
     }
 
     public static function unsupportedNodeRoute(string $releaseId, string $nodeId): self
