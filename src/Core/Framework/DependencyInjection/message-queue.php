@@ -19,6 +19,7 @@ use Shopwell\Core\Framework\MessageQueue\Telemetry\MessageGroupResolver;
 use Shopwell\Core\Framework\MessageQueue\Telemetry\MessageQueueTelemetrySubscriber;
 use Shopwell\Core\Framework\MessageQueue\Telemetry\MessengerQueueDepthCollector;
 use Shopwell\Core\Framework\MessageQueue\Telemetry\WorkerMessageTimingHelper;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Messenger\Event\SendMessageToTransportsEvent;
@@ -47,7 +48,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('kernel.event_subscriber');
 
-    $services->set(MessageGroupResolver::class);
+    $services->set(MessageGroupResolver::class)
+        ->args([
+            service(LabelMappingRegistry::class),
+        ]);
 
     $services->set(WorkerMessageTimingHelper::class);
 

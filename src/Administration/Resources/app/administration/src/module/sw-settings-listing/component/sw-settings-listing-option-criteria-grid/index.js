@@ -202,6 +202,11 @@ export default {
 
         /** @deprecated tag:v6.8.0 - Will be removed, use Shopwell.Filter.getByName('asset') instead. */
         assetFilter() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                "sw-settings-listing-option-criteria-grid.assetFilter is deprecated. Use Shopwell.Filter.getByName('asset') instead.",
+            );
+
             return Shopwell.Filter.getByName('asset');
         },
     },

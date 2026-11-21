@@ -25,6 +25,7 @@ use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Content\Shared\MailFlow\DocumentResolver;
 use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\Adapter\Twig\StringTemplateRenderer;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
@@ -83,7 +84,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Translator::class),
         ]);
 
-    $services->set(MailGroupResolver::class);
+    $services->set(MailGroupResolver::class)
+        ->args([
+            service(LabelMappingRegistry::class),
+        ]);
 
     $services->set(MailMetricsInstrumentor::class)
         ->args([

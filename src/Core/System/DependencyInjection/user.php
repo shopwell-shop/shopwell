@@ -14,6 +14,7 @@ use Shopwell\Core\System\User\Api\UserRecoveryController;
 use Shopwell\Core\System\User\Api\UserValidationController;
 use Shopwell\Core\System\User\Recovery\UserRecoveryService;
 use Shopwell\Core\System\User\Service\UserValidationService;
+use Shopwell\Core\System\User\Subscriber\AdminUserWriteValidator;
 use Shopwell\Core\System\User\UserDefinition;
 use Shopwell\Core\System\User\UserExceptionHandler;
 use Shopwell\Core\System\User\Validation\UserOrganizationAssignmentValidator;
@@ -87,6 +88,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(UserOrganizationAssignmentValidator::class)
+        ->args([
+            service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(AdminUserWriteValidator::class)
         ->args([
             service(Connection::class),
         ])

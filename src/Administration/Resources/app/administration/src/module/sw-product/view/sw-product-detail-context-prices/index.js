@@ -41,6 +41,11 @@ export default {
     computed: {
         /** @deprecated tag:v6.8.0 - Will be removed, use Shopwell.Filter.getByName('asset') instead. */
         assetFilter() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                "sw-product-detail-context-prices.assetFilter is deprecated. Will be removed, use Shopwell.Filter.getByName('asset') instead.",
+            );
+
             return Shopwell.Filter.getByName('asset');
         },
 

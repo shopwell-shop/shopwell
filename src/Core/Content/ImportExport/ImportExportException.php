@@ -8,6 +8,7 @@ use Shopwell\Core\Content\ImportExport\Exception\InvalidIdentifierException;
 use Shopwell\Core\Content\ImportExport\Exception\ProcessingException;
 use Shopwell\Core\Content\ImportExport\Exception\ProfileNotFoundException;
 use Shopwell\Core\Content\ImportExport\Exception\RequiredByUserException;
+use Shopwell\Core\Content\Media\Util\PathHelper;
 use Shopwell\Core\Framework\Deprecation\BCChange\ReturnTypeNarrowing;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\HttpException;
@@ -349,7 +350,7 @@ class ImportExportException extends HttpException
             Response::HTTP_BAD_REQUEST,
             self::FAILED_MEDIA_URL_PARSE,
             'Error parsing media URL: {{ url }}',
-            ['url' => $url]
+            ['url' => PathHelper::stripCredentials($url)]
         );
     }
 

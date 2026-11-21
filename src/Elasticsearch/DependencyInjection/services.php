@@ -153,6 +153,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CriteriaParser::class),
             service('shopwell.elasticsearch.logger'),
             service(SystemConfigService::class),
+            param('elasticsearch.search.term_max_words'),
+            service(ElasticsearchTokenizer::class),
         ]);
 
     $services->set(ElasticsearchIndexingUtils::class)

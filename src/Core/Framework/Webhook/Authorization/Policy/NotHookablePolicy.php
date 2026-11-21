@@ -2,12 +2,12 @@
 
 namespace Shopwell\Core\Framework\Webhook\Authorization\Policy;
 
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
 use Shopwell\Core\Framework\Event\FlowEventAware;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\Authorization\Subscription\Subscriber;
-use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriberType;
 use Shopwell\Core\Framework\Webhook\Hookable;
 use Shopwell\Core\Framework\Webhook\NotHookable;
 use Shopwell\Core\Framework\Webhook\Webhook;
@@ -38,7 +38,7 @@ final class NotHookablePolicy implements Policy
     public function permitsSubscription(string $eventName, Subscriber $subscriber): bool
     {
         // @deprecated tag:v6.8.0 - Will always return false, apps can no longer subscribe to events that are not hookable
-        if ($subscriber->type !== SubscriberType::App || Feature::isActive('v6.8.0.0')) {
+        if ($subscriber->type !== IdentityType::App || Feature::isActive('v6.8.0.0')) {
             return false;
         }
 

@@ -213,7 +213,6 @@
             <file>src/Core/Framework/ContentSystem/Diagnostics/ViolationScope.php</file>
             <file>src/Core/Framework/ContentSystem/Diagnostics/ViolationSeverity.php</file>
             <file>src/Core/Framework/ContentSystem/Hydration/DataLoader/ConfigKeyKind.php</file>
-            <file>src/Core/Framework/ContentSystem/Hydration/DataLoader/ConfigKeySpecification.php</file>
             <file>src/Core/Framework/ContentSystem/Hydration/DataLoader/LoaderTypeCapability.php</file>
             <file>src/Core/Framework/ContentSystem/Layout/Codec/PropertyTypeConformance.php</file>
             <file>src/Core/Framework/ContentSystem/Layout/Element/Style/Loader/StyleOptionSourceDirectory.php</file>

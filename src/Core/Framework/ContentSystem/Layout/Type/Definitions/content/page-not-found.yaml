@@ -1,5 +1,6 @@
 meta:
   label: "Page Not Found"
+  labelSnippet: "sw-experience-studio.elements.page-not-found.label"
   description: "Displays the translated page-not-found illustration, heading, message and return-to-shop link."
   icon: "regular-align-left"
   illustration: "content-text"
@@ -12,6 +13,7 @@ properties:
     required: false
     translatable: true
     title: "Title"
+    titleSnippet: "sw-experience-studio.elements.page-not-found.title.title"
     description: "Optional heading override. When empty, the heading uses the storefront's translated page-not-found message."
     default: ""
     adminUI:

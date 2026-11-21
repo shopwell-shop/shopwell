@@ -212,6 +212,56 @@ class AccountProfileControllerTest extends TestCase
         static::assertCount(0, $crawler->filter('label[for="vatIds"] .form-required-label'));
     }
 
+    public function testStoredBusinessAccountTypeIsPreselectedEvenWithoutCustomerCompany(): void
+    {
+        $context = Context::createDefaultContext();
+        $customer = $this->createCustomerWithAccountType(
+            $context,
+            accountType: CustomerEntity::ACCOUNT_TYPE_BUSINESS,
+            company: null,
+            addressCompany: 'Shopwell',
+        );
+
+        static::getContainer()->get(SystemConfigService::class)
+            ->set('core.loginRegistration.showAccountTypeSelection', true);
+
+        $browser = $this->login($customer->getEmail());
+
+        $crawler = $browser->request('GET', '/account/profile');
+
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode());
+
+        $businessOption = \sprintf('select[name="accountType"] option[value="%s"][selected]', CustomerEntity::ACCOUNT_TYPE_BUSINESS);
+        $privateOption = \sprintf('select[name="accountType"] option[value="%s"][selected]', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
+        static::assertCount(1, $crawler->filter($businessOption));
+        static::assertCount(0, $crawler->filter($privateOption));
+    }
+
+    public function testStoredPrivateAccountTypeIsPreselectedEvenWithCustomerCompany(): void
+    {
+        $context = Context::createDefaultContext();
+        $customer = $this->createCustomerWithAccountType(
+            $context,
+            accountType: CustomerEntity::ACCOUNT_TYPE_PRIVATE,
+            company: 'Shopwell',
+            addressCompany: null,
+        );
+
+        static::getContainer()->get(SystemConfigService::class)
+            ->set('core.loginRegistration.showAccountTypeSelection', true);
+
+        $browser = $this->login($customer->getEmail());
+
+        $crawler = $browser->request('GET', '/account/profile');
+
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode());
+
+        $businessOption = \sprintf('select[name="accountType"] option[value="%s"][selected]', CustomerEntity::ACCOUNT_TYPE_BUSINESS);
+        $privateOption = \sprintf('select[name="accountType"] option[value="%s"][selected]', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
+        static::assertCount(1, $crawler->filter($privateOption));
+        static::assertCount(0, $crawler->filter($businessOption));
+    }
+
     public function testGuestsSaveTheirVatIdInTheProfileAndReturnToCheckout(): void
     {
         $browser = $this->registerBusinessGuest('guest@example.com');
@@ -369,6 +419,44 @@ class AccountProfileControllerTest extends TestCase
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
             'gender' => $this->getValidGender(),
+            'customerNumber' => '12345',
+        ];
+
+        /** @var EntityRepository<CustomerCollection> $repo */
+        $repo = static::getContainer()->get('customer.repository');
+        $repo->create([$customer], $context);
+
+        $customer = $repo->search(new Criteria([$customerId]), $context)->getEntities()->first();
+
+        static::assertNotNull($customer);
+
+        return $customer;
+    }
+
+    private function createCustomerWithAccountType(Context $context, string $accountType, ?string $company, ?string $addressCompany): CustomerEntity
+    {
+        $customerId = Uuid::randomHex();
+        $addressId = Uuid::randomHex();
+
+        $customer = [
+            'id' => $customerId,
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
+            'accountType' => $accountType,
+            'company' => $company,
+            'defaultShippingAddress' => [
+                'id' => $addressId,
+                'name' => 'Max Mustermann',
+                'street' => 'Musterstraße 1',
+                'city' => 'Schöppingen',
+                'zipcode' => '12345',
+                'company' => $addressCompany,
+                'country' => ['name' => 'Germany'],
+            ],
+            'defaultBillingAddressId' => $addressId,
+            'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+            'email' => 'account.type.customer@test.com',
+            'password' => TestDefaults::HASHED_PASSWORD,
+            'name' => 'Max Mustermann',
             'customerNumber' => '12345',
         ];
 

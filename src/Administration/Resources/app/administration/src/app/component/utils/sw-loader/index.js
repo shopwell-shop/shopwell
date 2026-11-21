@@ -31,10 +31,11 @@ export default {
                 return true;
             }
 
-            // Throw warning when deprecated component is used
-            Shopwell.Utils.debug.warn(
-                'sw-loader',
+            // @deprecated tag:v6.8.0 - Use "mt-loader" instead.
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
                 'The old usage of "sw-loader" is deprecated and will be removed in v6.8.0.0. Please use "mt-loader" instead.',
+                { _blame: 'author' },
             );
 
             return false;

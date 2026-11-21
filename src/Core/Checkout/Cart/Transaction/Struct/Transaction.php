@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Cart\Transaction\Struct;
 
+use Shopwell\Core\Checkout\Cart\PayloadTrait;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\Struct;
@@ -9,6 +10,8 @@ use Shopwell\Core\Framework\Struct\Struct;
 #[Package('checkout')]
 class Transaction extends Struct
 {
+    use PayloadTrait;
+
     protected ?Struct $validationStruct = null;
 
     public function __construct(
@@ -45,6 +48,14 @@ class Transaction extends Struct
     public function setValidationStruct(?Struct $validationStruct): void
     {
         $this->validationStruct = $validationStruct;
+    }
+
+    public function jsonSerialize(): array
+    {
+        $data = parent::jsonSerialize();
+        $data['payload'] = $this->getUnprotectedPayload();
+
+        return $data;
     }
 
     public function getApiAlias(): string

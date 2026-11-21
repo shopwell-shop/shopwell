@@ -6,11 +6,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\ApiCaller;
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\Authorization\Subscription\Subscriber;
-use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriberType;
 
 /**
  * @internal
@@ -25,19 +25,19 @@ class SubscriberTest extends TestCase
 
         $subscriber = Subscriber::app($manifest);
 
-        static::assertSame(SubscriberType::App, $subscriber->type);
+        static::assertSame(IdentityType::App, $subscriber->type);
         static::assertSame($manifest, $subscriber->manifest);
     }
 
     #[DataProvider('subscribersWithoutAManifest')]
-    public function testASubscriberWithoutAManifestCarriesItsType(Subscriber $subscriber, SubscriberType $expectedType): void
+    public function testASubscriberWithoutAManifestCarriesItsType(Subscriber $subscriber, ?IdentityType $expectedType): void
     {
         static::assertSame($expectedType, $subscriber->type);
         static::assertNull($subscriber->manifest);
     }
 
     /**
-     * @return iterable<string, array{Subscriber, SubscriberType}>
+     * @return iterable<string, array{Subscriber, IdentityType|null}>
      */
     public static function subscribersWithoutAManifest(): iterable
     {
@@ -46,8 +46,8 @@ class SubscriberTest extends TestCase
         $integration = ApiCaller::of(new AdminApiSource(null, 'integration-id'));
         static::assertNotNull($integration);
 
-        yield 'a user through the API' => [Subscriber::api($user), SubscriberType::User];
-        yield 'an integration through the API' => [Subscriber::api($integration), SubscriberType::Integration];
-        yield 'no subscriber at all' => [Subscriber::none(), SubscriberType::None];
+        yield 'a user through the API' => [Subscriber::api($user), IdentityType::User];
+        yield 'an integration through the API' => [Subscriber::api($integration), IdentityType::Integration];
+        yield 'no subscriber at all' => [Subscriber::none(), null];
     }
 }

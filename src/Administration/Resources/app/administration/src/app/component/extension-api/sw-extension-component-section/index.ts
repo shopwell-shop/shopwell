@@ -65,8 +65,10 @@ export default Shopwell.Component.wrapComponentConfig({
                     ];
                     // @ts-expect-error
                     if (process.env !== 'prod') {
+                        // eslint-disable-next-line sw-deprecation-rules/no-manual-deprecation-notices -- a position identifier has no removal version to guard with
                         Shopwell.Utils.debug.error(...debugArgs);
                     } else {
+                        // eslint-disable-next-line sw-deprecation-rules/no-manual-deprecation-notices -- a position identifier has no removal version to guard with
                         Shopwell.Utils.debug.warn(...debugArgs);
                     }
                 });

@@ -87,6 +87,8 @@ use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\ContentSystem\Adapter\RootSourceRegistry;
+use Shopwell\Core\Framework\ContentSystem\Api\DraftLayoutDecoder;
+use Shopwell\Core\Framework\ContentSystem\Binding\DefaultBindingRootSources;
 use Shopwell\Core\Framework\ContentSystem\Binding\Registry\ContentSystemBindingSpecificationRegistry;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Registry\ContentSystemStyleOptionRegistry;
 use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\ContentSystemLayoutPresetRegistry;
@@ -101,6 +103,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\CompressedCriteriaDecoder;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Feature\FeatureFlagRegistry;
+use Shopwell\Core\Framework\Mcp\Authentication\McpOAuthMetadata;
 use Shopwell\Core\Framework\MessageQueue\Stats\StatsService;
 use Shopwell\Core\Framework\Migration\MigrationInfo;
 use Shopwell\Core\Framework\Plugin\KernelPluginCollection;
@@ -361,6 +364,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PresignedMediaUploadService::class)->nullOnInvalid(),
             service(MediaFileExtensionListProvider::class),
             service(VersionHistory::class),
+            service(DefaultBindingRootSources::class),
+            service(DraftLayoutDecoder::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -383,6 +388,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PublicClientRegistry::class),
             service('shopwell.rate_limiter'),
             service('router'),
+            service(McpOAuthMetadata::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -404,6 +410,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(PublicClientRegistry::class)
         ->args([
             param('shopwell.api.oauth_clients'),
+            param('kernel.environment'),
         ]);
 
     $services->set(ClientRepository::class)
@@ -506,6 +513,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ClockInterface::class),
             service(OAuth2LoginCodeService::class),
             service('user.repository'),
+            service(PublicClientRegistry::class),
             param('shopwell.api.refresh_token_ttl'),
             param('shopwell.api.auth_code_ttl'),
         ]);

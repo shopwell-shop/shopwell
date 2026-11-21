@@ -36,7 +36,8 @@
 小计 {{ lineItem.totalPrice|currency(currencyIsoCode) }}，
 
 {% endfor %}
-{% set delivery = order.deliveries.first %}
+{% set shipments = order.deliveries|filter(delivery => delivery.shippingCosts.totalPrice >= 0)|sort((a, b) => [a.position|default(0), b.id == order.primaryOrderDeliveryId, b.shippingCosts.unitPrice, a.id] <=> [b.position|default(0), a.id == order.primaryOrderDeliveryId, a.shippingCosts.unitPrice, b.id]) %}
+{% set delivery = shipments|first %}
 {% set displayRounded = order.totalRounding.interval != 0.01 or order.totalRounding.decimals != order.itemRounding.decimals %}
 {% set decimals = order.totalRounding.decimals %}
 {% set total = order.price.totalPrice %}
@@ -61,7 +62,22 @@
 {{ order.transactions.first.paymentMethod.translated.description }}
 {% endif %}
 
-{% if delivery %}
+{% if shipments|length > 1 %}
+{% for shipment in shipments %}
+配送 {{ loop.index }}： {{ shipment.shippingMethod.translated.name }}
+运费： {{ shipment.shippingCosts.totalPrice|currency(currencyIsoCode) }}
+预计送达时间： {{ shipment.shippingDateEarliest|format_date('medium', locale='zh-CN') }} - {{ shipment.shippingDateLatest|format_date('medium', locale='zh-CN') }}
+收货地址：
+{% if shipment.shippingOrderAddress.company %}
+{{ shipment.shippingOrderAddress.company }}
+{% endif %}
+{{ shipment.shippingOrderAddress.name }}
+{{ shipment.shippingOrderAddress.street }}
+{{ shipment.shippingOrderAddress.zipcode }} {{ shipment.shippingOrderAddress.city }}
+{{ shipment.shippingOrderAddress.country.translated.name }}
+
+{% endfor %}
+{% elseif delivery %}
 所选配送方式：{{ delivery.shippingMethod.translated.name }}
 {{ delivery.shippingMethod.translated.description }}
 {% endif %}
@@ -73,7 +89,7 @@
 {{ billingAddress.zipcode }} {{ billingAddress.city }}
 {{ billingAddress.country.translated.name }}
 
-{% if delivery %}
+{% if shipments|length == 1 %}
 收货地址：
 {{ delivery.shippingOrderAddress.company }}
 {{ delivery.shippingOrderAddress.name }}

@@ -1,5 +1,6 @@
 meta:
   label: "Revocation request form"
+  labelSnippet: "sw-experience-studio.elements.revocation-request.label"
   description: "Displays the revocation request form."
   icon: "regular-envelope"
   category: "content"
@@ -11,6 +12,7 @@ properties:
     required: false
     translatable: true
     title: "Title"
+    titleSnippet: "sw-experience-studio.elements.revocation-request.title.title"
     description: "Optional heading displayed above the form."
     default: ""
     adminUI:
@@ -20,6 +22,7 @@ properties:
     type: Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection
     required: false
     title: "Genders"
+    titleSnippet: "sw-experience-studio.elements.revocation-request.genders.title"
     description: "Translated gender choices loaded for this sales channel."
     resolvedBy:
       form_genders: {}

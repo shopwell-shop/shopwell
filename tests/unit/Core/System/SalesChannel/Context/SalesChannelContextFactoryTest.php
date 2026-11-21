@@ -28,6 +28,10 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateCollection;
+use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
+use Shopwell\Core\System\Country\CountryCollection;
+use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\SalesChannel\BaseSalesChannelContext;
@@ -51,6 +55,8 @@ class SalesChannelContextFactoryTest extends TestCase
     private const CUSTOMER_BILLING_ADDRESS_ID = 'customer-billing-address-id';
 
     private const CUSTOMER_SHIPPING_ADDRESS_ID = 'customer-shipping-address-id';
+
+    private const DEFAULT_CUSTOMER_GROUP_ID = 'default-customer-group-id';
 
     public function testCustomerPaymentMethodIsOnlyUsedIfActive(): void
     {
@@ -179,6 +185,7 @@ class SalesChannelContextFactoryTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(EntityRepository::class),
             $baseSalesChannelContextFactory,
+            static::createStub(EntityRepository::class),
         );
 
         $generatedContext = $factory->create(Uuid::randomHex(), $salesChannel->getId(), $options);
@@ -287,6 +294,7 @@ class SalesChannelContextFactoryTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(EntityRepository::class),
             $baseSalesChannelContextFactory,
+            static::createStub(EntityRepository::class),
         );
 
         $generatedContext = $factory->create(Uuid::randomHex(), $salesChannel->getId(), $options);
@@ -397,6 +405,7 @@ class SalesChannelContextFactoryTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(EntityRepository::class),
             $baseSalesChannelContextFactory,
+            static::createStub(EntityRepository::class),
         );
 
         $generatedContext = $factory->create(Uuid::randomHex(), $salesChannel->getId(), $options);
@@ -519,6 +528,7 @@ class SalesChannelContextFactoryTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(EntityRepository::class),
             $baseSalesChannelContextFactory,
+            static::createStub(EntityRepository::class),
         );
 
         $generatedContext = $factory->create(Uuid::randomHex(), $salesChannel->getId(), $options);
@@ -649,6 +659,138 @@ class SalesChannelContextFactoryTest extends TestCase
         static::assertSame($injectedAddress->getCountry(), $context->getShippingLocation()->getCountry());
     }
 
+    public function testProspectiveCustomerDefinesTheShippingLocationAndTheRuleCustomer(): void
+    {
+        $country = $this->createCountry();
+
+        $context = $this->createContext([
+            SalesChannelContextService::PROSPECTIVE_CUSTOMER => [
+                'shippingAddress' => ['countryId' => $country->getId(), 'countryStateId' => null, 'zipcode' => '48624', 'city' => 'Schöppingen', 'street' => null],
+            ],
+        ], withCustomer: false, salesChannelCountry: $country);
+
+        static::assertNull($context->getCustomer());
+
+        $prospectiveCustomer = $context->getProspectiveCustomer();
+        static::assertNotNull($prospectiveCustomer);
+        static::assertNull($prospectiveCustomer->getBillingAddress());
+
+        $address = $context->getShippingLocation()->getAddress();
+        static::assertNotNull($address);
+        static::assertSame($country, $context->getShippingLocation()->getCountry());
+        static::assertSame('48624', $address->getZipcode());
+        static::assertSame('Schöppingen', $address->getCity());
+        static::assertSame('', $address->getStreet());
+
+        $ruleCustomer = $prospectiveCustomer->getRuleCustomer();
+        static::assertTrue($ruleCustomer->getGuest());
+        static::assertTrue($ruleCustomer->getActive());
+        static::assertSame(self::DEFAULT_CUSTOMER_GROUP_ID, $ruleCustomer->getGroupId());
+        static::assertSame(0, $ruleCustomer->getOrderCount());
+        static::assertSame(CustomerEntity::ACCOUNT_TYPE_PRIVATE, $ruleCustomer->getAccountType());
+        static::assertSame($address, $ruleCustomer->getActiveShippingAddress());
+        static::assertSame($address, $ruleCustomer->getActiveBillingAddress(), 'Without a billing address, the visitor is billed at the shipping address');
+    }
+
+    public function testProspectiveAddressIdsStayTheSameForAToken(): void
+    {
+        $country = $this->createCountry();
+        $options = [
+            SalesChannelContextService::PROSPECTIVE_CUSTOMER => [
+                'shippingAddress' => ['countryId' => $country->getId(), 'zipcode' => '48624'],
+                'billingAddress' => ['countryId' => $country->getId(), 'zipcode' => '48619'],
+            ],
+        ];
+
+        $first = $this->createContext($options, withCustomer: false, salesChannelCountry: $country, token: 'token')->getProspectiveCustomer()?->getRuleCustomer();
+        $second = $this->createContext($options, withCustomer: false, salesChannelCountry: $country, token: 'token')->getProspectiveCustomer()?->getRuleCustomer();
+        $otherToken = $this->createContext($options, withCustomer: false, salesChannelCountry: $country, token: 'other-token')->getProspectiveCustomer()?->getRuleCustomer();
+
+        static::assertNotNull($first);
+        static::assertNotNull($second);
+        static::assertNotNull($otherToken);
+        static::assertSame($first->getId(), $second->getId());
+        static::assertSame($first->getActiveShippingAddress()?->getId(), $second->getActiveShippingAddress()?->getId());
+        static::assertSame($first->getActiveBillingAddress()?->getId(), $second->getActiveBillingAddress()?->getId());
+        static::assertNotSame($first->getActiveShippingAddress()?->getId(), $first->getActiveBillingAddress()?->getId());
+        static::assertNotSame($first->getActiveShippingAddress()?->getId(), $otherToken->getActiveShippingAddress()?->getId());
+    }
+
+    public function testProspectiveCustomerIsIgnoredForALoggedInCustomer(): void
+    {
+        $country = $this->createCountry();
+
+        $context = $this->createContext([
+            SalesChannelContextService::PROSPECTIVE_CUSTOMER => [
+                'shippingAddress' => ['countryId' => $country->getId(), 'zipcode' => '48624'],
+            ],
+        ], salesChannelCountry: $country);
+
+        static::assertNotNull($context->getCustomer());
+        static::assertNull($context->getProspectiveCustomer());
+        static::assertSame(self::CUSTOMER_SHIPPING_ADDRESS_ID, $context->getShippingLocation()->getAddress()?->getId());
+    }
+
+    public function testProspectiveCustomerIsIgnoredWhenTheContextCountryWasChangedAfterwards(): void
+    {
+        $context = $this->createContext([
+            SalesChannelContextService::PROSPECTIVE_CUSTOMER => [
+                'shippingAddress' => ['countryId' => Uuid::randomHex(), 'zipcode' => '48624'],
+            ],
+        ], withCustomer: false);
+
+        static::assertNull($context->getProspectiveCustomer());
+        static::assertNull($context->getShippingLocation()->getAddress());
+    }
+
+    public function testProspectiveBillingAddressInAnotherCountryLoadsItsCountryAndState(): void
+    {
+        $shippingCountry = $this->createCountry();
+
+        $billingState = new CountryStateEntity();
+        $billingState->setId(Uuid::randomHex());
+        $billingCountry = $this->createCountry();
+        $billingCountry->setStates(new CountryStateCollection([$billingState]));
+
+        $context = $this->createContext([
+            SalesChannelContextService::PROSPECTIVE_CUSTOMER => [
+                'shippingAddress' => ['countryId' => $shippingCountry->getId(), 'zipcode' => '48624'],
+                'billingAddress' => ['countryId' => $billingCountry->getId(), 'countryStateId' => $billingState->getId(), 'zipcode' => '1010'],
+            ],
+        ], withCustomer: false, salesChannelCountry: $shippingCountry, countryRepository: new StaticEntityRepository([new CountryCollection([$billingCountry])], new CountryDefinition()));
+
+        $billingAddress = $context->getProspectiveCustomer()?->getRuleCustomer()->getActiveBillingAddress();
+        static::assertNotNull($billingAddress);
+        static::assertSame($billingCountry, $billingAddress->getCountry());
+        static::assertSame($billingState, $billingAddress->getCountryState());
+        static::assertSame('1010', $billingAddress->getZipcode());
+        static::assertSame($shippingCountry, $context->getShippingLocation()->getCountry(), 'The billing address must not change the shipping location');
+    }
+
+    public function testProspectiveBillingAddressOfADeletedCountryFallsBackToTheShippingAddress(): void
+    {
+        $country = $this->createCountry();
+
+        $context = $this->createContext([
+            SalesChannelContextService::PROSPECTIVE_CUSTOMER => [
+                'shippingAddress' => ['countryId' => $country->getId()],
+                'billingAddress' => ['countryId' => Uuid::randomHex()],
+            ],
+        ], withCustomer: false, salesChannelCountry: $country, countryRepository: new StaticEntityRepository([new CountryCollection()], new CountryDefinition()));
+
+        $ruleCustomer = $context->getProspectiveCustomer()?->getRuleCustomer();
+        static::assertNotNull($ruleCustomer);
+        static::assertSame($ruleCustomer->getActiveShippingAddress(), $ruleCustomer->getActiveBillingAddress());
+    }
+
+    private function createCountry(): CountryEntity
+    {
+        $country = new CountryEntity();
+        $country->setId(Uuid::randomHex());
+
+        return $country;
+    }
+
     private function createInjectedAddress(): CustomerAddressEntity
     {
         $country = new CountryEntity();
@@ -665,8 +807,9 @@ class SalesChannelContextFactoryTest extends TestCase
 
     /**
      * @param array<string, mixed> $options
+     * @param EntityRepository<CountryCollection>|null $countryRepository
      */
-    private function createContext(array $options, bool $withCustomer = true): SalesChannelContext
+    private function createContext(array $options, bool $withCustomer = true, ?CountryEntity $salesChannelCountry = null, ?EntityRepository $countryRepository = null, ?string $token = null): SalesChannelContext
     {
         $salesChannel = new SalesChannelEntity();
         $salesChannel->setId(Uuid::randomHex());
@@ -678,8 +821,13 @@ class SalesChannelContextFactoryTest extends TestCase
         $customer->setDefaultShippingAddressId(self::CUSTOMER_SHIPPING_ADDRESS_ID);
         $customer->setGroupId(Uuid::randomHex());
 
-        $salesChannelCountry = new CountryEntity();
-        $salesChannelCountry->setId(Uuid::randomHex());
+        if ($salesChannelCountry === null) {
+            $salesChannelCountry = new CountryEntity();
+            $salesChannelCountry->setId(Uuid::randomHex());
+        }
+
+        $customerGroup = new CustomerGroupEntity();
+        $customerGroup->setId(self::DEFAULT_CUSTOMER_GROUP_ID);
 
         $billingAddress = new CustomerAddressEntity();
         $billingAddress->setId(self::CUSTOMER_BILLING_ADDRESS_ID);
@@ -699,7 +847,7 @@ class SalesChannelContextFactoryTest extends TestCase
             Context::createDefaultContext(new SalesChannelApiSource($salesChannel->getId())),
             $salesChannel,
             $currency,
-            new CustomerGroupEntity(),
+            $customerGroup,
             new TaxCollection(),
             new PaymentMethodEntity(),
             new ShippingMethodEntity(),
@@ -723,12 +871,13 @@ class SalesChannelContextFactoryTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(EntityRepository::class),
             $baseSalesChannelContextFactory,
+            $countryRepository ?? static::createStub(EntityRepository::class),
         );
 
         if ($withCustomer) {
             $options[SalesChannelContextService::CUSTOMER_ID] = $customer->getId();
         }
 
-        return $factory->create(Uuid::randomHex(), $salesChannel->getId(), $options);
+        return $factory->create($token ?? Uuid::randomHex(), $salesChannel->getId(), $options);
     }
 }

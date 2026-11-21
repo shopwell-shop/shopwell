@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\Framework\Mcp\Resource;
 
+use Mcp\Schema\Content\TextResourceContents;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Flow\Api\FlowActionCollector;
@@ -34,12 +35,13 @@ class FlowActionsResourceTest extends TestCase
         $contextProvider->method('getContext')->willReturn($context);
 
         $resource = new FlowActionsResource($collector, $contextProvider);
-        $result = ($resource)();
+        $result = ($resource)()->contents[0];
+        static::assertInstanceOf(TextResourceContents::class, $result);
 
-        static::assertSame('shopwell://flow-actions', $result['uri']);
-        static::assertSame('application/json', $result['mimeType']);
+        static::assertSame('shopwell://flow-actions', $result->uri);
+        static::assertSame('application/json', $result->mimeType);
 
-        $actions = json_decode($result['text'], true, 512, \JSON_THROW_ON_ERROR);
+        $actions = json_decode($result->text, true, 512, \JSON_THROW_ON_ERROR);
         static::assertCount(2, $actions);
         static::assertSame('action.add-tag', $actions[0]['name']);
         static::assertSame(['entity'], $actions[0]['requirements']);

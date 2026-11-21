@@ -41,6 +41,7 @@ rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NameConstantEntityDefinition
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\StorefrontRouteUsageRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoRuntimeExceptionInDomainExceptionsRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoXmlUtilsParsingRule
     # core-only until the commercial repositories have swept their own reflection backlogs
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoReflectionOnNonPublicMethodsRule
 

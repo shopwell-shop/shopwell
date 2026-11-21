@@ -1,5 +1,5 @@
 import type { Viewport, ViewportPreset, ResizeDirection, CanvasGesture, CanvasFrame } from './canvas.config';
-import { getContentLayoutNameKey } from 'src/app/utils/content-layout-label.util';
+import { getContentLayoutName } from 'src/app/utils/content-layout-label.util';
 import {
     VIEWPORT_WIDTHS,
     FRAME_GAP,
@@ -19,7 +19,6 @@ import {
     loadExperienceStudioCanvasPosition,
     saveExperienceStudioCanvasPosition,
 } from '../../util/canvas-position.util';
-import type { ExperienceStudioCanvasPosition } from '../../util/canvas-position.util';
 import template from './sw-experience-studio-canvas.html.twig';
 import './sw-experience-studio-canvas.scss';
 
@@ -264,11 +263,7 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     methods: {
-        getLayoutName(layout: CanvasFrame['layout']): string {
-            const key = getContentLayoutNameKey(layout);
-
-            return key ? this.$t(key) : layout.name;
-        },
+        getLayoutName: getContentLayoutName,
 
         ...canvasInteractionHandlers,
 
@@ -331,10 +326,7 @@ export default Shopwell.Component.wrapComponentConfig({
             if (this.workspaceConfiguration) {
                 return;
             }
-            const position: ExperienceStudioCanvasPosition | null = loadExperienceStudioCanvasPosition(
-                this.getCurrentUserId(),
-                this.layoutId,
-            );
+            const position = loadExperienceStudioCanvasPosition(this.getCurrentUserId(), this.layoutId);
 
             this.frameX = position?.x ?? 0;
             this.frameY = position?.y ?? 0;
@@ -391,7 +383,12 @@ export default Shopwell.Component.wrapComponentConfig({
                         Math.abs(state.y - other.y) < (state.height + other.height) / 2 + FRAME_GAP,
                 );
                 if (overlappingFrame) {
-                    x = overlappingFrame.x + (overlappingFrame.width + state.width) / 2 + FRAME_GAP;
+                    const nextX = overlappingFrame.x + (overlappingFrame.width + state.width) / 2 + FRAME_GAP;
+                    // Float rounding can leave the pushed frame a hair inside the gap, so it would never move on.
+                    if (nextX <= x) {
+                        break;
+                    }
+                    x = nextX;
                 }
             } while (overlappingFrame);
             return x;

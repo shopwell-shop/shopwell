@@ -31,7 +31,6 @@ use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpDebugCommandComp
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpServerBuilderCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolAnalysisCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolDiscoveryCompilerPass;
-use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolResultCacheCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolResultRendererCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\MessengerMiddlewareCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\OverwriteSessionFactoryCompilerPass;
@@ -167,8 +166,6 @@ class Framework extends Bundle
         // "mcp.servers.elements" parameter, so it has to run before the bundle's own McpPass reads
         // it. That one is registered with the default priority.
         $container->addCompilerPass(new McpToolDiscoveryCompilerPass(), priority: 20);
-        // Wires the tool-result cache into every MCP tool: core, plugin and bundle tools.
-        $container->addCompilerPass(new McpToolResultCacheCompilerPass(), priority: 15);
         $container->addCompilerPass(new McpToolAnalysisCompilerPass());
         $container->addCompilerPass(new McpServerBuilderCompilerPass());
         // After the bundle's McpPass, which sets the reference handler this pass wraps.

@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\Webhook\Authorization\EventLog;
 
 use Shopwell\Core\Framework\Api\Acl\ApiCaller;
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -112,8 +113,8 @@ class RestrictEventLogReadSubscriber implements EventSubscriberInterface, ResetI
     {
         $criteria = new Criteria();
         $criteria->addFilter(match ($caller->type) {
-            ApiCaller::USER => new EqualsFilter('ownerUserId', $caller->id),
-            ApiCaller::INTEGRATION => new OrFilter([
+            IdentityType::User => new EqualsFilter('ownerUserId', $caller->id),
+            IdentityType::Integration, IdentityType::AppIntegration => new OrFilter([
                 new EqualsFilter('ownerIntegrationId', $caller->id),
                 new EqualsFilter('app.integrationId', $caller->id),
             ]),

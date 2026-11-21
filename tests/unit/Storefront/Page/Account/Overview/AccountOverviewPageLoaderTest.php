@@ -29,6 +29,7 @@ use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Shopwell\Storefront\Checkout\Order\OrderProductAvailabilityResolver;
@@ -282,6 +283,17 @@ class AccountOverviewPageLoaderTest extends TestCase
         static::assertNull($page->getTierPointsToNext());
     }
 
+    public function testLoadsShippingAddressAndStateOfEveryDelivery(): void
+    {
+        $this->assertDeliveryAssociationsLoaded();
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testLoadsShippingAddressAndStateOfEveryDeliveryWithoutMajorFlag(): void
+    {
+        $this->assertDeliveryAssociationsLoaded();
+    }
+
     private function loadOverview(
         ?WalletRoute $walletRoute = null,
         ?LoyaltyRoute $loyaltyRoute = null,
@@ -377,6 +389,7 @@ class AccountOverviewPageLoaderTest extends TestCase
         ?AbstractTranslator $translator = null,
         ?WalletRoute $walletRoute = null,
         ?LoyaltyRoute $loyaltyRoute = null,
+        ?AccountOrderStateCounter $orderStateCounter = null,
     ): AccountOverviewPageLoader {
         return new AccountOverviewPageLoader(
             $genericPageLoader ?? $this->genericPageLoader,
@@ -391,13 +404,62 @@ class AccountOverviewPageLoaderTest extends TestCase
             $loyaltyRoute ?? $this->loyaltyRoute,
             new LoyaltySettings($this->systemConfigService),
             new LoyaltyTierProgress(),
-            $this->orderStateCounter($orderRoute ?? $this->orderRoute)
+            $orderStateCounter ?? $this->orderStateCounter($orderRoute ?? $this->orderRoute)
         );
     }
 
     private function orderStateCounter(AbstractOrderRoute $orderRoute): AccountOrderStateCounter
     {
         return new AccountOrderStateCounter($orderRoute, $this->eventDispatcher);
+    }
+
+    private function assertDeliveryAssociationsLoaded(): void
+    {
+        $criteria = null;
+
+        $orderRoute = $this->createMock(OrderRoute::class);
+        $orderRoute
+            ->expects($this->once())
+            ->method('load')
+            ->with(
+                static::isInstanceOf(Request::class),
+                static::anything(),
+                static::callback(static function (Criteria $loadedCriteria) use (&$criteria): bool {
+                    $criteria = $loadedCriteria;
+
+                    return true;
+                }),
+            )
+            ->willReturn(new OrderRouteResponse(
+                new EntitySearchResult(
+                    OrderDefinition::ENTITY_NAME,
+                    0,
+                    new OrderCollection(),
+                    null,
+                    new Criteria(),
+                    Context::createDefaultContext()
+                )
+            ));
+
+        $genericPageLoader = static::createStub(GenericPageLoader::class);
+        $genericPageLoader->method('load')->willReturn(new Page());
+
+        $this->createPageLoader(
+            genericPageLoader: $genericPageLoader,
+            orderRoute: $orderRoute,
+            orderStateCounter: static::createStub(AccountOrderStateCounter::class)
+        )
+            ->load(new Request(), static::createStub(SalesChannelContext::class), new CustomerEntity());
+
+        static::assertInstanceOf(Criteria::class, $criteria);
+
+        foreach (['deliveries.shippingOrderAddress.country', 'deliveries.shippingOrderAddress.countryState', 'deliveries.stateMachineState'] as $path) {
+            $association = $criteria;
+            foreach (explode('.', $path) as $part) {
+                static::assertTrue($association->hasAssociation($part), \sprintf('The criteria does not load "%s"', $path));
+                $association = $association->getAssociations()[$part];
+            }
+        }
     }
 }
 

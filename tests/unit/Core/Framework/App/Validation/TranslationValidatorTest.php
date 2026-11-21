@@ -35,7 +35,6 @@ class TranslationValidatorTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/../Manifest/_fixtures/invalidTranslations/manifest.xml');
 
         $violations = $this->translationValidator->validate($manifest, null);
-        static::assertSame('Missing translations for "Metadata":
-- label: zh-CN, fr-FR', $violations[0]->getMessage());
+        static::assertSame('Missing label translations: zh-CN, fr-FR', $violations[0]->getMessage());
     }
 }

@@ -230,7 +230,6 @@ abstract class AbstractAppPaymentHandlerTestCase extends TestCase
             ->add('orderId', $orderId)
             ->add('paymentMethodId', $paymentMethodId)
             ->add('stateId', $this->ids->get('transaction_state'))
-            ->add('payload', '{}')
             ->amount(100)
             ->build();
 

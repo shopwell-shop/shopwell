@@ -1083,6 +1083,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
             'transactions.order',
             'transactions.orderId',
             'transactions.orderVersionId',
+            'transactions.payload',
             'transactions.paymentMethod',
             'transactions.paymentMethodId',
             // the reverse side of the payment domain, declared on the transaction
@@ -1118,6 +1119,8 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
             'deliveries.order',
             'deliveries.orderId',
             'deliveries.orderVersionId',
+            'deliveries.payload',
+            'deliveries.position',
             'deliveries.positions',
             'deliveries.primaryOrder',
             'deliveries.shippingCosts',

@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Mcp\AllowList\McpAllowlistProvider;
 use Shopwell\Core\Framework\Mcp\Tool\AbstractToolSearchTool;
 use Shopwell\Core\Framework\Mcp\Tool\Search\ToolSearch;
 use Shopwell\Core\Framework\Mcp\Tool\ToolSearchTool;
+use Shopwell\Core\Framework\Util\Json;
 
 /**
  * @internal
@@ -30,7 +31,8 @@ class AbstractToolSearchToolTest extends TestCase
         // the empty properties as an object.
         $tool = new ToolSearchTool($this->registry(), new ToolSearch());
 
-        $json = $tool('read entity');
+        // The renderer encodes the data like this for the text block and `structuredContent`.
+        $json = Json::encode($tool('read entity')->data);
 
         static::assertStringContainsString('"properties":{}', $json);
         static::assertStringNotContainsString('"properties":[]', $json);
@@ -47,11 +49,11 @@ class AbstractToolSearchToolTest extends TestCase
 
         $tool = new ToolSearchTool($this->registry(), new ToolSearch(), $allowlistProvider);
 
-        $data = json_decode($tool('entity'), true, 512, \JSON_THROW_ON_ERROR);
-        $names = array_column(array_column($data['data'], 'tool'), 'name');
+        $data = $tool('entity');
+        $names = array_column(array_column($data->data, 'tool'), 'name');
 
         static::assertSame(['shopwell-entity-search'], $names);
-        static::assertSame(1, $data['_meta']['totalCandidates']);
+        static::assertSame(1, $data->meta['totalCandidates']);
     }
 
     public function testSearchToolDoesNotReturnItself(): void
@@ -61,8 +63,8 @@ class AbstractToolSearchToolTest extends TestCase
 
         $tool = new ToolSearchTool($registry, new ToolSearch());
 
-        $data = json_decode($tool('tool search'), true, 512, \JSON_THROW_ON_ERROR);
-        $names = array_column(array_column($data['data'], 'tool'), 'name');
+        $data = $tool('tool search');
+        $names = array_column(array_column($data->data, 'tool'), 'name');
 
         static::assertNotContains('shopwell-tool-search', $names);
     }
@@ -71,10 +73,10 @@ class AbstractToolSearchToolTest extends TestCase
     {
         $tool = new ToolSearchTool(null, new ToolSearch());
 
-        $data = json_decode($tool('entity'), true, 512, \JSON_THROW_ON_ERROR);
+        $data = $tool('entity');
 
-        static::assertFalse($data['success']);
-        static::assertSame('MCP registry is not available.', $data['error']);
+        static::assertTrue($data->isError());
+        static::assertSame('MCP registry is not available.', $data->error->message);
     }
 
     public function testSearchResultCountIsCappedAtTwenty(): void
@@ -86,10 +88,10 @@ class AbstractToolSearchToolTest extends TestCase
 
         $tool = new ToolSearchTool($registry, new ToolSearch());
 
-        $data = json_decode($tool('entity', 25), true, 512, \JSON_THROW_ON_ERROR);
+        $data = $tool('entity', 25);
 
-        static::assertCount(20, $data['data']);
-        static::assertSame(25, $data['_meta']['totalCandidates']);
+        static::assertCount(20, $data->data);
+        static::assertSame(25, $data->meta['totalCandidates']);
     }
 
     private function registry(): Registry

@@ -1,5 +1,6 @@
 repository-url: https://raw.githubusercontent.com/shopwell-shop/translations/main/translations
 metadata-url: https://raw.githubusercontent.com/shopwell-shop/translations/main/crowdin-metadata.json
+archive-manifest-url: https://github.com/shopwell-shop/translations/releases/latest/download/manifest.json
 
 excluded-locales: ['it-IT']
 

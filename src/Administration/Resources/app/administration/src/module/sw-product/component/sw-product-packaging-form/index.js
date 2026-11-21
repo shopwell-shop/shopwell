@@ -37,6 +37,11 @@ export default {
 
         // @deprecated tag:v6.8.0 - will be removed due to unused
         isLoading() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-product-packaging-form.isLoading is deprecated. Will be removed due to unused.',
+            );
+
             return Shopwell.Store.get('swProductDetail').isLoading;
         },
 

@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\App\Mcp\Feature\McpResourceFeatureDefinition;
 use Shopwell\Core\Framework\App\Mcp\Feature\McpToolFeatureDefinition;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpServerBuilderCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolDiscoveryCompilerPass;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Mcp\AllowList\McpAllowlistFilter;
@@ -21,10 +22,14 @@ use Shopwell\Core\Framework\Mcp\AllowList\McpAllowlistListRequestHandler;
 use Shopwell\Core\Framework\Mcp\AllowList\McpAllowlistProvider;
 use Shopwell\Core\Framework\Mcp\Authentication\McpAuthenticationListener;
 use Shopwell\Core\Framework\Mcp\Authentication\McpExceptionListener;
+use Shopwell\Core\Framework\Mcp\Authentication\McpOAuthMetadata;
+use Shopwell\Core\Framework\Mcp\Authentication\McpPrincipalResolver;
 use Shopwell\Core\Framework\Mcp\Command\DebugMcpCommand;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
 use Shopwell\Core\Framework\Mcp\Context\StoreApiMcpContextProvider;
 use Shopwell\Core\Framework\Mcp\Controller\IntegrationMcpAllowlistController;
+use Shopwell\Core\Framework\Mcp\Controller\McpOAuthMetadataController;
+use Shopwell\Core\Framework\Mcp\Controller\McpOAuthMetadataRouteScopeWhitelist;
 use Shopwell\Core\Framework\Mcp\Controller\McpServerController;
 use Shopwell\Core\Framework\Mcp\Controller\McpToolListController;
 use Shopwell\Core\Framework\Mcp\Controller\StoreApiMcpServerController;
@@ -42,6 +47,7 @@ use Shopwell\Core\Framework\Mcp\McpToolsetRegistry;
 use Shopwell\Core\Framework\Mcp\McpToolsetSessionStorage;
 use Shopwell\Core\Framework\Mcp\Notification\AppMcpCapabilityDetector;
 use Shopwell\Core\Framework\Mcp\Notification\AppMcpCapabilityLifecycleSubscriber;
+use Shopwell\Core\Framework\Mcp\Notification\McpAllowlistChangeSubscriber;
 use Shopwell\Core\Framework\Mcp\Notification\McpHandshakeListChangedSubscriber;
 use Shopwell\Core\Framework\Mcp\Notification\McpListChangedNotifier;
 use Shopwell\Core\Framework\Mcp\Notification\McpListVersions;
@@ -65,6 +71,7 @@ use Shopwell\Core\Framework\Mcp\ScheduledTask\McpToolsetSessionCleanupTask;
 use Shopwell\Core\Framework\Mcp\ScheduledTask\McpToolsetSessionCleanupTaskHandler;
 use Shopwell\Core\Framework\Mcp\Session\McpSessionCleanupSubscriber;
 use Shopwell\Core\Framework\Mcp\Session\McpSessionIdValidator;
+use Shopwell\Core\Framework\Mcp\Session\McpSessionPrincipalBinding;
 use Shopwell\Core\Framework\Mcp\Tool\EntityAggregateTool;
 use Shopwell\Core\Framework\Mcp\Tool\EntityDeleteTool;
 use Shopwell\Core\Framework\Mcp\Tool\EntityReadTool;
@@ -118,12 +125,17 @@ return static function (ContainerConfigurator $container): void {
     $services->set(AppMcpCapabilityDetector::class)
         ->args([service(AppFeatureStorage::class)]);
 
+    $services->set(McpAllowlistChangeSubscriber::class)
+        ->args([service(McpListChangedNotifier::class)])
+        ->tag('kernel.event_subscriber');
+
     $services->set(AppMcpCapabilityLifecycleSubscriber::class)
         ->args([
             service(AppMcpCapabilityDetector::class),
             service(McpListChangedNotifier::class),
         ])
-        ->tag('kernel.event_subscriber');
+        ->tag('kernel.event_subscriber')
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(McpHandshakeListChangedSubscriber::class)
         ->args([service('request_stack')])
@@ -165,12 +177,38 @@ return static function (ContainerConfigurator $container): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(McpExceptionListener::class)
+        ->args([service(McpOAuthMetadata::class)])
         ->tag('kernel.event_subscriber');
+
+    $services->set(McpOAuthMetadata::class)
+        ->args([
+            service(McpAllowedHostsProvider::class),
+            env('APP_URL'),
+        ]);
+
+    $services->set(McpOAuthMetadataController::class)
+        ->public()
+        ->args([service(McpOAuthMetadata::class)])
+        ->tag('controller.service_arguments');
+
+    $services->set(McpOAuthMetadataRouteScopeWhitelist::class)
+        ->tag('shopwell.route_scope_whitelist');
 
     $services->set(McpSessionIdValidator::class);
 
+    $services->set(McpPrincipalResolver::class);
+
+    $services->set(McpSessionPrincipalBinding::class)
+        ->args([
+            service('mcp.server.admin.session.store')->nullOnInvalid(),
+            service(McpPrincipalResolver::class),
+        ]);
+
     $services->set(McpRateLimiter::class)
-        ->args([service(RateLimiter::class)]);
+        ->args([
+            service(RateLimiter::class),
+            service(McpPrincipalResolver::class),
+        ]);
 
     $services->set(McpAllowedHostsProvider::class)
         ->args([
@@ -201,6 +239,7 @@ return static function (ContainerConfigurator $container): void {
             service('logger'),
             service(McpAllowlistFilter::class),
             service(McpListChangedNotifier::class),
+            service(McpSessionPrincipalBinding::class),
         ])
         ->tag('controller.service_arguments')
         ->tag('monolog.logger', ['channel' => 'mcp']);
@@ -227,7 +266,11 @@ return static function (ContainerConfigurator $container): void {
         ]);
 
     $services->set('mcp.store_api.toolset_registry', McpToolsetRegistry::class)
-        ->args([service('mcp.store_api.capability_catalog')]);
+        ->args([
+            service('mcp.store_api.capability_catalog'),
+            null,
+            param('shopwell.store_api_mcp.tool_group_descriptions'),
+        ]);
 
     $services->set('mcp.store_api.list_request_handler', McpAllowlistListRequestHandler::class)
         ->args([
@@ -251,6 +294,7 @@ return static function (ContainerConfigurator $container): void {
             service(McpSessionIdValidator::class),
             service('logger'),
             service('mcp.store_api.list_changed_notifier'),
+            service('mcp.server.store_api.session.store')->nullOnInvalid(),
         ])
         ->tag('controller.service_arguments')
         ->tag('monolog.logger', ['channel' => 'mcp']);
@@ -271,6 +315,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service(McpCapabilityCatalog::class),
             service(McpAllowlistProvider::class),
+            param('shopwell.mcp.tool_group_descriptions'),
         ]);
 
     $services->set(McpToolListController::class)
@@ -302,11 +347,18 @@ return static function (ContainerConfigurator $container): void {
             service('mcp.store_api.capability_catalog')->nullOnInvalid(),
             param('mcp.servers.unassigned'),
             param(McpToolDiscoveryCompilerPass::DEMOTED_DISCOVERY_TOOLS_PARAMETER),
+            param(McpServerBuilderCompilerPass::PROTOCOL_ERA_PARAMETER),
         ])
         ->tag('console.command');
 
     $services->set(McpToolResultRenderer::class)
-        ->args([service(ClockInterface::class)]);
+        ->args([
+            service(ClockInterface::class),
+            service(ToolResultCacheStorage::class),
+            service('request_stack'),
+            service('logger'),
+        ])
+        ->tag('monolog.logger', ['channel' => 'mcp']);
 
     $services->set(McpToolResultParser::class);
 
@@ -364,6 +416,8 @@ return static function (ContainerConfigurator $container): void {
             service('mcp.server.admin.registry')->nullOnInvalid(),
             service(ToolSearch::class),
             service(McpAllowlistProvider::class),
+            service(McpToolsetRegistry::class)->nullOnInvalid(),
+            service('request_stack'),
         ])
         ->tag('mcp.tool');
 
@@ -456,6 +510,8 @@ return static function (ContainerConfigurator $container): void {
             service('mcp.server.store_api.registry')->nullOnInvalid(),
             service(ToolSearch::class),
             null,
+            service('mcp.store_api.toolset_registry'),
+            service('request_stack'),
         ])
         ->tag('shopwell.store_api_mcp.tool');
 
@@ -500,6 +556,7 @@ return static function (ContainerConfigurator $container): void {
 
     // Prompt
     $services->set(ShopwellContextPrompt::class)
+        ->args([service('request_stack')])
         ->tag('mcp.prompt');
 
     // Resources

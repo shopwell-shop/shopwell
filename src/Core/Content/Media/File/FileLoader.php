@@ -8,6 +8,7 @@ use Psr\Http\Message\StreamInterface;
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\MediaException;
+use Shopwell\Core\Content\Media\Upload\MediaUploadService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -60,6 +61,10 @@ class FileLoader
 
     private function getFilePath(MediaEntity $media): string
     {
+        if (MediaUploadService::isExternalUrl($media->getPath())) {
+            throw MediaException::missingFile($media->getId());
+        }
+
         $this->fileNameValidator->validateFileName($media->getFileName() ?: '');
 
         return $media->getPath();

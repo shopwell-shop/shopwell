@@ -80,6 +80,11 @@ export default {
 
         /** @deprecated tag:v6.8.0 - Will be removed */
         isAgenticCommerceSalesChannelType(salesChannelTypeId) {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-sales-channel-modal-grid.isAgenticCommerceSalesChannelType() is deprecated. Will be removed.',
+            );
+
             return salesChannelTypeId === Defaults.agenticCommerceTypeId;
         },
 
@@ -110,6 +115,11 @@ export default {
 
         /** @deprecated tag:v6.8.0 - Will be removed */
         showAgenticCommerceType() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-sales-channel-modal-grid.showAgenticCommerceType() is deprecated. Will be removed.',
+            );
+
             return !!Shopwell.Context.app.config.bundles?.SwagAgenticCommerce;
         },
     },

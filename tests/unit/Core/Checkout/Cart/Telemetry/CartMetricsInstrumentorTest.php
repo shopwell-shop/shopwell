@@ -11,6 +11,7 @@ use Shopwell\Core\Checkout\Cart\Telemetry\CartMetricsInstrumentor;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
@@ -175,7 +176,7 @@ class CartMetricsInstrumentorTest extends TestCase
     {
         $this->meter = new CollectingMeter();
 
-        return new CartMetricsInstrumentor(new Telemetry($this->meter, 'test'), new SalesChannelTypeResolver());
+        return new CartMetricsInstrumentor(new Telemetry($this->meter, 'test'), new SalesChannelTypeResolver(new LabelMappingRegistry([SalesChannelTypeResolver::MAPPING => [Defaults::SALES_CHANNEL_TYPE_STOREFRONT => 'storefront', Defaults::SALES_CHANNEL_TYPE_API => 'api']], 'other')));
     }
 
     private function createContext(string $typeId = Defaults::SALES_CHANNEL_TYPE_STOREFRONT): SalesChannelContext

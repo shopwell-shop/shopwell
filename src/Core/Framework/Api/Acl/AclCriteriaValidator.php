@@ -8,6 +8,9 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelpe
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Aggregation;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\BucketAggregation;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\EntityAggregation;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\FrameworkException;
 use Shopwell\Core\Framework\Log\Package;
@@ -76,6 +79,36 @@ class AclCriteriaValidator
             }
         }
 
+        foreach ($criteria->getAggregations() as $aggregation) {
+            $missing = array_merge($missing, $this->validateEntityAggregations($aggregation, $context));
+        }
+
         return array_values(array_unique(array_filter($missing)));
+    }
+
+    /**
+     * An entity aggregation loads the entities of its definition, so their read privilege is required as well
+     *
+     * @return list<string>
+     */
+    private function validateEntityAggregations(Aggregation $aggregation, Context $context): array
+    {
+        $missing = [];
+
+        if ($aggregation instanceof BucketAggregation && $aggregation->getAggregation() !== null) {
+            $missing = $this->validateEntityAggregations($aggregation->getAggregation(), $context);
+        }
+
+        if (!$aggregation instanceof EntityAggregation) {
+            return $missing;
+        }
+
+        $privilege = $aggregation->getEntity() . ':' . AclRoleDefinition::PRIVILEGE_READ;
+
+        if (!$context->isAllowed($privilege)) {
+            $missing[] = $privilege;
+        }
+
+        return $missing;
     }
 }

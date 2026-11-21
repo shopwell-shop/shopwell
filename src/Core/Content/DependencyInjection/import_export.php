@@ -57,6 +57,7 @@ use Shopwell\Core\Content\Product\ProductTypeRegistry;
 use Shopwell\Core\Framework\Api\Sync\SyncService;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldSerializer\CustomFieldsSerializer as DalCustomFieldsSerializer;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\CustomField\CustomFieldService;
@@ -93,7 +94,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SystemDefaultValidator::class)
         ->args([
-            service(Connection::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 

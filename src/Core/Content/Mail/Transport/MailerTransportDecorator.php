@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Content\Mail\Service\Mail;
 use Shopwell\Core\Content\Mail\Service\MailAttachmentsBuilder;
 use Shopwell\Core\Content\MailTemplate\Subscriber\MailSendSubscriberConfig;
+use Shopwell\Core\Content\Media\Upload\MediaUploadService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
@@ -47,6 +48,10 @@ class MailerTransportDecorator implements \Stringable, TransportInterface
         }
 
         foreach ($message->getAttachmentUrls() as $url) {
+            if (MediaUploadService::isExternalUrl($url)) {
+                continue;
+            }
+
             try {
                 $mimeType = $this->filesystem->mimeType($url);
             } catch (UnableToRetrieveMetadata) {

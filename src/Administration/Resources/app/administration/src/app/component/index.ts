@@ -40,6 +40,10 @@ export default () => {
         () => import('src/app/component/utils/sw-shortcut-overview-item/index'),
     );
     Shopwell.Component.register('sw-shortcut-overview', () => import('src/app/component/utils/sw-shortcut-overview/index'));
+    Shopwell.Component.register(
+        'sw-silence-deprecations',
+        () => import('src/app/component/utils/sw-silence-deprecations/index'),
+    );
     Shopwell.Component.register('sw-provide', () => import('src/app/component/utils/sw-provide/index'));
     Shopwell.Component.register('sw-progress-bar', () => import('src/app/component/utils/sw-progress-bar/index'));
     Shopwell.Component.register(

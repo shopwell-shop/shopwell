@@ -114,6 +114,10 @@ class CheckoutFinishPageLoader
             ->addAssociation('primaryOrderDelivery.shippingMethod')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.country')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.countryState')
+            ->addAssociation('deliveries.shippingMethod')
+            ->addAssociation('deliveries.shippingOrderAddress.salutation')
+            ->addAssociation('deliveries.shippingOrderAddress.country')
+            ->addAssociation('deliveries.shippingOrderAddress.countryState')
             ->addAssociation('primaryOrderTransaction.paymentMethod')
             ->addAssociation('lineItems.cover')
             ->addAssociation('billingAddress.country')
@@ -121,11 +125,7 @@ class CheckoutFinishPageLoader
             ->addAssociation('currency');
 
         if (!Feature::isActive('v6.8.0.0')) {
-            $criteria
-                ->addAssociation('transactions.paymentMethod')
-                ->addAssociation('deliveries.shippingMethod')
-                ->addAssociation('deliveries.shippingOrderAddress.country')
-                ->addAssociation('deliveries.shippingOrderAddress.countryState');
+            $criteria->addAssociation('transactions.paymentMethod');
 
             $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
         }

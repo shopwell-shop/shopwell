@@ -183,9 +183,31 @@ class ShopwellClass implements CustomShopwellProperties {
     };
 
     /**
+     * The Vuex state behind the deprecated `State` facade. The boot sequence still has to populate it,
+     * and reaching for the backing field keeps core from tripping the guard it installs for extensions.
+     *
+     * @private
+     */
+    public _state = StateFactory();
+
+    /**
      * @deprecated tag:v6.8.0 - Will be removed, use Store instead.
      */
-    public State = StateFactory();
+    public get State() {
+        // Through `this.Feature`, so a replaced `Shopwell.Feature`, like the Jest mock, guards it too.
+        this.Feature.triggerDeprecationOrThrow('V6_8_0_0', 'Shopwell.State is deprecated. Use Shopwell.Store instead.');
+
+        return this._state;
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Will be removed, use Store instead.
+     */
+    public set State(state: ShopwellClass['_state']) {
+        this.Feature.triggerDeprecationOrThrow('V6_8_0_0', 'Shopwell.State is deprecated. Use Shopwell.Store instead.');
+
+        this._state = state;
+    }
 
     public Store = Store.instance;
 

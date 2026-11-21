@@ -5,7 +5,7 @@ namespace Shopwell\Core\Framework\App\Flow\Event;
 use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Flow\Event\Xml\CustomEvents;
 use Shopwell\Core\Framework\Log\Package;
-use Symfony\Component\Config\Util\XmlUtils;
+use Shopwell\Core\Framework\Util\XmlParser;
 
 /**
  * @internal
@@ -25,7 +25,7 @@ class Event
     {
         try {
             $schemaFile = \dirname(__FILE__, 2) . self::XSD_FILE;
-            $doc = XmlUtils::loadFile($xmlFile, $schemaFile);
+            $doc = XmlParser::loadFile($xmlFile, $schemaFile);
         } catch (\Exception $e) {
             throw AppException::createFromXmlFileFlowError($xmlFile, $e->getMessage(), $e);
         }

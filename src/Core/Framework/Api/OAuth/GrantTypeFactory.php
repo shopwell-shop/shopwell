@@ -7,6 +7,7 @@ use League\OAuth2\Server\Grant\GrantTypeInterface;
 use League\OAuth2\Server\Repositories\AuthCodeRepositoryInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\Api\OAuth\Client\PublicClientRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Sso\OAuth2LoginGrantType;
@@ -38,6 +39,7 @@ final class GrantTypeFactory
         private readonly ClockInterface $clock,
         private readonly OAuth2LoginCodeService $oAuth2LoginCodeService,
         private readonly EntityRepository $shopUserRepository,
+        private readonly PublicClientRegistry $publicClients,
         private readonly string $refreshTokenTtl = 'P1W',
         private readonly string $authCodeTtl = 'PT5M',
     ) {
@@ -67,7 +69,8 @@ final class GrantTypeFactory
         $authCodeGrant = new ShopwellAuthCodeGrantType(
             $this->authCodeRepository,
             $this->refreshTokenRepository,
-            new \DateInterval($this->authCodeTtl)
+            new \DateInterval($this->authCodeTtl),
+            $this->publicClients,
         );
         $authCodeGrant->setRefreshTokenTTL($refreshTokenInterval);
 

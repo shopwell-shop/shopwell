@@ -7,6 +7,7 @@ use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufactu
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopwell\Core\Content\Test\Product\ProductBuilder;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\ApiProtectionException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Facade\SalesChannelRepositoryFacade;
@@ -14,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Facade\SalesChannelRepositoryFa
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\SumResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Execution\Script;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
@@ -303,6 +305,24 @@ class SalesChannelRepositoryFacadeTest extends TestCase
 
         static::expectException(ApiProtectionException::class);
         $this->createFacade()->search('product', $criteria);
+    }
+
+    public function testSearchCannotLoadReviewCustomersThroughStoreFacade(): void
+    {
+        if (Feature::isActive('v6.8.0.0')) {
+            $this->expectExceptionObject(DataAbstractionLayerException::accessorNotAllowedInApiScope('customer'));
+        }
+
+        $result = $this->createFacade()->search('product', [
+            'ids' => [$this->ids->get('p1')],
+            'associations' => [
+                'productReviews' => [
+                    'associations' => ['customer' => []],
+                ],
+            ],
+        ]);
+
+        static::assertFalse($result->getCriteria()->getAssociation('productReviews')->hasAssociation('customer'));
     }
 
     private function createProducts(): void

@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\DataAbstractionLayer;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityHydrator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Field;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Flag;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopwell\Core\Framework\Log\Package;
@@ -72,7 +73,15 @@ class AttributeEntityDefinition extends EntityDefinition
             }
 
             if ($field['translated']) {
-                $fields[] = new TranslatedField($field['name']);
+                $translatedField = new TranslatedField($field['name']);
+
+                // the other flags belong to the field of the translation definition
+                $apiAware = $field['flags'][ApiAware::class] ?? null;
+                if ($apiAware !== null) {
+                    $translatedField->addFlags(new ApiAware(...$apiAware['args'] ?? []));
+                }
+
+                $fields[] = $translatedField;
                 continue;
             }
 

@@ -30,6 +30,7 @@ use Shopwell\Core\Content\Media\DataAbstractionLayer\MediaFileExtensionWriteVali
 use Shopwell\Core\Content\Media\DataAbstractionLayer\MediaFolderConfigurationIndexer;
 use Shopwell\Core\Content\Media\DataAbstractionLayer\MediaFolderIndexer;
 use Shopwell\Core\Content\Media\DataAbstractionLayer\MediaIndexer;
+use Shopwell\Core\Content\Media\DataAbstractionLayer\MediaPathWriteValidator;
 use Shopwell\Core\Content\Media\File\DownloadResponseGenerator;
 use Shopwell\Core\Content\Media\File\FileContentValidationStrategy;
 use Shopwell\Core\Content\Media\File\FileFetcher;
@@ -508,6 +509,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(MediaFileExtensionWriteValidator::class)
         ->args([
             service(MediaFileExtensionListProvider::class),
+            service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(MediaPathWriteValidator::class)
+        ->args([
             service(Connection::class),
         ])
         ->tag('kernel.event_subscriber');

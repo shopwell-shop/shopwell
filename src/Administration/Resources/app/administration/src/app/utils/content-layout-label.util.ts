@@ -21,3 +21,10 @@ export function getContentLayoutNameKey(layout: { id: string; name: string }): s
     const builtIn = builtInLayouts[layout.id as keyof typeof builtInLayouts];
     return builtIn?.name === layout.name ? builtIn.key : null;
 }
+
+/** @private */
+export function getContentLayoutName(this: { $t: (key: string) => string }, layout: { id: string; name: string }): string {
+    const key = getContentLayoutNameKey(layout);
+
+    return key ? this.$t(key) : layout.name;
+}

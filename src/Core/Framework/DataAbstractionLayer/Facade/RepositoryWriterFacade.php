@@ -6,10 +6,10 @@ use Shopwell\Core\Framework\Api\Sync\SyncBehavior;
 use Shopwell\Core\Framework\Api\Sync\SyncOperation;
 use Shopwell\Core\Framework\Api\Sync\SyncResult;
 use Shopwell\Core\Framework\Api\Sync\SyncService;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\AppContextFactory;
 
 /**
  * The `writer` service allows you to write data, that is stored inside shopwell.
@@ -26,7 +26,7 @@ class RepositoryWriterFacade
     public function __construct(
         private readonly DefinitionInstanceRegistry $registry,
         private readonly SyncService $syncService,
-        private readonly Context $context
+        private readonly AppContextFactory $contextFactory
     ) {
     }
 
@@ -46,7 +46,7 @@ class RepositoryWriterFacade
     {
         $repository = $this->registry->getRepository($entityName);
 
-        return $repository->upsert($payload, $this->context);
+        return $repository->upsert($payload, $this->contextFactory->create());
     }
 
     /**
@@ -63,7 +63,7 @@ class RepositoryWriterFacade
     {
         $repository = $this->registry->getRepository($entityName);
 
-        return $repository->delete($payload, $this->context);
+        return $repository->delete($payload, $this->contextFactory->create());
     }
 
     /**
@@ -85,6 +85,6 @@ class RepositoryWriterFacade
             $operations[] = new SyncOperation((string) $key, (string) $operation['entity'], (string) $operation['action'], $operation['payload']);
         }
 
-        return $this->syncService->sync($operations, $this->context, new SyncBehavior());
+        return $this->syncService->sync($operations, $this->contextFactory->create(), new SyncBehavior());
     }
 }

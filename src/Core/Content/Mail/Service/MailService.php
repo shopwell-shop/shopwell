@@ -12,6 +12,7 @@ use Shopwell\Core\Content\MailTemplate\Service\Event\MailSentEvent;
 use Shopwell\Core\Content\MailTemplate\Service\Event\MailTemplateRenderContextEvent;
 use Shopwell\Core\Content\MailTemplate\Service\MailTemplateContentBuilder;
 use Shopwell\Core\Content\Media\MediaCollection;
+use Shopwell\Core\Content\Media\Upload\MediaUploadService;
 use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\Adapter\Twig\StringTemplateRenderer;
 use Shopwell\Core\Framework\Context;
@@ -318,7 +319,7 @@ class MailService extends AbstractMailService
             [$senderEmail => $data['senderName'] ?? null],
             $data['recipients'],
             $contents,
-            $this->getMediaUrls($data, $context),
+            $this->getMediaUrls($data, $templateData, $context),
             $data,
             $data['binAttachments'] ?? null
         );
@@ -433,10 +434,11 @@ class MailService extends AbstractMailService
 
     /**
      * @param MailData $data
+     * @param array<string, mixed> $templateData
      *
      * @return list<string>
      */
-    private function getMediaUrls(array $data, Context $context): array
+    private function getMediaUrls(array $data, array $templateData, Context $context): array
     {
         $mediaIds = $data['mediaIds'] ?? [];
         if ($mediaIds === []) {
@@ -451,6 +453,18 @@ class MailService extends AbstractMailService
 
         $urls = [];
         foreach ($media as $mediaItem) {
+            if (MediaUploadService::isExternalUrl($mediaItem->getPath())) {
+                $this->mailError(
+                    errorMessage: \sprintf('Media "%s" has an external URL and cannot be attached to a mail, skipping this attachment', $mediaItem->getId()),
+                    context: $context,
+                    templateData: $templateData,
+                    level: Level::Warning,
+                    data: $data,
+                );
+
+                continue;
+            }
+
             $urls[] = $mediaItem->getPath();
         }
 

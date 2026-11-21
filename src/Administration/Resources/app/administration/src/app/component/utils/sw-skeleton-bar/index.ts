@@ -17,10 +17,11 @@ export default Shopwell.Component.wrapComponentConfig({
                 return true;
             }
 
-            // Throw warning when deprecated component is used
-            Shopwell.Utils.debug.warn(
-                'sw-skeleton-bar',
+            // @deprecated tag:v6.8.0 - Use "mt-skeleton-bar" instead.
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
                 'The old usage of "sw-skeleton-bar" is deprecated and will be removed in v6.8.0.0. Please use "mt-skeleton-bar" instead.',
+                { _blame: 'author' },
             );
 
             return false;

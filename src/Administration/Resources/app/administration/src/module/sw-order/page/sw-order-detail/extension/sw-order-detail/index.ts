@@ -72,4 +72,4 @@ export const orderDetailReturnTab = {
     },
 };
 
-Component.override('sw-order-detail', orderDetailReturnTab);
+Component.override('sw-order-detail', { ...orderDetailReturnTab });

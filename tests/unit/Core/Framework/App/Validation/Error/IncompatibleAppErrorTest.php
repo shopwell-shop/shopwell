@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Validation\Error\IncompatibleAppError;
+use Shopwell\Core\Framework\App\Validation\Error\Severity;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -22,5 +23,6 @@ class IncompatibleAppErrorTest extends TestCase
         static::assertSame('App SwagExample is not compatible with this Shopwell version', $error->getMessage());
         static::assertSame(AppException::NOT_COMPATIBLE, $error->getErrorCode());
         static::assertSame(['name' => 'SwagExample'], $error->getParameters());
+        static::assertSame(Severity::Fail, $error->getSeverity());
     }
 }

@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\PartialEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Script\AppContextFactory;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Twig\Environment;
@@ -58,7 +59,7 @@ class TwigFieldVisibilityTest extends TestCase
             static::getContainer()->get(DefinitionInstanceRegistry::class),
             static::getContainer()->get(RequestCriteriaBuilder::class),
             static::getContainer()->get(AclCriteriaValidator::class),
-            Context::createDefaultContext()
+            AppContextFactory::forHookContext(Context::createDefaultContext())
         )]);
 
         static::assertTrue(Uuid::isValid(trim($result)));

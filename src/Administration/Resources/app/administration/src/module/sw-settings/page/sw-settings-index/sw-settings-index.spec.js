@@ -4,6 +4,7 @@
  * @sw-package framework
  */
 import { mount } from '@vue/test-utils';
+import { allowDeprecation } from 'test/_helper_/deprecations';
 
 async function createWrapper(
     privileges = [
@@ -164,6 +165,7 @@ async function createWrapper(
 
 describe('module/sw-settings/page/sw-settings-index', () => {
     beforeEach(async () => {
+        allowDeprecation('sw-settings-index.onCloseSettingRenameBanner() is deprecated');
         Shopwell.Store.get('settingsItems').settingsGroups = {};
         Shopwell.Store.get('adminMenuConfig').$reset();
         jest.spyOn(Shopwell.Store.get('adminMenuConfig'), 'loadVisibleTree').mockResolvedValue();

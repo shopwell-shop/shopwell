@@ -112,11 +112,21 @@ export default {
 
         // @deprecated tag:v6.8.0 - Use customFieldDataProviderService instead.
         customFieldSetRepository() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-category-detail.customFieldSetRepository is deprecated. Use customFieldDataProviderService instead.',
+            );
+
             return this.repositoryFactory.create('custom_field_set');
         },
 
         // @deprecated tag:v6.8.0 - Use customFieldDataProviderService instead.
         customFieldSetCriteria() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-category-detail.customFieldSetCriteria is deprecated. Use customFieldDataProviderService instead.',
+            );
+
             const criteria = new Criteria(1, null);
 
             criteria.addFilter(Criteria.equals('relations.entityName', 'category'));
@@ -126,6 +136,11 @@ export default {
 
         // @deprecated tag:v6.8.0 - Use customFieldDataProviderService instead.
         customFieldSetLandingPageCriteria() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-category-detail.customFieldSetLandingPageCriteria is deprecated. Use customFieldDataProviderService instead.',
+            );
+
             const criteria = new Criteria(1, null);
 
             criteria.addFilter(Criteria.equals('relations.entityName', 'landing_page'));
@@ -489,6 +504,8 @@ export default {
 
                 await this.categoryRepository.save(this.category, { ...Shopwell.Context.api });
 
+                await this.updateSeoUrls();
+
                 this.isSaveSuccessful = true;
                 this.entryPointOverwriteConfirmed = false;
                 return this.setCategory();
@@ -604,41 +621,40 @@ export default {
                 return Promise.resolve();
             }
 
-            const seoUrls = Shopwell.Store.get('swSeoUrl').newOrModifiedUrls;
+            const seoUrls = Shopwell.Store.get('swSeoUrl').newOrModifiedUrls.filter((seoUrl) => {
+                return seoUrl.foreignKey === this.category.id;
+            });
 
             return Promise.all(
                 seoUrls.map((seoUrl) => {
-                    if (seoUrl.seoPathInfo) {
-                        seoUrl.isModified = true;
-                        return this.seoUrlService.updateCanonicalUrl(seoUrl, seoUrl.languageId).catch((error) => {
-                            if (error.response?.data?.errors) {
-                                error.response.data.errors.forEach((apiError) => {
-                                    const messageKey = `global.error-codes.${apiError.detail}`;
-                                    const params = apiError.meta?.parameters || {};
-                                    const translatedMessage = this.$t(messageKey, params);
+                    seoUrl.isModified = !!seoUrl.seoPathInfo?.trim();
 
-                                    const errorMessage =
-                                        translatedMessage !== messageKey
-                                            ? translatedMessage
-                                            : apiError.detail ||
-                                              apiError.title ||
-                                              this.$t('global.notification.unspecifiedSaveErrorMessage');
+                    return this.seoUrlService.updateCanonicalUrl(seoUrl, seoUrl.languageId).catch((error) => {
+                        if (error.response?.data?.errors) {
+                            error.response.data.errors.forEach((apiError) => {
+                                const messageKey = `global.error-codes.${apiError.detail}`;
+                                const params = apiError.meta?.parameters || {};
+                                const translatedMessage = this.$t(messageKey, params);
 
-                                    this.createNotificationError({
-                                        message: errorMessage,
-                                    });
-                                });
-                            } else {
+                                const errorMessage =
+                                    translatedMessage !== messageKey
+                                        ? translatedMessage
+                                        : apiError.detail ||
+                                          apiError.title ||
+                                          this.$t('global.notification.unspecifiedSaveErrorMessage');
+
                                 this.createNotificationError({
-                                    message: error.message || this.$t('global.notification.unspecifiedSaveErrorMessage'),
+                                    message: errorMessage,
                                 });
-                            }
+                            });
+                        } else {
+                            this.createNotificationError({
+                                message: error.message || this.$t('global.notification.unspecifiedSaveErrorMessage'),
+                            });
+                        }
 
-                            return Promise.reject(error);
-                        });
-                    }
-
-                    return Promise.resolve();
+                        return Promise.reject(error);
+                    });
                 }),
             );
         },

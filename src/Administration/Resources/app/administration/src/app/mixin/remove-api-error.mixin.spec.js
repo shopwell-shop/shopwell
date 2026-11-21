@@ -29,17 +29,8 @@ async function createWrapper(attrs = {}) {
 
 describe('src/app/mixin/remove-api-error.mixin.ts', () => {
     let wrapper;
-    let originalDispatch;
 
     beforeEach(async () => {
-        if (originalDispatch) {
-            Object.defineProperty(Shopwell.State, 'dispatch', {
-                value: originalDispatch,
-            });
-        } else {
-            originalDispatch = Shopwell.State.dispatch;
-        }
-
         wrapper = await createWrapper();
 
         await flushPromises();
@@ -71,7 +62,6 @@ describe('src/app/mixin/remove-api-error.mixin.ts', () => {
 
         await flushPromises();
 
-        // expect dispatch to have been called with removeApiError
         expect(Shopwell.Store.get('error').removeApiError).toHaveBeenCalledWith('self.link');
     });
 });

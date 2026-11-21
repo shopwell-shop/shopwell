@@ -9,10 +9,10 @@ use Shopwell\Core\Framework\App\Command\AppPrinter;
 use Shopwell\Core\Framework\App\Command\RefreshAppCommand;
 use Shopwell\Core\Framework\App\Lifecycle\AppLifecycle;
 use Shopwell\Core\Framework\App\Lifecycle\AppLifecycleIterator;
-use Shopwell\Core\Framework\App\Validation\ManifestValidator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Test\AppSystemTestBehaviour;
@@ -277,7 +277,7 @@ class RefreshAppCommandTest extends TestCase
 
         $commandTester->execute([]);
 
-        static::assertSame(0, $commandTester->getStatusCode());
+        static::assertSame(1, $commandTester->getStatusCode());
         $display = $commandTester->getDisplay();
 
         // header
@@ -289,36 +289,29 @@ class RefreshAppCommandTest extends TestCase
         static::assertSame(0, $registeredApps->getTotal());
     }
 
-    public function testRefreshValidationFailure(): void
+    public function testRefreshInstallsAppsWithNoticesAndListsFailedApps(): void
     {
         $commandTester = new CommandTester($this->createCommand(__DIR__ . '/_fixtures'));
-        $commandTester->setInputs(['yes', 'yes', 'yes', 'yes', 'yes', 'yes', 'yes']);
-
-        $commandTester->execute([]);
+        $commandTester->execute(['-f' => true]);
 
         static::assertSame(1, $commandTester->getStatusCode());
         $display = $commandTester->getDisplay();
 
-        static::assertStringContainsString('[ERROR] The app "validationFailures" is invalid:', $display);
-        static::assertStringContainsString('[ERROR] The app "validationFailure" is invalid:', $display);
-
-        $registeredApps = $this->appRepository->search(new Criteria(), Context::createDefaultContext());
-        static::assertSame(0, $registeredApps->getTotal());
-    }
-
-    public function testRefreshInvalidAppWithNoValidate(): void
-    {
-        $commandTester = new CommandTester($this->createCommand(__DIR__ . '/_fixtures'));
-        $commandTester->execute(['-f' => true, '--no-validate' => true]);
-
         // header app list
-        static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $commandTester->getDisplay());
-        // content app list
-        static::assertMatchesRegularExpression('/.*validationFailures\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $commandTester->getDisplay());
+        static::assertMatchesRegularExpression('/.*App\s+Label\s+Version\s+Author\s+\n.*/', $display);
+
+        // `validationFailure` only gets notices, so it installs ...
+        static::assertMatchesRegularExpression('/.*validationFailure\s+Swag App Test\s+1.0.0\s+Shopwell\s+\n.*/', $display);
+
+        // ... while `validationFailures` is missing permissions its webhooks require.
+        static::assertStringContainsString('Incomplete installations', $display);
+        static::assertStringContainsString('Missing permissions:', $display);
     }
 
     public function testRefreshWithLimitation(): void
     {
+        Feature::skipTestIfActive('v6.8.0.0', $this);
+
         $commandTester = new CommandTester($this->createCommand(__DIR__ . '/_fixtures'));
         $commandTester->execute(['-f' => true, '--no-validate' => true, 'name' => ['validationFailure']]);
 
@@ -336,8 +329,7 @@ class RefreshAppCommandTest extends TestCase
                 ),
                 static::getContainer()->get(AppLifecycle::class)
             ),
-            new AppPrinter($this->appRepository),
-            static::getContainer()->get(ManifestValidator::class)
+            new AppPrinter($this->appRepository)
         );
     }
 }

@@ -3,16 +3,19 @@
 namespace Shopwell\Tests\Unit\Core\Framework\ContentSystem\Mutation\Op;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ContentSystem\Binding\BindingApplicator;
 use Shopwell\Core\Framework\ContentSystem\Binding\Registry\AbstractContentSystemBindingSpecificationRegistry;
+use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\DataLoaderConfigSerializerProvider;
 use Shopwell\Core\Framework\ContentSystem\Layout\Element\StoredElement;
 use Shopwell\Core\Framework\ContentSystem\Layout\StoredTree;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\AbstractContentSystemElementTypeRegistry;
 use Shopwell\Core\Framework\ContentSystem\Mutation\Op\AttachElements;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Tests\Unit\Core\Framework\ContentSystem\Fixture\ScopedDefaultBindingFixture;
 
 /**
  * @internal
@@ -95,6 +98,35 @@ class AttachElementsTest extends TestCase
 
         static::assertCount(1, $result->roots);
         static::assertSame([], $op->affected());
+    }
+
+    /**
+     * @return iterable<string, array{bool, ?string}>
+     */
+    public static function rejectionElementIdProvider(): iterable
+    {
+        yield 'attach-element names the supplied element' => [false, 'category'];
+        yield 'a preset insertion names the payload id of the element' => [true, 'category'];
+        yield 'attach-element names the supplied element when the tree has no root source' => [false, null];
+    }
+
+    #[DataProvider('rejectionElementIdProvider')]
+    #[TestDox('names the offending element when the type default of a later element rejects the root source: $_dataName')]
+    public function testRejectionNamesTheOffendingElement(bool $isNewScaffold, ?string $rootSource): void
+    {
+        $bindingRegistry = static::createStub(AbstractContentSystemBindingSpecificationRegistry::class);
+        $bindingRegistry->method('all')->willReturn(['core:Sw:Card' => ScopedDefaultBindingFixture::mediaScopedToProduct('Sw:Card', 'Card')]);
+
+        $op = new AttachElements(
+            $this->registry(),
+            [new StoredElement('first', 'Sw:Block'), new StoredElement('second', 'Sw:Card')],
+            $bindingRegistry,
+            new BindingApplicator(static::createStub(DataLoaderConfigSerializerProvider::class), $this->registry()),
+            isNewScaffold: $isNewScaffold,
+        );
+
+        $this->expectExceptionObject(ContentSystemException::bindingRootSourceNotScoped('core:Sw:Card', 'media', 'second', $rootSource));
+        $op->apply(new StoredTree([], $rootSource));
     }
 
     /**

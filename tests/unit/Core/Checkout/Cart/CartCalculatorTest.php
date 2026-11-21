@@ -17,6 +17,7 @@ use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Content\Rule\RuleCollection;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
 use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\System\SalesChannel\Telemetry\SalesChannelTypeResolver;
@@ -50,7 +51,7 @@ class CartCalculatorTest extends TestCase
         $calculator = new CartCalculator(
             $cartRuleLoader,
             new CartContextHasher(new EventDispatcher()),
-            new CartMetricsInstrumentor(new Telemetry(static::createStub(Meter::class), 'test'), new SalesChannelTypeResolver()),
+            new CartMetricsInstrumentor(new Telemetry(static::createStub(Meter::class), 'test'), new SalesChannelTypeResolver(new LabelMappingRegistry([], 'other'))),
         );
         $calculatedCart = $calculator->calculate($cart, $context);
 
@@ -90,7 +91,7 @@ class CartCalculatorTest extends TestCase
         $calculator = new CartCalculator(
             $cartRuleLoader,
             new CartContextHasher(new EventDispatcher()),
-            new CartMetricsInstrumentor(new Telemetry(static::createStub(Meter::class), 'test'), new SalesChannelTypeResolver()),
+            new CartMetricsInstrumentor(new Telemetry(static::createStub(Meter::class), 'test'), new SalesChannelTypeResolver(new LabelMappingRegistry([], 'other'))),
         );
         $calculatedCart = $calculator->calculate($cart, $context);
 
@@ -124,7 +125,7 @@ class CartCalculatorTest extends TestCase
         $calculator = new CartCalculator(
             $cartRuleLoader,
             new CartContextHasher(new EventDispatcher()),
-            new CartMetricsInstrumentor(new Telemetry(static::createStub(Meter::class), 'test'), new SalesChannelTypeResolver()),
+            new CartMetricsInstrumentor(new Telemetry(static::createStub(Meter::class), 'test'), new SalesChannelTypeResolver(new LabelMappingRegistry([], 'other'))),
         );
 
         $calculatedCart = $calculator->calculateByToken('hatoken', $context);

@@ -39,6 +39,7 @@ use Shopwell\Core\Framework\Gateway\Context\Command\Handler\RegisterCustomerComm
 use Shopwell\Core\Framework\Gateway\Context\Command\Registry\ContextGatewayCommandRegistry;
 use Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute;
 use Shopwell\Core\Framework\Log\ExceptionLogger;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics\SalesChannelAnalyticsDefinition;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelCountry\SalesChannelCountryDefinition;
@@ -281,6 +282,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service('currency_country_rounding.repository'),
             service(BaseSalesChannelContextFactory::class),
+            service('country.repository'),
         ]);
 
     $services->set(BaseSalesChannelContextFactory::class)
@@ -548,5 +550,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     // Telemetry: shared sales_channel_type label resolver (cart calculation, order placed metrics)
-    $services->set(SalesChannelTypeResolver::class);
+    $services->set(SalesChannelTypeResolver::class)
+        ->args([
+            service(LabelMappingRegistry::class),
+        ]);
 };

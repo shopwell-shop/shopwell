@@ -33,6 +33,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Computed;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Immutable;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
@@ -116,7 +117,7 @@ class MediaDefinition extends EntityDefinition
             (new StringField('url', 'url'))->addFlags(new ApiAware(), new Runtime(['path', 'private', 'updatedAt'])),
             (new StringField('path', 'path', 2048))->addFlags(new ApiAware()),
             (new BoolField('has_file', 'hasFile'))->addFlags(new ApiAware(), new Runtime()),
-            (new BoolField('private', 'private'))->addFlags(new ApiAware())->setDescription('When `true`, the media display is kept private.'),
+            (new BoolField('private', 'private'))->addFlags(new ApiAware(), new Immutable())->setDescription('When `true`, the media display is kept private.'),
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
             (new BlobField('thumbnails_ro', 'thumbnailsRo'))->removeFlag(ApiAware::class)->addFlags(new Computed()),
             (new TranslationsAssociationField(MediaTranslationDefinition::class, 'media_id'))->addFlags(new ApiAware(), new Required()),

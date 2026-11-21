@@ -1,5 +1,4 @@
-import type { AxiosResponse } from 'axios';
-import type { HttpClient } from 'src/core/factory/http-client.types';
+import type { HttpClient, HttpResponse } from 'src/core/factory/http-client.types';
 import type { LoginService } from '../login.service';
 import ApiService from '../api.service';
 
@@ -49,7 +48,7 @@ export default class CustomSnippetApiService extends ApiService {
             .get(`/_action/${this.getApiBasePath()}`, {
                 headers: this.getBasicHeaders(),
             })
-            .then((response: AxiosResponse<Array<string[]>>) => {
+            .then((response: HttpResponse<Array<string[]>>) => {
                 return ApiService.handleResponse(response);
             });
     }
@@ -61,7 +60,7 @@ export default class CustomSnippetApiService extends ApiService {
             .post(`/_action/${this.getApiBasePath()}/render`, params, {
                 headers: this.getBasicHeaders(),
             })
-            .then((response: AxiosResponse<string>) => {
+            .then((response: HttpResponse<string>) => {
                 return ApiService.handleResponse(response);
             });
     }

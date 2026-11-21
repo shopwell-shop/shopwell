@@ -19,6 +19,7 @@ export default {
         'numberRangeService',
         'systemConfigApiService',
         'customerValidationService',
+        'customFieldDataProviderService',
     ],
 
     mixins: [Mixin.getByName('notification')],
@@ -30,6 +31,7 @@ export default {
             customerNumberPreview: '',
             isSaveSuccessful: false,
             isLoading: false,
+            customerCustomFieldSets: null,
         };
     },
 
@@ -61,6 +63,9 @@ export default {
 
         languageId() {
             return this.loadLanguage(this.customer?.salesChannelId);
+        },
+        showCustomFieldSets() {
+            return !!this.customer && this.customerCustomFieldSets?.length > 0;
         },
     },
 
@@ -104,6 +109,8 @@ export default {
 
     methods: {
         async createdComponent() {
+            this.loadCustomFieldSets();
+
             Shopwell.Store.get('context').resetLanguageToDefault();
             this.customer = this.customerRepository.create();
 
@@ -123,6 +130,12 @@ export default {
             this.customer.gender = 'not_specified';
             this.customer.languageId = Shopwell.Context.api.languageId;
             this.address.gender = 'not_specified';
+        },
+
+        loadCustomFieldSets() {
+            return this.customFieldDataProviderService.getCustomFieldSets('customer').then((customFieldSets) => {
+                this.customerCustomFieldSets = customFieldSets;
+            });
         },
 
         saveFinish() {

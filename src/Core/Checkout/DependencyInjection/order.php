@@ -38,6 +38,7 @@ use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
+use Shopwell\Core\Checkout\Order\Subscriber\OrderDeliveryPositionSubscriber;
 use Shopwell\Core\Checkout\Order\Subscriber\OrderGenderSubscriber;
 use Shopwell\Core\Checkout\Order\Subscriber\OrderTransactionVersionMergeSubscriber;
 use Shopwell\Core\Checkout\Order\Telemetry\OrderMetricsSubscriber;
@@ -239,6 +240,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(OrderGenderSubscriber::class)
+        ->args([
+            service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(OrderDeliveryPositionSubscriber::class)
         ->args([
             service(Connection::class),
         ])

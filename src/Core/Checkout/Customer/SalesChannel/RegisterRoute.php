@@ -48,6 +48,7 @@ use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInt
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
@@ -237,6 +238,7 @@ class RegisterRoute extends AbstractRegisterRoute
                 'customerId' => $customerEntity->getId(),
                 'billingAddressId' => null,
                 'shippingAddressId' => null,
+                SalesChannelContextService::PROSPECTIVE_CUSTOMER => null,
                 'domainId' => $context->getDomainId(),
             ],
             $context->getSalesChannelId(),

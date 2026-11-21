@@ -8,6 +8,7 @@ use Shopwell\Core\Content\LandingPage\LandingPageCollection;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\LandingPageStoreApiUrlRoute;
 use Shopwell\Core\Content\Sitemap\Provider\LandingPageUrlProvider;
 use Shopwell\Core\Content\Sitemap\Service\ConfigHandler;
 use Shopwell\Core\Content\Sitemap\Struct\Url;
@@ -17,11 +18,9 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Test\Seo\StorefrontSalesChannelTestHelper;
-use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
 
 /**
  * @internal
@@ -29,8 +28,7 @@ use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
 #[Package('discovery')]
 class LandingPageUrlProviderTest extends TestCase
 {
-    use IntegrationTestBehaviour;
-    use StorefrontSalesChannelTestHelper;
+    use SalesChannelFunctionalTestBehaviour;
 
     private SalesChannelContext $salesChannelContext;
 
@@ -43,16 +41,9 @@ class LandingPageUrlProviderTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!static::getContainer()->has(ProductPageSeoUrlRoute::class)) {
-            static::markTestSkipped('NEXT-16799: Sitemap module has a dependency on storefront routes');
-        }
-
         $this->landingPageRepository = static::getContainer()->get('landing_page.repository');
 
-        $this->salesChannelContext = $this->createStorefrontSalesChannelContext(
-            Uuid::randomHex(),
-            'test-landing-pages-sitemap',
-        );
+        $this->salesChannelContext = $this->createHeadlessSalesChannelContext('http://landing-page-sitemap.headless.test');
 
         $this->landingPageUrlProvider = static::getContainer()->get(LandingPageUrlProvider::class);
     }
@@ -173,14 +164,14 @@ class LandingPageUrlProviderTest extends TestCase
         [$firstUrl] = $urlResult->getUrls();
 
         static::assertCount(1, $urlResult->getUrls());
-        static::assertSame('/landingPage/' . $id, $firstUrl->getLoc());
+        static::assertSame('/store-api/landing-page/' . $id, $firstUrl->getLoc());
 
         // we add a custom seo url
         $seuUrlRepository->upsert([
             [
-                'routeName' => 'frontend.landing.page',
+                'routeName' => LandingPageStoreApiUrlRoute::ROUTE_NAME,
                 'foreignKey' => $id,
-                'pathInfo' => '/landingPage/1',
+                'pathInfo' => '/store-api/landing-page/' . $id,
                 'seoPathInfo' => 'seo-landing-page-1',
                 'salesChannelId' => $this->salesChannelContext->getSalesChannelId(),
                 'isCanonical' => true,
@@ -232,10 +223,7 @@ class LandingPageUrlProviderTest extends TestCase
 
         $this->landingPageRepository->upsert($validLandingPages, $this->salesChannelContext->getContext());
 
-        $newSalesChannelContext = $this->createStorefrontSalesChannelContext(
-            Uuid::randomHex(),
-            'new-landing-pages-sitemap',
-        );
+        $newSalesChannelContext = $this->createHeadlessSalesChannelContext('http://other-landing-page-sitemap.headless.test');
 
         // add invalid landing pages
         $this->landingPageRepository->upsert([
@@ -270,5 +258,23 @@ class LandingPageUrlProviderTest extends TestCase
                 ],
             ],
         ], Context::createDefaultContext());
+    }
+
+    /**
+     * A headless sales channel resolves its routes through the core store-api SEO URL routes,
+     * so the provider is tested without depending on the Storefront bundle.
+     */
+    private function createHeadlessSalesChannelContext(string $externalStorefrontUrl): SalesChannelContext
+    {
+        return $this->createSalesChannelContext([
+            'typeId' => Defaults::SALES_CHANNEL_TYPE_API,
+            'domains' => [[
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'currencyId' => Defaults::CURRENCY,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'url' => $externalStorefrontUrl,
+                'isExternalStorefront' => true,
+            ]],
+        ]);
     }
 }

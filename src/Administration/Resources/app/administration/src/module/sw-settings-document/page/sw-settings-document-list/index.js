@@ -56,6 +56,11 @@ export default {
          * @deprecated tag:v6.8.0 - Will be removed without replacement
          */
         expandButtonClass() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-settings-document-list.expandButtonClass is deprecated. Will be removed without replacement.',
+            );
+
             return {
                 'is--hidden': this.expanded,
             };
@@ -65,6 +70,11 @@ export default {
          * @deprecated tag:v6.8.0 - Will be removed without replacement
          */
         collapseButtonClass() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-settings-document-list.collapseButtonClass is deprecated. Will be removed without replacement.',
+            );
+
             return {
                 'is--hidden': !this.expanded,
             };

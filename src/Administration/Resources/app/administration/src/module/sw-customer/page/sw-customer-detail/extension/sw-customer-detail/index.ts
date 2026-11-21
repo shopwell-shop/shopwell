@@ -85,4 +85,4 @@ export const customerDetailExtension = {
     },
 };
 
-Component.override('sw-customer-detail', customerDetailExtension);
+Component.override('sw-customer-detail', { ...customerDetailExtension });

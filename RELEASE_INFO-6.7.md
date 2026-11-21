@@ -355,6 +355,256 @@ Replace `EntityRepository<EntityCollection<ImportExportFileEntity>>` annotations
 Orders placed before this change still contain the default currency value.
 Extensions and headless frontends that convert `payload.value` into the cart currency themselves must remove that conversion.
 
+### Cart deliveries and transactions carry a payload into the order
+
+Cart deliveries and transactions have a `payload`, which the order stores in the new `payload` field of `order_delivery` and `order_transaction` and keeps through order edits.
+Their payload methods work like the ones of line items.
+`setPayloadValue($key, $value, protected: true)` keeps a key out of the Store API cart response, but Store API order responses still contain it.
+Unlike a line item payload, it does not survive the next cart calculation.
+Keep your state on line items or in a cart extension, and write the delivery payload in a cart processor after the `DeliveryProcessor`.
+At checkout, a payment handler can set the transaction payload in its `validate()` method, which receives the calculated cart right before the order is written.
+Any other extension sets it on the converted order data in the `CartConvertedEvent`.
+
+### Mails and documents list every shipment
+
+`OrderDeliveryCollection::getShipments()` returns the deliveries that are not shipping discounts, sorted by their `position`.
+Deliveries with the same position, like every delivery of an order placed before 6.7.17.0, list the primary delivery first when its id is passed, then by shipping costs.
+The cart's `DeliveryCollection::getShipments()` returns the cart deliveries that are not shipping discounts in cart order, which becomes their `position` when the order is placed.
+The storefront, the mails, the documents and, with `v6.8.0.0`, the Administration list shipments in this order, so a shipment has the same number everywhere.
+When an order has more than one shipment, the default order confirmation, payment received and payment reminder mails list each shipment with its shipping method, address, shipping costs and delivery period.
+The delivery status mails name the shipment whose state changed when the flow provides `orderDelivery`, and list every shipment with its state otherwise.
+A migration updates these mail templates unless they were changed in the Administration.
+Documents keep one shipping costs row with the shipping total of the order; this row and the shipping method line name each shipping method of the shipments once.
+The invoice shows the shipping address of the primary delivery.
+Orders with one shipment render as before.
+
+### Customer language check on sales channel change
+
+The customer language check from [#14836](https://github.com/shopwell-shop/shopwell/pull/14836) now also runs when only the sales channel changes.
+
+### MCP sessions on `/api/_mcp` are bound to the principal that opened them
+
+A session on the Admin API MCP endpoint now belongs to the user or integration that sent `initialize`.
+A request with the `Mcp-Session-Id` of a session opened by someone else gets the same `404` as an unknown session.
+The session stays valid when the client gets a new access token for the same user or integration.
+
+Sessions opened before the update have no owner and are answered with `404` once.
+MCP clients start a new session on `404`, so no action is needed.
+The stateless protocol era and `/store-api/_mcp` are not affected.
+
+### The `/api/_mcp` rate limit counts per user or integration
+
+The `mcp_admin_api` rate limit now counts the requests of a user or integration, no longer of a single access token.
+A new or refreshed access token continues in the same bucket, and all MCP clients of one user share it.
+An integration has one bucket, whichever user it acts for with `sw-app-user-id`.
+Clients that requested a new token to get a fresh limit are throttled sooner.
+Requests without a known user or integration are still counted per client IP.
+The stateless protocol era is not affected.
+On `/store-api/_mcp`, a `DELETE` of an unknown session now gets `404` instead of `200`.
+
+### MCP tool results follow the negotiated protocol revision
+
+Tool results of `/api/_mcp` and `/store-api/_mcp` now take their format from the protocol revision the client negotiated, not from the `v6.8.0.0` feature flag.
+
+* **Clients on 2025-06-18 and later** get the MCP format: the first text block is the result data as plain JSON (or the error message), followed by the summary and the metadata (`{"_meta": …}`) as blocks of their own.
+  The text is no longer the `{"success": …}` envelope.
+  The data is also in `structuredContent`, a failure sets `isError: true` with a stable code in `structuredContent.error.code`, and the metadata is also in the result's `_meta` with the prefix `shopwell/`.
+  Integrations that parse `success` out of `content[0].text` have to read `isError` and `structuredContent` instead, or negotiate an older revision.
+  When a result has metadata for the model, such as `dryRun`, `total` or a summary, `structuredContent` carries it under the reserved key `_meta`: next to the keys of an object, or as `{"result": …, "_meta": …}` for a list or scalar, on 2026-07-28 too.
+  Tools that declare an `outputSchema` get exactly their data in `structuredContent`.
+* **Clients on 2024-11-05 and 2025-03-26** keep the `{"success": …}` envelope as the only text block, unchanged.
+  This legacy envelope is deprecated as a wire format.
+  It is kept for these clients and is not removed in 6.8.0.
+  Tools that still return the `{"success": …}` string keep working; see "MCP tools return `McpToolResult`; the legacy string is deprecated" for the result object.
+
+### Large MCP results in the result envelope are stored and linked for every tool
+
+The MCP result renderer now decides whether a tool result is too large to return inline, on `/api/_mcp` and `/store-api/_mcp`.
+It renders every result in the `{"success": …}` envelope, meaning a JSON string with a boolean `success`, no matter whether it comes from `McpToolResponse::success()`, an app tool, or a plugin tool that builds the string by hand.
+Such results, which were always returned inline unless they came from `McpToolResponse::success()`, are now stored when they are too large and sent as a `resource_link` (2025-06-18 and later) or with `_meta.resourceUri` in the envelope (before 2025-06-18).
+A tool result that is not in this envelope, such as plain text, is passed through unchanged and is never stored.
+A PHP tool that returns plain text triggers a deprecation; it returns `McpToolResult::text('…')` instead, which sends the same text block to every client.
+On 2025-06-18 and later, results of a tool that declares an `outputSchema` are never stored, because a link carries no `structuredContent` that could match the schema; such a tool has to keep its results small itself.
+The model reads stored results with `resources/read`.
+`McpToolResponse::success()` itself no longer stores anything and always returns the full data, so a tool called outside of an MCP request gets its complete result.
+The limit applies to the rendered result, the text plus `structuredContent`, and is set so that the offload point stays at about 100 KB of data.
+The linked response keeps the tool's summary, its own links, and its metadata up to 10 KB; larger metadata values are named in `_meta.omittedMeta`.
+On 2025-06-18 and later these values cannot be fetched, because the stored result holds only the data, so tools should put large values into the data instead.
+For clients on protocol revision 2025-06-18 or later, `resources/read` of a stored result returns the plain data instead of the `{"success": true, "data": …}` envelope.
+Its metadata, such as `total`, comes with the link in the tool result.
+Clients on 2024-11-05 and 2025-03-26 keep reading the envelope.
+
+### Opt-out attribute for MCP tools without privileges
+
+An Admin API MCP tool that reads no shop data can now declare `#[McpToolRequiresNoPrivilege(reason: '...')]` instead of `#[McpToolRequires]`.
+The new PHPStan rule `shopwell.mcpAdminToolMissingRequires` reports an Admin API tool that declares neither attribute,
+and `shopwell.mcpStoreApiToolAdminAcl` reports a Store API tool that uses Admin ACL privileges.
+Both rules are part of the rule set that extensions include.
+They only report when `parameters.symfony.containerXmlPath` points to a compiled container that registers the extension's tools.
+
+### Media uploads can set a title and an alt text
+
+`MediaUploadParameters` has the new optional properties `title` and `alt`.
+`MediaUploadService` writes them when it creates the media, so a separate media update for them is no longer needed.
+
+### MCP toolsets can carry a description
+
+`#[McpToolGroup]` takes an optional `description` that describes the whole toolset.
+`shopwell-toolsets-list` and `shopwell-toolset-enable` return it instead of the generated `Tools explicitly assigned to the "<group>" MCP tool group.`, so a model can tell which toolset fits a task.
+All core toolsets now have one.
+Plugins that add their own toolset should set it on one tool of the group:
+
+```php
+#[McpToolGroup('swag-report', description: 'Revenue, bestseller and customer reports for a date range. Enable it for questions about sales figures.')]
+```
+
+Existing `#[McpToolGroup('<group>')]` declarations keep working and keep the generated description.
+Plugins can add tools to a core toolset such as `entity`, but cannot change its description.
+
+### MCP tools return `McpToolResult`; the legacy string is deprecated
+
+All core MCP tools now return a `Shopwell\Core\Framework\Mcp\Result\McpToolResult` instead of the `{"success": …}` JSON string.
+What clients receive is unchanged on every protocol revision.
+
+`McpToolResponse` has new helpers that return the result object: `successResult()`, which also takes an optional summary for the model, and `errorResult()`, which also takes error details.
+The other helpers have a counterpart as well: `requirePrivilegeResult()`, `missingPrivilegesResult()`, `invalidCriteriaResult()`, `decodeJsonOrErrorResult()` and `executeWithDryRunResult()`.
+
+Returning the legacy string from a plugin or bundle tool, built with `success()`, `error()` and the other string helpers or by hand, is deprecated.
+It keeps working in 6.7, including for tools that declare `__invoke(): string`, but it can't carry a summary or error details.
+The string helpers `success()`, `error()`, `requirePrivilege()`, `missingPrivilegesError()`, `invalidCriteriaError()`, `decodeJsonOrError()` and `executeWithDryRun()` are marked `@deprecated tag:v6.8.0`.
+They trigger a deprecation when called and throw once the `v6.8.0.0` feature flag is active, so run your tests with the flag to find the calls that are left.
+A PHP tool that returns the string, built by hand or with the helpers, triggers the same deprecation.
+Switch a tool by declaring `__invoke(): McpToolResult` and using the `…Result` helpers:
+
+```php
+public function __invoke(string $id): McpToolResult
+{
+    if ($error = $this->requirePrivilegeResult($this->contextProvider->getContext(), 'product:read')) {
+        return $error;
+    }
+
+    return $this->successResult(['id' => $id], ['total' => 1]);
+}
+```
+
+App tools keep the `{"success": …}` envelope as their response format.
+
+### MCP endpoints can serve the stateless 2026-07-28 protocol revision
+
+Both MCP endpoints can now serve the stateless 2026-07-28 revision next to the handshake revisions, from the same URL.
+It is off by default.
+Switch it on per endpoint:
+
+```yaml
+shopwell:
+    mcp:
+        protocol_era:
+            admin: auto
+            store_api: auto
+```
+
+`legacy`, the default, serves the handshake revisions up to 2025-11-25 only.
+With `auto`, the client picks the revision, and clients on the handshake revisions are not affected.
+`bin/console debug:mcp` shows the era of each endpoint.
+
+On the stateless revision there is no MCP session:
+
+* Choose toolsets in the endpoint URL, for example `/api/_mcp?toolsets=order,media`.
+  `shopwell-toolset-enable` and `shopwell-toolsets-list` are not listed in `tools/list`; called directly, they answer with an error that points to `?toolsets=`.
+  The server instructions and `shopwell-tool-search` point to `?toolsets=` as well, and each search match names its toolset.
+* List changes on the Admin API endpoint reach clients through `subscriptions/listen` within about a second.
+  They are raised by app installs, updates, activations and removals, by edits of the MCP allowlist of an integration or a user, and by a change of a user's `admin` flag, through any API.
+  The stream reads the list versions from the database, so changes made on the CLI, in queue workers or on another host arrive as well.
+  Each host reads them at most once a second, through a `cache.app` entry.
+  The Store API endpoint does not announce list changes on the stateless revision, because its lists only change per session there.
+  Clients on the session-based revisions receive the same changes as `list_changed` notifications in their session, so an allowlist edit now reaches them as well.
+* Each open `subscriptions/listen` stream holds one PHP-FPM worker for up to 25 seconds, then the server ends it and the client reconnects.
+  A client that keeps listening therefore occupies one worker almost all the time.
+  Account for it in `pm.max_children`, and keep `max_execution_time` and the timeouts of proxies in front of PHP above 25 seconds.
+* List changes on the Admin API endpoint, for example after an app install, reach clients through `subscriptions/listen`.
+  The notifications go through `cache.app`, so setups with several hosts need a shared `cache.app`, for example Redis.
+* Each open `subscriptions/listen` stream occupies a PHP worker for up to 25 seconds before the client reconnects.
+  Account for it in `pm.max_children`.
+  The Store API endpoint publishes no notifications, so it answers `subscriptions/listen` with the JSON-RPC error `-32601` instead of opening a stream.
+
+### Rules match the address of a visitor without a customer
+
+A visitor who is neither logged in nor registered can now send an address, which is stored on the context as `SalesChannelContext::getProspectiveCustomer()`.
+No customer or address is written, and `SalesChannelContext::getCustomer()` stays `null`.
+The addresses are available as `ProspectiveAddress` structs with readonly properties.
+The shipping location of such a context contains the address, so zip code, city and street rules and zip code tax rules match before registration.
+
+Rule matching sees a customer that only exists for the rules: a guest of the default customer group without order history, with the sent shipping and billing address.
+This affects `CheckoutRuleScope::getCustomer()` and therefore guest, active, order history and billing address rules.
+Company, newsletter recipient and "created by admin" rules set to "no", and customer custom field rules with "not equal", match as well.
+Rules that need contact or account data, such as e-mail, tags or birthday, do not match before registration.
+Custom rules that load the customer by its id find no customer.
+
+Shops with such rules see them apply earlier in the checkout once their frontend sends an address.
+Contexts without an address behave as before.
+The prospective customer is removed when the visitor logs in or registers.
+
+### Manifest validation runs on every app install and update
+
+Manifest validation now also runs when an app is installed or updated from the store, the Administration or as a service, not only through the CLI.
+Errors make the install or update fail, and all of them are reported at once.
+Notices no longer stop `app:install` and `app:refresh`, run `app:validate` to see them.
+`app:validate` now fails only on errors and exits with 0 when an app has notices only.
+
+### Deprecated `PluginZipImportCommand::$cacheClearer`
+
+The property is unused and will be removed in 6.8.
+`--no-validate` on `app:install` and `app:refresh` is deprecated and will be removed in 6.8.
+
+### System config cache is invalidated per sales channel
+
+Saving the system config of one sales channel now only drops the cached config of that sales channel.
+A change of the global config still drops the cached config of all sales channels.
+`CachedSystemConfigLoader` tags each cached sales channel config additionally with `CachedSystemConfigLoader::buildSalesChannelTag($salesChannelId)`.
+Invalidating `CachedSystemConfigLoader::CACHE_TAG` still drops the whole cached config.
+
+### MCP answers carry cache hints on the 2026-07-28 revision
+
+On the stateless 2026-07-28 revision, both MCP endpoints now tell clients how long they may reuse an answer (`ttlMs` and `cacheScope`, SEP-2549).
+Every hint is `private`, because the allowlist and `?toolsets=` make the answers differ per caller.
+`server/discover`, `tools/list`, `prompts/list`, `resources/list` and `resources/templates/list` stay fresh for 60 seconds, so an allowlist change reaches a client within a minute, even if it does not listen for `list_changed`.
+The reference resources stay fresh for one hour (`shopwell://state-machines`) or 60 seconds (`shopwell://entities`, `shopwell://business-events`, `shopwell://flow-actions`, `shopwell://currencies`, `shopwell://languages`, `shopwell://sales-channels`).
+Entities, business events and flow actions can change when an app is installed, so they get the shorter time.
+Everything else, including stored tool results and app resources, is not cached.
+Answers on the handshake revisions carry no hints and are unchanged.
+
+The core reference resources now return a `Mcp\Schema\Result\ReadResourceResult` instead of an array.
+A plugin resource can set its own hint by returning a `ReadResourceResult` with `ttlMs` and `cacheScope`; only do so on the 2026-07-28 revision, as `RequestContext::getProtocolVersion()->isModern()` tells.
+
+### Deprecated `ImitateCustomerTokenGenerator::HMAC_HASH_ALGORITHM`
+
+The constant is unused and will be removed in 6.8.
+The imitation token is signed by the internal `HmacSigner`.
+
+### Order deliveries keep the order of the cart deliveries
+
+Order deliveries have a new `position` field with the order of the cart deliveries when the order was placed, starting at 1.
+Extensions that build several cart deliveries in a deliberate order, for example by priority or release date, no longer need to persist that order themselves.
+Sort order deliveries by `position` to show them in that order; the primary delivery is still the one with the highest shipping costs.
+Recalculating an order numbers the deliveries from 1 again in the order of their stored positions, like line items, with deliveries added by the recalculation, such as shipping discounts, last.
+Deliveries of orders placed before this release have position `0` until the order is recalculated.
+
+### Event before a media file is replaced
+
+`Shopwell\Core\Content\Media\Event\BeforeMediaFileReplacedEvent` is dispatched before an upload replaces the file of a media.
+It carries the media ID and the extension, MIME type and size of the new file.
+A listener can throw an exception to stop the replacement, and the media keeps its old file.
+Presigned replacements dispatch it in `prepare()` with the file the client declares, before the upload, and again in `finalize()` with the stored file.
+The new optional `fileSize` of `POST /api/_action/media/presign-upload` fills the size in `prepare()`; without it, the size is `null`.
+With `shopwell.cdn.path_cache_buster` disabled, a presigned upload of the same file name and extension has already overwritten the old file when `finalize()` stops it.
+
+### Default tax rules use the current VAT rates
+
+The update changes the default tax rules of Czechia, Estonia, Finland, Lithuania, Romania and Slovakia to the current VAT rates, and adds a 5% rule for "Reduced rate 2" in Slovakia and Slovenia.
+Only rules of the default tax groups that still have their original rate and were never edited are changed.
+Shops that adjusted these rules themselves keep their rules, and should compare them with the current rates.
+
+
 ## Administration
 
 ### Removed the empty Shopwell Payments navigation module
@@ -522,6 +772,115 @@ async loadLocaleConfig() {
 }
 ```
 
+### The smart bar back button names its target
+
+The back button of `sw-page` shows the title of the module its parent route belongs to, e.g. "Products" on a product detail page.
+Without a resolvable title it shows only the icon, labelled "Go back".
+Pages whose route hierarchy does not lead back to where users expect can pass the new optional `backRoute` and `backLabel` props of `sw-page`.
+
+### Custom fields on the customer create page
+
+The customer create page now shows the custom field sets assigned to customers, so custom fields can be filled in when a customer is created.
+They are rendered in the new block `sw_customer_create_custom_field_sets` in `sw-customer-create.html.twig`.
+
+### `blocks-list.json` is replaced by the public API snapshot
+
+The Administration no longer ships `blocks-list.json`.
+The block names are now in `public-api/index.json`, listed per component.
+A component that extends another one also lists the blocks it inherits.
+All `blocks` arrays of that file together hold the names of the old list, except eight blocks of extend templates that the Administration never rendered.
+Beside it, one `.api.md` report per component shows its blocks with their nesting, for the current release and for the next major.
+
+Tools that read `blocks-list.json` have to read `public-api/index.json` instead.
+The format of the files in `public-api/` can still change while the snapshot is being built.
+Core contributors run `composer admin:generate-public-api` instead of `composer admin:generate-blocks-list` after changing a block.
+
+### Experimental: `Feature.silence()` and `sw-silence-deprecations`
+
+Both silence the deprecations of a major on the pre-major side of a feature-flag branch, so an extension can support both sides of a major without warnings:
+
+```js
+if (!Shopwell.Feature.isActive('V6_8_0_0')) {
+    Shopwell.Feature.silence('V6_8_0_0', () => this.legacyLoad());
+}
+```
+
+```html
+<sw-silence-deprecations v-if="!feature.isActive('V6_8_0_0')" flag="V6_8_0_0">
+    <sw-deprecated-component />
+</sw-silence-deprecations>
+```
+
+The component silences the first level of components inside of it, ignoring plain HTML, and everything they render themselves.
+Event handlers, watchers and code after an `await` need `Feature.silence()`.
+Once the major is active, both silence nothing.
+
+### Administration HTTP client runs on a single Axios 1.x transport
+
+The Administration `httpClient` is now one Axios 1.x instance (1.20.0).
+The legacy Axios 0.x dependency and the `axios-v1` package alias were removed, which drops the second Axios copy from the Administration bundle.
+The opt-out survives the removal: `useAxiosV1: false` now selects a compatibility mode on the single client that keeps `[` and `]` literal in query strings, including `httpClient.getUri()`, and returns `response.headers` as a plain object.
+The defaults are unchanged, legacy behaviour on 6.7 and Axios 1.x once `V6_8_0_0` is active.
+Request interceptors now run on Axios 1.x on 6.7 too, and no opt-out restores how they see headers.
+`config.headers` is one flat `AxiosHeaders` instance, so an interceptor that writes `config.headers.common[...]` or `config.headers.post[...]` fails with a `TypeError`.
+Set such headers on `config.headers` directly.
+Repository requests return plain response headers again on 6.7, as they did before 6.7.14.
+This applies to every response a `Repository` method returns, for example from `save()`, `delete()`, `assign()`, `mergeVersion()` and `deleteVersion()`, and to `error.response.headers` of every failed repository request.
+`useAxiosV1`, `httpClient.CancelToken`, the `cancelToken` option, passing a `CancelToken` to `messageQueueService.consume()`, and the `axiosV0`, `axiosV1`, `interceptorsV0`, `interceptorsV1`, `defaultsV0` and `defaultsV1` aliases are deprecated and removed in 6.8.
+They log a development-mode warning on first use.
+Use `AbortController` with the `signal` request option to cancel requests and `httpClient.isCancel(error)` to detect cancellations.
+Details are in `UPGRADE-6.8.md` and the migration guide at `src/Administration/Resources/app/administration/technical-docs/09-security/axios-migration-guide.md`.
+
+### Extension Jest configs can compose the Administration test harness (experimental)
+
+The Administration extension tooling now ships a Jest config factory, `extension-tooling/jest.mjs`, next to its TypeScript and ESLint presets.
+It carries the harness the Administration's own specs run on: the `shopwell:*` virtual modules, the feature flag registry behind `Shopwell.Feature.triggerDeprecationOrThrow()`, `it.deprecated()` and `it.activeFeatureFlags()`, the global `Shopwell` setup and the transforms.
+An extension Jest config that composes it picks up every later change to the harness without editing its own config:
+
+```js
+// jest.config.mjs, beside the generated .shopwell/ bridge
+import { shopwellAdminJestConfig } from './.shopwell/jest.mjs';
+
+export default shopwellAdminJestConfig({
+    moduleNameMapper: { '^MyPlugin/(.*)$': '<rootDir>/src/$1' },
+});
+```
+
+`composer admin:setup-extension-tooling` (or `bin/console administration:setup-extension-tooling` in a Composer install) generates the `.shopwell/jest.mjs` bridge for every extension.
+The harness works in a platform checkout and in a Composer install: the `shopwell/administration` package now ships the Administration's Jest setup files (without spec files).
+Before the first run, generate the entity schema with `bin/console administration:generate-entity-schema-types`.
+Run the specs with the Administration's own Jest through `composer admin:test-extensions -- --only=MyPlugin`, or `bin/console administration:test-extensions -- --only=MyPlugin` in a Composer install, so the extension needs no Jest installation of its own.
+`--all` tests every extension with a Jest config, vendor-installed ones included.
+As in `admin:check-extensions`, a failing vendor-installed extension fails the run only with `--strict-vendor`.
+A Jest config that does not build on the harness runs on the Jest the extension installs itself;
+when its `package.json` declares Jest that is not installed, the command skips the config and names the `npm ci` or `npm install` that installs it.
+`admin:test-extensions` generates the component import map when it is missing;
+when you call Jest directly, generate it with `npm run unit-setup` in the Administration directory.
+Before the first run, generate the entity schema with `bin/console administration:generate-entity-schema-types` and the component import map with `npm run unit-setup` in the Administration directory.
+The factory is part of the experimental extension tooling, so the terms of [Opt-in TypeScript and ESLint configuration for Administration extensions](#opt-in-typescript-and-eslint-configuration-for-administration-extensions-experimental) apply to it as well.
+
+### Administration deprecation notices go through the feature lifecycle
+
+The hand-rolled deprecation warnings in the Administration now go through `Shopwell.Feature.triggerDeprecationOrThrow()`, so they throw once their major flag is active instead of staying a console message forever.
+This covers `sw-tabs`, `sw-loader`, `sw-popover`, `sw-skeleton-bar`, the `items` prop of `sw-entity-listing`, the Options API compatibility shim and the legacy theme config labels and help texts in `sw-theme-manager-detail`.
+
+Deprecation notices for the legacy Twig override shim and for deprecated extension SDK position identifiers and data sets still only warn and do not throw, because no removal version exists for them yet.
+
+### Deprecated Administration APIs warn when they are used
+
+Deprecated Administration JavaScript APIs now call `Shopwell.Feature.triggerDeprecationOrThrow()` when they are used: deprecated `Shopwell.*` globals including `Shopwell.State`, services, exported functions, component `methods` and `computed` members, also through `this.$super()`, as well as deprecated components and props.
+In development builds, a use logs a warning naming the API and its replacement.
+With the next major flag active, it throws unless baselined.
+
+### Order detail shows every shipment in 6.8
+
+With the major feature flag `v6.8.0.0`, the order detail tells shipments and shipping discounts apart by their shipping costs.
+A delivery with negative shipping costs is a discount, every other delivery is a shipment.
+Until now, every delivery besides the primary one was shown as a shipping discount.
+The general tab lists the shipping costs of each shipment with its number and shipping method, and the details tab shows one delivery card per shipment, sorted like `OrderDeliveryCollection::getShipments()`.
+Overrides of the Twig blocks inside `sw_order_detail_details_shipping` of `sw-order-detail-details` render once per shipment, see `UPGRADE-6.8.md`.
+
+
 ## Storefront
 
 
@@ -532,6 +891,17 @@ The link targets the new `id="product-listing"` on the product listing wrapper, 
 Themes that override the `product_listing` block in `storefront/component/product/listing.html.twig` without `parent()` must keep `id="product-listing"` on their wrapper, otherwise the link has no target.
 `storefront/component/skip-to-content.html.twig` has a new `productListing` parameter (default `null`) and the new block `component_skip_to_content_product_listing`.
 
+### Checkout and account pages list every shipment
+
+When a cart or order has more than one shipment, the confirm, finish and edit order pages and the account order history list each shipment with its shipping method, address, shipping costs and delivery period, and the account order list shows the state of every shipment.
+Deliveries with negative shipping costs are shipping discounts and are not listed as shipments.
+`AccountOrderPageLoader` and `AccountOverviewPageLoader` now load the shipping address and the state of every delivery, independent of the `v6.8.0.0` feature flag.
+`CheckoutFinishPageLoader` and `AccountEditOrderPageLoader` load the shipping method and the shipping address of every delivery, also with the flag active.
+Carts and orders with one shipment render as before.
+The new component `@Storefront/storefront/component/checkout/shipment.html.twig` renders a single shipment.
+The lists sit in the new blocks `page_checkout_confirm_address_shipping_shipments`, `page_checkout_finish_address_shipping_shipments`, `page_checkout_finish_order_dispatch_method_shipments` and `page_account_order_item_detail_shipments`.
+
+
 ## API
 
 ### Installed extensions tell whether they can be removed
@@ -539,6 +909,106 @@ Themes that override the `product_listing` block in `storefront/component/produc
 Extensions returned by `GET /api/_action/extension/installed` have a new `allowRemove` flag, also available as `ExtensionStruct::isAllowRemove()`.
 It is `false` when Shopwell can't delete the extension's files, for example for extensions that Composer installed outside `custom/plugins`, and for extensions that are only available in the store.
 Check it before calling `POST /api/_action/extension/remove/{type}/{technicalName}`.
+
+### Checkout draft route
+
+`GET /store-api/checkout/draft` returns the calculated cart together with the available shipping and payment methods and the stored address of a visitor without a customer.
+`PATCH /store-api/checkout/draft` accepts every field of `PATCH /store-api/context`, applies the change through that route and returns the same response.
+Unlike `PATCH /store-api/context`, unknown fields are rejected with HTTP 400.
+
+The flags `methods`, `shippingCosts`, `checkoutGateway` and `taxed` control the optional, more expensive parts; `contextGateway` with `appName` runs an app Context Gateway on `PATCH`.
+Changes of an address or a method are rate limited per context token, configurable as `shopwell.api.rate_limiter.checkout_draft`.
+
+### Address of a visitor without a customer on `PATCH /store-api/context`
+
+`PATCH /store-api/context` accepts `shippingAddress` and `billingAddress` for visitors who are not logged in.
+Only `countryId` is required, the country of the shipping address also becomes the context country, and `null` removes the address.
+Logged-in customers keep using `shippingAddressId` and `billingAddressId`; sending an address for them fails with HTTP 400 and code `SYSTEM__PROSPECTIVE_ADDRESS_WITH_CUSTOMER`.
+A `shippingAddress` together with `countryId` or `countryStateId` fails with HTTP 400 and code `SYSTEM__PROSPECTIVE_ADDRESS_WITH_COUNTRY`.
+A later `countryId` or `countryStateId` that differs from the stored shipping address removes the stored addresses.
+`GET /store-api/context` returns the stored address as `prospectiveCustomer`.
+
+Headless clients should note that `shippingLocation.address` and `cart.deliveries[].location.address` now contain an address for such a visitor, while `customer` is `null`.
+Its ids stay the same for a context token, but it is not a stored customer address and can not be sent as `shippingAddressId`.
+Check `customer` or `prospectiveCustomer` before treating it as a customer address.
+
+### Rate limit responses contain `Retry-After`
+
+Admin API and Store API responses with HTTP 429 now contain a `Retry-After` header with the seconds to wait.
+It is listed in `Access-Control-Expose-Headers`, so browser clients on another origin can read it.
+
+### MCP clients can log in with OAuth
+
+MCP clients can now discover how to log in to `/api/_mcp` and get a token that only works there.
+Access keys, integration tokens and all existing OAuth tokens keep working unchanged.
+
+* **Discovery:** A `401` from `/api/_mcp` now carries `WWW-Authenticate: Bearer resource_metadata="..."`, with `error="invalid_token"` when credentials were sent.
+  The protected resource metadata (RFC 9728) is served at `/.well-known/oauth-protected-resource/api/_mcp` and the authorization server metadata (RFC 8414) at `/.well-known/oauth-authorization-server/api`.
+  The issuer is `<shop URL>/api`, and the authorization response now contains `iss` (RFC 9207).
+  The URLs use the request host when it is an allowed MCP host, otherwise `APP_URL`.
+  When the MCP URL has a query, e.g. `/api/_mcp?toolsets=orders`, the metadata URL and the `resource` of the metadata keep it unchanged, as RFC 9728 requires; the token audience ignores it.
+* **Installations in a subdirectory:** The well-known URIs sit at the host root, e.g. `/.well-known/oauth-protected-resource/shop/api/_mcp`.
+  Rewrite them in the web server to `/shop/.well-known/oauth-protected-resource/api/_mcp` and `/shop/.well-known/oauth-authorization-server/api`.
+* **Audience-bound tokens:** `/api/oauth/authorize` and `/api/oauth/token` accept the `resource` parameter (RFC 8707).
+  The only accepted value is the shop's MCP endpoint; any other value is answered with `invalid_target`.
+  A token issued with `resource` is accepted on `/api/_mcp` only and gets `401` on every other Admin API route, including `/api/_info/system-health-check`.
+  A refresh keeps the resource.
+  The JWT keeps the client id as the first `aud` entry and lists the resource after it.
+  Requests without `resource` behave as before.
+* **OAuth error members:** Every OAuth error of the Admin API, e.g. from `/api/oauth/token`, now also carries `error`, `error_description` and, when known, `hint` at the top level of the body, as RFC 6749 (section 5.2) defines them.
+  The `errors` array stays unchanged, so existing clients keep working.
+* **Consent page:** The Administration consent page forwards `resource` and says that access is limited to the MCP endpoint.
+  Rebuild the Administration when you build it yourself.
+  A build from before this change drops `resource`, and the token request of the MCP client then fails with `invalid_target`.
+* **Clients:** There is no dynamic client registration.
+  To let an MCP client with a configurable client id log in, add it to `shopwell.api.oauth_clients`:
+
+  ```yaml
+  shopwell:
+      api:
+          oauth_clients:
+              claude-code:
+                  name: 'Claude Code'
+                  redirect_uris:
+                      - 'http://localhost:53682/callback'
+  ```
+
+  Redirect URIs on `http://127.0.0.1` and `http://[::1]` accept any port; all others, including `http://localhost:<port>`, must match exactly.
+  Redirect URIs must now use `https`, or a private-use scheme of a native app such as `cursor://`.
+  Plain `http` is only accepted for `localhost`, `127.0.0.1` and `[::1]`, or for every host when the kernel runs in the `dev` environment.
+  An authorization request to another `http` redirect URI is rejected with `FRAMEWORK__OAUTH_INSECURE_REDIRECT_URI`, so change registered `http` redirect URIs on other hosts to `https`.
+  Claude Code calls back on `http://localhost:<port>/callback`, so register a fixed port and add the server with `claude mcp add --transport http --client-id claude-code --callback-port 53682 shopwell <shop URL>/api/_mcp`.
+
+### Order deliveries and order transactions have a `payload` field
+
+Order deliveries and order transactions in the Admin API and Store API have a new `payload` field, and so do the deliveries and transactions of the Store API cart.
+It is an object, or an empty array when nothing is set.
+
+### Error responses no longer expose database connection errors
+
+With `APP_DEBUG=0`, a failed database connection, for example invalid credentials or an unreachable database server, is no longer rendered with its raw exception message.
+Requests that prefer HTML, like a storefront request while the database is not reachable, get Symfony's generic error page.
+Other requests get a JSON error with `Internal Server Error` as detail.
+The original exception is still logged.
+
+### Reset a SEO URL to its template
+
+`PATCH /api/_action/seo-url/canonical` accepts an empty or missing `seoPathInfo`, unless the request sets `isModified` to `true`.
+It replaces the canonical SEO URL of that entity, sales channel and language with the URL generated from the SEO URL template, and removes its write protection (`isModified`).
+Before, the request was rejected with `400`.
+When the template generates no URL there, for example for an inactive sales channel or a language without a domain, the request is rejected with `400` and the error code `CONTENT__SEO_URL_RESET_NOT_POSSIBLE`, and the SEO URL stays unchanged.
+In the Administration, clearing the SEO URL field of a product or category and saving does this.
+
+### Media upload endpoints accept a title and an alt text
+
+`POST /api/_action/media/upload`, `POST /api/_action/media/upload_by_url` and `POST /api/_action/media/external-link` accept the optional fields `title` and `alt`.
+The new media is created with them, so a separate `PATCH /api/media/{id}` is no longer needed.
+
+### Order deliveries have a `position` field
+
+Order deliveries in the Admin API and Store API have a new integer `position` field with the order of the deliveries in the cart the order was placed from, starting at 1.
+A delivery created without a `position` gets the next free position of its order, so a delivery added to a placed order is listed last.
+Deliveries of orders placed before this release have position `0` until the order is recalculated.
 
 
 ## App System
@@ -564,3 +1034,66 @@ Overdue reminder events include an optional configured `escalateTo` user ID for 
 
 Action, notification and subprocess nodes dispatch `WorkflowAutomationActionEvent` with a pinned action and input map so connectors and data actions can run through one transaction-aware extension seam.
 Script nodes evaluate bounded Symfony expressions with only `form` and `round` values and persist their result in node output; PHP and service access is unavailable.
+
+## Critical Fixes
+
+### A failed theme save keeps the saved theme config
+
+Saving a theme in the Administration (`PATCH /api/_action/theme/{themeId}?reset=1`) now resets the theme config and writes the new values in one transaction.
+Before, a failure between the two writes left the theme without any of its saved settings.
+The theme is compiled after the commit.
+For that, `ThemeService::updateTheme()` skips the compile when the context has the new state `ThemeService::STATE_SKIP_COMPILE`.
+Classes overriding `updateTheme()` without calling the parent method should handle that state.
+
+## Features
+
+### MCP tools declare whether they change shop data
+
+The core MCP tools on `/api/_mcp` and `/store-api/_mcp` now send the tool annotations of the MCP specification in `tools/list` and in `shopwell-tool-search` results.
+Read tools such as `shopwell-entity-search` are marked with `readOnlyHint`, and tools that change or remove data, such as `shopwell-entity-upsert`, `shopwell-entity-delete`, `shopwell-order-state`, `shopwell-system-config-write`, `shopwell-theme-config` and `shopwell-media-upload`, with `destructiveHint`.
+MCP clients use these hints to decide when to ask the user before a call: clients that honour them may now run the read tools without asking, and ask before the destructive ones where they did not before.
+Plugin and bundle tools can declare the same hints with the `annotations` argument of `#[McpTool]`.
+
+### Open a product in the Storefront from the Administration
+
+The product detail page has a new "Open in Storefront" action in the context menu of its smart bar.
+It opens a modal to select one of the Storefront sales channels the product is assigned to.
+For the selected sales channel it shows the product URLs, or the reason why the sales channel cannot show the product, for example an inactive sales channel or product, a missing domain, or a sold-out clearance sale product.
+Sales channels in maintenance mode get a hint.
+If the IP address of the Administration user is not on the maintenance allowlist, the modal explains that it cannot load the product URLs.
+The `product.viewer` role now includes the `sales_channel_domain:read` privilege, which the modal needs to load the domains; a migration adds it to existing roles.
+
+## Hosting & Configuration
+
+### Password recovery is rate limited per IP
+
+Customer and admin password recovery requests are now also limited per client IP (`reset_password_client`, `user_recovery_client`), so setups behind a proxy or a headless frontend must configure trusted proxies to keep the real client IP
+
+### Translations can be downloaded as one archive
+
+`bin/console translation:download` and `bin/console translation:install --all` download all locales as one archive when `shopwell.translation.archive_manifest_url` is set.
+The translations repository publishes the manifest of its latest archive at `https://github.com/shopwell-shop/translations/releases/latest/download/manifest.json`.
+
+```yaml
+shopwell:
+    translation:
+        archive_manifest_url: 'https://github.com/shopwell-shop/translations/releases/latest/download/manifest.json'
+```
+
+When the archive cannot be used, both commands download every file of each locale as before.
+`translation:install --all` also downloads every file when the archive is older than the translation metadata.
+Decorators of `AbstractTranslationLoader::download()` are not called for the locales that come from the archive.
+
+### Elasticsearch searches use at most 10 words of a search term
+
+Searches over Elasticsearch or OpenSearch now use only the first 10 distinct words of a search term, because longer terms made OpenSearch reject the query with `too_many_nested_clauses`.
+Punctuation and one-letter words do not count.
+Change the limit with `elasticsearch.search.term_max_words`:
+
+```yaml
+elasticsearch:
+    search:
+        term_max_words: 10
+```
+
+Raise it only when your cluster allows more clauses through `indices.query.bool.max_clause_count`, and lower it when searches with fewer words still fail.

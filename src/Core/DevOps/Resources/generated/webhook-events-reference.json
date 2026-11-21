@@ -263,6 +263,46 @@
             "order:read"
         ]
     },
+    "state_enter.order_return.state.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.order_return.state.closed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.order_return.state.declined": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.order_return.state.open": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.order_return.state.received": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.order_return.state.refunding": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.order_return.state.requested": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.order_return.state.returning": {
+        "privileges": [
+            "order:read"
+        ]
+    },
     "state_enter.order_transaction.state.authorized": {
         "privileges": [
             "order:read"
@@ -363,6 +403,271 @@
             "order:read"
         ]
     },
+    "state_enter.payment_mandate.status.active": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_mandate.status.expired": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_mandate.status.init": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_mandate.status.pending": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_mandate.status.suspended": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_mandate.status.terminated": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.closed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.created": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.expired": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.failed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.opened": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.paid": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.refunded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_order.state.refunded_partially": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_refund.state.failed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_refund.state.finished": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_refund.state.open": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_refund.state.processing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription.status.active": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription.status.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription.status.expired": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription.status.past_due": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription.status.pending": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription.status.suspended": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription.status.trialing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.closed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.failed_final": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.failed_retryable": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.partial_refunded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.processing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.refunded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.scheduled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.submitted": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.succeeded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_subscription_cycle.state.unknown": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.awaiting_user_confirm": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.created": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.failed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.processing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.returned": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.submitted": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.payment_transfer.status.succeeded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_instance.state.agreed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_instance.state.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_instance.state.completed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_instance.state.rejected": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_instance.state.returned": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_instance.state.running": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_task.state.agreed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_task.state.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_task.state.rejected": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_enter.workflow_task.state.todo": {
+        "privileges": [
+            "order:read"
+        ]
+    },
     "state_leave.order.state.cancelled": {
         "privileges": [
             "order:read"
@@ -409,6 +714,46 @@
         ]
     },
     "state_leave.order_delivery.state.shipped_partially": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.closed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.declined": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.open": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.received": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.refunding": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.requested": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.order_return.state.returning": {
         "privileges": [
             "order:read"
         ]
@@ -509,6 +854,271 @@
         ]
     },
     "state_leave.order_transaction_capture_refund.state.open": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_mandate.status.active": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_mandate.status.expired": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_mandate.status.init": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_mandate.status.pending": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_mandate.status.suspended": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_mandate.status.terminated": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.closed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.created": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.expired": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.failed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.opened": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.paid": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.refunded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_order.state.refunded_partially": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_refund.state.failed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_refund.state.finished": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_refund.state.open": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_refund.state.processing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription.status.active": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription.status.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription.status.expired": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription.status.past_due": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription.status.pending": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription.status.suspended": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription.status.trialing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.closed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.failed_final": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.failed_retryable": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.partial_refunded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.processing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.refunded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.scheduled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.submitted": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.succeeded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_subscription_cycle.state.unknown": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.awaiting_user_confirm": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.created": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.failed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.processing": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.returned": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.submitted": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.payment_transfer.status.succeeded": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_instance.state.agreed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_instance.state.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_instance.state.completed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_instance.state.rejected": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_instance.state.returned": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_instance.state.running": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_task.state.agreed": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_task.state.canceled": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_task.state.rejected": {
+        "privileges": [
+            "order:read"
+        ]
+    },
+    "state_leave.workflow_task.state.todo": {
         "privileges": [
             "order:read"
         ]

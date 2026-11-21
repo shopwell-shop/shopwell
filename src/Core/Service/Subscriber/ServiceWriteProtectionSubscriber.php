@@ -2,15 +2,10 @@
 
 namespace Shopwell\Core\Service\Subscriber;
 
-use Doctrine\DBAL\ArrayParameterType;
-use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\App\AppDefinition;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
-use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
-use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
-use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\WriteConstraintViolationException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -35,13 +30,10 @@ readonly class ServiceWriteProtectionSubscriber implements EventSubscriberInterf
 {
     final public const VIOLATION_NO_PERMISSION = 'service_write_not_allowed_violation';
 
-    public function __construct(private Connection $connection)
+    public function __construct(private WriteOutcome $writeOutcome)
     {
     }
 
-    /**
-     * @return array<string, string>
-     */
     public static function getSubscribedEvents(): array
     {
         return [
@@ -57,67 +49,26 @@ readonly class ServiceWriteProtectionSubscriber implements EventSubscriberInterf
             return;
         }
 
-        $appCommands = $event->getCommandsForEntity(AppDefinition::ENTITY_NAME);
-        if ($appCommands === []) {
-            // The write does not touch the app entity at all , bail
-            return;
+        $violations = new ConstraintViolationList();
+        foreach ($this->writeOutcome->touchedRows($event->getCommandsForEntity(AppDefinition::ENTITY_NAME), ['self_managed']) as $app) {
+            if ($app->getPayloadValue('self_managed') || $app->getStoredValue('self_managed')) {
+                $violations->add($this->buildViolation());
+            }
         }
-
-        $serviceIds = $this->fetchServiceIds($appCommands);
-
-        $violations = new ConstraintViolationList(array_map(
-            $this->buildViolation(...),
-            array_filter($appCommands, fn (WriteCommand $command): bool => $this->isProtected($command, $serviceIds))
-        ));
 
         if ($violations->count() > 0) {
             $event->getExceptions()->add(new WriteConstraintViolationException($violations));
         }
     }
 
-    /**
-     * @param array<string> $selfManagedIds
-     */
-    private function isProtected(WriteCommand $command, array $selfManagedIds): bool
-    {
-        // creating a service or changing an app to a service is a lifecycle-only operation.
-        if (($command instanceof InsertCommand || $command instanceof UpdateCommand)
-            && ($command->getPayload()['self_managed'] ?? false)) {
-            return true;
-        }
-
-        // modifying or deleting a row that is already a service.
-        if ($command instanceof UpdateCommand || $command instanceof DeleteCommand) {
-            return \in_array($command->getPrimaryKey()['id'], $selfManagedIds, true);
-        }
-
-        return false;
-    }
-
-    /**
-     * @param list<WriteCommand> $commands
-     *
-     * @return array<string>
-     */
-    private function fetchServiceIds(array $commands): array
-    {
-        $ids = array_map(static fn (WriteCommand $command): string => $command->getPrimaryKey()['id'], $commands);
-
-        return $this->connection->fetchFirstColumn(
-            'SELECT `id` FROM `app` WHERE `id` IN (:ids) AND `self_managed` = 1',
-            ['ids' => $ids],
-            ['ids' => ArrayParameterType::BINARY]
-        );
-    }
-
-    private function buildViolation(WriteCommand $command): ConstraintViolation
+    private function buildViolation(): ConstraintViolation
     {
         return new ConstraintViolation(
             'A service cannot be created, modified or deleted through the API.',
             'A service cannot be created, modified or deleted through the API.',
             [],
             null,
-            '/' . $command->getEntityName(),
+            '/' . AppDefinition::ENTITY_NAME,
             null,
             null,
             self::VIOLATION_NO_PERMISSION

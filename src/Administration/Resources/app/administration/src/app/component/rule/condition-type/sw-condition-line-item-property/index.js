@@ -12,7 +12,6 @@ const { EntityCollection, Criteria } = Shopwell.Data;
  * @component-example
  * <sw-condition-line-item-property :condition="condition" :level="0"></sw-condition-line-item-property>
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
     template,
 

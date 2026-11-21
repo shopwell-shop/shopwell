@@ -3,8 +3,8 @@
 namespace Shopwell\Core\System\CustomEntity\Xml;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\XmlParser;
 use Shopwell\Core\System\CustomEntity\CustomEntityException;
-use Symfony\Component\Config\Util\XmlUtils;
 
 /**
  * @internal
@@ -25,7 +25,7 @@ class CustomEntityXmlSchema
     public static function createFromXmlFile(string $xmlFile): self
     {
         try {
-            $doc = XmlUtils::loadFile($xmlFile, self::XSD_FILE);
+            $doc = XmlParser::loadFile($xmlFile, self::XSD_FILE);
         } catch (\Exception $e) {
             throw CustomEntityException::xmlParsingException($xmlFile, $e->getMessage());
         }

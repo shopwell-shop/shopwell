@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\Webhook\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Json;
 use Shopwell\Core\Framework\Webhook\Webhook;
@@ -54,14 +55,16 @@ class WebhookLoader
         SQL;
 
         $rows = $this->connection->fetchAllAssociative($sql);
-        $userRoles = $this->aclRoleLoader->getUserRoles(array_values(array_filter(array_column($rows, 'ownerUserId'))));
-        $integrationRoles = $this->aclRoleLoader->getIntegrationRoles(array_values(array_filter(array_column($rows, 'ownerIntegrationId'))));
+        $owners = $this->aclRoleLoader->getRoles(
+            array_values(array_filter(array_column($rows, 'ownerUserId'))),
+            array_values(array_filter(array_column($rows, 'ownerIntegrationId'))),
+        );
 
         $webhooks = [];
         foreach ($rows as $row) {
             $roles = $row['ownerIntegrationId'] !== null
-                ? $integrationRoles[$row['ownerIntegrationId']] ?? null
-                : $userRoles[$row['ownerUserId']] ?? null;
+                ? $owners->rolesFor($row['ownerIntegrationId'], IdentityType::Integration)
+                : $owners->rolesFor($row['ownerUserId'], IdentityType::User);
             if ($roles === null) {
                 continue;
             }

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\DependencyInjection;
 
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Metrics\Config\MetricConfigProvider;
 use Shopwell\Core\Framework\Telemetry\Metrics\Config\TransportConfigProvider;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
@@ -45,6 +46,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             param('shopwell.telemetry.metrics.replace_unknown_label_values_with'),
             service('logger'),
             env('APP_ENV'),
+        ]);
+
+    $services->set(LabelMappingRegistry::class)
+        ->args([
+            param('shopwell.telemetry.metrics.mappings'),
+            param('shopwell.telemetry.metrics.replace_unknown_label_values_with'),
         ]);
 
     $services->set(MetricConfigProvider::class)

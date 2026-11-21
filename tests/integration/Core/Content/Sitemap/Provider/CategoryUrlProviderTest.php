@@ -9,11 +9,9 @@ use Shopwell\Core\Content\Sitemap\Provider\CategoryUrlProvider;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Test\Seo\StorefrontSalesChannelTestHelper;
-use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
 
 /**
  * @internal
@@ -21,26 +19,27 @@ use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
 #[Package('discovery')]
 class CategoryUrlProviderTest extends TestCase
 {
-    use IntegrationTestBehaviour;
-    use StorefrontSalesChannelTestHelper;
+    use SalesChannelFunctionalTestBehaviour;
 
     private SalesChannelContext $salesChannelContext;
 
     protected function setUp(): void
     {
-        if (!static::getContainer()->has(ProductPageSeoUrlRoute::class)) {
-            static::markTestSkipped('NEXT-16799: Sitemap module has a dependency on storefront routes');
-        }
-
         $navigationCategoryId = $this->createRootCategoryData();
 
-        $this->salesChannelContext = $this->createStorefrontSalesChannelContext(
-            Uuid::randomHex(),
-            'test-category-sitemap',
-            Defaults::LANGUAGE_SYSTEM,
-            [],
-            $navigationCategoryId
-        );
+        // A headless sales channel resolves its routes through the core store-api SEO URL routes,
+        // so the provider is tested without depending on the Storefront bundle.
+        $this->salesChannelContext = $this->createSalesChannelContext([
+            'typeId' => Defaults::SALES_CHANNEL_TYPE_API,
+            'navigationCategoryId' => $navigationCategoryId,
+            'domains' => [[
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'currencyId' => Defaults::CURRENCY,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'url' => 'http://category-sitemap.headless.test',
+                'isExternalStorefront' => true,
+            ]],
+        ]);
 
         $this->createCategoryTree($navigationCategoryId);
     }

@@ -80,6 +80,7 @@ use Shopwell\Core\Checkout\Cart\SalesChannel\CartLoadRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartReorderRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CheckoutDraftRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\ProductShippingCostRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\ShippingCostRoute;
 use Shopwell\Core\Checkout\Cart\Subscriber\CartOrderEventSubscriber;
@@ -123,11 +124,13 @@ use Shopwell\Core\Framework\App\TaxProvider\Payload\TaxProviderPayloadService;
 use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute;
 use Shopwell\Core\Framework\Log\ExceptionLogger;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopwell\Core\System\SalesChannel\Telemetry\SalesChannelTypeResolver;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -293,6 +296,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(OrderRoute::class),
             service(CartItemAddRoute::class),
             service(LineItemFactoryRegistry::class),
+            service(ExtensionDispatcher::class),
+        ]);
+
+    $services->set(CheckoutDraftRoute::class)
+        ->public()
+        ->args([
+            service(ContextSwitchRoute::class),
+            service(ContextGatewayRoute::class),
+            service(SalesChannelContextService::class),
+            service(CartService::class),
+            service(TaxProviderProcessor::class),
+            service(ShippingMethodRoute::class),
+            service(PaymentMethodRoute::class),
+            service(CheckoutGatewayRoute::class),
+            service(ShippingCostRoute::class),
+            service('shopwell.rate_limiter'),
             service(ExtensionDispatcher::class),
         ]);
 

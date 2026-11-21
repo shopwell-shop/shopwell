@@ -1,5 +1,6 @@
 meta:
   label: "Product GARAN Label"
+  labelSnippet: "sw-experience-studio.elements.garan-label.label"
   description: "Displays the product's confirmed commercial guarantee label and guarantee terms."
   icon: "regular-checkmark"
   category: "commerce"
@@ -10,6 +11,7 @@ properties:
     type: Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity
     required: false
     title: "Product"
+    titleSnippet: "sw-experience-studio.elements.garan-label.product.title"
     description: "Product whose confirmed guarantee is displayed. Without an eligible product, no guarantee label is shown."
     resolvedBy:
       loader: entity

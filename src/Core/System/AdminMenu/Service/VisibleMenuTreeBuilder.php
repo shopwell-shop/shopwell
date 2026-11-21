@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\AdminMenu\Service;
 
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Acl\AclRoles;
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
@@ -257,7 +258,7 @@ class VisibleMenuTreeBuilder
             return new AclRoles(true, []);
         }
 
-        return $this->aclRoleLoader->getUserRoles([$userId])[$userId] ?? new AclRoles(false, []);
+        return $this->aclRoleLoader->getRoles([$userId], [])->rolesFor($userId, IdentityType::User) ?? new AclRoles(false, []);
     }
 
     /**

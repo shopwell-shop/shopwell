@@ -1295,7 +1295,8 @@
             }
         },
         "sw-page": {
-            "backButton": "Go back"
+            "backButton": "Go back",
+            "backButtonTo": "Back to {title}"
         },
         "mediaUploadCaption": "Upload an image",
         "sw-tree-select": {

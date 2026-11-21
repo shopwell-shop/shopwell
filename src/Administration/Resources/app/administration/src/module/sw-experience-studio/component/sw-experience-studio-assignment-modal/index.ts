@@ -186,10 +186,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 const config =
                     (assignmentType.entity === 'blog' || assignmentType.defaultConfigKey) &&
                     this.acl.can('system.system_config')
-                        ? ((await this.systemConfigApiService.getValues(DEFAULT_LAYOUT_CONFIG_DOMAIN)) as Record<
-                              string,
-                              unknown
-                          >)
+                        ? await this.systemConfigApiService.getValues(DEFAULT_LAYOUT_CONFIG_DOMAIN)
                         : {};
 
                 this.assignmentIdsByEntityId = Object.fromEntries(

@@ -56,6 +56,7 @@ use Shopwell\Core\Checkout\Promotion\Subscriber\Storefront\StorefrontCartSubscri
 use Shopwell\Core\Checkout\Promotion\Util\PromotionCodeService;
 use Shopwell\Core\Checkout\Promotion\Validator\PromotionValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -108,6 +109,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(PromotionValidator::class)
         ->args([
             service(Connection::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -273,7 +275,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PromotionDalValidator::class)
         ->args([
-            service(Connection::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 

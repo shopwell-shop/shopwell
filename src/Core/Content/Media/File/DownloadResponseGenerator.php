@@ -14,6 +14,7 @@ use Shopwell\Core\Content\Media\Exception\IllegalFileNameException;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\MediaException;
 use Shopwell\Core\Content\Media\MediaService;
+use Shopwell\Core\Content\Media\Upload\MediaUploadService;
 use Shopwell\Core\Content\Media\Util\PathHelper;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -62,6 +63,14 @@ class DownloadResponseGenerator
         $fileSystem = $this->getFileSystem($media);
 
         $path = $media->getPath();
+
+        if (MediaUploadService::isExternalUrl($path)) {
+            if ($media->isPrivate()) {
+                throw MediaException::missingFile($media->getId());
+            }
+
+            return $this->getDefaultResponse($media, $context, $fileSystem);
+        }
 
         try {
             $url = $fileSystem->temporaryUrl($path, $this->clock->now()->modify($expiration));

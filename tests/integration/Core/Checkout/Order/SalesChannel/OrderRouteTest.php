@@ -30,6 +30,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\MailTemplateTestBehaviour;
@@ -582,6 +583,41 @@ class OrderRouteTest extends TestCase
         static::assertArrayHasKey('id', $response['orders']['elements'][0]);
         static::assertSame($this->orderId, $response['orders']['elements'][0]['id']);
         static::assertSame(TestDefaults::SALES_CHANNEL, $response['orders']['elements'][0]['salesChannelId']);
+    }
+
+    public function testProtectedStateMachineStateOrdersAssociationCannotBeExposedThroughIncludes(): void
+    {
+        $this->browser
+            ->request(
+                'GET',
+                '/store-api/order',
+                [
+                    'associations' => [
+                        'stateMachineState' => [
+                            'associations' => [
+                                'orders' => [],
+                            ],
+                        ],
+                    ],
+                    'includes' => [
+                        'state_machine_state' => ['id', 'orders.id'],
+                    ],
+                ]
+            );
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        if (Feature::isActive('v6.8.0.0')) {
+            static::assertSame(Response::HTTP_BAD_REQUEST, $this->browser->getResponse()->getStatusCode());
+            static::assertArrayNotHasKey('orders', $response);
+            static::assertSame('FRAMEWORK__ACCESSOR_NOT_ALLOWED', $response['errors'][0]['code']);
+
+            return;
+        }
+
+        static::assertSame(Response::HTTP_OK, $this->browser->getResponse()->getStatusCode());
+        static::assertCount(1, $response['orders']['elements']);
+        static::assertArrayNotHasKey('orders', $response['orders']['elements'][0]['stateMachineState']);
     }
 
     protected function getValidPaymentMethods(): PaymentMethodCollection

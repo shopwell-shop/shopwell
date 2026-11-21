@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import FilterService from 'src/app/service/filter.service';
+import { allowDeprecation } from 'test/_helper_/deprecations';
 
 const { Criteria } = Shopwell.Data;
 
@@ -111,6 +112,7 @@ async function createWrapper(privileges = [], rules = createRuleCollection(), fi
 
 describe('src/module/sw-settings-rule/page/sw-settings-rule-list', () => {
     beforeEach(() => {
+        allowDeprecation('sw-settings-rule-list.dateFilter is deprecated');
         jest.restoreAllMocks();
         jest.spyOn(Shopwell.Service('userConfigService'), 'search').mockResolvedValue({ data: {} });
         jest.spyOn(Shopwell.Service('userConfigService'), 'upsert').mockResolvedValue();

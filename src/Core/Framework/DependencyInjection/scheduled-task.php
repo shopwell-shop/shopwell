@@ -25,6 +25,7 @@ use Shopwell\Core\Framework\MessageQueue\ScheduledTask\Telemetry\TaskNameResolve
 use Shopwell\Core\Framework\MessageQueue\Subscriber\PluginLifecycleSubscriber;
 use Shopwell\Core\Framework\MessageQueue\Subscriber\UpdatePostFinishSubscriber;
 use Shopwell\Core\Framework\MessageQueue\Telemetry\WorkerMessageTimingHelper;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -50,7 +51,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.telemetry.periodic_metric_collector');
 
-    $services->set(TaskNameResolver::class);
+    $services->set(TaskNameResolver::class)
+        ->args([
+            service(LabelMappingRegistry::class),
+        ]);
 
     $services->set(ScheduledTaskMetricsSubscriber::class)
         ->args([

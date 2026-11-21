@@ -19,6 +19,7 @@ use Shopwell\Core\System\Locale\LocaleCollection;
 use Shopwell\Core\System\Snippet\Aggregate\SnippetSet\SnippetSetCollection;
 use Shopwell\Core\System\Snippet\Command\InstallTranslationCommand;
 use Shopwell\Core\System\Snippet\DataTransfer\Language\Language;
+use Shopwell\Core\System\Snippet\Service\TranslationArchiveLoader;
 use Shopwell\Core\System\Snippet\Service\TranslationLoader;
 use Shopwell\Core\System\Snippet\Service\TranslationMetadataStore;
 use Shopwell\Core\System\Snippet\Service\TranslationUpdater;
@@ -255,6 +256,7 @@ class InstallTranslationCommandTest extends TestCase
             $this->config,
             $metadataStore,
             new TranslationUpdater($this->translationLoader, $metadataStore),
+            static::getContainer()->get(TranslationArchiveLoader::class),
         );
 
         $tester = new CommandTester($command);

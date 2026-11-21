@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Content\ImportExport\Exception;
 
+use Shopwell\Core\Content\Media\Util\PathHelper;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,7 +15,7 @@ class InvalidMediaUrlException extends ShopwellHttpException
 {
     public function __construct(?string $url)
     {
-        parent::__construct('Invalid media url: {{ url }}', ['url' => $url ?? 'null']);
+        parent::__construct('Invalid media url: {{ url }}', ['url' => PathHelper::stripCredentials($url ?? 'null')]);
     }
 
     public function getStatusCode(): int

@@ -149,10 +149,7 @@ export default Shopwell.Component.wrapComponentConfig({
 
         async loadDefaults(): Promise<void> {
             try {
-                this.configValues = (await this.systemConfigApiService.getValues('core.content_system', null)) as Record<
-                    string,
-                    unknown
-                >;
+                this.configValues = await this.systemConfigApiService.getValues('core.content_system', null);
             } catch {
                 this.defaultsLoadFailed = true;
             } finally {

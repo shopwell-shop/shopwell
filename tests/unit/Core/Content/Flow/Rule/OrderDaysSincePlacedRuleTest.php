@@ -11,11 +11,13 @@ use Shopwell\Core\Content\Flow\Rule\OrderDaysSincePlacedRule;
 use Shopwell\Core\Content\Rule\Aggregate\RuleCondition\RuleConditionDefinition;
 use Shopwell\Core\Content\Rule\RuleValidator;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\RowLoader;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Collector\RuleConditionRegistry;
@@ -136,7 +138,7 @@ class OrderDaysSincePlacedRuleTest extends TestCase
             Validation::createValidator(),
             new RuleConditionRegistry([new OrderDaysSincePlacedRule()]),
             static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class)
+            new WriteOutcome(static::createStub(RowLoader::class))
         );
 
         $event = new PreWriteValidationEvent(

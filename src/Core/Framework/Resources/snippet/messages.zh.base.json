@@ -35,7 +35,9 @@
         "vat-id-missing": "您的账单地址所在国家/地区要求提供增值税号（VAT ID），请<a href=\"%url%\">点此</a>在个人资料中添加",
         "checkout-gateway-error": "%reason%",
         "billing-address-missing": "您的账单地址已失效，请先在账户中新建账单地址后再下单",
-        "shipping-address-missing": "您的收货地址已失效，请先在账户中新建收货地址后再下单"
+        "shipping-address-missing": "您的收货地址已失效，请先在账户中新建收货地址后再下单",
+        "label": "购物车中有商品缺少名称，暂时无法下单。",
+        "price": "购物车中有商品缺少价格，暂时无法下单。"
     },
     "document": {
         "invoiceNumber": "发票号 %invoiceNumber%",

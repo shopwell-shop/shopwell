@@ -174,7 +174,9 @@ export default Shopwell.Component.wrapComponentConfig({
         createdComponent() {
             // @deprecated tag:v6.8.0 - Remove together with getUserConfig()
             if (!Shopwell.Feature.isActive('v6.8.0.0')) {
-                void this.getUserConfig();
+                Shopwell.Feature.silence('V6_8_0_0', () => {
+                    void this.getUserConfig();
+                });
             }
 
             void Shopwell.Store.get('whatsNew').load();
@@ -201,6 +203,11 @@ export default Shopwell.Component.wrapComponentConfig({
          * @deprecated tag:v6.8.0 - Will be removed without replacement
          */
         async getUserConfig() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-settings-index.getUserConfig() is deprecated. Will be removed without replacement.',
+            );
+
             const config = (await Shopwell.Service('userConfigService').search(['settings.hideRenameBanner']))?.data?.[
                 'settings.hideRenameBanner'
             ] as { value?: boolean } | undefined;
@@ -212,6 +219,11 @@ export default Shopwell.Component.wrapComponentConfig({
          * @deprecated tag:v6.8.0 - Will be removed without replacement
          */
         async onCloseSettingRenameBanner() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_8_0_0',
+                'sw-settings-index.onCloseSettingRenameBanner() is deprecated. Will be removed without replacement.',
+            );
+
             this.hideSettingRenameBanner = true;
 
             await Shopwell.Service('userConfigService').upsert({

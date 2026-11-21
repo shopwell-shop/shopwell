@@ -807,7 +807,8 @@
         "walletPaymentLabel": "Pay with wallet",
         "walletBalanceLoading": "Loading wallet balance...",
         "walletPaymentPlaceholder": "Amount to pay",
-        "walletPaymentApply": "Apply"
+        "walletPaymentApply": "Apply",
+        "shipmentHeader": "Shipment %number%: %shippingMethod%"
     },
     "listing": {
         "filterTitleText": "Filter products",

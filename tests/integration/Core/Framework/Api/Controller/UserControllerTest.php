@@ -5,12 +5,16 @@ namespace Shopwell\Tests\Integration\Core\Framework\Api\Controller;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\Controller\SyncController;
 use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Api\OAuth\Scope\UserVerifiedScope;
+use Shopwell\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestBrowser;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\User\UserException;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
 use Symfony\Component\HttpFoundation\Response;
@@ -535,5 +539,128 @@ class UserControllerTest extends TestCase
             ['userId' => $userId]
         );
         static::assertSame(0, $tokensAfter, 'Expected all refresh tokens to be revoked after logout');
+    }
+
+    public function testPreventUpdateAndDeleteOfOtherUserAsNonAdmin(): void
+    {
+        $userId = $this->createUser(admin: true);
+        $this->authorizeBrowser($this->getBrowser(), [UserVerifiedScope::IDENTIFIER], ['user:update', 'user:delete']);
+
+        $this->getBrowser()->jsonRequest('PATCH', '/api/user/' . $userId, ['email' => 'attacker@example.com']);
+        $this->assertUserChangeNotAllowed();
+
+        $this->getBrowser()->jsonRequest('DELETE', '/api/user/' . $userId);
+        $this->assertUserChangeNotAllowed();
+    }
+
+    public function testUpdateOwnUserAsNonAdmin(): void
+    {
+        $browser = $this->getBrowser();
+        $this->authorizeBrowser($browser, [UserVerifiedScope::IDENTIFIER], ['user:update']);
+
+        $browser->jsonRequest('PATCH', '/api/user/' . $this->getOwnUserId($browser), ['email' => 'self@example.com']);
+
+        $response = $browser->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+    }
+
+    public function testPreventManagingAccessKeysOfOtherUserAsNonAdmin(): void
+    {
+        $ownerId = $this->createUser(admin: true);
+        $ownerKeyId = $this->createAccessKey($ownerId);
+        $this->authorizeBrowser($this->getBrowser(), [UserVerifiedScope::IDENTIFIER], ['user_access_key:create', 'user_access_key:update', 'user_access_key:delete']);
+
+        $key = [
+            'userId' => $ownerId,
+            'accessKey' => AccessKeyHelper::generateAccessKey('user'),
+            'secretAccessKey' => AccessKeyHelper::generateSecretAccessKey(),
+        ];
+
+        $this->getBrowser()->jsonRequest('POST', '/api/user-access-key', $key);
+        $this->assertUserChangeNotAllowed();
+
+        $this->getBrowser()->jsonRequest('POST', '/api/_action/sync', [[
+            'action' => SyncController::ACTION_UPSERT,
+            'entity' => 'user_access_key',
+            'payload' => [$key],
+        ]]);
+        $this->assertUserChangeNotAllowed();
+
+        $this->getBrowser()->jsonRequest('DELETE', '/api/user/' . $ownerId . '/access-keys/' . $ownerKeyId);
+        $this->assertUserChangeNotAllowed();
+    }
+
+    public function testCreateOwnAccessKeyAsNonAdmin(): void
+    {
+        $browser = $this->getBrowser();
+        $this->authorizeBrowser($browser, [UserVerifiedScope::IDENTIFIER], ['user_access_key:create']);
+
+        $browser->jsonRequest('POST', '/api/user-access-key', [
+            'userId' => $this->getOwnUserId($browser),
+            'accessKey' => AccessKeyHelper::generateAccessKey('user'),
+            'secretAccessKey' => AccessKeyHelper::generateSecretAccessKey(),
+        ]);
+
+        $response = $browser->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), (string) $response->getContent());
+    }
+
+    public function testPreventChangingUserOfAccessKey(): void
+    {
+        $keyId = $this->createAccessKey($this->getOwnUserId($this->getBrowser()));
+
+        $this->getBrowser()->jsonRequest('PATCH', '/api/user-access-key/' . $keyId, ['userId' => $this->createUser(admin: false)]);
+
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode(), (string) $response->getContent());
+        static::assertStringContainsString('is immutable', (string) $response->getContent());
+    }
+
+    private function createUser(bool $admin): string
+    {
+        $id = Uuid::randomHex();
+        Context::createDefaultContext()->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($id, $admin): void {
+            static::getContainer()->get('user.repository')->create([[
+                'id' => $id,
+                'email' => $id . '@example.com',
+                'firstName' => 'Firstname',
+                'lastName' => 'Lastname',
+                'password' => TestDefaults::HASHED_PASSWORD,
+                'username' => $id,
+                'localeId' => static::getContainer()->get(Connection::class)->fetchOne('SELECT LOWER(HEX(id)) FROM locale LIMIT 1'),
+                'admin' => $admin,
+            ]], $context);
+        });
+
+        return $id;
+    }
+
+    private function createAccessKey(string $userId): string
+    {
+        $id = Uuid::randomHex();
+        static::getContainer()->get('user_access_key.repository')->create([[
+            'id' => $id,
+            'userId' => $userId,
+            'accessKey' => AccessKeyHelper::generateAccessKey('user'),
+            'secretAccessKey' => AccessKeyHelper::generateSecretAccessKey(),
+        ]], Context::createDefaultContext());
+
+        return $id;
+    }
+
+    private function getOwnUserId(TestBrowser $browser): string
+    {
+        $browser->request('GET', '/api/_info/me');
+        $id = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR)['data']['id'];
+        static::assertIsString($id);
+
+        return $id;
+    }
+
+    private function assertUserChangeNotAllowed(): void
+    {
+        $response = $this->getBrowser()->getResponse();
+        static::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode(), (string) $response->getContent());
+        static::assertStringContainsString(UserException::USER_CHANGE_NOT_ALLOWED, (string) $response->getContent());
     }
 }

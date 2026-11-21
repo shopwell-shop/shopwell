@@ -1,6 +1,8 @@
 rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\McpToolResponseRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\McpReservedToolGroupRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\McpAdminToolRequiresPrivilegeRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\McpStoreApiToolAdminAclRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\ScheduledTaskTooLowIntervalRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\RuleAreasFlagNotAllowedRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\RuleConditionHasRuleConfigRule
@@ -19,6 +21,7 @@ rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\UseHasherRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\PropertyNativeTypeRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoManualSalesChannelContextCreationRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\ScriptServiceContextPropertyRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoDelayStampRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoAddCacheTagEventRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\NoUpdatesInExecuteQueryRule

@@ -117,6 +117,7 @@ use Shopwell\Core\Framework\Routing\Validation\RouteBlocklistService;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Store\InAppPurchase;
 use Shopwell\Core\Framework\Struct\Serializer\StructNormalizer;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Util\Backtrace\BacktraceCollector;
 use Shopwell\Core\Framework\Util\HtmlPurifierConfigProvider;
@@ -196,6 +197,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         'storefront' => '',
         'installer' => '',
     ]);
+
+    $parameters->set('shopwell.security.private_media_csp', 'script-src \'none\'; object-src \'none\'; frame-src \'none\'; base-uri \'none\'; form-action \'none\'');
 
     $parameters->set('shopwell_http_cache_enabled_default', 1);
     $parameters->set('shopwell.http.cache.enabled', env('SHOPWELL_HTTP_CACHE_ENABLED')->default('shopwell_http_cache_enabled_default'));
@@ -420,6 +423,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(DomainResolver::class)
         ->args([
+            service(LabelMappingRegistry::class),
             service(EntityGroupResolver::class),
         ]);
 

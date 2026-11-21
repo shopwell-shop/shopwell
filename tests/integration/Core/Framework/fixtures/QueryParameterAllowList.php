@@ -89,6 +89,7 @@ class QueryParameterAllowList
                 '/store-api/checkout/cart/line-item' => ['ids'],
                 '/store-api/context/gateway' => ['data'],
                 '/store-api/wallet' => ['page', 'limit'],
+                '/store-api/checkout/draft' => ['methods', 'shippingCosts', 'checkoutGateway', 'taxed'],
             ],
         ];
     }

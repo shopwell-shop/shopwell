@@ -1,6 +1,7 @@
 import { DOMWrapper, mount } from '@vue/test-utils';
 import ShopwellError from 'src/core/data/ShopwellError';
 import EntityValidationService from 'src/app/service/entity-validation.service';
+import { allowDeprecation } from 'test/_helper_/deprecations';
 
 /**
  * @sw-package checkout
@@ -179,6 +180,7 @@ describe('src/module/sw-order/component/sw-order-address-selection', () => {
     let wrapper;
 
     beforeEach(async () => {
+        allowDeprecation('sw-order-address-selection.customerCriteria is deprecated');
         const orderDetailStore = Shopwell.Store.get('swOrderDetail');
 
         orderDetailStore.$reset();

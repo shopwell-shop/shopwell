@@ -9,6 +9,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Acl\AclRoles;
+use Shopwell\Core\Framework\Api\Acl\IdentityRoleMap;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleEntity;
@@ -214,7 +215,7 @@ class WorkflowDefaultRoleInstallerTest extends TestCase
             $role->setAdminMenuItems($menuItems->filter(static fn (AdminMenuItemEntity $item): bool => \in_array($item->getId(), $selectedIds, true)));
             $userId = Uuid::randomHex();
             $roleLoader = static::createStub(AclRoleLoader::class);
-            $roleLoader->method('getUserRoles')->willReturn([$userId => new AclRoles(false, [$role->getId()])]);
+            $roleLoader->method('getRoles')->willReturn(new IdentityRoleMap([$userId => new AclRoles(false, [$role->getId()])], []));
             $treeBuilder = new VisibleMenuTreeBuilder(
                 new StaticEntityRepository([$menuItems]),
                 new AdminMenuRouteRegistry(new MenuDefinitionCollector([$provider])),

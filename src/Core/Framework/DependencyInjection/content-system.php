@@ -25,6 +25,7 @@ use Shopwell\Core\Framework\ContentSystem\Api\LayoutMutationController;
 use Shopwell\Core\Framework\ContentSystem\Api\UnknownRequestFieldExceptionListener;
 use Shopwell\Core\Framework\ContentSystem\Binding\AttributionReconciler;
 use Shopwell\Core\Framework\ContentSystem\Binding\BindingApplicator;
+use Shopwell\Core\Framework\ContentSystem\Binding\DefaultBindingRootSources;
 use Shopwell\Core\Framework\ContentSystem\Binding\DefaultBindingSpecificationSynthesizer;
 use Shopwell\Core\Framework\ContentSystem\Binding\Loader\DatabaseBindingSpecificationLoader;
 use Shopwell\Core\Framework\ContentSystem\Binding\Loader\YamlBindingSpecificationLoader;
@@ -396,10 +397,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(SubTreeExtractor::class);
 
     // Entity Layout Services
-    $services->set(EntityLayoutResolver::class)
-        ->args([
-            param('shopwell.http_cache.ignored_url_parameters'),
-        ]);
+    $services->set(EntityLayoutResolver::class);
     $services->set(EntityLayoutContextFactory::class)
         ->args([
             service(EntityLayoutResolver::class),
@@ -430,7 +428,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     // Rendering Specification Factory
-    $services->set(RenderingSpecificationFactory::class);
+    $services->set(RenderingSpecificationFactory::class)
+        ->args([
+            param('shopwell.http_cache.ignored_url_parameters'),
+        ]);
 
     $services->set(StandaloneLayoutSpecificationSource::class);
 
@@ -712,6 +713,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ContentSystemBindingSpecificationRegistry::class),
             service(DataLoaderProvider::class),
+        ]);
+
+    // Default binding root sources: the picker introspection fold
+    $services->set(DefaultBindingRootSources::class)
+        ->args([
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service(RootSourceRegistry::class),
         ]);
 
     // Root-source authority: the valid set of root sources (entity types + sections + none) and their resolution

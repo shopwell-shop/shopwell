@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Cart\Delivery\Struct;
 
+use Shopwell\Core\Checkout\Cart\PayloadTrait;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Framework\Log\Package;
@@ -10,6 +11,8 @@ use Shopwell\Core\Framework\Struct\Struct;
 #[Package('checkout')]
 class Delivery extends Struct
 {
+    use PayloadTrait;
+
     /**
      * @var list<string>|null
      */
@@ -75,6 +78,14 @@ class Delivery extends Struct
     public function setRuleIds(?array $ruleIds): void
     {
         $this->ruleIds = $ruleIds;
+    }
+
+    public function jsonSerialize(): array
+    {
+        $data = parent::jsonSerialize();
+        $data['payload'] = $this->getUnprotectedPayload();
+
+        return $data;
     }
 
     public function getApiAlias(): string

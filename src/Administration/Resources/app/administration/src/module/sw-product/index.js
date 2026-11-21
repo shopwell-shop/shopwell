@@ -4,6 +4,7 @@
 
 import './acl';
 import defaultSearchConfiguration from './default-search-configuration';
+import ProductStorefrontUrlApiService from './service/product-storefront-url.api.service';
 
 const { Module } = Shopwell;
 
@@ -17,6 +18,10 @@ Shopwell.Component.register(
 Shopwell.Component.register('sw-product-feature-set-form', () => import('./component/sw-product-feature-set-form'));
 Shopwell.Component.register('sw-product-category-form', () => import('./component/sw-product-category-form'));
 Shopwell.Component.register('sw-product-clone-modal', () => import('./component/sw-product-clone-modal'));
+Shopwell.Component.register(
+    'sw-product-open-in-storefront-modal',
+    () => import('./component/sw-product-open-in-storefront-modal'),
+);
 Shopwell.Component.register(
     'sw-product-modal-variant-generation',
     () => import('./component/sw-product-variants/sw-product-modal-variant-generation'),
@@ -112,6 +117,13 @@ Shopwell.Component.register('sw-product-detail-cross-selling', () => import('./v
 Shopwell.Component.register('sw-product-detail-reviews', () => import('./view/sw-product-detail-reviews'));
 Shopwell.Component.register('sw-product-list', () => import('./page/sw-product-list'));
 Shopwell.Component.register('sw-product-detail', () => import('./page/sw-product-detail'));
+Shopwell.Service().register('productStorefrontUrlApiService', () => {
+    return new ProductStorefrontUrlApiService(
+        Shopwell.Application.getContainer('init').httpClient,
+        Shopwell.Service().get('loginService'),
+        Shopwell.Service().get('repositoryFactory'),
+    );
+});
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations

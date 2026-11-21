@@ -1,5 +1,4 @@
-import type { AxiosResponse } from 'axios';
-import type { HttpClient } from 'src/core/factory/http-client.types';
+import type { HttpClient, HttpResponse } from 'src/core/factory/http-client.types';
 import type { LoginService } from 'src/core/service/login.service';
 import type { ContextStore } from 'src/app/store/context.store';
 import type { BasicHeaders } from 'src/core/service/api.service';
@@ -123,7 +122,7 @@ export default class ExtensionStoreActionService extends ApiService {
         this.name = 'extensionStoreActionService';
     }
 
-    public downloadExtension(technicalName: string): Promise<AxiosResponse<void>> {
+    public downloadExtension(technicalName: string): Promise<HttpResponse<void>> {
         return this.httpClient.post(
             `_action/${this.getApiBasePath()}/download/${technicalName}`,
             {},
@@ -134,7 +133,7 @@ export default class ExtensionStoreActionService extends ApiService {
         );
     }
 
-    public installExtension(technicalName: string, type: ExtensionType): Promise<AxiosResponse<void>> {
+    public installExtension(technicalName: string, type: ExtensionType): Promise<HttpResponse<void>> {
         return this.httpClient.post(
             `_action/${this.getApiBasePath()}/install/${type}/${technicalName}`,
             {},
@@ -149,7 +148,7 @@ export default class ExtensionStoreActionService extends ApiService {
         technicalName: string,
         type: ExtensionType,
         allowNewPermissions = false,
-    ): Promise<AxiosResponse<void>> {
+    ): Promise<HttpResponse<void>> {
         return this.httpClient.post(
             `_action/${this.getApiBasePath()}/update/${type}/${technicalName}`,
             { allowNewPermissions },
@@ -160,7 +159,7 @@ export default class ExtensionStoreActionService extends ApiService {
         );
     }
 
-    public activateExtension(technicalName: string, type: ExtensionType): Promise<AxiosResponse<void>> {
+    public activateExtension(technicalName: string, type: ExtensionType): Promise<HttpResponse<void>> {
         return this.httpClient.put(
             `_action/${this.getApiBasePath()}/activate/${type}/${technicalName}`,
             {},
@@ -171,7 +170,7 @@ export default class ExtensionStoreActionService extends ApiService {
         );
     }
 
-    public deactivateExtension(technicalName: string, type: ExtensionType): Promise<AxiosResponse<void>> {
+    public deactivateExtension(technicalName: string, type: ExtensionType): Promise<HttpResponse<void>> {
         return this.httpClient.put(
             `_action/${this.getApiBasePath()}/deactivate/${type}/${technicalName}`,
             {},
@@ -182,11 +181,7 @@ export default class ExtensionStoreActionService extends ApiService {
         );
     }
 
-    public uninstallExtension(
-        technicalName: string,
-        type: ExtensionType,
-        removeData: boolean,
-    ): Promise<AxiosResponse<void>> {
+    public uninstallExtension(technicalName: string, type: ExtensionType, removeData: boolean): Promise<HttpResponse<void>> {
         return this.httpClient.post(
             `_action/${this.getApiBasePath()}/uninstall/${type}/${technicalName}`,
             { keepUserData: !removeData },
@@ -197,7 +192,7 @@ export default class ExtensionStoreActionService extends ApiService {
         );
     }
 
-    public removeExtension(technicalName: string, type: ExtensionType, removeData: boolean): Promise<AxiosResponse<void>> {
+    public removeExtension(technicalName: string, type: ExtensionType, removeData: boolean): Promise<HttpResponse<void>> {
         return this.httpClient.post(
             `_action/${this.getApiBasePath()}/remove/${type}/${technicalName}`,
             { keepUserData: !removeData },
@@ -231,7 +226,7 @@ export default class ExtensionStoreActionService extends ApiService {
         text: string;
         tocAccepted: boolean;
         version: string;
-    }): Promise<AxiosResponse<void>> {
+    }): Promise<HttpResponse<void>> {
         return this.httpClient.post(
             `/license/rate/${extensionId}`,
             { authorName, headline, rating, text, tocAccepted, version },

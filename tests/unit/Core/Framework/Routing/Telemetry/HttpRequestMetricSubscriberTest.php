@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Routing\Telemetry\HttpRequestMetricSubscriber;
 use Shopwell\Core\Framework\Routing\Telemetry\OperationResolver;
 use Shopwell\Core\Framework\Telemetry\Doctrine\QueryCounter;
 use Shopwell\Core\Framework\Telemetry\Doctrine\QueryCountMiddleware;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\Test\Stub\Telemetry\CollectingMeter;
@@ -225,10 +226,14 @@ class HttpRequestMetricSubscriberTest extends TestCase
         $connection = static::createStub(Connection::class);
         $connection->method('getConfiguration')->willReturn($configuration);
 
+        $mappings = new LabelMappingRegistry([
+            DomainResolver::MAPPING_ROUTE_DOMAIN => ['frontend.detail*' => 'product', 'frontend.content*' => 'content', 'store-api.product*' => 'product'],
+        ], 'other');
+
         return new HttpRequestMetricSubscriber(
             new Telemetry($this->meter, 'test'),
             new AreaResolver(),
-            new DomainResolver(new EntityGroupResolver()),
+            new DomainResolver($mappings, new EntityGroupResolver($mappings)),
             new OperationResolver(),
             $connection,
         );

@@ -25,7 +25,7 @@ class InterfaceTranslationCatalogTest extends TestCase
         $root = \dirname(__DIR__, 5);
         $snippetDirectory = $root . '/src/Administration/Resources/app/administration/src/module/sw-experience-studio/snippet/';
         $english = json_decode((string) file_get_contents($snippetDirectory . 'en.json'), true, 512, \JSON_THROW_ON_ERROR);
-        $german = json_decode((string) file_get_contents($snippetDirectory . 'de.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $chinese = json_decode((string) file_get_contents($snippetDirectory . 'zh.json'), true, 512, \JSON_THROW_ON_ERROR);
         $base = $root . '/src/Core/Framework/ContentSystem/Layout/';
         $directories = [
             'elements' => 'Type/Definitions',
@@ -39,13 +39,13 @@ class InterfaceTranslationCatalogTest extends TestCase
             foreach ($files as $file) {
                 $data = Yaml::parseFile($file->getPathname(), Yaml::PARSE_CUSTOM_TAGS);
                 if ($kind === 'elements') {
-                    $this->assertText($data['meta'], 'label', $english, $german);
-                    $this->assertProperties($data['properties'] ?? [], $english, $german);
+                    $this->assertText($data['meta'], 'label', $english, $chinese);
+                    $this->assertProperties($data['properties'] ?? [], $english, $chinese);
                 } elseif ($kind === 'presets') {
-                    $this->assertText($data, 'name', $english, $german);
-                    $this->assertText($data, 'description', $english, $german);
+                    $this->assertText($data, 'name', $english, $chinese);
+                    $this->assertText($data, 'description', $english, $chinese);
                 } else {
-                    $this->assertAdminUi($data['adminUI'] ?? [], $english, $german);
+                    $this->assertAdminUi($data['adminUI'] ?? [], $english, $chinese);
                 }
                 ++$count;
             }
@@ -54,12 +54,12 @@ class InterfaceTranslationCatalogTest extends TestCase
         static::assertGreaterThan(0, $count);
         $used = array_values(array_unique($this->usedKeys));
         $englishKeys = $this->catalogKeys($english['sw-experience-studio']);
-        $germanKeys = $this->catalogKeys($german['sw-experience-studio']);
+        $chineseKeys = $this->catalogKeys($chinese['sw-experience-studio']);
         sort($used);
         sort($englishKeys);
-        sort($germanKeys);
+        sort($chineseKeys);
         static::assertSame($used, $englishKeys, 'English snippet references contain missing or stale keys.');
-        static::assertSame($used, $germanKeys, 'German snippet references contain missing or stale keys.');
+        static::assertSame($used, $chineseKeys, 'Chinese snippet references contain missing or stale keys.');
     }
 
     /**
@@ -107,9 +107,9 @@ class InterfaceTranslationCatalogTest extends TestCase
     /**
      * @param array<string, mixed> $properties
      * @param array<string, mixed> $english
-     * @param array<string, mixed> $german
+     * @param array<string, mixed> $chinese
      */
-    private function assertProperties(array $properties, array $english, array $german): void
+    private function assertProperties(array $properties, array $english, array $chinese): void
     {
         foreach ($properties as $property) {
             if (($property['adminUI']['component'] ?? null) === 'select' && isset($property['enum'])) {
@@ -120,28 +120,28 @@ class InterfaceTranslationCatalogTest extends TestCase
                 }
             }
 
-            $this->assertText($property, 'title', $english, $german);
-            $this->assertAdminUi($property['adminUI'] ?? [], $english, $german);
-            $this->assertProperties($property['properties'] ?? [], $english, $german);
+            $this->assertText($property, 'title', $english, $chinese);
+            $this->assertAdminUi($property['adminUI'] ?? [], $english, $chinese);
+            $this->assertProperties($property['properties'] ?? [], $english, $chinese);
         }
     }
 
     /**
      * @param array<string, mixed> $adminUi
      * @param array<string, mixed> $english
-     * @param array<string, mixed> $german
+     * @param array<string, mixed> $chinese
      */
-    private function assertAdminUi(array $adminUi, array $english, array $german): void
+    private function assertAdminUi(array $adminUi, array $english, array $chinese): void
     {
         foreach (['label', 'description', 'helpText'] as $field) {
             if (isset($adminUi[$field])) {
-                $this->assertText($adminUi, $field, $english, $german);
+                $this->assertText($adminUi, $field, $english, $chinese);
             }
         }
         foreach ($adminUi['props']['options'] ?? [] as $option) {
             foreach (['label', 'description'] as $field) {
                 if (isset($option[$field])) {
-                    $this->assertText($option, $field, $english, $german);
+                    $this->assertText($option, $field, $english, $chinese);
                 }
             }
         }
@@ -150,16 +150,16 @@ class InterfaceTranslationCatalogTest extends TestCase
     /**
      * @param array<string, mixed> $metadata
      * @param array<string, mixed> $english
-     * @param array<string, mixed> $german
+     * @param array<string, mixed> $chinese
      */
-    private function assertText(array $metadata, string $field, array $english, array $german): void
+    private function assertText(array $metadata, string $field, array $english, array $chinese): void
     {
         static::assertArrayHasKey($field . 'Snippet', $metadata, 'Missing snippet reference for ' . $metadata[$field]);
         $key = $metadata[$field . 'Snippet'];
         static::assertIsString($key);
         $this->usedKeys[] = $key;
         $en = $english;
-        $de = $german;
+        $de = $chinese;
         foreach (explode('.', $key) as $part) {
             static::assertIsArray($en, $key);
             static::assertIsArray($de, $key);

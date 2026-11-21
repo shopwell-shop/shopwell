@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\WebhookCollection;
 use Shopwell\Core\System\Locale\LocaleEntity;
@@ -79,6 +80,9 @@ class UserEntity extends Entity
 
     protected ?ImportExportLogCollection $importExportLogEntries = null;
 
+    /**
+     * @deprecated tag:v6.8.0 - The recoveryUser association was removed.
+     */
     protected ?UserRecoveryEntity $recoveryUser = null;
 
     /**
@@ -266,13 +270,23 @@ class UserEntity extends Entity
         $this->configs = $configs;
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - The recoveryUser association was removed.
+     */
     public function getRecoveryUser(): ?UserRecoveryEntity
     {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', 'The recoveryUser association was removed.');
+
         return $this->recoveryUser;
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - The recoveryUser association was removed.
+     */
     public function setRecoveryUser(UserRecoveryEntity $recoveryUser): void
     {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', 'The recoveryUser association was removed.');
+
         $this->recoveryUser = $recoveryUser;
     }
 

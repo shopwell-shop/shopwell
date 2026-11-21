@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\Webhook\Authorization\Subscription;
 
 use Shopwell\Core\Framework\Api\Acl\ApiCaller;
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -16,7 +17,7 @@ use Shopwell\Core\Framework\Log\Package;
 final class Subscriber
 {
     private function __construct(
-        public readonly SubscriberType $type,
+        public readonly ?IdentityType $type,
         public readonly ?Manifest $manifest,
     ) {
     }
@@ -26,7 +27,7 @@ final class Subscriber
      */
     public static function app(Manifest $manifest): self
     {
-        return new self(SubscriberType::App, $manifest);
+        return new self(IdentityType::App, $manifest);
     }
 
     /**
@@ -34,7 +35,7 @@ final class Subscriber
      */
     public static function api(ApiCaller $caller): self
     {
-        return new self(SubscriberType::of($caller), null);
+        return new self($caller->type, null);
     }
 
     /**
@@ -42,6 +43,6 @@ final class Subscriber
      */
     public static function none(): self
     {
-        return new self(SubscriberType::None, null);
+        return new self(null, null);
     }
 }

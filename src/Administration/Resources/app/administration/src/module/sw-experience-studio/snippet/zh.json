@@ -940,6 +940,45 @@
                 "title": {
                     "title": "标题"
                 }
+            },
+            "revocation-request": {
+                "label": "撤回申请表单",
+                "title": {
+                    "title": "标题"
+                },
+                "genders": {
+                    "title": "性别选项"
+                }
+            },
+            "newsletter": {
+                "label": "订阅表单",
+                "title": {
+                    "title": "标题"
+                },
+                "genders": {
+                    "title": "性别选项"
+                }
+            },
+            "contact": {
+                "label": "联系表单",
+                "title": {
+                    "title": "标题"
+                },
+                "genders": {
+                    "title": "性别选项"
+                }
+            },
+            "page-not-found": {
+                "label": "页面未找到",
+                "title": {
+                    "title": "标题"
+                }
+            },
+            "garan-label": {
+                "label": "商品 GARAN 标签",
+                "product": {
+                    "title": "商品"
+                }
             }
         },
         "list": {
@@ -1023,7 +1062,9 @@
                 "missingEntityContext": "此布局尚未分配给商品、分类或落地页。",
                 "noElements": "预览已加载，但未返回顶层元素。",
                 "emptySlot": "此插槽暂无元素。",
-                "errorLoad": "无法加载预览。"
+                "errorLoad": "无法加载预览。",
+                "errorUpdate": "预览更新失败，目前仍显示旧版本。",
+                "retry": "重试"
             },
             "elementSettings": {
                 "title": "元素设置",
@@ -1102,7 +1143,8 @@
                 "targetNotFound": "所选元素已不可用，请选择现有元素再编辑。",
                 "unknownElementType": "此元素类型已不可用，请选择可用的类型。",
                 "invalidStructure": "当前布局结构不支持此操作，请检查所选元素及其位置。",
-                "generic": "无法应用布局修改，请检查修改内容或联系管理员。"
+                "generic": "无法应用布局修改，请检查修改内容或联系管理员。",
+                "bindingRootSourceNotScoped": "此布局类型不支持该元素，请选择其他元素或预设。"
             },
             "messageSaved": "内容布局已保存。",
             "messageSaveError": "无法保存内容布局。",

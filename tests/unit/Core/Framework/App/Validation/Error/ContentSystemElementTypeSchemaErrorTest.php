@@ -7,6 +7,7 @@ use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Validation\Error\ContentSystemElementTypeSchemaError;
+use Shopwell\Core\Framework\App\Validation\Error\Severity;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -21,6 +22,7 @@ class ContentSystemElementTypeSchemaErrorTest extends TestCase
     {
         $error = new ContentSystemElementTypeSchemaError('/path/to/types', 'YAML syntax invalid');
 
+        static::assertSame(Severity::Fail, $error->getSeverity());
         static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
         static::assertSame([], $error->getParameters());
         static::assertSame('Invalid element type schema in "/path/to/types": YAML syntax invalid', $error->getMessage());

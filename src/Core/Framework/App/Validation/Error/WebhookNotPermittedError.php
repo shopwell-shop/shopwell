@@ -2,42 +2,49 @@
 
 namespace Shopwell\Core\Framework\App\Validation\Error;
 
-use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
  * @internal only for use by the app-system
  *
  * @codeCoverageIgnore
+ *
+ * @see \Shopwell\Tests\Integration\Core\Framework\App\Validation\HookableValidatorTest
  */
 #[Package('framework')]
 class WebhookNotPermittedError implements Error
 {
-    private readonly string $message;
+    public const CODE = 'FRAMEWORK__APP_WEBHOOK_NOT_PERMITTED';
 
     /**
-     * @param list<string> $violations
+     * @param array<string, string> $webhooks
      */
-    public function __construct(array $violations)
+    public function __construct(private readonly array $webhooks)
     {
-        $this->message = \sprintf(
-            "This app is not permitted to subscribe to the following webhooks:\n- %s",
-            implode("\n- ", $violations)
-        );
     }
 
     public function getMessage(): string
     {
-        return $this->message;
+        $webhooks = [];
+        foreach ($this->webhooks as $name => $event) {
+            $webhooks[] = \sprintf('%s (%s)', $name, $event);
+        }
+
+        return \sprintf('Webhooks not permitted: %s', implode(', ', $webhooks));
     }
 
     public function getErrorCode(): string
     {
-        return AppException::VALIDATION_FAILED;
+        return self::CODE;
     }
 
     public function getParameters(): array
     {
         return [];
+    }
+
+    public function getSeverity(): Severity
+    {
+        return Severity::Fail;
     }
 }

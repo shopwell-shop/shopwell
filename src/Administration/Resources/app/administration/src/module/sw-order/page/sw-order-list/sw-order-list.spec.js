@@ -1,3 +1,4 @@
+import { allowDeprecation } from 'test/_helper_/deprecations';
 import { config, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import EntityCollection from 'src/core/data/entity-collection.data';
@@ -181,6 +182,10 @@ async function renderOrder(order, showAddress = false) {
 
 describe('src/module/sw-order/page/sw-order-list', () => {
     beforeEach(() => {
+        allowDeprecation('sw-order-list.filterSelectCriteria is deprecated');
+        allowDeprecation('sw-order-list.getDelivery() is deprecated');
+        allowDeprecation('sw-order-list.transaction() is deprecated');
+        allowDeprecation('sw-order-list.getTransactionState() is deprecated');
         global.activeAclRoles = [];
     });
     afterEach(() => {
@@ -383,14 +388,27 @@ describe('src/module/sw-order/page/sw-order-list', () => {
     });
 
     it.activeFeatureFlags(['v6.8.0.0'])('should ignore fallback deliveries and transactions', async () => {
-        const { wrapper } = await renderOrder({
-            primaryOrderDelivery: null,
-            primaryOrderTransaction: null,
-            deliveries: [state('shipped', 'Fallback Shipped')],
-            transactions: createTransactionCollection([state('paid', 'Fallback Paid')]),
-        });
-        expect(wrapper.text()).not.toContain('Fallback Shipped');
-        expect(wrapper.text()).not.toContain('Fallback Paid');
+        const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        try {
+            const { wrapper } = await renderOrder({
+                primaryOrderDelivery: null,
+                primaryOrderTransaction: null,
+                deliveries: [state('shipped', 'Fallback Shipped')],
+                transactions: createTransactionCollection([state('paid', 'Fallback Paid')]),
+            });
+            expect(wrapper.text()).not.toContain('Fallback Shipped');
+            expect(wrapper.text()).not.toContain('Fallback Paid');
+            expect(error).toHaveBeenCalled();
+            error.mock.calls.forEach(([label, message]) => {
+                expect(label).toBe('[Deprecation]');
+                expect(message).toMatch(
+                    /^sw-order-list\.(getDelivery|getDeliveryState|transaction|getTransactionState)\(\) is deprecated/,
+                );
+            });
+        } finally {
+            error.mockRestore();
+        }
     });
 
     if (!Shopwell.Feature.isActive('v6.8.0.0')) {

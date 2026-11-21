@@ -30,6 +30,11 @@ class OrderTransactionEntity extends Entity
 
     protected CalculatedPrice $amount;
 
+    /**
+     * @var array<string, scalar|array<array-key, mixed>|null>
+     */
+    protected array $payload = [];
+
     protected ?PaymentMethodEntity $paymentMethod = null;
 
     protected ?OrderEntity $order = null;
@@ -173,5 +178,21 @@ class OrderTransactionEntity extends Entity
     public function setPaymentOrders(PaymentOrderCollection $paymentOrders): void
     {
         $this->paymentOrders = $paymentOrders;
+    }
+
+    /**
+     * @return array<string, scalar|array<array-key, mixed>|null>
+     */
+    public function getPayload(): array
+    {
+        return $this->payload;
+    }
+
+    /**
+     * @param array<string, scalar|array<array-key, mixed>|null> $payload
+     */
+    public function setPayload(array $payload): void
+    {
+        $this->payload = $payload;
     }
 }

@@ -1295,7 +1295,8 @@
             }
         },
         "sw-page": {
-            "backButton": "返回"
+            "backButton": "返回",
+            "backButtonTo": "返回{title}"
         },
         "mediaUploadCaption": "上传图片",
         "sw-tree-select": {

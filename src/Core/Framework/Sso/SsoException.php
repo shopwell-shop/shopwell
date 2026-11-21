@@ -2,6 +2,8 @@
 
 namespace Shopwell\Core\Framework\Sso;
 
+use League\OAuth2\Server\Exception\OAuthServerException;
+use Shopwell\Core\Framework\Api\ApiException;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Api\Context\ContextSource;
 use Shopwell\Core\Framework\Api\Context\Exception\InvalidContextSourceException;
@@ -63,6 +65,11 @@ class SsoException extends HttpException
             self::OAUTH2_USER_NOT_LOGGED_IN,
             'For this interaction an authenticated user login is required.'
         );
+    }
+
+    public static function refreshTokenResourceMismatch(): OAuthServerException
+    {
+        return ApiException::oauthInvalidTarget('The resource does not match the original grant.');
     }
 
     public static function mailTemplateNotFound(): self

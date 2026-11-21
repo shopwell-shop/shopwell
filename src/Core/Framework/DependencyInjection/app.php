@@ -156,6 +156,7 @@ use Shopwell\Core\Framework\App\Url\AppUrlVerificationPrinter;
 use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\App\Validation\AppNameValidator;
 use Shopwell\Core\Framework\App\Validation\AppRequirementsValidator;
+use Shopwell\Core\Framework\App\Validation\AppValidator;
 use Shopwell\Core\Framework\App\Validation\CompatibilityValidator;
 use Shopwell\Core\Framework\App\Validation\ConfigValidator;
 use Shopwell\Core\Framework\App\Validation\ContentSystemBindingSpecificationAppValidator;
@@ -163,7 +164,6 @@ use Shopwell\Core\Framework\App\Validation\ContentSystemElementTypeAppValidator;
 use Shopwell\Core\Framework\App\Validation\ContentSystemLayoutPresetAppValidator;
 use Shopwell\Core\Framework\App\Validation\ContentSystemStyleOptionAppValidator;
 use Shopwell\Core\Framework\App\Validation\HookableValidator;
-use Shopwell\Core\Framework\App\Validation\ManifestValidator;
 use Shopwell\Core\Framework\App\Validation\Requirements\PublicAccess;
 use Shopwell\Core\Framework\App\Validation\Requirements\SecureUrlValidator;
 use Shopwell\Core\Framework\App\Validation\TranslationValidator;
@@ -263,7 +263,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.app_manifest.validator');
 
-    $services->set(ManifestValidator::class)
+    $services->set(AppValidator::class)
         ->args([
             tagged_iterator('shopwell.app_manifest.validator'),
         ]);
@@ -281,6 +281,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.app_manifest.validator');
 
+    $services->set(CompatibilityValidator::class)
+        ->args([
+            param('kernel.shopwell_version'),
+        ])
+        ->tag('shopwell.app_manifest.validator');
+
+    $services->set(AppRequirementsValidator::class)
+        ->args([
+            tagged_iterator('app.requirements_validator'),
+            service('logger'),
+            param('kernel.environment'),
+        ])
+        ->tag('shopwell.app_manifest.validator');
+
     $services->set(SecureUrlValidator::class);
 
     $services->set(PublicAccess::class)
@@ -290,18 +304,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('app.requirements_validator')
         ->tag('kernel.reset', ['method' => 'reset']);
-
-    $services->set(AppRequirementsValidator::class)
-        ->args([
-            tagged_iterator('app.requirements_validator'),
-            service('logger'),
-            param('kernel.environment'),
-        ]);
-
-    $services->set(CompatibilityValidator::class)
-        ->args([
-            param('kernel.shopwell_version'),
-        ]);
 
     $services->set(PermissionLifecycleService::class)
         ->args([
@@ -675,19 +677,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ActiveAppsLoader::class),
             service('language.repository'),
             service(SystemConfigService::class),
-            service(ConfigValidator::class),
             service('integration.repository'),
             service('acl_role.repository'),
             service(AssetService::class),
             service(ScriptExecutor::class),
             param('kernel.project_dir'),
             service(CustomEntityLifecycleService::class),
-            service(CompatibilityValidator::class),
             service(AppFeatureValidator::class),
             service(SourceResolver::class),
             service(ConfigReader::class),
             service(DeletedAppsGateway::class),
-            service(AppRequirementsValidator::class),
+            service(AppValidator::class),
             service(ClockInterface::class),
         ]);
 
@@ -896,7 +896,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(AppService::class),
             service(AppPrinter::class),
-            service(ManifestValidator::class),
         ])
         ->tag('console.command');
 
@@ -905,7 +904,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AppLoader::class),
             service(AppLifecycle::class),
             service(AppPrinter::class),
-            service(ManifestValidator::class),
         ])
         ->tag('console.command');
 
@@ -940,7 +938,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ValidateAppCommand::class)
         ->args([
             param('shopwell.app_dir'),
-            service(ManifestValidator::class),
+            service(AppValidator::class),
         ])
         ->tag('console.command');
 

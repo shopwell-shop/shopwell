@@ -3,6 +3,8 @@
 namespace Shopwell\Core\Framework\Mcp\Resource;
 
 use Mcp\Capability\Attribute\McpResource;
+use Mcp\Schema\Result\ReadResourceResult;
+use Mcp\Server\RequestContext;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
@@ -28,10 +30,7 @@ class BusinessEventsResource
     ) {
     }
 
-    /**
-     * @return array{uri: string, mimeType: string, text: string}
-     */
-    public function __invoke(): array
+    public function __invoke(?RequestContext $requestContext = null): ReadResourceResult
     {
         $context = $this->contextProvider->getContext();
         $result = $this->collector->collect($context);
@@ -45,10 +44,10 @@ class BusinessEventsResource
             ];
         }
 
-        return [
+        return McpResourceCacheHint::read([
             'uri' => 'shopwell://business-events',
             'mimeType' => 'application/json',
             'text' => Json::encode($events),
-        ];
+        ], $requestContext, McpResourceCacheHint::SHOP_CONFIGURATION_TTL_MS);
     }
 }

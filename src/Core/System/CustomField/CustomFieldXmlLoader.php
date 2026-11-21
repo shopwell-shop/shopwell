@@ -3,8 +3,8 @@
 namespace Shopwell\Core\System\CustomField;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\XmlParser;
 use Shopwell\Core\System\CustomField\Xml\CustomFields;
-use Symfony\Component\Config\Util\XmlUtils;
 
 /**
  * @internal
@@ -16,7 +16,7 @@ class CustomFieldXmlLoader
 
     public static function load(string $xmlFile): CustomFields
     {
-        $doc = XmlUtils::loadFile($xmlFile, self::XSD_FILE);
+        $doc = XmlParser::loadFile($xmlFile, self::XSD_FILE);
 
         $customFields = $doc->getElementsByTagName('custom-fields')->item(0);
         \assert($customFields instanceof \DOMElement);

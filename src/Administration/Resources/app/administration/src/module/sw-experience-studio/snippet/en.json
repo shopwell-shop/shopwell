@@ -940,6 +940,45 @@
                 "title": {
                     "title": "Title"
                 }
+            },
+            "revocation-request": {
+                "label": "Revocation request form",
+                "title": {
+                    "title": "Title"
+                },
+                "genders": {
+                    "title": "Genders"
+                }
+            },
+            "newsletter": {
+                "label": "Newsletter form",
+                "title": {
+                    "title": "Title"
+                },
+                "genders": {
+                    "title": "Genders"
+                }
+            },
+            "contact": {
+                "label": "Contact form",
+                "title": {
+                    "title": "Title"
+                },
+                "genders": {
+                    "title": "Genders"
+                }
+            },
+            "page-not-found": {
+                "label": "Page Not Found",
+                "title": {
+                    "title": "Title"
+                }
+            },
+            "garan-label": {
+                "label": "Product GARAN Label",
+                "product": {
+                    "title": "Product"
+                }
             }
         },
         "list": {
@@ -1023,7 +1062,9 @@
                 "missingEntityContext": "This layout is not assigned to a product, category, or landing page yet.",
                 "noElements": "The preview loaded, but no root elements were returned.",
                 "emptySlot": "No elements in this slot.",
-                "errorLoad": "Preview could not be loaded."
+                "errorLoad": "Preview could not be loaded.",
+                "errorUpdate": "The preview could not be updated. It still shows an earlier version.",
+                "retry": "Retry"
             },
             "elementSettings": {
                 "title": "Element settings",
@@ -1102,7 +1143,8 @@
                 "targetNotFound": "The selected element is no longer available. Select an existing element before editing it.",
                 "unknownElementType": "This element type is no longer available. Choose an available element type.",
                 "invalidStructure": "This change is not valid for the current layout structure. Review the selected elements and their positions.",
-                "generic": "The layout edit could not be applied. Review your changes or contact your administrator."
+                "generic": "The layout edit could not be applied. Review your changes or contact your administrator.",
+                "bindingRootSourceNotScoped": "This element is not available for this layout type. Choose a different element or preset."
             },
             "messageSaved": "Content layout saved successfully.",
             "messageSaveError": "The content layout could not be saved.",

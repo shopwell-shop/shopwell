@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\App\Lifecycle\AppManager;
 use Shopwell\Core\Framework\App\Manifest\ManifestFactory;
 use Shopwell\Core\Framework\App\Privileges\Privileges;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Notification\NotificationService;
 use Shopwell\Core\Framework\Store\Services\AbstractExtensionDataProvider;
 use Shopwell\Core\Framework\Store\Services\FirstRunWizardService;
@@ -287,7 +288,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ServiceWriteProtectionSubscriber::class)
         ->args([
-            service(Connection::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 

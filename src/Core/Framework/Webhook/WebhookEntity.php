@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\Webhook;
 
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\App\AppEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -36,6 +37,11 @@ class WebhookEntity extends Entity
     protected ?string $ownerIntegrationId = null;
 
     protected ?IntegrationEntity $ownerIntegration = null;
+
+    /**
+     * @internal
+     */
+    protected ?IdentityType $ownerType = null;
 
     protected bool $active;
 
@@ -146,6 +152,22 @@ class WebhookEntity extends Entity
     public function setOwnerIntegration(?IntegrationEntity $ownerIntegration): void
     {
         $this->ownerIntegration = $ownerIntegration;
+    }
+
+    /**
+     * @internal
+     */
+    public function getOwnerType(): ?IdentityType
+    {
+        return $this->ownerType;
+    }
+
+    /**
+     * @internal
+     */
+    public function setOwnerType(?IdentityType $ownerType): void
+    {
+        $this->ownerType = $ownerType;
     }
 
     public function isActive(): bool

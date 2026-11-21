@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\System\CustomField;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\UtilException;
 use Shopwell\Core\System\CustomField\CustomFieldXmlLoader;
 
 /**
@@ -46,9 +47,11 @@ class CustomFieldXmlLoaderTest extends TestCase
 
     public function testLoadInvalidFileThrows(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $file = __DIR__ . '/_fixtures/nonexistent.xml';
 
-        CustomFieldXmlLoader::load(__DIR__ . '/_fixtures/nonexistent.xml');
+        $this->expectExceptionObject(UtilException::xmlParsingFailed(\sprintf('Resource "%s" is not a file.', $file)));
+
+        CustomFieldXmlLoader::load($file);
     }
 
     public function testToEntityArrayWithoutAppId(): void

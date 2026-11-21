@@ -5,7 +5,7 @@ namespace Shopwell\Core\DevOps\Test\Command;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\Collection;
 use Shopwell\Core\Framework\Struct\Struct;
-use Symfony\Component\Config\Util\XmlUtils;
+use Shopwell\Core\Framework\Util\XmlParser;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -187,7 +187,7 @@ class MakeCoverageTestCommand extends Command
      */
     private function readSourceExcludes(string $configurationPath): array
     {
-        $xpath = new \DOMXPath(XmlUtils::loadFile($configurationPath));
+        $xpath = new \DOMXPath(XmlParser::loadFile($configurationPath));
         $configurationDir = \dirname($configurationPath);
 
         $directories = [];

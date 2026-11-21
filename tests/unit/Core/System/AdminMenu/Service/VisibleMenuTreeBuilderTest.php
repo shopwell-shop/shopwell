@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Acl\AclRoles;
+use Shopwell\Core\Framework\Api\Acl\IdentityRoleMap;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleEntity;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
@@ -80,6 +81,16 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         $navigation = $this->createBuilder([], $registry, ['role-a'], $this->createRoles('role-a'))
             ->buildNavigation($this->createUserContext());
+
+        static::assertSame([], $navigation['menu']);
+        static::assertFalse($navigation['allowUnmanaged']);
+    }
+
+    public function testUnrestrictedIntegrationWithSameIdDoesNotUnrestrictUser(): void
+    {
+        $registry = $this->createRegistry(new AdminMenuDefinitionStruct('finance'));
+
+        $navigation = $this->createBuilder([], $registry, [])->buildNavigation($this->createUserContext());
 
         static::assertSame([], $navigation['menu']);
         static::assertFalse($navigation['allowUnmanaged']);
@@ -400,9 +411,10 @@ class VisibleMenuTreeBuilderTest extends TestCase
     private function createBuilder(array $items, AdminMenuRouteRegistry $registry, ?array $roleIds = null, ?AclRoleCollection $roles = null): VisibleMenuTreeBuilder
     {
         $roleLoader = static::createStub(AclRoleLoader::class);
-        $roleLoader->method('getUserRoles')->willReturn([
-            self::USER_ID => new AclRoles(false, $roleIds ?? []),
-        ]);
+        $roleLoader->method('getRoles')->willReturn(new IdentityRoleMap(
+            [self::USER_ID => new AclRoles(false, $roleIds ?? [])],
+            [self::USER_ID => new AclRoles(true, [])],
+        ));
 
         return new VisibleMenuTreeBuilder(
             StaticEntityRepository::of(AdminMenuItemCollection::class, [new AdminMenuItemCollection($items)]),

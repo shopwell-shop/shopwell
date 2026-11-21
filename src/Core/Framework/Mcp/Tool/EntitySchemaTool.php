@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\Mcp\Tool;
 
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
@@ -19,7 +20,9 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
+use Shopwell\Core\Framework\Mcp\Attribute\McpToolRequiresNoPrivilege;
 use Shopwell\Core\Framework\Mcp\Result\McpToolError;
+use Shopwell\Core\Framework\Mcp\Result\McpToolResult;
 
 /**
  * @experimental stableVersion:v6.8.0
@@ -28,9 +31,11 @@ use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 #[McpTool(
     name: 'shopwell-entity-schema',
     title: 'Entity Schema',
+    annotations: new ToolAnnotations(readOnlyHint: true, openWorldHint: false),
     description: 'Get the field and association schema of a Shopwell entity definition: field names, types, and associations for building shopwell-entity-search criteria. Many-to-many associations name their mappingEntity (e.g. "product_category"), which shopwell-entity-delete uses to remove a link. Returns {success, data: {fields: [...], associations: [...]}}. See shopwell://entities resource for all available entity names.'
 )]
 #[McpToolGroup('entity')]
+#[McpToolRequiresNoPrivilege(reason: 'Reads entity definitions only, never a repository.')]
 class EntitySchemaTool extends McpToolResponse
 {
     /**
@@ -41,10 +46,10 @@ class EntitySchemaTool extends McpToolResponse
     ) {
     }
 
-    public function __invoke(string $entity): string
+    public function __invoke(string $entity): McpToolResult
     {
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity), McpToolError::INVALID_ARGUMENTS);
+            return $this->errorResult(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity), McpToolError::INVALID_ARGUMENTS);
         }
 
         $definition = $this->registry->getByEntityName($entity);
@@ -95,7 +100,7 @@ class EntitySchemaTool extends McpToolResponse
             ];
         }
 
-        return $this->success([
+        return $this->successResult([
             'entity' => $entity,
             'fields' => $fields,
             'associations' => $associations,

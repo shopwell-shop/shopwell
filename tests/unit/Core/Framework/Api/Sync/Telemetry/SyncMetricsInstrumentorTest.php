@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Api\Sync\SyncResult;
 use Shopwell\Core\Framework\Api\Sync\Telemetry\SyncMetricsInstrumentor;
 use Shopwell\Core\Framework\DataAbstractionLayer\Telemetry\EntityGroupResolver;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Metrics\Metric\ConfiguredMetric;
 use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Test\Stub\Telemetry\CollectingMeter;
@@ -162,7 +163,7 @@ class SyncMetricsInstrumentorTest extends TestCase
     {
         $this->meter = new CollectingMeter();
 
-        return new SyncMetricsInstrumentor(new Telemetry($this->meter, 'test'), new EntityGroupResolver());
+        return new SyncMetricsInstrumentor(new Telemetry($this->meter, 'test'), new EntityGroupResolver(new LabelMappingRegistry([EntityGroupResolver::MAPPING => ['product' => 'product', 'product_*' => 'product', 'order' => 'order']], 'other')));
     }
 
     private function operation(string $entity): SyncOperation

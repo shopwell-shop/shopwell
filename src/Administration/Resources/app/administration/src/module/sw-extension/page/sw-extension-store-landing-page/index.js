@@ -41,6 +41,11 @@ export default {
 
         /** @deprecated tag:v6.9.0 - Will be removed, use Shopwell.Filter.getByName('asset') instead. */
         assetFilter() {
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_9_0_0',
+                "sw-extension-store-landing-page.assetFilter is deprecated. Use Shopwell.Filter.getByName('asset') instead.",
+            );
+
             return Shopwell.Filter.getByName('asset');
         },
     },

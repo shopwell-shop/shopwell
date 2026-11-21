@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\XmlParser;
 use Shopwell\Core\System\CustomEntity\CustomEntityException;
 use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\AdminUi;
-use Symfony\Component\Config\Util\XmlUtils;
 
 /**
  * @internal
@@ -25,7 +25,7 @@ final readonly class AdminUiXmlSchema
     public static function createFromXmlFile(string $xmlFilePath): self
     {
         try {
-            $doc = XmlUtils::loadFile($xmlFilePath, self::XSD_FILEPATH);
+            $doc = XmlParser::loadFile($xmlFilePath, self::XSD_FILEPATH);
         } catch (\Exception $e) {
             throw CustomEntityException::xmlParsingException($xmlFilePath, $e->getMessage());
         }

@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Framework\Api\Acl;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\ApiCaller;
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Api\Context\SystemSource;
 use Shopwell\Core\Framework\Log\Package;
@@ -22,7 +23,7 @@ class ApiCallerTest extends TestCase
         $caller = ApiCaller::of(new AdminApiSource('user-id'));
 
         static::assertNotNull($caller);
-        static::assertSame(ApiCaller::USER, $caller->type);
+        static::assertSame(IdentityType::User, $caller->type);
         static::assertSame('user-id', $caller->id);
     }
 
@@ -31,7 +32,7 @@ class ApiCallerTest extends TestCase
         $caller = ApiCaller::of(new AdminApiSource(null, 'integration-id'));
 
         static::assertNotNull($caller);
-        static::assertSame(ApiCaller::INTEGRATION, $caller->type);
+        static::assertSame(IdentityType::Integration, $caller->type);
         static::assertSame('integration-id', $caller->id);
     }
 
@@ -40,7 +41,19 @@ class ApiCallerTest extends TestCase
         $caller = ApiCaller::of(new AdminApiSource(Uuid::randomHex(), 'integration-id'));
 
         static::assertNotNull($caller);
-        static::assertSame(ApiCaller::INTEGRATION, $caller->type);
+        static::assertSame(IdentityType::Integration, $caller->type);
+        static::assertSame('integration-id', $caller->id);
+    }
+
+    public function testAnAppCallingThroughItsIntegrationIsTheAppsIntegration(): void
+    {
+        $source = new AdminApiSource(null, 'integration-id');
+        $source->setAppId('app-id');
+
+        $caller = ApiCaller::of($source);
+
+        static::assertNotNull($caller);
+        static::assertSame(IdentityType::AppIntegration, $caller->type);
         static::assertSame('integration-id', $caller->id);
     }
 

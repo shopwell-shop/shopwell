@@ -23,6 +23,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Deprecation\BCChange\ParameterTypeWidening;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Language\LanguageEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateCollection;
@@ -160,6 +161,9 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?PromotionCollection $promotions = null;
 
+    /**
+     * @deprecated tag:v6.8.0 - The recoveryCustomer association was removed.
+     */
     protected ?CustomerRecoveryEntity $recoveryCustomer = null;
 
     protected ?ProductReviewCollection $productReviews = null;
@@ -722,13 +726,23 @@ class CustomerEntity extends Entity implements \Stringable
         $this->productReviews = $productReviews;
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - The recoveryCustomer association was removed.
+     */
     public function getRecoveryCustomer(): ?CustomerRecoveryEntity
     {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', 'The recoveryCustomer association was removed.');
+
         return $this->recoveryCustomer;
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - The recoveryCustomer association was removed.
+     */
     public function setRecoveryCustomer(?CustomerRecoveryEntity $recoveryCustomer): void
     {
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', 'The recoveryCustomer association was removed.');
+
         $this->recoveryCustomer = $recoveryCustomer;
     }
 

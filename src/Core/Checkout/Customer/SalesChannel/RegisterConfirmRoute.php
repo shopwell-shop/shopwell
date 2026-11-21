@@ -22,6 +22,7 @@ use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
+use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -107,6 +108,7 @@ class RegisterConfirmRoute extends AbstractRegisterConfirmRoute
                 'customerId' => $customer->getId(),
                 'billingAddressId' => null,
                 'shippingAddressId' => null,
+                SalesChannelContextService::PROSPECTIVE_CUSTOMER => null,
             ],
             $context->getSalesChannelId(),
             $customer->getId()

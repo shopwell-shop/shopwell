@@ -14,6 +14,7 @@ use Shopwell\Core\Checkout\Order\Telemetry\OrderMetricsSubscriber;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\System\SalesChannel\Telemetry\SalesChannelTypeResolver;
@@ -124,7 +125,7 @@ class OrderMetricsSubscriberTest extends TestCase
     {
         $this->meter = new CollectingMeter();
 
-        return new OrderMetricsSubscriber($this->meter, new SalesChannelTypeResolver());
+        return new OrderMetricsSubscriber($this->meter, new SalesChannelTypeResolver(new LabelMappingRegistry([SalesChannelTypeResolver::MAPPING => [Defaults::SALES_CHANNEL_TYPE_STOREFRONT => 'storefront', Defaults::SALES_CHANNEL_TYPE_API => 'api']], 'other')));
     }
 
     private function createOrder(int $lineItems, ?string $paymentTechnicalName): OrderEntity

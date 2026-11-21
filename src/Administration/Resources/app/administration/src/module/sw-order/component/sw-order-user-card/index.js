@@ -9,9 +9,16 @@ const { Criteria } = Shopwell.Data;
 const ApiService = Shopwell.Classes.ApiService;
 const format = Shopwell.Utils.format;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/**
+ * @deprecated tag:v6.8.0 - File will be removed. No longer used.
+ */
 export default {
     template,
+
+    deprecated: {
+        version: 'v6.8.0.0',
+        comment: 'Will be removed without replacement.',
+    },
 
     inject: [
         'customSnippetApiService',

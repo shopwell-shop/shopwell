@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\Webhook\Authorization\Policy;
 
+use Shopwell\Core\Framework\Api\Acl\IdentityType;
 use Shopwell\Core\Framework\App\Event\AppActivatedEvent;
 use Shopwell\Core\Framework\App\Event\AppDeactivatedEvent;
 use Shopwell\Core\Framework\App\Event\AppDeletedEvent;
@@ -11,7 +12,6 @@ use Shopwell\Core\Framework\App\Event\AppPermissionsUpdated;
 use Shopwell\Core\Framework\App\Event\AppUpdatedEvent;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\Authorization\Subscription\Subscriber;
-use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriberType;
 use Shopwell\Core\Framework\Webhook\Hookable;
 use Shopwell\Core\Framework\Webhook\Webhook;
 use Shopwell\Core\System\SystemConfig\Event\SystemConfigChangedHook;
@@ -43,8 +43,8 @@ final class AppEventPolicy implements Policy
     public function permitsSubscription(string $eventName, Subscriber $subscriber): bool
     {
         return !\in_array($eventName, self::APP_EVENTS, true)
-            || $subscriber->type === SubscriberType::App
-            || $subscriber->type === SubscriberType::None;
+            || $subscriber->type === IdentityType::App
+            || $subscriber->type === null;
     }
 
     public function permitsDelivery(Hookable $event, Webhook $webhook): bool

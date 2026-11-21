@@ -3,6 +3,8 @@
 namespace Shopwell\Core\Framework\Mcp\Resource;
 
 use Mcp\Capability\Attribute\McpResource;
+use Mcp\Schema\Result\ReadResourceResult;
+use Mcp\Server\RequestContext;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -31,10 +33,7 @@ class LanguageListResource
     ) {
     }
 
-    /**
-     * @return array{uri: string, mimeType: string, text: string}
-     */
-    public function __invoke(): array
+    public function __invoke(?RequestContext $requestContext = null): ReadResourceResult
     {
         $criteria = new Criteria();
         $criteria->addAssociation('locale');
@@ -50,10 +49,10 @@ class LanguageListResource
             ];
         }
 
-        return [
+        return McpResourceCacheHint::read([
             'uri' => 'shopwell://languages',
             'mimeType' => 'application/json',
             'text' => Json::encode($languages),
-        ];
+        ], $requestContext, McpResourceCacheHint::SHOP_CONFIGURATION_TTL_MS);
     }
 }

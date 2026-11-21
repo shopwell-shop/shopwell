@@ -7,6 +7,7 @@ use League\OAuth2\Server\Repositories\AuthCodeRepositoryInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\OAuth\Client\PublicClientRegistry;
 use Shopwell\Core\Framework\Api\OAuth\GrantTypeFactory;
 use Shopwell\Core\Framework\Api\OAuth\RefreshTokenRepository;
 use Shopwell\Core\Framework\Api\OAuth\ShopwellAuthCodeGrantType;
@@ -60,6 +61,7 @@ class GrantTypeFactoryTest extends TestCase
             $clock,
             new OAuth2LoginCodeService(new ArrayAdapter(), $clock),
             StaticEntityRepository::of(UserCollection::class, []),
+            new PublicClientRegistry([], 'prod'),
         );
 
         $grantTypes = $factory->createGrantTypes();

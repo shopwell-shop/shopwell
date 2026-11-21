@@ -91,6 +91,7 @@ use Shopwell\Core\Framework\App\Flow\Action\AppFlowActionProvider;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Telemetry\Metrics\Config\LabelMappingRegistry;
 use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
@@ -168,7 +169,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(FlowMetricsInstrumentor::class),
         ]);
 
-    $services->set(TriggerGroupResolver::class);
+    $services->set(TriggerGroupResolver::class)
+        ->args([
+            service(LabelMappingRegistry::class),
+        ]);
 
     $services->set(FlowMetricsInstrumentor::class)
         ->args([

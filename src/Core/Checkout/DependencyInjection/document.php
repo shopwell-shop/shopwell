@@ -45,6 +45,7 @@ use Shopwell\Core\Checkout\DocumentV2\Type\DocumentTypeRegistry;
 use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
@@ -335,6 +336,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(DocumentTypeRegistry::class),
             service_closure(DocumentV2RendererRegistry::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 };

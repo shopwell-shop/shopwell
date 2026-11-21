@@ -39,6 +39,19 @@ function rejectRepositoryCreation<EntityName extends keyof EntitySchema.EntityKe
 }
 
 /**
+ * Merges the context supplied by the extension into the admin API context.
+ * The `cacheKey` is removed, because the repository would otherwise treat the merged context as cache options
+ * and run the request with the global admin context instead.
+ * @param context
+ */
+function createContext(context: object | undefined): ContextState['api'] {
+    const mergedContext: ContextState['api'] & { cacheKey?: unknown } = { ...Shopwell.Context.api, ...context };
+    delete mergedContext.cacheKey;
+
+    return mergedContext;
+}
+
+/**
  * This method mutates the result object and removes the filter properties
  * @param result
  * @param customContext
@@ -52,9 +65,9 @@ function filterContext(result: any, customContext: any) {
     if (typeof result === 'object') {
         for (const key in result) {
             if (key === 'context') {
-                // delete everything inside context except properties of customContext
+                // delete everything inside context except the properties of customContext
                 for (const contextKey in result[key]) {
-                    if (!customContext || !customContext[contextKey]) {
+                    if (contextKey === 'authToken' || !customContext || !customContext[contextKey]) {
                         delete result[key][contextKey];
                     }
                 }
@@ -79,7 +92,7 @@ export default function initializeExtensionDataLoader(): void {
                     return rejectRepositoryCreation(entityName) as Promise<EntityCollection<typeof entityName>>;
                 }
 
-                const mergedContext = { ...Shopwell.Context.api, ...context } as ContextState['api'];
+                const mergedContext = createContext(context);
 
                 try {
                     const result = await repository.search(criteria, mergedContext);
@@ -94,49 +107,54 @@ export default function initializeExtensionDataLoader(): void {
         },
     );
 
-    Shopwell.ExtensionAPI.handle(
-        'repositoryGet',
-        ({ entityName, id, criteria = new Shopwell.Data.Criteria(), context }, additionalInformation) => {
-            const repository = getRepository(entityName, additionalInformation);
-            if (!repository) {
-                return rejectRepositoryCreation(entityName) as Promise<null>;
-            }
+    Shopwell.ExtensionAPI.handle('repositoryGet', async ({ entityName, id, criteria, context }, additionalInformation) => {
+        const repository = getRepository(entityName, additionalInformation);
+        if (!repository) {
+            return rejectRepositoryCreation(entityName) as Promise<null>;
+        }
 
-            const mergedContext = { ...Shopwell.Context.api, ...context } as ContextState['api'];
+        const mergedContext = createContext(context);
 
-            const result = repository.get(id as EntityKey<typeof entityName>, mergedContext, criteria);
-            filterContext(result, context);
-            return result;
-        },
-    );
+        const safeCriteria = criteria instanceof Shopwell.Data.Criteria ? criteria : new Shopwell.Data.Criteria();
 
-    Shopwell.ExtensionAPI.handle('repositorySave', ({ entityName, entity, context }, additionalInformation) => {
+        // The context has to be filtered on the resolved entity, not on the pending promise
+        const result: unknown = await repository.get(id as EntityKey<typeof entityName>, mergedContext, safeCriteria);
+        filterContext(result, context);
+        return result;
+    });
+
+    Shopwell.ExtensionAPI.handle('repositorySave', async ({ entityName, entity, context }, additionalInformation) => {
         const repository = getRepository(entityName, additionalInformation);
         if (!repository) {
             return rejectRepositoryCreation(entityName) as Promise<void>;
         }
 
-        const mergedContext = { ...Shopwell.Context.api, ...context } as ContextState['api'];
+        const mergedContext = createContext(context);
 
-        return repository.save(entity, mergedContext) as Promise<void>;
+        // Await the save, but do not return its result: the extension only needs to know it succeeded,
+        // not the raw request response.
+        await repository.save(entity, mergedContext);
     });
 
-    Shopwell.ExtensionAPI.handle('repositoryClone', ({ entityName, behavior, entityId, context }, additionalInformation) => {
-        const repository = getRepository(entityName, additionalInformation);
-        if (!repository) {
-            return rejectRepositoryCreation(entityName);
-        }
+    Shopwell.ExtensionAPI.handle(
+        'repositoryClone',
+        async ({ entityName, behavior, entityId, context }, additionalInformation) => {
+            const repository = getRepository(entityName, additionalInformation);
+            if (!repository) {
+                return rejectRepositoryCreation(entityName);
+            }
 
-        const mergedContext = { ...Shopwell.Context.api, ...context } as ContextState['api'];
+            const mergedContext = createContext(context);
 
-        const result = repository.clone(
-            entityId as EntityKey<typeof entityName>,
-            behavior as $TSDangerUnknownObject,
-            mergedContext,
-        );
-        filterContext(result, context);
-        return result;
-    });
+            const result = await repository.clone(
+                entityId as EntityKey<typeof entityName>,
+                behavior as $TSDangerUnknownObject,
+                mergedContext,
+            );
+            filterContext(result, context);
+            return result;
+        },
+    );
 
     Shopwell.ExtensionAPI.handle('repositoryHasChanges', ({ entityName, entity }, additionalInformation) => {
         const repository = getRepository(entityName, additionalInformation);
@@ -147,26 +165,30 @@ export default function initializeExtensionDataLoader(): void {
         return repository.hasChanges(entity);
     });
 
-    Shopwell.ExtensionAPI.handle('repositorySaveAll', ({ entityName, entities, context }, additionalInformation) => {
+    Shopwell.ExtensionAPI.handle('repositorySaveAll', async ({ entityName, entities, context }, additionalInformation) => {
         const repository = getRepository(entityName, additionalInformation);
         if (!repository) {
             return rejectRepositoryCreation(entityName) as Promise<void>;
         }
 
-        const mergedContext = { ...Shopwell.Context.api, ...context } as ContextState['api'];
+        const mergedContext = createContext(context);
 
-        return repository.saveAll(entities as EntityCollection<typeof entityName>, mergedContext) as Promise<void>;
+        // Await the save, but do not return its result: the extension only needs to know it succeeded,
+        // not the raw request response.
+        await repository.saveAll(entities as EntityCollection<typeof entityName>, mergedContext);
     });
 
-    Shopwell.ExtensionAPI.handle('repositoryDelete', ({ entityName, entityId, context }, additionalInformation) => {
+    Shopwell.ExtensionAPI.handle('repositoryDelete', async ({ entityName, entityId, context }, additionalInformation) => {
         const repository = getRepository(entityName, additionalInformation);
         if (!repository) {
             return rejectRepositoryCreation(entityName) as Promise<void>;
         }
 
-        const mergedContext = { ...Shopwell.Context.api, ...context } as ContextState['api'];
+        const mergedContext = createContext(context);
 
-        return repository.delete(entityId as EntityKey<typeof entityName>, mergedContext) as unknown as Promise<void>;
+        // Await the delete, but do not return its result: the extension only needs to know it succeeded,
+        // not the raw request response.
+        await repository.delete(entityId as EntityKey<typeof entityName>, mergedContext);
     });
 
     Shopwell.ExtensionAPI.handle('repositoryCreate', ({ entityName, entityId, context }, additionalInformation) => {
@@ -175,7 +197,7 @@ export default function initializeExtensionDataLoader(): void {
             return rejectRepositoryCreation(entityName) as Promise<Entity<typeof entityName>>;
         }
 
-        const mergedContext = { ...Shopwell.Context.api, ...context } as ContextState['api'];
+        const mergedContext = createContext(context);
 
         const result = repository.create(mergedContext, entityId as EntityKey<typeof entityName>) as Entity<
             keyof EntitySchema.Entities

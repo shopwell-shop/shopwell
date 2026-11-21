@@ -96,12 +96,11 @@ export default Shopwell.Component.wrapComponentConfig({
                 return true;
             }
 
-            if (Shopwell.Feature.isActive('V6_8_0_0')) {
-                Shopwell.Utils.debug.warn(
-                    'sw-tabs',
-                    'The "sw-tabs" wrapper is deprecated and will be removed in v6.9.0.0. Please use "mt-tabs" instead.',
-                );
-            }
+            Shopwell.Feature.triggerDeprecationOrThrow(
+                'V6_9_0_0',
+                'The "sw-tabs" wrapper is deprecated and will be removed in v6.9.0.0. Please use "mt-tabs" instead.',
+                { _blame: 'author' },
+            );
 
             return false;
         },
