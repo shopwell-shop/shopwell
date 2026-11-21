@@ -68,7 +68,7 @@ At feature stabilization, the following join the BC promise and change only in m
 - mapping names and the identifier space each mapping is keyed on,
 - the merge semantics of `add_allowed_values`, `allowed_values` and `mappings`.
 
-The integration test `TelemetryMetricContractTest` pins these names; updating its snapshot is the conscious decision 
+The integration test `TelemetryMetricContractTest` pins these names; updating its snapshot is the conscious decision
 and, once stable, needs proper deprecation cycle.
 
 The per-label mechanism (allow list or mapping) is deliberately not part of the promise, so core may switch a label's mechanism in a minor.
