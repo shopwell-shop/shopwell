@@ -94,6 +94,21 @@
         font-weight: var(--font-weight-medium);
     }
 
+    .sw-admin-menu-topbar .sw-admin-menu__header-logo-wrapper,
+    .sw-admin-menu-topbar .sw-admin-menu__avatar {
+        width: var(--sw-admin-control-height);
+        height: var(--sw-admin-control-height);
+    }
+
+    .sw-admin-menu-topbar .sw-admin-menu__header-logo {
+        width: var(--scale-size-24);
+        height: var(--scale-size-24);
+    }
+
+    .sw-admin-menu-topbar .sw-admin-menu-topbar__entry {
+        height: var(--sw-admin-control-height);
+    }
+
     // Meteor and legacy fields share the same density, including their compound controls.
     .mt-field--small,
     .sw-field--small,
@@ -350,15 +365,80 @@
         height: 100%;
     }
 
+    .sw-select.sw-block-field .sw-block-field__block:has(.sw-select-selection-list) {
+        min-height: var(--sw-admin-control-height);
+        height: auto;
+    }
+
+    .sw-select .sw-select__selection:has(> .sw-select-selection-list) {
+        display: flex;
+        align-items: center;
+        padding: 0 var(--scale-size-64) 0 var(--scale-size-8);
+    }
+
     .sw-select-selection-list {
+        width: 100%;
+        align-items: center;
+        gap: var(--scale-size-4);
+        padding-block: var(--scale-size-4);
+
         .sw-select-selection-list__item-holder,
         .sw-select-selection-list__load-more {
-            margin-top: var(--scale-size-4);
+            display: flex;
+            align-items: center;
+            margin: 0;
         }
 
-        .sw-select-selection-list__input {
-            padding: var(--scale-size-4) var(--scale-size-8);
-            line-height: var(--font-line-height-xs);
+        .sw-select-selection-list__item-holder .sw-label {
+            height: calc(var(--sw-admin-control-height) - var(--scale-size-12));
+            margin: 0;
+            padding: 0 var(--scale-size-8);
+        }
+
+        .sw-select-selection-list__input-wrapper {
+            flex: 1 1 120px;
+            min-width: 80px;
+            max-width: 100%;
+        }
+
+        input.sw-select-selection-list__input {
+            float: none;
+            min-height: calc(var(--sw-admin-control-height) - var(--scale-size-12));
+            height: calc(var(--sw-admin-control-height) - var(--scale-size-12));
+            padding: 0 var(--scale-size-4);
+            line-height: var(--font-line-height-2xs);
+        }
+    }
+
+    .sw-category-tree-field .sw-block-field__block {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-4);
+        position: relative;
+        padding: var(--scale-size-4) var(--scale-size-36) var(--scale-size-4) var(--scale-size-8);
+    }
+
+    .sw-category-tree-field .sw-category-tree-field__selected-label {
+        margin: 0;
+    }
+
+    .sw-category-tree-field .sw-block-field__block > .sw-category-tree__input-field {
+        flex: 1 1 120px;
+        min-width: 80px;
+        min-height: calc(var(--sw-admin-control-height) - var(--scale-size-12));
+        height: calc(var(--sw-admin-control-height) - var(--scale-size-12));
+        padding: 0 var(--scale-size-4);
+    }
+
+    .sw-category-tree-field .sw-category-tree-field__expand-indicator {
+        position: absolute;
+        top: 50%;
+        right: var(--scale-size-12);
+        margin: 0;
+        transform: translateY(-50%);
+
+        &.is--collapsed {
+            transform: translateY(-50%) rotate(180deg);
         }
     }
 
@@ -674,8 +754,10 @@
 
     .mt-label:not(.mt-label--size-small, .mt-label--size-medium, .mt-label--appearance-circle),
     .sw-label:not(.sw-label--size-small, .sw-label--size-medium, .sw-label--appearance-circle) {
+        display: inline-flex;
+        align-items: center;
         height: var(--scale-size-24);
-        padding-inline: var(--scale-size-8);
+        padding: 0 var(--scale-size-8);
         font-size: var(--font-size-2xs);
         line-height: var(--font-line-height-2xs);
     }
