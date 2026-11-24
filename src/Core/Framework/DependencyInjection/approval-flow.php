@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalRequestController;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingHeadDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
@@ -52,6 +53,8 @@ use Shopwell\Core\Framework\ApprovalFlow\Publication\Artifact\ArtifactManifestLo
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Query\ApprovalFormReader;
+use Shopwell\Core\Framework\ApprovalFlow\Query\ApprovalRequestQuery;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseService;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseStore;
@@ -77,6 +80,11 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
+    $services->set(ApprovalFormReader::class);
+    $services->set(ApprovalRequestQuery::class)->args([
+        service('approval_flow_request.repository'), service('approval_flow_execution.repository'), service('approval_flow_operation.repository'), service(ApprovalFormReader::class),
+    ]);
+    $services->set(ApprovalRequestController::class)->args([service(ApprovalRequestQuery::class)])->tag('controller.service_arguments');
 
     $services->set(ApprovalProgressionRunner::class)->args([
         service(ApprovalInstanceStore::class), service(ApprovalInstanceService::class), service('logger'),

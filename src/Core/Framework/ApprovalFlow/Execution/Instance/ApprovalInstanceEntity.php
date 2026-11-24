@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -25,6 +26,8 @@ class ApprovalInstanceEntity extends Entity
     protected int $aggregateVersion;
 
     protected ?ApprovalReleaseEntity $release = null;
+
+    protected ?ApprovalNodeExecutionCollection $executions = null;
 
     public function getReleaseId(): string
     {
@@ -74,5 +77,15 @@ class ApprovalInstanceEntity extends Entity
     public function setRelease(?ApprovalReleaseEntity $release): void
     {
         $this->release = $release;
+    }
+
+    public function getExecutions(): ?ApprovalNodeExecutionCollection
+    {
+        return $this->executions;
+    }
+
+    public function setExecutions(?ApprovalNodeExecutionCollection $executions): void
+    {
+        $this->executions = $executions;
     }
 }

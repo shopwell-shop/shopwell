@@ -3,8 +3,34 @@
 The supported extension surface covers node and approval business type declaration, configuration compilation, pure node entry, assembly and business-owned binding validation.
 The DAL models `approval_flow_binding`, `approval_flow_binding_head`, `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 Writes use the controlled draft, release and instance paths.
-No HTTP action routes or supported PHP publication/runtime command services are exposed by this increment.
+Personal request query HTTP routes are supported as described below; publication and runtime command services remain internal.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
+
+## Personal request query API
+
+- `GET /api/_action/approval-flow/requests` supports `view=todo|done|started`, optional lifecycle `status`, `limit` (1–100, default 25) and nonnegative `offset` (default 0).
+- `GET /api/_action/approval-flow/requests/{requestId}` returns the request summary, viewer-filtered form, executed nodes, tasks and decision history.
+
+Both routes require `approval_flow:access` and an Administration user identity, excluding integration identities.
+This privilege does not grant the generic entity read privileges.
+Started uses the original initiator; todo uses this user's pending task on a running instance; done uses this user's approved or rejected task and excludes cancelled tasks.
+Request-level results are deduplicated, counted and paginated after applying ownership, with stable creation-time and ID ordering.
+Only the initiator or a user with an assigned task may read a detail; unknown and unrelated IDs both return 404.
+There is no manager-wide visibility override in these personal routes.
+
+The initiator reads the original form; participants read explicit grants from their assigned `core:approval@1.0.0` nodes in the frozen node plan.
+Unspecified fields are hidden, explicit hidden rules take priority, and unsupported nodes and versions grant no field access.
+Nested objects retain only visible branches; lists are atomic and are omitted when element rules would require unsupported projection.
+Literal dots in property names cannot be addressed by the current field reference syntax.
+Empty visible objects and lists retain their shapes; a fully hidden form is `{}`.
+Private business evidence, raw actor JSON, request hashes and executable release content are not response fields.
+Decision history includes only personal approved/rejected tasks and their original receipt reason/time/version; system cancellation does not fabricate an opinion.
+These queries grant no task decision, form edit or payment execution authority.
+
+The response schema is maintained in `AdminApi/paths/approval-flow-query.json`.
+`ApprovalRequestQuery`, `ApprovalFormReader`, `ApprovalRequestView` and `ApprovalRequestController` are implementation services rather than supported PHP extension contracts.
+The `executions` instance association and `tasks` execution association use the normal DAL collection model and do not add tables or write authority.
+Frontend pages and public decision commands remain subsequent increments.
 
 ## Node declarations
 

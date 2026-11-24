@@ -445,7 +445,40 @@ Runtime command tests also seed execution facts explicitly to exercise their com
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Progression and decision commands check the instance's running status under the same lock.
 The personal group decision completes only that node execution; scheduled progression separately enters its successors or commits the rejection outcome.
-Dynamic assignee sources, the empty-assignee skip policy and task queries remain subsequent increments.
+Dynamic assignee sources and the empty-assignee skip policy remain subsequent increments.
+
+## Personal approval queries
+
+`GET /api/_action/approval-flow/requests` lists the current Administration user's approvals.
+It requires `approval_flow:access`, which does not grant generic DAL read privileges.
+The `view` parameter is `todo` (default), `done` or `started`.
+Todo requires a pending task assigned to this user on a running instance; suspended instances do not advertise actionable work.
+Done requires this user's approved or rejected task; a task cancelled by another reviewer's decision is excluded.
+Started selects the original initiator.
+Lists contain one summary per request, with lifecycle status, optional outcome, aggregate version and exact total count; forms are omitted.
+Filtering by lifecycle `status` is optional; `limit` defaults to 25 and accepts 1–100, while `offset` defaults to zero and must be nonnegative.
+Ownership and status filters run before pagination and counting, with stable `createdAt` and ID ordering.
+
+`GET /api/_action/approval-flow/requests/{requestId}` is available to the original initiator and users who have been assigned a task on that instance, including completed and cancelled tasks.
+Unknown and unrelated requests both return 404.
+Personal queries require a real Administration user identity; system and integration callers do not acquire a personal inbox.
+The detail contains the request summary, executed nodes, tasks and personal decision history ordered by aggregate version.
+Opinions come from the decided task's original command receipt; cancellation does not become another user's opinion.
+Raw actor JSON, command hashes, deployment content and Payment's private payout snapshot are omitted.
+These read responses do not authorize a decision or a payment.
+
+The initiator receives the original submitted form.
+Participants receive only explicit field grants from their actually assigned `core:approval@1.0.0` nodes in the frozen node plan; unspecified fields are hidden and explicit hidden rules win.
+This reads publication bytes without requiring retained executable artifacts or re-running the graph.
+Nested object paths retain their object shape and omit ungranted siblings; null, false, zero, empty maps and lists retain their JSON types.
+The current dot reference syntax cannot address property names containing literal dots.
+Lists are atomic fields: a list with element-level rules is omitted until an element projection contract exists.
+Unsupported node types and versions grant no form access; query behavior does not silently interpret their configuration as core field rules.
+
+`ApprovalRequestQuery`, `ApprovalFormReader` and the HTTP controller remain internal services.
+The instance's `executions` and execution's `tasks` DAL associations express the stored ownership path without a separate query table or a list of every matching task ID.
+The response contract is documented in the Admin OpenAPI schema.
+Administration lists, detail pages and public decision routes remain subsequent increments.
 
 ## Terminal results and delivery work
 

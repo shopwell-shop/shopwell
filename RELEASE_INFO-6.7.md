@@ -48,7 +48,8 @@ The scheduled task `approval_flow.progress` now advances committed serial approv
 Register scheduled tasks and run the normal scheduled-task runner and Messenger worker to enable this continuation.
 Internal progression preserves the caller Context; authorization belongs to its actual entry point, while personal decisions retain their assignee checks.
 Payment transfer submission starts the initial approval tasks through the internal request path.
-Public task queries remain unavailable.
+Personal request queries are available at `GET /api/_action/approval-flow/requests` (`view=todo|done|started`) and `GET /api/_action/approval-flow/requests/{requestId}` with `approval_flow:access`.
+Lists apply ownership before pagination; details restrict form fields to the participant's assigned nodes and include personal decision history.
 Instance lifecycle commands remain internal without public approval action routes.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.

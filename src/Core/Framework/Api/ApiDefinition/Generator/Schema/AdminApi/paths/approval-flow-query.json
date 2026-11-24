@@ -1,0 +1,382 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Personal approval queries",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/_action/approval-flow/requests": {
+            "get": {
+                "tags": [
+                    "Approval Flow"
+                ],
+                "operationId": "searchPersonalApprovalRequests",
+                "summary": "List my approvals",
+                "description": "Requires approval_flow:access and an Administration user. Ownership is applied before counting and pagination. Todo includes pending personal tasks on running instances; done includes approved or rejected personal tasks and excludes cancelled tasks; started includes requests initiated by this user. Lists do not contain forms.",
+                "parameters": [
+                    {
+                        "name": "view",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "todo",
+                                "done",
+                                "started"
+                            ],
+                            "default": "todo"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "running",
+                                "suspended",
+                                "completed",
+                                "terminated",
+                                "withdrawn"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalRequestList"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid view, status or pagination."
+                    },
+                    "403": {
+                        "description": "Missing access privilege or Administration user identity."
+                    }
+                }
+            }
+        },
+        "/_action/approval-flow/requests/{requestId}": {
+            "get": {
+                "tags": [
+                    "Approval Flow"
+                ],
+                "operationId": "getPersonalApprovalRequest",
+                "summary": "Read an approval request",
+                "description": "Requires approval_flow:access. Only the original initiator and users with an assigned task can read the request. Hidden fields are omitted from participant forms. This read response does not authorize a decision or payment.",
+                "parameters": [
+                    {
+                        "name": "requestId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalRequestDetail"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed request ID."
+                    },
+                    "403": {
+                        "description": "Missing access privilege or Administration user identity."
+                    },
+                    "404": {
+                        "description": "Request is unknown or not visible to the user."
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ApprovalRequestSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "businessType",
+                    "businessId",
+                    "submissionRound",
+                    "instanceId",
+                    "initiatorId",
+                    "createdAt",
+                    "status",
+                    "outcome",
+                    "aggregateVersion"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "businessType": {
+                        "type": "string"
+                    },
+                    "businessId": {
+                        "type": "string"
+                    },
+                    "submissionRound": {
+                        "type": "integer"
+                    },
+                    "instanceId": {
+                        "type": "string"
+                    },
+                    "initiatorId": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "running",
+                            "suspended",
+                            "completed",
+                            "terminated",
+                            "withdrawn"
+                        ]
+                    },
+                    "outcome": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "approved",
+                            "rejected",
+                            null
+                        ]
+                    },
+                    "aggregateVersion": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "ApprovalExecutionSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "nodeId",
+                    "sequence",
+                    "status",
+                    "outcome"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "sequence": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "waiting",
+                            "awaiting_approval",
+                            "completed"
+                        ]
+                    },
+                    "outcome": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "approved",
+                            "rejected",
+                            null
+                        ]
+                    }
+                }
+            },
+            "ApprovalTaskSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "executionId",
+                    "assigneeId",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "executionId": {
+                        "type": "string"
+                    },
+                    "assigneeId": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "approved",
+                            "rejected",
+                            "cancelled"
+                        ]
+                    }
+                }
+            },
+            "ApprovalDecisionSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "taskId",
+                    "nodeId",
+                    "assigneeId",
+                    "decision",
+                    "reason",
+                    "decidedAt",
+                    "aggregateVersion"
+                ],
+                "properties": {
+                    "taskId": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string"
+                    },
+                    "assigneeId": {
+                        "type": "string"
+                    },
+                    "decision": {
+                        "type": "string",
+                        "enum": [
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "decidedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "aggregateVersion": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "ApprovalRequestList": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalRequestSummary"
+                        }
+                    },
+                    "meta": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "total"
+                        ],
+                        "properties": {
+                            "total": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            },
+            "ApprovalRequestDetail": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "request",
+                    "form",
+                    "executions",
+                    "tasks",
+                    "decisions"
+                ],
+                "properties": {
+                    "request": {
+                        "$ref": "#/components/schemas/ApprovalRequestSummary"
+                    },
+                    "form": {
+                        "type": "object",
+                        "description": "Original submission for its initiator; participants receive only fields granted by their assigned core approval nodes. Empty forms serialize as {}.",
+                        "additionalProperties": true
+                    },
+                    "executions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalExecutionSummary"
+                        }
+                    },
+                    "tasks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalTaskSummary"
+                        }
+                    },
+                    "decisions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalDecisionSummary"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\EnumField;
@@ -12,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -49,6 +51,7 @@ class ApprovalInstanceDefinition extends EntityDefinition
             new EnumField('outcome', 'outcome', ApprovalOutcome::Approved),
             (new IntField('aggregate_version', 'aggregateVersion', 1))->addFlags(new Required()),
             new ManyToOneAssociationField('release', 'release_id', ApprovalReleaseDefinition::class, 'id', false),
+            new OneToManyAssociationField('executions', ApprovalNodeExecutionDefinition::class, 'instance_id'),
         ]);
     }
 }

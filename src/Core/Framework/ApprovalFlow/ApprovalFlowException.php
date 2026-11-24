@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const INVALID_REQUEST_QUERY = 'APPROVAL_FLOW__INVALID_REQUEST_QUERY';
+
     public const RESULT_HANDLER_NOT_FOUND = 'APPROVAL_FLOW__RESULT_HANDLER_NOT_FOUND';
     public const DUPLICATE_RESULT_HANDLER = 'APPROVAL_FLOW__DUPLICATE_RESULT_HANDLER';
     public const RESULT_REQUEST_NOT_FOUND = 'APPROVAL_FLOW__RESULT_REQUEST_NOT_FOUND';
@@ -82,6 +84,11 @@ class ApprovalFlowException extends HttpException
     public const INVALID_NODE_COMPILER = 'APPROVAL_FLOW__INVALID_NODE_COMPILER';
     public const INVALID_NODE_CONFIGURATION = 'APPROVAL_FLOW__INVALID_NODE_CONFIGURATION';
 
+    public static function invalidRequestQuery(string $reason): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, self::INVALID_REQUEST_QUERY, 'Invalid approval query: {{ reason }}', ['reason' => $reason]);
+    }
+
     public static function resultHandlerNotFound(string $type, string $version): self
     {
         return new self(Response::HTTP_CONFLICT, self::RESULT_HANDLER_NOT_FOUND, 'No result handler is installed for approval business type "{{ type }}@{{ version }}".', ['type' => $type, 'version' => $version]);
@@ -109,7 +116,7 @@ class ApprovalFlowException extends HttpException
 
     public static function requestActorRequired(): self
     {
-        return new self(Response::HTTP_FORBIDDEN, self::REQUEST_ACTOR_REQUIRED, 'An administration user is required to submit an approval request.');
+        return new self(Response::HTTP_FORBIDDEN, self::REQUEST_ACTOR_REQUIRED, 'An administration user is required to access approval requests.');
     }
 
     public static function requestInitiatorRequired(string $requestId): self

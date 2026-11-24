@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Node;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceEntity;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -32,6 +33,8 @@ class ApprovalNodeExecutionEntity extends Entity
     protected ?ApprovalOutcome $outcome = null;
 
     protected ?ApprovalInstanceEntity $instance = null;
+
+    protected ?ApprovalTaskCollection $tasks = null;
 
     public function getInstanceId(): string
     {
@@ -111,5 +114,15 @@ class ApprovalNodeExecutionEntity extends Entity
     public function setInstance(?ApprovalInstanceEntity $instance): void
     {
         $this->instance = $instance;
+    }
+
+    public function getTasks(): ?ApprovalTaskCollection
+    {
+        return $this->tasks;
+    }
+
+    public function setTasks(?ApprovalTaskCollection $tasks): void
+    {
+        $this->tasks = $tasks;
     }
 }

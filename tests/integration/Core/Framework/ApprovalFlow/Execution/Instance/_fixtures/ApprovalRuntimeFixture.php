@@ -50,7 +50,7 @@ final class ApprovalRuntimeFixture
             ApprovalInstanceWriteGuard::class => $kernel->get(ApprovalInstanceWriteGuard::class),
         ];
         $definitions = $kernel->get(DefinitionInstanceRegistry::class);
-        foreach (['approval_flow_binding', 'approval_flow_binding_head', 'approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution', 'approval_flow_task', 'approval_flow_result'] as $entityName) {
+        foreach (['approval_flow_binding', 'approval_flow_binding_head', 'approval_flow_request', 'approval_flow_instance', 'approval_flow_operation', 'approval_flow_execution', 'approval_flow_task', 'approval_flow_result'] as $entityName) {
             $services[$entityName . '.repository'] = $definitions->getRepository($entityName);
         }
         foreach ($services as $id => $service) {
