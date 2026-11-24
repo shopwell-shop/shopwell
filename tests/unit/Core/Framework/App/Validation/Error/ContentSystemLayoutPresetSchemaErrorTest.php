@@ -26,7 +26,6 @@ class ContentSystemLayoutPresetSchemaErrorTest extends TestCase
         static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
         static::assertSame([], $error->getParameters());
         static::assertSame('Invalid layout preset in "/path/to/presets": YAML syntax invalid', $error->getMessage());
-        static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
-        static::assertSame([], $error->getParameters());
+        static::assertSame(Severity::Fail, $error->getSeverity());
     }
 }

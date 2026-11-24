@@ -6,13 +6,13 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlEntity;
 use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\ContentSystemLayoutProvisioner;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Debugging\ScriptTraces;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Storefront\Page\Navigation\NavigationPageLoadedHook;
@@ -69,34 +69,16 @@ class NavigationControllerTest extends TestCase
         static::assertArrayHasKey(MenuOffcanvasPageletLoadedHook::HOOK_NAME, $traces);
     }
 
-    public function testStorefrontRedirectsOutOfRangePaginationTo301(): void
+    public function testStorefrontAnswersOutOfRangePaginationWith404(): void
     {
-        // 5 products, default limit 24 → lastPage = 1; p=99 must redirect.
+        // 5 products, default limit 24 → lastPage = 1; p=99 does not exist.
         $seoPath = $this->createCategoryWithProducts(5);
 
         $response = $this->request('GET', $seoPath . '?p=99', []);
-
-        static::assertSame(301, $response->getStatusCode(), (string) $response->getContent());
-
-        $location = $response->headers->get('Location');
-        static::assertNotNull($location);
-        static::assertStringNotContainsString('p=99', $location);
-        static::assertStringNotContainsString('p=', $location);
-    }
-
-    public function testStorefrontPreservesOtherQueryParamsOnRedirect(): void
-    {
-        $seoPath = $this->createCategoryWithProducts(5);
+        static::assertSame(404, $response->getStatusCode());
 
         $response = $this->request('GET', $seoPath . '?p=99&order=price-asc', []);
-
-        static::assertSame(301, $response->getStatusCode(), (string) $response->getContent());
-
-        $location = $response->headers->get('Location');
-        static::assertNotNull($location);
-        static::assertStringContainsString('order=price-asc', $location);
-        static::assertStringNotContainsString('p=99', $location);
-        static::assertStringNotContainsString('p=', $location);
+        static::assertSame(404, $response->getStatusCode());
     }
 
     public function testStorefrontInRangePaginationStillReturns200AndRendersCanonicalUrl(): void
@@ -177,6 +159,8 @@ class NavigationControllerTest extends TestCase
         ];
 
         static::getContainer()->get('category.repository')->create([$category], Context::createDefaultContext());
+        $this->provisionCategoryLayout($salesChannel->getNavigationCategoryId());
+        $this->provisionCategoryLayout($this->ids->get('category'));
     }
 
     /**
@@ -218,10 +202,11 @@ class NavigationControllerTest extends TestCase
         static::getContainer()->get('category.repository')->create([[
             'id' => $categoryId,
             'name' => 'Out-of-range test category',
-            'contentLayouts' => [['contentLayoutId' => Hasher::hash('shopwell.content-system.default.category', 'md5')]],
             'type' => 'page',
             'parentId' => $salesChannel->getNavigationCategoryId(),
         ]], Context::createDefaultContext());
+
+        $this->provisionCategoryLayout($categoryId);
 
         static::getContainer()->get('product.repository')->create($products, Context::createDefaultContext());
 
@@ -243,6 +228,17 @@ class NavigationControllerTest extends TestCase
         );
 
         return ltrim($seoUrl->getSeoPathInfo(), '/');
+    }
+
+    private function provisionCategoryLayout(string $categoryId): void
+    {
+        static::getContainer()->get(ContentSystemLayoutProvisioner::class)->provisionFromPreset(
+            'Navigation test category ' . $categoryId,
+            'Sw:CategoryPage',
+            'category',
+            Context::createDefaultContext(),
+            entityId: $categoryId,
+        );
     }
 
     private function createFooterTree(): void

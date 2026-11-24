@@ -13,6 +13,6 @@ component sw-workflow-approval-settings  private  ts  [private]
 
 blocks
   sw_workflow_approval_settings  [private]
-    sw_workflow_approval_settings_deadline  [private]
+    sw_workflow_approval_settings_deadline  [after v-if] [private]
     sw_workflow_approval_settings_operations  [private]
 ```

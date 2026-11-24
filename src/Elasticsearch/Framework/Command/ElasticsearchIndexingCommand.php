@@ -6,7 +6,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Command\ConsoleProgressTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Elasticsearch\Framework\Indexing\CreateAliasTaskHandler;
 use Shopwell\Elasticsearch\Framework\Indexing\ElasticsearchIndexer;
-use Shopwell\Elasticsearch\Framework\Indexing\ElasticsearchIndexingMessage;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -65,26 +64,15 @@ class ElasticsearchIndexingCommand extends Command
         $progressBar->start();
 
         $entities = $input->getOption('only') ? explode(',', $input->getOption('only')) : [];
-        $offset = null;
-        $messagesToDispatch = [];
+        $messages = $this->indexer->iterateMessages($entities);
 
-        while ($message = $this->indexer->iterate($offset, $entities)) {
-            $offset = $message->getOffset();
-
-            $messagesToDispatch[] = $message;
-        }
-
-        $lastMessage = end($messagesToDispatch);
-
-        if (!$lastMessage instanceof ElasticsearchIndexingMessage) {
+        if (!$messages->valid()) {
             $this->io->error('No messages found for indexing.');
 
             return self::SUCCESS;
         }
 
-        $lastMessage->markAsLastMessage();
-
-        foreach ($messagesToDispatch as $message) {
+        foreach ($messages as $message) {
             $step = \count($message->getData()->getIds());
 
             if ($input->getOption('no-queue')) {

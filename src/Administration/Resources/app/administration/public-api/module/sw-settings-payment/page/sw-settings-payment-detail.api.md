@@ -27,27 +27,30 @@ blocks
         sw_settings_payment_detail_content_field_position
         sw_settings_payment_detail_content_field_technical_name
       sw_settings_payment_detail_custom_field_sets
-      sw_settings_payment_detail_delete_modal
+      sw_settings_payment_detail_delete_modal  [after v-if]
         sw_settings_payment_detail_delete_modal_footer
           sw_settings_payment_detail_reset_modal_cancel
           sw_settings_payment_detail_reset_modal_confirm
         sw_settings_payment_detail_delete_modal_info
-      sw_settings_payment_detail_delete_payment_method
+      sw_settings_payment_detail_delete_payment_method  [after v-if]
       sw_settings_payment_detail_gateway_channel
-        sw_settings_payment_detail_gateway_channel_actions
-        sw_settings_payment_detail_gateway_channel_bound
-        sw_settings_payment_detail_gateway_channel_collect_hint
+        sw_settings_payment_detail_gateway_channel_actions  [after v-if]
+        sw_settings_payment_detail_gateway_channel_bound  [after v-if]
+        sw_settings_payment_detail_gateway_channel_collect_hint  [after v-if]
         sw_settings_payment_detail_gateway_channel_empty
         sw_settings_payment_detail_gateway_channel_new
-        sw_settings_payment_detail_gateway_channel_no_channels
-        sw_settings_payment_detail_gateway_channel_selects
+        sw_settings_payment_detail_gateway_channel_no_channels  [after v-if]
+        sw_settings_payment_detail_gateway_channel_selects  [after v-if]
           sw_settings_payment_detail_gateway_channel_select_account
           sw_settings_payment_detail_gateway_channel_select_channel
           sw_settings_payment_detail_gateway_routing_policy
-        sw_settings_payment_detail_gateway_channel_unbound
+        sw_settings_payment_detail_gateway_channel_unbound  [after v-if]
       sw_settings_payment_detail_gateway_channel_rebind_modal
-      sw_settings_payment_detail_top_rule
+      sw_settings_payment_detail_top_rule  [after v-if]
         sw_settings_payment_detail_top_rule_select
     sw_settings_payment_detail_header
     sw_settings_payment_detail_language_switch
+
+crossings
+  v-if  sw_settings_payment_detail_gateway_channel_new -> sw_settings_payment_detail_gateway_channel
 ```

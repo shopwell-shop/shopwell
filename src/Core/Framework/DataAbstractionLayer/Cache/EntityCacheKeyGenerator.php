@@ -22,6 +22,11 @@ class EntityCacheKeyGenerator
         return 'product-stream-' . $id;
     }
 
+    public static function buildManufacturerTag(string $id): string
+    {
+        return 'product-manufacturer-' . $id;
+    }
+
     /**
      * @param string[] $areas
      */

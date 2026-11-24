@@ -16,8 +16,8 @@ blocks
     sw_blog_list_content  [private]
       sw_blog_list_content_inner  [private]
         sw_blog_list_empty_state  [private]
-        sw_blog_list_empty_state_filtered  [private]
-        sw_blog_list_grid  [private]
+        sw_blog_list_empty_state_filtered  [after v-if] [private]
+        sw_blog_list_grid  [after v-if] [private]
           sw_blog_list_grid_column_categories  [private]
           sw_blog_list_grid_column_cover  [private]
           sw_blog_list_grid_column_status  [private]
@@ -35,4 +35,8 @@ blocks
       sw_blog_list_smart_bar_header_title  [private]
         sw_blog_list_smart_bar_header_amount  [private]
         sw_blog_list_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_blog_list_empty_state -> sw_blog_list_empty_state_filtered  [private]
+  v-if  sw_blog_list_empty_state_filtered -> sw_blog_list_grid  [private]
 ```

@@ -38,6 +38,7 @@ use Shopwell\Core\Framework\Demodata\Generator\MediaGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\NewsletterRecipientGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\OrderGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\ProductContentLayoutGenerator;
+use Shopwell\Core\Framework\Demodata\Generator\ProductDocumentFileProvider;
 use Shopwell\Core\Framework\Demodata\Generator\ProductGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\ProductManufacturerGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\ProductReviewGenerator;
@@ -54,6 +55,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\Tag\TagDefinition;
 use Shopwell\Core\System\User\UserDefinition;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Filesystem\Filesystem;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -144,6 +146,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('shopwell.demodata_generator', ['option-name' => 'product-content-layouts', 'option-default' => 1, 'option-description' => 'Product detail page content layouts (assigned to products)', 'option_name' => 'product-content-layouts', 'option_default' => 1, 'option_description' => 'Product detail page content layouts (assigned to products)']);
+    $services->set(ProductDocumentFileProvider::class)
+        ->args([
+            service(EntityWriter::class),
+            service(MediaDefinition::class),
+            service(FileSaver::class),
+            service(FileNameProvider::class),
+            service(Filesystem::class),
+            service(Connection::class),
+        ]);
 
     $services->set(ProductGenerator::class)
         ->args([
@@ -151,6 +162,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(InheritanceUpdater::class),
             service(StatesUpdater::class)->nullOnInvalid(),
+            service(ProductDocumentFileProvider::class),
         ])
         ->tag('shopwell.demodata_generator', ['option-name' => 'products', 'option-default' => 1000, 'option_name' => 'products', 'option_default' => 1000]);
 

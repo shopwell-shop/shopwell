@@ -5,6 +5,8 @@ namespace Shopwell\Tests\Integration\Storefront\Page\LandingPage;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Content\LandingPage\LandingPageException;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\ContentSystemLayoutProvisioner;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
@@ -40,7 +42,7 @@ class LandingPageLoaderTest extends TestCase
         $this->ids = new IdsCollection();
 
         $request = new Request([], [], [
-            'landingPageId' => $this->ids->get('landing-page'),
+            'landingPageId' => $this->ids->create('landing-page'),
         ]);
 
         $context = $this->createSalesChannelContextWithNavigation();
@@ -75,6 +77,36 @@ class LandingPageLoaderTest extends TestCase
         $this->getPageLoader()->load($request, $context);
     }
 
+    public function testItDoesHaveCanonicalTag(): void
+    {
+        $this->ids = new IdsCollection();
+
+        $request = new Request([], [], [
+            'landingPageId' => $this->ids->create('landing-page'),
+        ]);
+
+        $context = $this->createSalesChannelContextWithNavigation();
+        $this->ids->set('sales-channel', $context->getSalesChannelId());
+        $this->createData();
+
+        $seoUrlHandler = static::getContainer()->get(SeoUrlPlaceholderHandlerInterface::class);
+
+        $event = null;
+        $this->catchEvent(LandingPageLoadedEvent::class, $event);
+
+        $metaInformation = $this->getPageLoader()->load($request, $context)->getMetaInformation();
+        static::assertNotNull($metaInformation);
+        $meta = $metaInformation->getVars();
+        $canonical = $meta['canonical'];
+
+        static::assertIsString($canonical);
+        static::assertNotSame('', $canonical);
+
+        $seoUrl = $seoUrlHandler->replace($canonical, $request->getHost(), $context);
+
+        static::assertSame('/myUrl', $seoUrl);
+    }
+
     /**
      * @return LandingPageLoader
      */
@@ -99,5 +131,13 @@ class LandingPageLoaderTest extends TestCase
 
         static::getContainer()->get('landing_page.repository')
             ->create([$data], Context::createDefaultContext());
+
+        static::getContainer()->get(ContentSystemLayoutProvisioner::class)->provisionFromPreset(
+            'Landing page canonical test',
+            'Sw:TabPanel',
+            'landing_page',
+            Context::createDefaultContext(),
+            entityId: $this->ids->get('landing-page'),
+        );
     }
 }

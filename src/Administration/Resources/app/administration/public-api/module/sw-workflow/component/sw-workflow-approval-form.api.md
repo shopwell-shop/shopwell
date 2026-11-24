@@ -13,5 +13,5 @@ component sw-workflow-approval-form  private  ts  [private]
 
 blocks
   sw_workflow_approval_form  [private]
-    sw_workflow_approval_form_fields  [private]
+    sw_workflow_approval_form_fields  [after v-if] [private]
 ```

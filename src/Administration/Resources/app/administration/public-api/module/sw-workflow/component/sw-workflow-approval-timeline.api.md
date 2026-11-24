@@ -14,8 +14,8 @@ component sw-workflow-approval-timeline  private  ts  [private]
 blocks
   sw_workflow_approval_timeline  [private]
     sw_workflow_approval_timeline_list  [private]
-      sw_workflow_approval_timeline_empty  [private]
-      sw_workflow_approval_timeline_item  [private]
+      sw_workflow_approval_timeline_empty  [after v-if] [private]
+      sw_workflow_approval_timeline_item  [scope: row] [private]
       sw_workflow_approval_timeline_pending  [private]
     sw_workflow_approval_timeline_title  [private]
 ```

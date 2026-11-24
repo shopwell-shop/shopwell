@@ -14,9 +14,9 @@ component sw-workflow-studio-editor  private  ts  [private]
 blocks
   sw_workflow_studio_editor  [private]
     sw_workflow_studio_editor_canvas  [private]
-    sw_workflow_studio_editor_diagnostics  [private]
+    sw_workflow_studio_editor_diagnostics  [after v-if] [private]
     sw_workflow_studio_editor_node_picker  [private]
     sw_workflow_studio_editor_settings  [private]
-    sw_workflow_studio_editor_templates  [private]
+    sw_workflow_studio_editor_templates  [after v-if] [private]
     sw_workflow_studio_editor_toolbar  [private]
 ```

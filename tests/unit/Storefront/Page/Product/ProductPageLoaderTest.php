@@ -12,6 +12,7 @@ use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewEntity;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRouteResponse;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
@@ -248,6 +249,7 @@ class ProductPageLoaderTest extends TestCase
             $productDetailRouteMock,
             $reviewRepository,
             $systemConfigService,
+            static::createStub(SeoUrlPlaceholderHandlerInterface::class),
             $breadcrumbBuilder ?? static::createStub(CategoryBreadcrumbBuilder::class)
         );
     }

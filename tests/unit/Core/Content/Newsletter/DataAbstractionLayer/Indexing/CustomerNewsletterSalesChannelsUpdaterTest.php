@@ -33,6 +33,8 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
                 'email' => 'y.tran@shopwell.cn',
                 'name' => 'Y Tran',
                 'newsletter_sales_channel_ids' => null,
+                'bound_sales_channel_id' => null,
+                'guest' => '0',
             ],
         ]);
 
@@ -51,6 +53,8 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
                 'email' => 'y.tran@shopwell.cn',
                 'name' => 'Y Tran',
                 'newsletter_sales_channel_ids' => $newsletterIds,
+                'bound_sales_channel_id' => null,
+                'guest' => '0',
             ],
         ]);
 
@@ -61,24 +65,28 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
             if (!$consentReset) {
                 $consentReset = true;
 
-                static::assertSame('UPDATE newsletter_recipient SET status = (:notSet), confirmed_at = NULL WHERE id IN (:ids) AND email <> :email AND status = :optIn', $sql);
+                static::assertSame('UPDATE newsletter_recipient SET status = (:notSet), confirmed_at = NULL WHERE id IN (:ids) AND email <> :email AND status = :optIn AND (:boundSalesChannelId IS NULL OR sales_channel_id = :boundSalesChannelId) AND (:guest = 0 OR NOT EXISTS (SELECT 1 FROM customer WHERE customer.email = newsletter_recipient.email AND customer.guest = 0 AND (customer.bound_sales_channel_id IS NULL OR customer.bound_sales_channel_id = newsletter_recipient.sales_channel_id)))', $sql);
 
                 static::assertSame([
                     'ids' => Uuid::fromHexToBytesList($ids),
                     'email' => 'y.tran@shopwell.cn',
                     'notSet' => NewsletterSubscribeRoute::STATUS_NOT_SET,
                     'optIn' => NewsletterSubscribeRoute::STATUS_OPT_IN,
+                    'boundSalesChannelId' => null,
+                    'guest' => 0,
                 ], $params);
 
                 return 1;
             }
 
-            static::assertSame('UPDATE newsletter_recipient SET email = (:email), name = (:name) WHERE id IN (:ids)', $sql);
+            static::assertSame('UPDATE newsletter_recipient SET email = (:email), name = (:name) WHERE id IN (:ids) AND (:boundSalesChannelId IS NULL OR sales_channel_id = :boundSalesChannelId) AND (:guest = 0 OR NOT EXISTS (SELECT 1 FROM customer WHERE customer.email = newsletter_recipient.email AND customer.guest = 0 AND (customer.bound_sales_channel_id IS NULL OR customer.bound_sales_channel_id = newsletter_recipient.sales_channel_id)))', $sql);
 
             static::assertSame([
                 'ids' => Uuid::fromHexToBytesList($ids),
                 'email' => 'y.tran@shopwell.cn',
                 'name' => 'Y Tran',
+                'boundSalesChannelId' => null,
+                'guest' => 0,
             ], $params);
 
             return 1;
@@ -97,6 +105,8 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
                 'email' => 'y.tran@shopwell.cn',
                 'name' => 'Y Tran',
                 'newsletter_sales_channel_ids' => $newsletterIds,
+                'bound_sales_channel_id' => null,
+                'guest' => '0',
             ],
         ]);
 
@@ -106,24 +116,28 @@ class CustomerNewsletterSalesChannelsUpdaterTest extends TestCase
             if (!$consentReset) {
                 $consentReset = true;
 
-                static::assertSame('UPDATE newsletter_recipient SET status = (:notSet), confirmed_at = NULL WHERE id IN (:ids) AND email <> :email AND status = :optIn', $sql);
+                static::assertSame('UPDATE newsletter_recipient SET status = (:notSet), confirmed_at = NULL WHERE id IN (:ids) AND email <> :email AND status = :optIn AND (:boundSalesChannelId IS NULL OR sales_channel_id = :boundSalesChannelId) AND (:guest = 0 OR NOT EXISTS (SELECT 1 FROM customer WHERE customer.email = newsletter_recipient.email AND customer.guest = 0 AND (customer.bound_sales_channel_id IS NULL OR customer.bound_sales_channel_id = newsletter_recipient.sales_channel_id)))', $sql);
 
                 static::assertSame([
                     'ids' => Uuid::fromHexToBytesList($ids),
                     'email' => 'y.tran@shopwell.cn',
                     'notSet' => NewsletterSubscribeRoute::STATUS_NOT_SET,
                     'optIn' => NewsletterSubscribeRoute::STATUS_OPT_IN,
+                    'boundSalesChannelId' => null,
+                    'guest' => 0,
                 ], $params);
 
                 return 1;
             }
 
-            static::assertSame('UPDATE newsletter_recipient SET email = (:email), name = (:name) WHERE id IN (:ids)', $sql);
+            static::assertSame('UPDATE newsletter_recipient SET email = (:email), name = (:name) WHERE id IN (:ids) AND (:boundSalesChannelId IS NULL OR sales_channel_id = :boundSalesChannelId) AND (:guest = 0 OR NOT EXISTS (SELECT 1 FROM customer WHERE customer.email = newsletter_recipient.email AND customer.guest = 0 AND (customer.bound_sales_channel_id IS NULL OR customer.bound_sales_channel_id = newsletter_recipient.sales_channel_id)))', $sql);
 
             static::assertSame([
                 'ids' => Uuid::fromHexToBytesList($ids),
                 'email' => 'y.tran@shopwell.cn',
                 'name' => 'Y Tran',
+                'boundSalesChannelId' => null,
+                'guest' => 0,
             ], $params);
 
             return 1;

@@ -14,5 +14,5 @@ component sw-organization-unit-tree  private  ts  [private]
 blocks
   sw_organization_unit_tree  [private]
     sw_organization_unit_tree_content  [private]
-      sw_organization_unit_tree_empty  [private]
+      sw_organization_unit_tree_empty  [after v-if] [private]
 ```

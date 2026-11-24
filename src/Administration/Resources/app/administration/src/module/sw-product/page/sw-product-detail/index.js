@@ -103,6 +103,21 @@ export default {
             return Shopwell.Store.get('swProductDetail').product;
         },
 
+        /** @private */
+        productDocumentVariantService() {
+            return Shopwell.Service('productDocumentVariantService');
+        },
+
+        /** @private */
+        documentVariantOperations: {
+            get() {
+                return Shopwell.Store.get('swProductDetail').documentVariantOperations;
+            },
+            set(operations) {
+                Shopwell.Store.get('swProductDetail').documentVariantOperations = operations;
+            },
+        },
+
         parentProduct() {
             return Shopwell.Store.get('swProductDetail').parentProduct;
         },
@@ -288,6 +303,8 @@ export default {
 
             criteria.getAssociation('media').addSorting(Criteria.sort('position', 'ASC'));
             criteria.addAssociation('media.media');
+            criteria.getAssociation('documents').addSorting(Criteria.sort('position', 'ASC'));
+            criteria.addAssociation('documents.translations.media');
 
             criteria.getAssociation('prices').addSorting(Criteria.sort('quantityStart', 'ASC', true));
 
@@ -474,6 +491,14 @@ export default {
 
         languageRepository() {
             return this.repositoryFactory.create('language');
+        },
+
+        languageCriteria() {
+            const criteria = new Criteria();
+            criteria.setTotalCountMode(0);
+            criteria.addAssociation('locale');
+
+            return criteria;
         },
 
         language() {
@@ -900,6 +925,7 @@ export default {
 
                     Shopwell.Store.get('swProductDetail').isDownloadExternallyManaged = !product.downloads?.length;
                     Shopwell.Store.get('swProductDetail').product = product;
+                    this.documentVariantOperations = {};
 
                     if (this.product.parentId) {
                         await this.loadParentProduct();
@@ -1120,7 +1146,7 @@ export default {
         },
 
         abortOnLanguageChange() {
-            return this.productRepository.hasChanges(this.product);
+            return this.productRepository.hasChanges(this.product) || Object.keys(this.documentVariantOperations).length > 0;
         },
 
         saveOnLanguageChange() {
@@ -1339,12 +1365,15 @@ export default {
             };
 
             return new Promise((resolve) => {
+                const saveDocumentVariants = this.getDocumentVariantsSaver();
+
                 // check if product exists
                 if (!this.productRepository.hasChanges(this.product)) {
-                    updateSeoUrls();
-                    Shopwell.Store.get('swProductDetail').setLoading(['product', false]);
-                    resolve('empty');
-                    Shopwell.Store.get('swProductDetail').setLoading(['product', false]);
+                    saveDocumentVariants().then(() => {
+                        updateSeoUrls();
+                        Shopwell.Store.get('swProductDetail').setLoading(['product', false]);
+                        resolve('empty');
+                    });
                     return;
                 }
 
@@ -1358,6 +1387,7 @@ export default {
                 // save product
                 this.syncRepository
                     .save(this.product, this.productApiContext)
+                    .then(saveDocumentVariants)
                     .then(() => {
                         updateSeoUrls();
 
@@ -1383,6 +1413,28 @@ export default {
                         resolve(response);
                     });
             });
+        },
+
+        /** @private */
+        getDocumentVariantsSaver() {
+            const operations = Object.values(this.documentVariantOperations);
+            const productId = this.product.id;
+            const { languageId } = this.productApiContext;
+
+            return async () => {
+                if (!operations.length) {
+                    return;
+                }
+
+                try {
+                    await this.productDocumentVariantService.sync(productId, operations, false, languageId);
+                    this.documentVariantOperations = {};
+                } catch {
+                    this.createNotificationError({
+                        message: this.$t('sw-product.documentForm.errorSaveVariants'),
+                    });
+                }
+            };
         },
 
         trackProductSaveEvents(productType, productIsNew, productWasActivated) {
@@ -1441,7 +1493,8 @@ export default {
             return '';
         },
 
-        onDuplicate() {
+        async onDuplicate() {
+            await this.getDocumentVariantsSaver()();
             this.cloning = true;
         },
 
@@ -1462,10 +1515,15 @@ export default {
         },
 
         async loadLanguage(newLanguageId) {
-            Shopwell.Store.get('context').api.language = await this.languageRepository.get(newLanguageId, {
-                ...Shopwell.Context.api,
-                inheritance: true,
-            });
+            const language = await this.languageRepository.get(
+                newLanguageId,
+                { ...Shopwell.Context.api, inheritance: true },
+                this.languageCriteria,
+            );
+
+            if (newLanguageId === Shopwell.Context.api.languageId) {
+                Shopwell.Store.get('context').api.language = language;
+            }
         },
 
         async initProductMeasurementUnits() {

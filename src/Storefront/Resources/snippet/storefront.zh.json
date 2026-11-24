@@ -984,7 +984,9 @@
         "reviewTitleMinLengthHint": "请至少输入 5 个字符。",
         "reviewTextMinLengthHint": "请至少输入 40 个字符。",
         "priceUnavailable": "暂无价格",
-        "manufacturerUnavailable": "暂无品牌信息"
+        "manufacturerUnavailable": "暂无品牌信息",
+        "tabsDocuments": "商品文档",
+        "documentsTitle": "商品文档"
     },
     "spatial": {
         "ar": {

@@ -14,10 +14,10 @@ component sw-workflow-approval-actions  private  ts  [private]
 blocks
   sw_workflow_approval_actions  [private]
     sw_workflow_approval_actions_buttons  [private]
-    sw_workflow_approval_actions_comment  [private]
-    sw_workflow_approval_actions_extensions  [private]
+    sw_workflow_approval_actions_comment  [after v-if] [private]
+    sw_workflow_approval_actions_extensions  [after v-if] [private]
     sw_workflow_approval_actions_hint  [private]
-    sw_workflow_approval_actions_participation  [private]
+    sw_workflow_approval_actions_participation  [after v-if] [private]
     sw_workflow_approval_actions_progress  [private]
     sw_workflow_approval_actions_return  [private]
 ```

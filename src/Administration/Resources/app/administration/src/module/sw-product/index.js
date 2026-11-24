@@ -5,6 +5,7 @@
 import './acl';
 import defaultSearchConfiguration from './default-search-configuration';
 import ProductStorefrontUrlApiService from './service/product-storefront-url.api.service';
+import ProductDocumentVariantService from './service/product-document-variant.service';
 
 const { Module } = Shopwell;
 
@@ -43,6 +44,31 @@ Shopwell.Component.extend(
 );
 Shopwell.Component.register('sw-product-media-form', () => import('./component/sw-product-media-form'));
 Shopwell.Component.register('sw-product-download-form', () => import('./component/sw-product-download-form'));
+Shopwell.Component.register(
+    'sw-product-document-empty-state',
+    () => import('./component/sw-product-document-form/sw-product-document-empty-state'),
+);
+Shopwell.Component.register(
+    'sw-product-document-language-hint',
+    () => import('./component/sw-product-document-form/sw-product-document-language-hint'),
+);
+Shopwell.Component.register(
+    'sw-product-document-add-button',
+    () => import('./component/sw-product-document-form/sw-product-document-add-button'),
+);
+Shopwell.Component.register('sw-product-document-form', () => import('./component/sw-product-document-form'));
+Shopwell.Component.register(
+    'sw-product-document-download',
+    () => import('./component/sw-product-document-form/sw-product-document-download'),
+);
+Shopwell.Component.register(
+    'sw-product-document-edit-modal',
+    () => import('./component/sw-product-document-form/sw-product-document-edit-modal'),
+);
+Shopwell.Component.register(
+    'sw-product-document-remove-modal',
+    () => import('./component/sw-product-document-form/sw-product-document-remove-modal'),
+);
 Shopwell.Component.register('sw-product-visibility-detail', () => import('./component/sw-product-visibility-detail'));
 Shopwell.Component.register(
     'sw-product-restriction-selection',
@@ -117,6 +143,12 @@ Shopwell.Component.register('sw-product-detail-cross-selling', () => import('./v
 Shopwell.Component.register('sw-product-detail-reviews', () => import('./view/sw-product-detail-reviews'));
 Shopwell.Component.register('sw-product-list', () => import('./page/sw-product-list'));
 Shopwell.Component.register('sw-product-detail', () => import('./page/sw-product-detail'));
+Shopwell.Service().register('productDocumentVariantService', () => {
+    return new ProductDocumentVariantService(
+        Shopwell.Service().get('repositoryFactory'),
+        Shopwell.Service().get('syncService'),
+    );
+});
 Shopwell.Service().register('productStorefrontUrlApiService', () => {
     return new ProductStorefrontUrlApiService(
         Shopwell.Application.getContainer('init').httpClient,

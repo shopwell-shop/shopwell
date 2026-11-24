@@ -38,6 +38,7 @@ import type ContentSystemStyleOptionApiService from 'src/core/service/api/conten
 import type ContentSystemPreviewApiService from 'src/core/service/api/content-system-preview.api.service';
 import type ContentSystemLayoutPresetApiService from 'src/core/service/api/content-system-layout-preset.api.service';
 import type ContentSystemMappingCandidateApiService from 'src/core/service/api/content-system-mapping-candidate.api.service';
+import type createMediaDefaultFolderService from 'src/app/service/media-default-folder.service';
 import type LocaleFactory from 'src/core/factory/locale.factory';
 import type UserActivityService from 'src/app/service/user-activity.service';
 import type { FullState } from 'src/core/factory/state.factory';
@@ -79,6 +80,7 @@ import type AclService from './app/service/acl.service';
 import type EntityValidationService from './app/service/entity-validation.service';
 import type CustomEntityDefinitionService from './app/service/custom-entity-definition.service';
 import type ProductStorefrontUrlApiService from './module/sw-product/service/product-storefront-url.api.service';
+import type ProductDocumentVariantService from './module/sw-product/service/product-document-variant.service';
 import type StoreContextService from './core/service/api/store-context.api.service';
 import type OrderStateMachineApiService from './core/service/api/order-state-machine.api.service';
 import type CheckoutStoreService from './core/service/api/checkout-store.api.service';
@@ -271,6 +273,7 @@ declare global {
         adminMenuApiService: $TSFixMe;
         appAclService: $TSFixMe;
         appModulesService: AppModulesService;
+        productDocumentVariantService: ProductDocumentVariantService;
         businessEventService: BusinessEventsApiService;
         cacheService: CacheService;
         cartStoreService: CartStoreService;
@@ -306,7 +309,7 @@ declare global {
         localeHelper: $TSFixMe;
         localeToLanguageService: $TSFixMe;
         loginService: LoginService;
-        mediaDefaultFolderService: $TSFixMe;
+        mediaDefaultFolderService: ReturnType<typeof createMediaDefaultFolderService>;
         mediaService: MediaService;
         menuService: $TSFixMe;
         numberRangeService: $TSFixMe;

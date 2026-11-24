@@ -17,6 +17,6 @@ blocks
         sw_customer_detail_base_default_addresses
       sw_customer_detail_base_info_card
         sw_customer_detail_base_info_metadata
-      sw_customer_detail_custom_field_sets
-        sw_customer_detail_base_loyalty_overview
+      sw_customer_detail_custom_field_sets  [after v-if]
+        sw_customer_detail_base_loyalty_overview  [after v-if]
 ```

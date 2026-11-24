@@ -19,7 +19,7 @@ blocks
         sw_customer_detail_points_membership_points_balance
         sw_customer_detail_points_membership_tier
         sw_customer_detail_points_membership_valid_until
-    sw_customer_detail_points_membership_modal
+    sw_customer_detail_points_membership_modal  [after v-if]
       sw_customer_detail_points_membership_modal_content
       sw_customer_detail_points_membership_modal_footer
     sw_customer_detail_points_modal
@@ -27,7 +27,7 @@ blocks
       sw_customer_detail_points_modal_footer
     sw_customer_detail_points_orders_card
       sw_customer_detail_points_orders_grid
-        sw_customer_detail_points_orders_empty
+        sw_customer_detail_points_orders_empty  [after v-if]
         sw_customer_detail_points_orders_grid_column_amount
         sw_customer_detail_points_orders_grid_column_paid_at
         sw_customer_detail_points_orders_grid_column_plan
@@ -35,11 +35,11 @@ blocks
     sw_customer_detail_points_transactions_card
       sw_customer_detail_points_transactions_actions
       sw_customer_detail_points_transactions_grid
-        sw_customer_detail_points_transactions_empty_state
+        sw_customer_detail_points_transactions_empty_state  [after v-if]
         sw_customer_detail_points_transactions_grid_column_balance_after
         sw_customer_detail_points_transactions_grid_column_comment
         sw_customer_detail_points_transactions_grid_column_date
         sw_customer_detail_points_transactions_grid_column_points
         sw_customer_detail_points_transactions_grid_column_type
-        sw_customer_detail_points_transactions_pagination
+        sw_customer_detail_points_transactions_pagination  [after v-if]
 ```

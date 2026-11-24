@@ -13,6 +13,6 @@ component sw-workflow-runtime-viewer  private  ts  [private]
 
 blocks
   sw_workflow_runtime_viewer  [private]
-    sw_workflow_runtime_viewer_node  [private]
+    sw_workflow_runtime_viewer_node  [scope: data] [private]
     sw_workflow_runtime_viewer_toolbar  [private]
 ```

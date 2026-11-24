@@ -14,10 +14,10 @@ component sw-experience-studio-sidebar-tree-node  private  ts  [private]
 blocks
   sw_experience_studio_sidebar_tree_node  [private]
     sw_experience_studio_sidebar_tree_node_children  [private]
-      sw_experience_studio_sidebar_tree_node_slot_elements  [private]
-      sw_experience_studio_sidebar_tree_node_slot_header  [private]
+      sw_experience_studio_sidebar_tree_node_slot_elements  [scope: slot] [private]
+      sw_experience_studio_sidebar_tree_node_slot_header  [scope: slot] [private]
     sw_experience_studio_sidebar_tree_node_element  [private]
       sw_experience_studio_sidebar_tree_node_actions  [private]
-      sw_experience_studio_sidebar_tree_node_label  [private]
+      sw_experience_studio_sidebar_tree_node_label  [after v-if] [private]
       sw_experience_studio_sidebar_tree_node_toggle  [private]
 ```

@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRouteResponse;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\ContentSystem\LayoutReference;
 use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
@@ -40,6 +41,7 @@ class LandingPageLoaderTest extends TestCase
             static::createStub(GenericPageLoader::class),
             $landingPageRouteMock,
             static::createStub(EventDispatcherInterface::class),
+            static::createStub(SeoUrlPlaceholderHandlerInterface::class),
             $this->createContentRoute()
         );
 
@@ -86,6 +88,7 @@ class LandingPageLoaderTest extends TestCase
             static::createStub(GenericPageLoader::class),
             $this->createLandingPageRoute($landingPage, $request, $context),
             static::createStub(EventDispatcherInterface::class),
+            static::createStub(SeoUrlPlaceholderHandlerInterface::class),
             $contentRoute,
         );
 
@@ -187,6 +190,7 @@ class LandingPageLoaderTest extends TestCase
             static::createStub(GenericPageLoader::class),
             $this->createLandingPageRoute($landingPage, $request, $salesChannelContext),
             static::createStub(EventDispatcherInterface::class),
+            static::createStub(SeoUrlPlaceholderHandlerInterface::class),
             $this->createContentRoute()
         );
     }
@@ -209,6 +213,7 @@ class LandingPageLoaderTest extends TestCase
             static::createStub(GenericPageLoader::class),
             $this->createLandingPageRoute($landingPage, $request, $salesChannelContext),
             static::createStub(EventDispatcherInterface::class),
+            static::createStub(SeoUrlPlaceholderHandlerInterface::class),
             $this->createContentRoute()
         );
     }

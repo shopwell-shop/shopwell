@@ -15,5 +15,5 @@ blocks
   sw_dashboard_metrics  [private]
     sw_dashboard_metrics_grid  [private]
       sw_dashboard_metrics_grid_card  [private]
-        sw_dashboard_metrics_grid_card_delta  [private]
+        sw_dashboard_metrics_grid_card_delta  [scope: card] [private]
 ```

@@ -1317,6 +1317,9 @@
             "count": "共 {count} 个图标",
             "more": "加载更多",
             "clear": "使用默认图标"
+        },
+        "sw-extension-floating-section": {
+            "label": "扩展内容"
         }
     },
     "mt-text-editor-toolbar-button-link": {

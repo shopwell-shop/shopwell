@@ -20,7 +20,7 @@ blocks
         sw_settings_sms_template_list_grid  [private]
           sw_settings_sms_template_list_empty_state  [private]
           sw_settings_sms_template_list_grid_columns_actions  [private]
-            sw_settings_sms_template_list_grid_columns_actions_delete  [private]
+            sw_settings_sms_template_list_grid_columns_actions_delete  [scope: item] [private]
           sw_settings_sms_template_list_grid_columns_enabled  [private]
           sw_settings_sms_template_list_grid_columns_max_length  [private]
           sw_settings_sms_template_list_grid_columns_scene  [private]

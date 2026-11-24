@@ -14,5 +14,5 @@ component sw-dashboard-order-states  private  ts  [private]
 blocks
   sw_dashboard_order_states  [private]
     sw_dashboard_order_states_chart  [private]
-      sw_dashboard_order_states_empty  [private]
+      sw_dashboard_order_states_empty  [after v-if] [private]
 ```

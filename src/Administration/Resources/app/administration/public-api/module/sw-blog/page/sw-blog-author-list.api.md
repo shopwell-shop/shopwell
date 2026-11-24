@@ -16,7 +16,7 @@ blocks
     sw_blog_author_list_content  [private]
       sw_blog_author_list_content_inner  [private]
         sw_blog_author_list_empty_state  [private]
-        sw_blog_author_list_grid  [private]
+        sw_blog_author_list_grid  [after v-if] [private]
           sw_blog_author_list_grid_column_active  [private]
           sw_blog_author_list_grid_column_avatar  [private]
           sw_blog_author_list_grid_column_email  [private]
@@ -34,4 +34,7 @@ blocks
       sw_blog_author_list_smart_bar_header_title  [private]
         sw_blog_author_list_smart_bar_header_amount  [private]
         sw_blog_author_list_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_blog_author_list_empty_state -> sw_blog_author_list_grid  [private]
 ```

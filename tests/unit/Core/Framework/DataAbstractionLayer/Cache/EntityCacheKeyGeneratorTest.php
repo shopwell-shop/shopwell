@@ -53,6 +53,11 @@ class EntityCacheKeyGeneratorTest extends TestCase
         static::assertSame('product-stream-foo', EntityCacheKeyGenerator::buildStreamTag('foo'));
     }
 
+    public function testBuildManufacturerTag(): void
+    {
+        static::assertSame('product-manufacturer-foo', EntityCacheKeyGenerator::buildManufacturerTag('foo'));
+    }
+
     #[DataProvider('criteriaHashProvider')]
     public function testCriteriaHash(Criteria $criteria, string $hash): void
     {

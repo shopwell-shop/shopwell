@@ -26,9 +26,12 @@ blocks
         sw_customer_detail_content_tab_addresses  [until v6.8.0]
         sw_customer_detail_content_tab_after  [until v6.8.0]
           sw_customer_detail_content_tab_points  [until v6.8.0]
-          sw_customer_detail_content_tab_wallet  [until v6.8.0]
+          sw_customer_detail_content_tab_wallet  [after v-if] [until v6.8.0]
         sw_customer_detail_content_tab_general  [until v6.8.0]
         sw_customer_detail_content_tab_order  [until v6.8.0]
       sw_customer_detail_content_view
     sw_customer_detail_header
+
+crossings
+  v-if  sw_customer_detail_actions_edit -> sw_customer_detail_actions
 ```

@@ -182,6 +182,7 @@ use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\ContentSystemElem
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Serialization\ElementTypeSpecificationSerializer;
 use Shopwell\Core\Framework\ContentSystem\Layout\Type\Validation\ElementTypeCollisionDetector;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Gateway\Context\Command\Executor\ContextGatewayCommandExecutor;
 use Shopwell\Core\Framework\Gateway\Context\Command\Registry\ContextGatewayCommandRegistry;
 use Shopwell\Core\Framework\Log\ExceptionLogger;
@@ -231,6 +232,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CustomFieldProtectionSubscriber::class)
         ->args([
             service(Connection::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 

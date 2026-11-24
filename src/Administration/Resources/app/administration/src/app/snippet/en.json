@@ -1317,6 +1317,9 @@
             "count": "{count} icons",
             "more": "Load more",
             "clear": "Use default icon"
+        },
+        "sw-extension-floating-section": {
+            "label": "Content from extensions"
         }
     },
     "sw-text-editor-toolbar": {

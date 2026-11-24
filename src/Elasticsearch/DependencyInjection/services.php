@@ -42,6 +42,7 @@ use Shopwell\Elasticsearch\Admin\Indexer\PromotionAdminSearchIndexer;
 use Shopwell\Elasticsearch\Admin\Indexer\PropertyGroupAdminSearchIndexer;
 use Shopwell\Elasticsearch\Admin\Indexer\SalesChannelAdminSearchIndexer;
 use Shopwell\Elasticsearch\Admin\Indexer\ShippingMethodAdminSearchIndexer;
+use Shopwell\Elasticsearch\Admin\Subscriber\ProductInheritanceSubscriber;
 use Shopwell\Elasticsearch\Admin\Subscriber\RefreshIndexSubscriber;
 use Shopwell\Elasticsearch\ExplainFieldQueryBuilder;
 use Shopwell\Elasticsearch\FieldQueryBuilder;
@@ -573,6 +574,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('kernel.event_subscriber');
 
+    $services->set(ProductInheritanceSubscriber::class)
+        ->args([
+            service(AdminSearchRegistry::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
     $services->set(SystemInstallListener::class)
         ->args([
             service(ElasticsearchIndexer::class),
@@ -636,6 +643,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             param('elasticsearch.administration.index.mapping'),
             param('kernel.environment'),
             service(ClockInterface::class),
+            param('elasticsearch.administration.indexing_batch_size'),
         ])
         ->tag('kernel.event_subscriber')
         ->tag('messenger.message_handler');

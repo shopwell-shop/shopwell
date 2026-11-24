@@ -15,7 +15,7 @@ blocks
     sw_loyalty_order_list_content
       sw_loyalty_order_list_content
       sw_loyalty_order_list_empty_state
-      sw_loyalty_order_list_grid
+      sw_loyalty_order_list_grid  [after v-if]
         sw_loyalty_order_list_grid_column_amount
         sw_loyalty_order_list_grid_column_created_at
         sw_loyalty_order_list_grid_column_customer
@@ -30,4 +30,7 @@ blocks
       sw_loyalty_order_list_smart_bar_header_title
         sw_loyalty_order_list_smart_bar_header_amount
         sw_loyalty_order_list_smart_bar_header_title_text
+
+crossings
+  v-if  sw_loyalty_order_list_empty_state -> sw_loyalty_order_list_grid
 ```

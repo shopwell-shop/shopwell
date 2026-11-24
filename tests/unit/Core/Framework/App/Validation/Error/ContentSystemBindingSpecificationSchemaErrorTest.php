@@ -27,6 +27,7 @@ class ContentSystemBindingSpecificationSchemaErrorTest extends TestCase
         static::assertSame(Severity::Fail, $error->getSeverity());
         static::assertSame(AppException::VALIDATION_FAILED, $error->getErrorCode());
         static::assertSame([], $error->getParameters());
+        static::assertSame(Severity::Fail, $error->getSeverity());
 
         $exception = AppException::validationFailedFromErrors([$error]);
         static::assertSame(AppException::VALIDATION_FAILED, $exception->getErrorCode());

@@ -15,6 +15,6 @@ blocks
   sw_experience_studio_assignment_modal  [private]
     sw_experience_studio_assignment_modal_content  [private]
       sw_experience_studio_assignment_modal_default  [private]
-      sw_experience_studio_assignment_modal_entities  [private]
-    sw_experience_studio_assignment_modal_footer  [private]
+      sw_experience_studio_assignment_modal_entities  [after v-if] [private]
+    sw_experience_studio_assignment_modal_footer  [after v-if] [private]
 ```

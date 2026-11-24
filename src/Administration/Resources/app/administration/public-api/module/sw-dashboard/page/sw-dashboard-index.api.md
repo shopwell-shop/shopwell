@@ -20,7 +20,7 @@ blocks
         sw_dashboard_index_content_statistics  [private]
         sw_dashboard_index_content_todos  [private]
       sw_dashboard_index_content_metrics  [private]
-      sw_dashboard_index_content_orders_and_loyalty  [private]
+      sw_dashboard_index_content_orders_and_loyalty  [after v-if] [private]
         sw_dashboard_index_content_charts  [private]
           sw_dashboard_index_content_order_states  [private]
         sw_dashboard_index_content_latest_orders  [private]

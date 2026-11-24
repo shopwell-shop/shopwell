@@ -13,7 +13,7 @@ component sw-category-entry-point-modal  public  js
 blocks
   sw_category_entry_point_modal
     sw_category_entry_point_modal_discard_changes_modal
-    sw_category_entry_point_modal_footer
+    sw_category_entry_point_modal_footer  [after v-if]
       sw_category_entry_point_modal_footer_apply_button
       sw_category_entry_point_modal_footer_cancel_button
     sw_category_entry_point_modal_sales_channel_selection

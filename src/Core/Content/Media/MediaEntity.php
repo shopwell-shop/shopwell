@@ -18,6 +18,7 @@ use Shopwell\Core\Content\Media\MediaType\MediaType;
 use Shopwell\Core\Content\Media\MediaType\SpatialMediaTypeInterface;
 use Shopwell\Core\Content\Media\MediaType\SpatialObjectType;
 use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocumentTranslation\ProductDocumentTranslationCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductMedia\ProductMediaCollection;
@@ -141,6 +142,8 @@ class MediaEntity extends Entity
     protected ?EntityCollection $appShippingMethods = null;
 
     protected ?ProductDownloadCollection $productDownloads = null;
+
+    protected ?ProductDocumentTranslationCollection $productDocumentTranslations = null;
 
     protected ?OrderLineItemDownloadCollection $orderLineItemDownloads = null;
 
@@ -625,6 +628,16 @@ class MediaEntity extends Entity
     public function setProductDownloads(ProductDownloadCollection $productDownloads): void
     {
         $this->productDownloads = $productDownloads;
+    }
+
+    public function getProductDocumentTranslations(): ?ProductDocumentTranslationCollection
+    {
+        return $this->productDocumentTranslations;
+    }
+
+    public function setProductDocumentTranslations(ProductDocumentTranslationCollection $productDocumentTranslations): void
+    {
+        $this->productDocumentTranslations = $productDocumentTranslations;
     }
 
     public function getOrderLineItemDownloads(): ?OrderLineItemDownloadCollection

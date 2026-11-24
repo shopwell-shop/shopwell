@@ -17,7 +17,7 @@ blocks
       sw_permissions_menu_list_collapse  [private]
         sw_permissions_menu_list_tree  [private]
       sw_permissions_menu_list_content_empty  [private]
-      sw_permissions_menu_list_delete_modal  [private]
+      sw_permissions_menu_list_delete_modal  [after v-if] [private]
       sw_permissions_menu_list_smart_bar_actions_save  [private]
     sw_permissions_menu_list_language_switch  [private]
     sw_permissions_menu_list_search_bar  [private]

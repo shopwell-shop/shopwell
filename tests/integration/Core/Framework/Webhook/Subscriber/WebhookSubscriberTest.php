@@ -8,13 +8,14 @@ use Shopwell\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopwell\Core\Framework\App\AppEntity;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
-use Shopwell\Core\Framework\Util\Json;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Webhook\WebhookEntity;
+use Shopwell\Core\Framework\Webhook\WebhookException;
 use Shopwell\Core\Test\Integration\Builder\Webhook\WebhookBuilder;
 use Shopwell\Tests\Integration\Core\Framework\App\AppFixture;
 
@@ -68,29 +69,32 @@ class WebhookSubscriberTest extends TestCase
         static::assertSame($app->getIntegrationId(), $this->loadWebhook($webhookId)->getOwnerIntegrationId());
     }
 
-    public function testADeletedRoleIsRemovedFromTheWebhooksThatListIt(): void
-    {
-        $keptRoleId = $this->createRole();
-        $deletedRoleId = $this->createRole();
-        $webhookId = WebhookBuilder::ownedByUser(TestUser::createNewTestUser($this->connection)->getUserId())
-            ->aclRoleIds([$keptRoleId, $deletedRoleId])
-            ->insert($this->connection);
-
-        static::getContainer()->get('acl_role.repository')->delete([['id' => $deletedRoleId]], Context::createDefaultContext());
-
-        static::assertSame([$keptRoleId], $this->loadAclRoleIds($webhookId));
-    }
-
-    public function testAWebhookWhoseLastRoleIsDeletedKeepsAnEmptyList(): void
+    public function testARoleUsedByAWebhookCannotBeDeleted(): void
     {
         $roleId = $this->createRole();
-        $webhookId = WebhookBuilder::ownedByUser(TestUser::createNewTestUser($this->connection)->getUserId())
-            ->aclRoleIds([$roleId])
+        $ownerId = TestUser::createNewTestUser($this->connection)->getUserId();
+        WebhookBuilder::ownedByUser($ownerId)->name('Order export')->aclRoleIds([$this->createRole(), $roleId])->insert($this->connection);
+        WebhookBuilder::ownedByUser($ownerId)->name('ERP sync')->aclRoleIds([$roleId])->insert($this->connection);
+        WebhookBuilder::ownedByUser($ownerId)->name('Unrelated')->aclRoleIds([$this->createRole()])->insert($this->connection);
+
+        try {
+            static::getContainer()->get('acl_role.repository')->delete([['id' => $roleId]], Context::createDefaultContext());
+            static::fail('The role was deleted.');
+        } catch (WriteException $e) {
+            static::assertEquals([WebhookException::aclRoleUsedByWebhook($roleId, ['ERP sync', 'Order export'])], $e->getExceptions());
+        }
+    }
+
+    public function testARoleNoWebhookUsesCanBeDeleted(): void
+    {
+        $roleId = $this->createRole();
+        WebhookBuilder::ownedByUser(TestUser::createNewTestUser($this->connection)->getUserId())
+            ->aclRoleIds([$this->createRole()])
             ->insert($this->connection);
 
         static::getContainer()->get('acl_role.repository')->delete([['id' => $roleId]], Context::createDefaultContext());
 
-        static::assertSame([], $this->loadAclRoleIds($webhookId));
+        static::assertFalse($this->connection->fetchOne('SELECT 1 FROM acl_role WHERE id = :id', ['id' => Uuid::fromHexToBytes($roleId)]));
     }
 
     private function replaceIntegration(AppEntity $app): string
@@ -128,19 +132,5 @@ class WebhookSubscriberTest extends TestCase
         ], Context::createDefaultContext());
 
         return $roleId;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function loadAclRoleIds(string $webhookId): array
-    {
-        $aclRoleIds = $this->connection->fetchOne(
-            'SELECT acl_role_ids FROM webhook WHERE id = :id',
-            ['id' => Uuid::fromHexToBytes($webhookId)],
-        );
-        static::assertIsString($aclRoleIds);
-
-        return Json::decodeToList($aclRoleIds);
     }
 }

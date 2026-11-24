@@ -1,0 +1,87 @@
+{
+    "sw-settings-webhook": {
+        "general": {
+            "mainMenuItemGeneral": "Webhook",
+            "descriptionTextModule": "查看和管理用户、集成及应用的 Webhook"
+        },
+        "list": {
+            "columnName": "名称",
+            "columnEvent": "事件",
+            "columnUrl": "URL",
+            "columnOwner": "所有者",
+            "columnRoles": "权限范围",
+            "columnActive": "启用",
+            "columnErrorCount": "错误数",
+            "ownerUser": "用户",
+            "ownerIntegration": "集成",
+            "ownerApp": "应用",
+            "ownerAppIntegration": "应用集成",
+            "tooltipAppWebhookNotDeletable": "此 Webhook 属于应用。",
+            "tooltipAppInactive": "所属应用已停用，不会发送此 Webhook。",
+            "messageSaveError": "Webhook“{name}”保存失败。",
+            "messageDeleteError": "Webhook 删除失败。",
+            "emptyStateHeadline": "暂无 Webhook",
+            "emptyStateDescription": "通过 API 创建或由应用注册的 Webhook 将显示在这里。",
+            "ownerFilter": "所有者",
+            "ownerFilterUsers": "用户",
+            "ownerFilterApps": "应用",
+            "ownerFilterServices": "服务",
+            "loadErrorHeadline": "Webhook 加载失败",
+            "loadErrorDescription": "请刷新页面重试。",
+            "actionShowDeliveries": "查看投递记录",
+            "messageSaveSuccess": "已保存 Webhook“{name}”。",
+            "placeholderSearchBar": "搜索 Webhook…",
+            "actionSetSecret": "设置签名密钥",
+            "deletedRole": "已删除的角色",
+            "allOwnerRoles": "所有者的全部角色",
+            "tooltipWebhookNotOwned": "仅此 Webhook 的所有者或管理员可以删除。"
+        },
+        "secret": {
+            "title": "“{name}”的签名密钥",
+            "description": "每次投递都会携带 shopwell-shop-signature 请求头，其值为使用此密钥对请求正文计算的 HMAC-SHA256。接收方可据此验证请求来自此店铺。保存后立即替换原密钥，请同步更新接收方。",
+            "labelSecret": "密钥",
+            "placeholderSecret": "输入接收方密钥或生成新密钥",
+            "buttonGenerate": "生成密钥",
+            "hintShownOnce": "请在保存前复制密钥，保存后无法再次查看。",
+            "messageSaveSuccess": "已保存“{name}”的签名密钥。",
+            "messageSaveError": "“{name}”的签名密钥保存失败。"
+        },
+        "deliveries": {
+            "title": "“{name}”的投递记录",
+            "columnDate": "日期",
+            "columnStatus": "状态",
+            "columnResponse": "响应",
+            "columnDuration": "耗时",
+            "durationSeconds": "{seconds} 秒",
+            "durationUnderOneSecond": "不足 1 秒",
+            "emptyStateHeadline": "暂无投递记录",
+            "emptyStateDescription": "事件发生后，投递记录将显示在这里。",
+            "hiddenHeadline": "无可显示的投递记录",
+            "hiddenDescription": "仅此 Webhook 的所有者或管理员可以查看投递记录。",
+            "loadErrorHeadline": "投递记录加载失败",
+            "loadErrorDescription": "请关闭后重新打开投递记录。",
+            "status": {
+                "success": "已送达",
+                "failed": "失败",
+                "pending_retry": "重试中",
+                "queued": "排队中",
+                "running": "发送中",
+                "not_permitted": "无权限"
+            },
+            "columnCode": "状态码",
+            "columnPayload": "请求数据",
+            "buttonBack": "返回投递记录",
+            "tabPayload": "请求数据",
+            "tabResponse": "响应",
+            "noResponse": "未收到响应。",
+            "noBody": "响应正文为空。"
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "webhook": {
+                "label": "Webhook"
+            }
+        }
+    }
+}

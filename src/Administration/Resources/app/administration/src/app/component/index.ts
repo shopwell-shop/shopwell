@@ -390,6 +390,10 @@ export default () => {
         () => import('src/app/component/extension-api/sw-extension-component-section/index'),
     );
     Shopwell.Component.register(
+        'sw-extension-floating-section',
+        () => import('src/app/component/extension-api/sw-extension-floating-section/index'),
+    );
+    Shopwell.Component.register(
         'sw-product-stream-grid-preview',
         () => import('src/app/component/entity/sw-product-stream-grid-preview/index'),
     );

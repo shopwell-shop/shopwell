@@ -9,14 +9,17 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\CheapestPriceUpdater;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductCategoryDenormalizer;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
+use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductIndexingMessage;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductStreamUpdater;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\RatingAverageUpdater;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\SearchKeywordUpdater;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\StatesUpdater;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\VariantListingUpdater;
+use Shopwell\Core\Content\Product\Events\ProductIndexerEvent;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\Stock\AbstractStockStorage;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IterableQuery;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
@@ -40,6 +43,41 @@ use Symfony\Component\Messenger\MessageBusInterface;
 #[CoversClass(ProductIndexer::class)]
 class ProductIndexerTest extends TestCase
 {
+    public function testHandleMarksTheIndexerEventOfAFullIndexingRun(): void
+    {
+        $events = [];
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(ProductIndexerEvent::class, static function (ProductIndexerEvent $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        $message = new ProductIndexingMessage([Uuid::randomHex()], null, Context::createDefaultContext());
+        $message->isFullIndexing = true;
+
+        $this->createIndexer(static::createStub(Connection::class), static::createStub(AbstractStockStorage::class), $dispatcher)->handle($message);
+
+        static::assertCount(1, $events);
+        static::assertTrue($events[0]->isFullIndexing);
+    }
+
+    public function testIterateMarksItsMessagesAsAFullIndexingRun(): void
+    {
+        $ids = [Uuid::randomHex(), Uuid::randomHex()];
+
+        $iterator = static::createStub(IterableQuery::class);
+        $iterator->method('fetch')->willReturn($ids);
+        $iterator->method('getOffset')->willReturn(['offset' => 2]);
+
+        $iteratorFactory = static::createStub(IteratorFactory::class);
+        $iteratorFactory->method('createIterator')->willReturn($iterator);
+
+        $message = $this->createIndexer(static::createStub(Connection::class), static::createStub(AbstractStockStorage::class), iteratorFactory: $iteratorFactory)->iterate(null);
+
+        static::assertInstanceOf(ProductIndexingMessage::class, $message);
+        static::assertSame($ids, $message->getData());
+        static::assertTrue($message->isFullIndexing);
+    }
+
     public function testUpdateSkipChildCountUpdater(): void
     {
         $context = Context::createDefaultContext();
@@ -120,10 +158,10 @@ class ProductIndexerTest extends TestCase
         $this->createIndexer($connection, $stockStorage)->update($this->writtenEvent($context, $parentId, ['stock' => 0]));
     }
 
-    private function createIndexer(Connection $connection, AbstractStockStorage $stockStorage): ProductIndexer
+    private function createIndexer(Connection $connection, AbstractStockStorage $stockStorage, ?EventDispatcher $eventDispatcher = null, ?IteratorFactory $iteratorFactory = null): ProductIndexer
     {
         return new ProductIndexer(
-            static::createStub(IteratorFactory::class),
+            $iteratorFactory ?? static::createStub(IteratorFactory::class),
             static::createStub(EntityRepository::class),
             $connection,
             static::createStub(VariantListingUpdater::class),
@@ -134,7 +172,7 @@ class ProductIndexerTest extends TestCase
             static::createStub(ChildCountUpdater::class),
             static::createStub(ManyToManyIdFieldUpdater::class),
             $stockStorage,
-            static::createStub(EventDispatcher::class),
+            $eventDispatcher ?? static::createStub(EventDispatcher::class),
             static::createStub(CheapestPriceUpdater::class),
             static::createStub(ProductStreamUpdater::class),
             static::createStub(MessageBusInterface::class),

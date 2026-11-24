@@ -12,6 +12,7 @@ use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewResult;
 use Shopwell\Core\Content\Product\SalesChannel\Review\RatingMatrix;
 use Shopwell\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
 use Shopwell\Core\Content\Property\PropertyGroupCollection;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\FilterAggregation;
@@ -26,6 +27,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -57,6 +59,7 @@ class ProductPageLoader
         private readonly AbstractProductDetailRoute $productDetailRoute,
         private readonly EntityRepository $productReviewRepository,
         private readonly SystemConfigService $systemConfigService,
+        private readonly SeoUrlPlaceholderHandlerInterface $seoUrlReplacer,
         private readonly CategoryBreadcrumbBuilder $breadcrumbBuilder
     ) {
     }
@@ -183,6 +186,9 @@ class ProductPageLoader
         $metaTitleParts[] = $page->getProduct()->getProductNumber();
 
         $metaInformation->setMetaTitle(implode(' | ', $metaTitleParts));
+
+        $canonical = $this->seoUrlReplacer->generate(ProductPageSeoUrlRoute::ROUTE_NAME, ['productId' => $page->getProduct()->getCanonicalProductId() ?? $page->getProduct()->getId()]);
+        $metaInformation->setCanonical($canonical);
     }
 
     /**

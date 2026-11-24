@@ -13,6 +13,6 @@ component sw-blog-detail-layout  private  ts  [private]
 
 blocks
   sw_blog_detail_layout  [private]
-    sw_blog_detail_layout_assignment  [private]
-    sw_blog_detail_layout_legacy  [private]
+    sw_blog_detail_layout_assignment  [after v-if] [private]
+    sw_blog_detail_layout_legacy  [after v-if] [private]
 ```

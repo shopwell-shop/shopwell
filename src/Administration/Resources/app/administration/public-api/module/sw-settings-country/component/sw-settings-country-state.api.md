@@ -12,7 +12,7 @@ component sw-settings-country-state  public  js
 
 blocks
   sw_settings_country_state_list_card
-    sw_settings_country_state_delete_modal
+    sw_settings_country_state_delete_modal  [after v-if]
       sw_settings_country_state_delete_modal_content
       sw_settings_country_state_delete_modal_footer
         sw_settings_country_state_delete_modal_footer_cancel
@@ -20,18 +20,21 @@ blocks
     sw_settings_country_state_detail
     sw_settings_country_state_list_columns
       sw_settings_country_state_list_column
-        sw_settings_country_state_list_column_content
-          sw_settings_country_state_list_column_hint
-          sw_settings_country_state_list_column_item
-            sw_settings_country_state_list_column_item_actions
-              sw_settings_country_state_list_column_item_action_delete
-              sw_settings_country_state_list_column_item_action_edit
-          sw_settings_country_state_list_column_loader
-        sw_settings_country_state_list_column_header
-        sw_settings_country_state_list_column_toolbar
-          sw_settings_country_state_list_column_search
+        sw_settings_country_state_list_column_content  [scope: level]
+          sw_settings_country_state_list_column_hint  [scope: level]
+          sw_settings_country_state_list_column_item  [after v-if] [scope: level]
+            sw_settings_country_state_list_column_item_actions  [scope: item, level]
+              sw_settings_country_state_list_column_item_action_delete  [scope: item, level]
+              sw_settings_country_state_list_column_item_action_edit  [scope: item, level]
+          sw_settings_country_state_list_column_loader  [scope: level]
+        sw_settings_country_state_list_column_header  [scope: level]
+        sw_settings_country_state_list_column_toolbar  [scope: level]
+          sw_settings_country_state_list_column_search  [scope: level]
     sw_settings_country_state_list_toolbar
       sw_settings_country_state_list_toolbar_path
       sw_settings_country_state_list_toolbar_summary
     sw_settings_country_state_list_unsaved_country
+
+crossings
+  v-if  sw_settings_country_state_list_unsaved_country -> sw_settings_country_state_list_card
 ```

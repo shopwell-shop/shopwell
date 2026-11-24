@@ -30,4 +30,7 @@ blocks
     sw_organization_detail_smart_bar_header  [private]
       sw_organization_detail_smart_bar_header_title  [private]
         sw_organization_detail_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_organization_detail_loading -> sw_organization_detail_content  [private]
 ```

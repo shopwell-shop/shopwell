@@ -4,6 +4,7 @@ namespace Shopwell\Storefront\Page\LandingPage;
 
 use Shopwell\Core\Content\LandingPage\LandingPageException;
 use Shopwell\Core\Content\LandingPage\SalesChannel\AbstractLandingPageRoute;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\ContentRouteResponse;
@@ -11,6 +12,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\LandingPageSeoUrlRoute;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
 use Shopwell\Storefront\Page\MetaInformation;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -29,6 +31,7 @@ class LandingPageLoader
         private readonly GenericPageLoaderInterface $genericPageLoader,
         private readonly AbstractLandingPageRoute $landingPageRoute,
         private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly SeoUrlPlaceholderHandlerInterface $seoUrlReplacer,
         private readonly ?AbstractContentRoute $contentRoute = null,
     ) {
     }
@@ -61,11 +64,13 @@ class LandingPageLoader
         $metaTitle = $landingPage->getTranslation('metaTitle') ?? $landingPage->getTranslation('name');
         $metaDescription = $landingPage->getTranslation('metaDescription');
         $metaKeywords = $landingPage->getTranslation('keywords');
+        $canonical = $this->seoUrlReplacer->generate(LandingPageSeoUrlRoute::ROUTE_NAME, ['landingPageId' => $landingPage->getId()]);
 
         $metaInformation = new MetaInformation();
         $metaInformation->setMetaTitle((string) $metaTitle);
         $metaInformation->setMetaDescription((string) $metaDescription);
         $metaInformation->setMetaKeywords((string) $metaKeywords);
+        $metaInformation->setCanonical($canonical);
         $page->setMetaInformation($metaInformation);
 
         $this->eventDispatcher->dispatch(

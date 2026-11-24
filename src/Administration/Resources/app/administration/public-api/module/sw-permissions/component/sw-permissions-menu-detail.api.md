@@ -13,12 +13,12 @@ component sw-permissions-menu-detail  private  ts  [private]
 
 blocks
   sw_permissions_menu_list_detail_form  [private]
-    sw_permissions_menu_list_detail_form_basics  [private]
+    sw_permissions_menu_list_detail_form_basics  [after v-if] [private]
       sw_permissions_menu_list_detail_form_icon  [private]
-      sw_permissions_menu_list_detail_form_parent  [private]
+      sw_permissions_menu_list_detail_form_parent  [after v-if] [private]
       sw_permissions_menu_list_detail_form_target  [private]
         sw_permissions_menu_list_detail_form_target_fields  [private]
       sw_permissions_menu_list_detail_form_title  [private]
-      sw_permissions_menu_list_detail_form_type  [private]
+      sw_permissions_menu_list_detail_form_type  [after v-if] [private]
     sw_permissions_menu_list_detail_form_locked  [private]
 ```

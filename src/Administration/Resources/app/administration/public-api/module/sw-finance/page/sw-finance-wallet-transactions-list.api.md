@@ -16,8 +16,8 @@ blocks
     sw_finance_wallet_transactions_list_content  [private]
       sw_finance_wallet_transactions_list_content_inner  [private]
         sw_finance_wallet_transactions_list_empty_state  [private]
-        sw_finance_wallet_transactions_list_empty_state_no_result  [private]
-        sw_finance_wallet_transactions_list_grid  [private]
+        sw_finance_wallet_transactions_list_empty_state_no_result  [after v-if] [private]
+        sw_finance_wallet_transactions_list_grid  [after v-if] [private]
           sw_finance_wallet_transactions_list_grid_column_amount  [private]
           sw_finance_wallet_transactions_list_grid_column_balance_after  [private]
           sw_finance_wallet_transactions_list_grid_column_created_at  [private]
@@ -33,4 +33,8 @@ blocks
         sw_finance_wallet_transactions_list_smart_bar_header_amount  [private]
         sw_finance_wallet_transactions_list_smart_bar_header_title_breadcrumb  [private]
           sw_finance_wallet_transactions_list_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_finance_wallet_transactions_list_empty_state -> sw_finance_wallet_transactions_list_empty_state_no_result  [private]
+  v-if  sw_finance_wallet_transactions_list_empty_state_no_result -> sw_finance_wallet_transactions_list_grid  [private]
 ```

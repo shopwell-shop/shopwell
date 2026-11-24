@@ -16,12 +16,15 @@ blocks
     sw_permissions_role_mcp_reference_modal_content  [private]
       sw_permissions_role_mcp_reference_modal_legend  [private]
       sw_permissions_role_mcp_reference_modal_loading  [private]
-      sw_permissions_role_mcp_reference_modal_rows  [private]
-        sw_permissions_role_mcp_reference_modal_empty  [private]
-        sw_permissions_role_mcp_reference_modal_row_chips  [private]
-        sw_permissions_role_mcp_reference_modal_row_grant  [private]
-        sw_permissions_role_mcp_reference_modal_row_label  [private]
+      sw_permissions_role_mcp_reference_modal_rows  [after v-if] [private]
+        sw_permissions_role_mcp_reference_modal_empty  [after v-if] [private]
+        sw_permissions_role_mcp_reference_modal_row_chips  [scope: row] [private]
+        sw_permissions_role_mcp_reference_modal_row_grant  [scope: row] [private]
+        sw_permissions_role_mcp_reference_modal_row_label  [scope: row] [private]
       sw_permissions_role_mcp_reference_modal_save_reminder  [private]
-      sw_permissions_role_mcp_reference_modal_toolbar  [private]
-    sw_permissions_role_mcp_reference_modal_footer  [private]
+      sw_permissions_role_mcp_reference_modal_toolbar  [after v-if] [private]
+    sw_permissions_role_mcp_reference_modal_footer  [after v-if] [private]
+
+crossings
+  <div>  sw_permissions_role_mcp_reference_modal -> sw_permissions_role_mcp_reference_modal_content  [private]
 ```

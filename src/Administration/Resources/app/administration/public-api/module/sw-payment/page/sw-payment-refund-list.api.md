@@ -16,7 +16,7 @@ blocks
     sw_payment_refund_list_content  [private]
       sw_payment_refund_list_content  [private]
       sw_payment_refund_list_empty_state  [private]
-      sw_payment_refund_list_grid  [private]
+      sw_payment_refund_list_grid  [after v-if] [private]
         sw_payment_refund_list_grid_column_amount  [private]
         sw_payment_refund_list_grid_column_created_at  [private]
         sw_payment_refund_list_grid_column_payment_order  [private]
@@ -30,4 +30,7 @@ blocks
       sw_payment_refund_list_smart_bar_header_title  [private]
         sw_payment_refund_list_smart_bar_header_amount  [private]
         sw_payment_refund_list_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_payment_refund_list_empty_state -> sw_payment_refund_list_grid  [private]
 ```

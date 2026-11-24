@@ -17,7 +17,7 @@ blocks
     sw_loyalty_tier_list_cardview
       sw_loyalty_tier_list_card_content
         sw_loyalty_tier_list_grid
-          sw_loyalty_tier_list_empty_state
+          sw_loyalty_tier_list_empty_state  [after v-if]
           sw_loyalty_tier_list_grid_column_active
           sw_loyalty_tier_list_grid_column_benefits
     sw_loyalty_tier_list_language_switch

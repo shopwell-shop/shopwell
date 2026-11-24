@@ -25,6 +25,10 @@ use Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSell
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingTranslation\ProductCrossSellingTranslationDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCustomFieldSet\ProductCustomFieldSetDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentConfig;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentValidator;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocumentTranslation\ProductDocumentTranslationDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductFeatureSet\ProductFeatureSetDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductFeatureSetTranslation\ProductFeatureSetTranslationDefinition;
@@ -53,6 +57,8 @@ use Shopwell\Core\Content\Product\Cleanup\CleanupProductKeywordDictionaryTask;
 use Shopwell\Core\Content\Product\Cleanup\CleanupProductKeywordDictionaryTaskHandler;
 use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTask;
 use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTaskHandler;
+use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedProductDocumentMediaTask;
+use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedProductDocumentMediaTaskHandler;
 use Shopwell\Core\Content\Product\ContentSystem\DataLoader\CrossSellingDataLoader;
 use Shopwell\Core\Content\Product\ContentSystem\DataLoader\CrossSellingLoaderConfigSerializer;
 use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductConfiguratorDataLoader;
@@ -99,6 +105,7 @@ use Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader
 use Shopwell\Core\Content\Product\SalesChannel\Detail\PartialProductConfiguratorLoader;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Document\ProductDocumentRoute;
 use Shopwell\Core\Content\Product\SalesChannel\FindVariant\FindProductVariantRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Garan\AbstractGaranLabelRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Garan\GaranLabelRoute;
@@ -238,6 +245,29 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ProductDownloadDefinition::class)
         ->tag('shopwell.entity.definition');
+
+    $services->set(ProductDocumentDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(ProductDocumentTranslationDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(ProductDocumentConfig::class)
+        ->args([
+            service('event_dispatcher'),
+            param('shopwell.product_documents.allowed_extensions'),
+            param('shopwell.product_documents.max_file_size'),
+            param('shopwell.filesystem.allowed_extensions'),
+        ]);
+
+    $services->set(ProductDocumentValidator::class)
+        ->args([
+            service(WriteOutcome::class),
+            service('media.repository'),
+            service(ProductDocumentConfig::class),
+            service('product_document.repository'),
+        ])
+        ->tag('kernel.event_subscriber');
 
     $services->set(ProductTranslationDefinition::class)
         ->tag('shopwell.entity.definition');
@@ -726,6 +756,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
         ]);
 
+    $services->set(ProductDocumentRoute::class)
+        ->public()
+        ->args([
+            service('sales_channel.product.repository'),
+            service('product_document.repository'),
+            service('media.repository'),
+            service(CacheTagCollector::class),
+            service(ExtensionDispatcher::class),
+        ]);
+
     $services->set(ProductReviewRoute::class)
         ->public()
         ->args([
@@ -822,6 +862,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.scheduled.task');
 
     $services->set(CleanupUnusedDownloadMediaTaskHandler::class)
+        ->args([
+            service('scheduled_task.repository'),
+            service('logger'),
+            service(UnusedMediaPurger::class),
+        ])
+        ->tag('messenger.message_handler');
+
+    $services->set(CleanupUnusedProductDocumentMediaTask::class)
+        ->tag('shopwell.scheduled.task');
+
+    $services->set(CleanupUnusedProductDocumentMediaTaskHandler::class)
         ->args([
             service('scheduled_task.repository'),
             service('logger'),

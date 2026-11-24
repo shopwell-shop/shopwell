@@ -16,7 +16,7 @@ blocks
     sw_loyalty_plan_list_content
       sw_loyalty_plan_list_card
         sw_loyalty_plan_list_grid
-          sw_loyalty_plan_list_empty_state
+          sw_loyalty_plan_list_empty_state  [after v-if]
     sw_loyalty_plan_list_language_switch
     sw_loyalty_plan_list_search_bar
     sw_loyalty_plan_list_smart_bar_header

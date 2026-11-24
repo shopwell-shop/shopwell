@@ -15,6 +15,8 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'media_folder_configuration:read',
                 'tag:read',
                 'product_media:read',
+                'product_document:read',
+                'product_document_translation:read',
                 'product:read',
                 'category:read',
                 'product_manufacturer:read',

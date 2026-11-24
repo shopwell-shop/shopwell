@@ -235,6 +235,8 @@ export default {
                 });
             });
 
+            criteria.addAssociation('productDocumentTranslations');
+
             return criteria;
         },
 

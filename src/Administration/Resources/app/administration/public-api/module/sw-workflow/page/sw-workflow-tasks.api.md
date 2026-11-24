@@ -14,7 +14,7 @@ component sw-workflow-tasks  private  ts  [private]
 blocks
   sw_workflow_tasks  [private]
     sw_workflow_tasks_content  [private]
-      sw_workflow_tasks_empty  [private]
+      sw_workflow_tasks_empty  [after v-if] [private]
       sw_workflow_tasks_grid  [private]
         sw_workflow_tasks_grid_actions  [private]
         sw_workflow_tasks_grid_comment  [private]
@@ -28,4 +28,7 @@ blocks
       sw_workflow_tasks_tabs  [private]
     sw_workflow_tasks_smart_bar_actions  [private]
     sw_workflow_tasks_smart_bar_header  [private]
+
+crossings
+  v-if  sw_workflow_tasks_grid -> sw_workflow_tasks_empty  [private]
 ```

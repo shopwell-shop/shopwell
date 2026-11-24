@@ -13,7 +13,7 @@ component sw-experience-studio-mapping-modal  private  ts  [private]
 
 blocks
   sw_experience_studio_mapping_modal  [private]
-    sw_experience_studio_mapping_modal_candidates  [private]
+    sw_experience_studio_mapping_modal_candidates  [after v-if] [private]
       sw_experience_studio_mapping_modal_search  [private]
     sw_experience_studio_mapping_modal_footer  [private]
     sw_experience_studio_mapping_modal_intro  [private]

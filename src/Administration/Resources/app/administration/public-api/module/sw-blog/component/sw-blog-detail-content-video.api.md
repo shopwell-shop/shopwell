@@ -14,6 +14,9 @@ component sw-blog-detail-content-video  private  ts  [private]
 blocks
   sw_blog_detail_content_video  [private]
     sw_blog_detail_content_video_empty  [private]
-    sw_blog_detail_content_video_fields  [private]
+    sw_blog_detail_content_video_fields  [after v-if] [private]
       sw_blog_detail_content_video_poster  [private]
+
+crossings
+  v-if  sw_blog_detail_content_video_empty -> sw_blog_detail_content_video_fields  [private]
 ```

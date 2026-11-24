@@ -23,13 +23,16 @@ blocks
     sw_finance_transfer_create_modal_loading  [private]
     sw_finance_transfer_create_modal_note_group  [private]
       sw_finance_transfer_create_modal_field_note  [private]
-    sw_finance_transfer_create_modal_recipient_group  [private]
+    sw_finance_transfer_create_modal_recipient_group  [after v-if] [private]
       sw_finance_transfer_create_modal_field_account  [private]
       sw_finance_transfer_create_modal_field_app  [private]
-      sw_finance_transfer_create_modal_field_bank  [private]
+      sw_finance_transfer_create_modal_field_bank  [after v-if] [private]
       sw_finance_transfer_create_modal_field_channel  [private]
-      sw_finance_transfer_create_modal_field_holder_name  [private]
-      sw_finance_transfer_create_modal_field_identity  [private]
+      sw_finance_transfer_create_modal_field_holder_name  [after v-if] [private]
+      sw_finance_transfer_create_modal_field_identity  [after v-if] [private]
       sw_finance_transfer_create_modal_field_recipient_existing  [private]
       sw_finance_transfer_create_modal_field_recipient_source  [private]
+
+crossings
+  v-if  sw_finance_transfer_create_modal_loading -> sw_finance_transfer_create_modal  [private]
 ```

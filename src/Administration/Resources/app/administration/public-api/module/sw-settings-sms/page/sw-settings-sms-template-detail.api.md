@@ -14,7 +14,7 @@ component sw-settings-sms-template-detail  private  ts  [private]
 blocks
   sw_settings_sms_template_detail  [private]
     sw_settings_sms_template_detail_content  [private]
-      sw_settings_sms_template_detail_loaded  [private]
+      sw_settings_sms_template_detail_loaded  [after v-if] [private]
         sw_settings_sms_template_detail_content_card  [private]
           sw_settings_sms_template_detail_content_field  [private]
         sw_settings_sms_template_detail_extension  [private]
@@ -26,10 +26,10 @@ blocks
           sw_settings_sms_template_detail_technical_name  [private]
           sw_settings_sms_template_detail_validity_seconds  [private]
         sw_settings_sms_template_detail_mapping_card  [private]
-          sw_settings_sms_template_detail_audit_missing_provider  [private]
-          sw_settings_sms_template_detail_mapping_grid  [private]
+          sw_settings_sms_template_detail_audit_missing_provider  [after v-if] [private]
+          sw_settings_sms_template_detail_mapping_grid  [after v-if] [private]
           sw_settings_sms_template_detail_mapping_note  [private]
-          sw_settings_sms_template_detail_mapping_save_first  [private]
+          sw_settings_sms_template_detail_mapping_save_first  [after v-if] [private]
       sw_settings_sms_template_detail_loading  [private]
     sw_settings_sms_template_detail_language_switch  [private]
     sw_settings_sms_template_detail_smart_bar_actions  [private]
@@ -37,4 +37,8 @@ blocks
     sw_settings_sms_template_detail_smart_bar_header  [private]
       sw_settings_sms_template_detail_smart_bar_header_title  [private]
         sw_settings_sms_template_detail_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_settings_sms_template_detail_loading -> sw_settings_sms_template_detail_loaded  [private]
+  v-if  sw_settings_sms_template_detail_mapping_grid -> sw_settings_sms_template_detail_mapping_save_first  [private]
 ```

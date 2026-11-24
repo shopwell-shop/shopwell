@@ -10,6 +10,7 @@ use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductFeatureSet\ProductFeatureSetEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerEntity;
@@ -257,6 +258,8 @@ class ProductEntity extends Entity implements \Stringable
     protected ?ProductStreamCollection $streams = null;
 
     protected ?ProductDownloadCollection $downloads = null;
+
+    protected ?ProductDocumentCollection $documents = null;
 
     protected ?string $openGraphMediaId = null;
 
@@ -1280,6 +1283,16 @@ class ProductEntity extends Entity implements \Stringable
     public function setDownloads(ProductDownloadCollection $downloads): void
     {
         $this->downloads = $downloads;
+    }
+
+    public function getDocuments(): ?ProductDocumentCollection
+    {
+        return $this->documents;
+    }
+
+    public function setDocuments(ProductDocumentCollection $documents): void
+    {
+        $this->documents = $documents;
     }
 
     /**

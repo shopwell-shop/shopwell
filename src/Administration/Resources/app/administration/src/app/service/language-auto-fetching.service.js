@@ -18,10 +18,20 @@ export default function LanguageAutoFetchingService() {
     // load the language Entity
     async function loadLanguage(newLanguageId) {
         const languageRepository = Shopwell.Service('repositoryFactory').create('language');
-        const newLanguage = await languageRepository.get(newLanguageId, {
-            ...Shopwell.Context.api,
-            inheritance: true,
-        });
+        const criteria = new Shopwell.Data.Criteria();
+        criteria.addAssociation('locale');
+        const newLanguage = await languageRepository.get(
+            newLanguageId,
+            {
+                ...Shopwell.Context.api,
+                inheritance: true,
+            },
+            criteria,
+        );
+
+        if (newLanguageId !== Shopwell.Context.api.languageId) {
+            return;
+        }
 
         Shopwell.Store.get('context').api.language = newLanguage;
     }

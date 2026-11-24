@@ -20,7 +20,7 @@ blocks
           sw_blog_detail_content_extensions  [private]
           sw_blog_detail_content_general_fields  [private]
         sw_blog_detail_content_page_layout  [private]
-        sw_blog_detail_content_seo  [private]
+        sw_blog_detail_content_seo  [after v-if] [private]
           sw_blog_detail_content_seo_fields  [private]
       sw_blog_detail_content_rail  [private]
         sw_blog_detail_rail_categories  [private]
@@ -32,6 +32,6 @@ blocks
     sw_blog_detail_language_switch  [private]
     sw_blog_detail_smart_bar_actions  [private]
       sw_blog_detail_actions_delete  [private]
-      sw_blog_detail_actions_save  [private]
+      sw_blog_detail_actions_save  [after v-if] [private]
     sw_blog_detail_smart_bar_header  [private]
 ```

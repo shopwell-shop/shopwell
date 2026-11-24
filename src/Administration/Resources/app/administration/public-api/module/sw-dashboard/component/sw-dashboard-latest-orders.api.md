@@ -19,6 +19,6 @@ blocks
       sw_dashboard_latest_orders_column_customer  [private]
       sw_dashboard_latest_orders_column_order_time  [private]
       sw_dashboard_latest_orders_column_state  [private]
-      sw_dashboard_latest_orders_empty  [private]
+      sw_dashboard_latest_orders_empty  [after v-if] [private]
     sw_dashboard_latest_orders_title  [private]
 ```

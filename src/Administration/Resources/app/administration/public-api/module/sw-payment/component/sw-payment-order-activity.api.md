@@ -15,12 +15,15 @@ blocks
   sw_payment_order_activity  [private]
     sw_payment_order_activity_empty  [private]
     sw_payment_order_activity_filters  [private]
-    sw_payment_order_activity_list  [private]
+    sw_payment_order_activity_list  [after v-if] [private]
       sw_payment_order_activity_entry  [private]
-        sw_payment_order_activity_entry_body  [private]
-          sw_payment_order_activity_entry_detail  [private]
-          sw_payment_order_activity_entry_meta  [private]
-            sw_payment_order_activity_entry_link  [private]
-          sw_payment_order_activity_entry_status  [private]
-        sw_payment_order_activity_entry_icon  [private]
+        sw_payment_order_activity_entry_body  [scope: activity] [private]
+          sw_payment_order_activity_entry_detail  [scope: activity] [private]
+          sw_payment_order_activity_entry_meta  [after v-if] [scope: activity] [private]
+            sw_payment_order_activity_entry_link  [scope: activity] [private]
+          sw_payment_order_activity_entry_status  [scope: activity] [private]
+        sw_payment_order_activity_entry_icon  [scope: activity] [private]
+
+crossings
+  v-if  sw_payment_order_activity_empty -> sw_payment_order_activity_list  [private]
 ```

@@ -109,7 +109,6 @@ use Shopwell\Storefront\Framework\Routing\DomainLoader;
 use Shopwell\Storefront\Framework\Routing\DomainNotMappedListener;
 use Shopwell\Storefront\Framework\Routing\MaintenanceModeResolver;
 use Shopwell\Storefront\Framework\Routing\NotFound\NotFoundSubscriber;
-use Shopwell\Storefront\Framework\Routing\ProductListingPageOutOfRangeSubscriber;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
 use Shopwell\Storefront\Framework\Routing\ResponseHeaderListener;
 use Shopwell\Storefront\Framework\Routing\RobotsRouteScopeWhitelist;
@@ -444,9 +443,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('kernel.event_subscriber');
 
-    $services->set(ProductListingPageOutOfRangeSubscriber::class)
-        ->tag('kernel.event_subscriber');
-
     $services->set(TemplateDataSubscriber::class)
         ->args([
             service(HreflangLoaderInterface::class),
@@ -504,6 +500,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(GenericPageLoader::class),
             service(LandingPageRoute::class),
             service('event_dispatcher'),
+            service(SeoUrlPlaceholderHandlerInterface::class),
             service(AbstractContentRoute::class),
         ]);
 
@@ -592,6 +589,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ProductDetailRoute::class),
             service('product_review.repository'),
             service(SystemConfigService::class),
+            service(SeoUrlPlaceholderHandlerInterface::class),
             service(CategoryBreadcrumbBuilder::class),
         ]);
 

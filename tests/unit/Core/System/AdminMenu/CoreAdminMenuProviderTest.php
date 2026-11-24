@@ -73,6 +73,17 @@ class CoreAdminMenuProviderTest extends TestCase
         }
     }
 
+    public function testWebhookSettingsCanBeAssignedToRoleMenus(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+
+        static::assertArrayHasKey('sw-settings-webhook', $definitions);
+        $definition = $definitions['sw-settings-webhook'];
+        static::assertSame('sw-settings-group-system', $definition->parent);
+        static::assertSame('system', $definitions[$definition->parent]->groupName);
+        static::assertSame('webhook.viewer', $definition->privilege);
+    }
+
     public function testBlogIsALocalizedFolderWithIndependentChildren(): void
     {
         $blogs = array_values(array_filter(

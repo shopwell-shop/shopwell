@@ -13,7 +13,11 @@ component sw-blog-detail-content  private  ts  [private]
 
 blocks
   sw_blog_detail_content  [private]
-    sw_blog_detail_content_loading  [private]
+    sw_blog_detail_content_loading  [after v-if] [private]
     sw_blog_detail_content_type  [private]
-    sw_blog_detail_content_unknown  [private]
+    sw_blog_detail_content_unknown  [after v-if] [private]
+
+crossings
+  v-if  sw_blog_detail_content_type -> sw_blog_detail_content_unknown  [private]
+  v-if  sw_blog_detail_content_unknown -> sw_blog_detail_content_loading  [private]
 ```

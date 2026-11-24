@@ -371,6 +371,10 @@
                 <title lang="en-GB">Users &amp; login</title>
                 <title lang="zh-CN">用户与登录</title>
             </menu>
+            <menu id="sw-settings-webhook" icon="regular-bolt" position="795" privilege="webhook.viewer">
+                <title lang="en-GB">Webhooks</title>
+                <title lang="zh-CN">Webhook</title>
+            </menu>
         </menu>
         <menu id="sw-settings-group-payment" type="group" position="800" group="payment">
             <title lang="en-GB">Payment</title>

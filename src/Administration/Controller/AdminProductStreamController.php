@@ -6,11 +6,10 @@ use Shopwell\Administration\Framework\Routing\AdministrationRouteScope;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
 use Shopwell\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotEqualsFilter;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Grouping\FieldGrouping;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Random;
@@ -36,7 +35,8 @@ class AdminProductStreamController extends AbstractController
         private readonly ProductDefinition $productDefinition,
         private readonly SalesChannelRepository $salesChannelProductRepository,
         private readonly SalesChannelContextServiceInterface $salesChannelContextService,
-        private readonly RequestCriteriaBuilder $criteriaBuilder
+        private readonly RequestCriteriaBuilder $criteriaBuilder,
+        private readonly ProductListingLoader $productListingLoader
     ) {
     }
 
@@ -76,16 +76,15 @@ class AdminProductStreamController extends AbstractController
 
         $criteria->addState(Criteria::STATE_ELASTICSEARCH_AWARE);
 
-        // Mirror the storefront listing's variant grouping so the preview reflects the product stream's
-        // "display as group" setting. It is read from the query string to keep the Criteria request body
-        // (and therefore its schema) untouched.
+        // The "display as group" setting is read from the query string to keep the Criteria request body
+        // (and therefore its schema) untouched. Grouped previews go through the listing loader, so each
+        // group shows the variant configured in the storefront presentation.
         if ($request->query->getBoolean('displayAsGroup')) {
-            $criteria->addGroupField(new FieldGrouping('displayGroup'));
-            $criteria->addFilter(new NotEqualsFilter('displayGroup', null));
+            $criteria->addState(ProductListingLoader::STATE_INCLUDE_INACTIVE);
+
+            return new JsonResponse($this->productListingLoader->load($criteria, $salesChannelContext));
         }
 
-        $previewResult = $this->salesChannelProductRepository->search($criteria, $salesChannelContext);
-
-        return new JsonResponse($previewResult);
+        return new JsonResponse($this->salesChannelProductRepository->search($criteria, $salesChannelContext));
     }
 }

@@ -13,6 +13,8 @@ use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentFile\DocumentFileDefinit
 use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocumentTranslation\ProductDocumentTranslationDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
@@ -317,6 +319,8 @@ class EntityForeignKeyResolverTest extends TestCase
             [
                 $rootDef,
                 new ProductDownloadDefinition(),
+                new ProductDocumentDefinition(),
+                new ProductDocumentTranslationDefinition(),
                 new OrderLineItemDownloadDefinition(),
                 new DocumentDefinition(),
                 new DocumentFileDefinition(),

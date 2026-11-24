@@ -27,7 +27,8 @@
                         "message": "角色 \"{name}\" 已删除。"
                     },
                     "deleteError": {
-                        "message": "角色 \"{name}\" 无法删除。"
+                        "message": "角色 \"{name}\" 无法删除。",
+                        "FRAMEWORK__WEBHOOK_ACL_ROLE_USED_BY_WEBHOOK": "Webhook {webhookNames} 正在使用此角色。"
                     }
                 },
                 "labelPrivileges": "权限数",

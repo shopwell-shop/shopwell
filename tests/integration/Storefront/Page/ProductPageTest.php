@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Integration\Storefront\Page;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopwell\Core\Content\Product\ProductException;
+use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
@@ -135,6 +136,57 @@ class ProductPageTest extends TestCase
         }
 
         $this->getPageLoader()->load($request, $context);
+    }
+
+    public function testItDoesHaveCanonicalTag(): void
+    {
+        $context = $this->createSalesChannelContextWithNavigation();
+        $product = $this->getRandomProduct($context);
+        $request = new Request([], [], ['productId' => $product->getId()]);
+
+        $event = null;
+        $this->catchEvent(ProductPageLoadedEvent::class, $event);
+
+        $metaInformation = $this->getPageLoader()->load($request, $context)->getMetaInformation();
+        static::assertNotNull($metaInformation);
+        $meta = $metaInformation->getVars();
+        $canonical = $meta['canonical'];
+
+        static::assertIsString($canonical);
+        static::assertNotSame('', $canonical);
+
+        $seoUrlHandler = static::getContainer()->get(SeoUrlPlaceholderHandlerInterface::class);
+        $seoUrl = $seoUrlHandler->replace($canonical, $request->getHost(), $context);
+
+        static::assertIsString($product->getName());
+
+        static::assertSame('/' . $product->getName() . '/' . $product->getProductNumber(), $seoUrl);
+    }
+
+    public function testItDoesHaveCanonicalTagWithCanonicalProduct(): void
+    {
+        $context = $this->createSalesChannelContextWithNavigation();
+        $canonicalProduct = $this->getRandomProduct($context);
+        $product = $this->getRandomProduct($context, config: ['canonicalProductId' => $canonicalProduct->getId()]);
+        $request = new Request([], [], ['productId' => $product->getId()]);
+
+        $event = null;
+        $this->catchEvent(ProductPageLoadedEvent::class, $event);
+
+        $metaInformation = $this->getPageLoader()->load($request, $context)->getMetaInformation();
+        static::assertNotNull($metaInformation);
+        $meta = $metaInformation->getVars();
+        $canonical = $meta['canonical'];
+
+        static::assertIsString($canonical);
+        static::assertNotSame('', $canonical);
+
+        $seoUrlHandler = static::getContainer()->get(SeoUrlPlaceholderHandlerInterface::class);
+        $seoUrl = $seoUrlHandler->replace($canonical, $request->getHost(), $context);
+
+        static::assertIsString($canonicalProduct->getName());
+
+        static::assertSame('/' . $canonicalProduct->getName() . '/' . $canonicalProduct->getProductNumber(), $seoUrl);
     }
 
     protected function getPageLoader(): ProductPageLoader

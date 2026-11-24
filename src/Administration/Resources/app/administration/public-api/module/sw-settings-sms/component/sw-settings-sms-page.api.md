@@ -14,7 +14,7 @@ component sw-settings-sms-page  private  ts  [private]
 blocks
   sw_settings_sms_page  [private]
     sw_settings_sms_page_actions  [private]
-    sw_settings_sms_page_content  [private]
+    sw_settings_sms_page_content  [after v-if] [private]
     sw_settings_sms_page_header  [private]
     sw_settings_sms_page_navigation  [private]
 ```

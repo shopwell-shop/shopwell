@@ -13,8 +13,8 @@ component sw-experience-studio-inline-text-field  private  ts  [private]
 
 blocks
   sw_experience_studio_inline_text_field  [private]
-    sw_experience_studio_inline_text_field_editor  [private]
-    sw_experience_studio_inline_text_field_help_text  [private]
-    sw_experience_studio_inline_text_field_mapping_modal  [private]
+    sw_experience_studio_inline_text_field_editor  [after v-if] [private]
+    sw_experience_studio_inline_text_field_help_text  [after v-if] [private]
+    sw_experience_studio_inline_text_field_mapping_modal  [after v-if] [private]
     sw_experience_studio_inline_text_field_parse_status  [private]
 ```

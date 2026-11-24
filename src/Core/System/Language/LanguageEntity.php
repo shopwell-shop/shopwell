@@ -20,6 +20,7 @@ use Shopwell\Core\Content\MailTemplate\MailTemplateCollection;
 use Shopwell\Core\Content\Media\Aggregate\MediaTranslation\MediaTranslationCollection;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingTranslation\ProductCrossSellingTranslationCollection;
+use Shopwell\Core\Content\Product\Aggregate\ProductDocumentTranslation\ProductDocumentTranslationCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductFeatureSetTranslation\ProductFeatureSetTranslationCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductKeywordDictionary\ProductKeywordDictionaryCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturerTranslation\ProductManufacturerTranslationCollection;
@@ -185,6 +186,8 @@ class LanguageEntity extends Entity
     protected ?NumberRangeTranslationCollection $numberRangeTranslations = null;
 
     protected ?ProductReviewCollection $productReviews = null;
+
+    protected ?ProductDocumentTranslationCollection $productDocumentTranslations = null;
 
     protected ?SeoUrlCollection $seoUrlTranslations = null;
 
@@ -771,6 +774,16 @@ class LanguageEntity extends Entity
     public function setProductReviews(ProductReviewCollection $productReviews): void
     {
         $this->productReviews = $productReviews;
+    }
+
+    public function getProductDocumentTranslations(): ?ProductDocumentTranslationCollection
+    {
+        return $this->productDocumentTranslations;
+    }
+
+    public function setProductDocumentTranslations(ProductDocumentTranslationCollection $productDocumentTranslations): void
+    {
+        $this->productDocumentTranslations = $productDocumentTranslations;
     }
 
     public function getSeoUrlTranslations(): ?SeoUrlCollection

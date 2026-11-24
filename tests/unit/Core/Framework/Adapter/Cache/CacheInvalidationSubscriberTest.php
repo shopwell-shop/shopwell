@@ -10,6 +10,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationDefinition;
 use Shopwell\Core\Content\Category\CategoryDefinition;
+use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\SalesChannel\NavigationRoute;
 use Shopwell\Core\Content\Media\Event\MediaIndexerEvent;
 use Shopwell\Core\Content\Media\SalesChannel\MediaRoute;
@@ -17,6 +18,7 @@ use Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSell
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingTranslation\ProductCrossSellingTranslationDefinition;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingRoute;
 use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidationSubscriber;
 use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopwell\Core\Framework\Context;
@@ -98,7 +100,7 @@ class CacheInvalidationSubscriberTest extends TestCase
 
     public function testInvalidateMediaWithoutVariantsWillInvalidateOnlyProducts(): void
     {
-        $productId = '123';
+        $productId = Uuid::randomHex();
         $mediaId = Uuid::randomHex();
         $event = new MediaIndexerEvent([$mediaId], Context::createDefaultContext(), []);
 
@@ -122,8 +124,8 @@ class CacheInvalidationSubscriberTest extends TestCase
 
     public function testInvalidateMediaWithVariantsWillInvalidateProductsAndVariants(): void
     {
-        $productId = '123';
-        $variants = ['456', '789'];
+        $productId = Uuid::randomHex();
+        $variants = [Uuid::randomHex(), Uuid::randomHex()];
         $mediaId = Uuid::randomHex();
         $event = new MediaIndexerEvent([$mediaId], Context::createDefaultContext(), []);
 
@@ -148,6 +150,53 @@ class CacheInvalidationSubscriberTest extends TestCase
             );
 
         $subscriber->invalidateMedia($event);
+    }
+
+    public function testInvalidateMediaInvalidatesEveryPageShowingTheMedia(): void
+    {
+        $ids = [
+            'product' => Uuid::randomHex(),
+            'listing' => Uuid::randomHex(),
+            'stream' => Uuid::randomHex(),
+            'category' => Uuid::randomHex(),
+            'manufacturer' => Uuid::randomHex(),
+        ];
+
+        // every lookup is answered by the table it reads
+        $results = [
+            'FROM product_category_tree' => [$ids['listing']],
+            'FROM product_stream_mapping' => [$ids['stream']],
+            'FROM category WHERE media_id' => [$ids['category']],
+            'FROM product_manufacturer WHERE media_id' => [$ids['manufacturer']],
+        ];
+
+        $this->connection->expects($this->once())->method('fetchAllAssociative')->willReturn([['product_id' => $ids['product'], 'variant_id' => null]]);
+        $this->connection->method('fetchFirstColumn')->willReturnCallback(static function (string $sql) use ($results): array {
+            foreach ($results as $table => $result) {
+                if (str_contains($sql, $table)) {
+                    return $result;
+                }
+            }
+
+            return [];
+        });
+
+        $tags = [];
+        $this->cacheInvalidator->expects($this->once())->method('invalidate')->willReturnCallback(static function (array $invalidated) use (&$tags): void {
+            $tags = $invalidated;
+        });
+
+        $this->createSubscriber()->invalidateMedia(new MediaIndexerEvent([Uuid::randomHex()], Context::createDefaultContext(), []));
+
+        foreach ([
+            EntityCacheKeyGenerator::buildProductTag($ids['product']),
+            ProductListingRoute::buildName($ids['listing']),
+            EntityCacheKeyGenerator::buildStreamTag($ids['stream']),
+            CategoryRoute::buildName($ids['category']),
+            EntityCacheKeyGenerator::buildManufacturerTag($ids['manufacturer']),
+        ] as $tag) {
+            static::assertContains($tag, $tags);
+        }
     }
 
     public function testInvalidateNavigationRouteWithSalesChannelSettings(): void

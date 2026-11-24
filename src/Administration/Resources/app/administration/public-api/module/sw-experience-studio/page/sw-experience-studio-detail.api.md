@@ -16,7 +16,7 @@ blocks
     sw_experience_studio_detail_content  [private]
       sw_experience_studio_detail_assignment_modal  [private]
       sw_experience_studio_detail_toolbar  [private]
-      sw_experience_studio_detail_workspace  [private]
+      sw_experience_studio_detail_workspace  [after v-if] [private]
         sw_experience_studio_detail_element_settings  [private]
         sw_experience_studio_detail_preview  [private]
         sw_experience_studio_detail_sidebar_tree  [private]

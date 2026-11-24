@@ -1,7 +1,10 @@
 import template from './sw-media-quickinfo-usage.html.twig';
 import './sw-media-quickinfo-usage.scss';
 
-const { Application } = Shopwell;
+const {
+    Application,
+    Data: { Criteria },
+} = Shopwell;
 const types = Shopwell.Utils.types;
 
 /**
@@ -41,6 +44,7 @@ export default {
 
             landingPages: [],
             isLoading: false,
+            usageRequestId: 0,
         };
     },
 
@@ -55,6 +59,15 @@ export default {
 
         categoryRepository() {
             return this.repositoryFactory.create('category');
+        },
+
+        productUsageCriteria() {
+            const criteria = new Criteria(1, 10);
+            criteria.addFilter(Criteria.equals('documents.translations.mediaId', this.item.id));
+            criteria.addFields('name');
+            criteria.addSorting(Criteria.sort('createdAt', 'DESC'));
+
+            return criteria;
         },
 
         moduleFactory() {
@@ -113,16 +126,16 @@ export default {
 
     watch: {
         item() {
-            this.createdComponent();
+            return this.createdComponent();
         },
     },
 
     created() {
-        this.createdComponent();
+        return this.createdComponent();
     },
 
     methods: {
-        createdComponent() {
+        async createdComponent() {
             this.loadProductAssociations();
             this.loadCategoryAssociations();
             this.loadManufacturerAssociations();
@@ -131,6 +144,30 @@ export default {
             this.loadAvatarUserAssociations();
             this.loadPaymentMethodAssociations();
             this.loadShippingMethodAssociations();
+            await this.loadProductDocumentAssociations();
+        },
+
+        async loadProductDocumentAssociations() {
+            this.usageRequestId += 1;
+            const requestId = this.usageRequestId;
+            this.isLoading = true;
+
+            try {
+                const foundInProducts = await this.productRepository.search(this.productUsageCriteria);
+                if (requestId !== this.usageRequestId) {
+                    return;
+                }
+
+                foundInProducts.forEach((product) => {
+                    if (!this.products.some((productMedia) => productMedia.product.id === product.id)) {
+                        this.products.push({ product });
+                    }
+                });
+            } finally {
+                if (requestId === this.usageRequestId) {
+                    this.isLoading = false;
+                }
+            }
         },
 
         loadProductAssociations() {

@@ -13,5 +13,5 @@ component sw-workflow-form-permissions  private  ts  [private]
 
 blocks
   sw_workflow_form_permissions  [private]
-    sw_workflow_form_permissions_fields  [private]
+    sw_workflow_form_permissions_fields  [after v-if] [private]
 ```

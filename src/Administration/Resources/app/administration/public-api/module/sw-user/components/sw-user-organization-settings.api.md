@@ -14,5 +14,5 @@ component sw-user-organization-settings  private  ts  [private]
 blocks
   sw_user_organization_settings  [private]
     sw_user_organization_settings_department  [private]
-    sw_user_organization_settings_memberships  [private]
+    sw_user_organization_settings_memberships  [after v-if] [private]
 ```

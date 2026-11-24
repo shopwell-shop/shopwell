@@ -31,6 +31,7 @@ use Shopwell\Administration\Snippet\SnippetFinder;
 use Shopwell\Administration\System\SalesChannel\Subscriber\SalesChannelUserConfigSubscriber;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerEmailUniqueChecker;
 use Shopwell\Core\Content\Product\ProductDefinition;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
 use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopwell\Core\Framework\Adapter\Cache\Http\Event\BeforeCacheControlEvent;
 use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
@@ -168,6 +169,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('sales_channel.product.repository'),
             service(SalesChannelContextService::class),
             service(RequestCriteriaBuilder::class),
+            service(ProductListingLoader::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

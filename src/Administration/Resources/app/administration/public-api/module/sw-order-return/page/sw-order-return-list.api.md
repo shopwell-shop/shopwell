@@ -16,8 +16,8 @@ blocks
     sw_order_return_list_content  [private]
       sw_order_return_list_content_inner  [private]
         sw_order_return_list_empty_state  [private]
-        sw_order_return_list_empty_state_no_result  [private]
-        sw_order_return_list_grid  [private]
+        sw_order_return_list_empty_state_no_result  [after v-if] [private]
+        sw_order_return_list_grid  [after v-if] [private]
           sw_order_return_list_grid_column_created_at  [private]
           sw_order_return_list_grid_column_customer  [private]
           sw_order_return_list_grid_column_deadline  [private]
@@ -32,4 +32,8 @@ blocks
       sw_order_return_list_smart_bar_header_title  [private]
         sw_order_return_list_smart_bar_header_amount  [private]
         sw_order_return_list_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_order_return_list_empty_state -> sw_order_return_list_empty_state_no_result  [private]
+  v-if  sw_order_return_list_empty_state_no_result -> sw_order_return_list_grid  [private]
 ```

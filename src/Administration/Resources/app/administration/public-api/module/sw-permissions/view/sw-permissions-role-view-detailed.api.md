@@ -12,5 +12,5 @@ component sw-permissions-role-view-detailed  private  js  [private]
   visibility-source registration  [private]
 
 blocks
-  sw_permissions_role_role_view_general_card_view_additional_permissions  [private]
+  sw_permissions_role_role_view_general_card_view_additional_permissions  [after v-if] [private]
 ```

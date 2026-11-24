@@ -22,7 +22,7 @@ blocks
       sw_customer_address_form_gender_title_container
         sw_customer_address_form_gender_field
       sw_customer_address_form_name_field
-      sw_customer_address_form_phone_number_field
+      sw_customer_address_form_phone_number_field  [after v-if]
       sw_customer_address_form_state_field
       sw_customer_address_form_street_field
       sw_customer_address_form_zipcode_city_container

@@ -543,8 +543,8 @@
             "imagesFilter": {
                 "label": "图片",
                 "placeholder": "选择图片状态 ...",
-                "textHasCriteria": "至少有一个商品图片关联",
-                "textNoCriteria": "未关联商品图片"
+                "textHasCriteria": "已添加图片",
+                "textNoCriteria": "未添加图片"
             },
             "releaseDateFilter": {
                 "label": "发布日期"
@@ -588,7 +588,13 @@
                 "placeholder": "选择商品类型..."
             },
             "messageEmptyTitle": "未找到内容",
-            "messageEmptySubline": "修改筛选条件以查看结果。"
+            "messageEmptySubline": "修改筛选条件以查看结果。",
+            "documentsFilter": {
+                "label": "商品文档",
+                "placeholder": "选择文档状态…",
+                "textHasCriteria": "已添加文档",
+                "textNoCriteria": "未添加文档"
+            }
         },
         "notification": {
             "notificationSaveErrorProductNoAlreadyExists": "商品编号 \"{productNo}\" 已被占用。"
@@ -613,6 +619,62 @@
             "maintenanceHint": "销售渠道正在维护，仅允许名单中的 IP 可以访问。",
             "infoDomainsWithoutValidUrl": "以下域名未配置有效的 HTTP 或 HTTPS 地址：{urls}",
             "notificationOpenInStorefrontError": "商品的店铺链接加载失败。"
+        },
+        "documentForm": {
+            "variantOnly": "仅此规格",
+            "cardTitle": "商品文档（{count}）",
+            "cardSubtitle": "客户可在店铺商品详情页下载的文件。",
+            "emptyState": "暂无商品文档",
+            "emptyDescription": "添加说明书、规格表或证书等文件，供客户在商品详情页下载。",
+            "emptyDescriptionOtherLanguage": "请切换到默认内容语言 {language} 后添加文档。",
+            "defaultLanguage": "默认语言",
+            "buttonAdd": "添加文档",
+            "addLanguageVersion": "添加{language}版本",
+            "fileFallbackHint": "未添加文件时，客户将下载回退语言的文件。",
+            "removeLanguageVersion": "移除{language}版本",
+            "removeLanguageVersionTitle": "移除“{name}”的{language}版本？",
+            "removeLanguageVersionSuccess": "已移除“{name}”的{language}版本。",
+            "removeLanguageVersionDescription": "移除后将使用回退语言的名称和文件，原文件仍保留在媒体库。",
+            "changedForLanguage": "已针对当前语言修改。",
+            "switchContentLanguage": "切换内容语言",
+            "columnPosition": "排序",
+            "columnTitle": "名称",
+            "columnFileName": "文件",
+            "columnFileType": "格式",
+            "columnFileSize": "大小",
+            "contextMoveUp": "上移",
+            "contextDownload": "下载",
+            "contextMoveDown": "下移",
+            "editTitle": "编辑文档",
+            "nameHint": "此名称显示在商品详情页。",
+            "errorNameRequired": "请输入名称。",
+            "errorFileRequired": "请选择文件。",
+            "applyToVariants": "同时更新已取消文档继承的规格",
+            "applyToVariantsHelp": "对于已取消继承的规格，仅更新名称和文件仍与原文档相同的副本。保持继承的规格会自动更新。",
+            "draftHint": "保存商品后生效。",
+            "errorLoadVariants": "规格文档加载失败，请重试。",
+            "errorSaveVariants": "商品已保存，但规格更新失败。",
+            "applySuccess": "已应用文档“{name}”，并更新 {count} 个规格。",
+            "removeSuccess": "已移除“{name}”，同时从 {count} 个规格中移除。",
+            "bulkRemoveTitle": "移除 {count} 份文档？",
+            "bulkRemoveLanguageVersionTitle": "移除 {count} 份文档的{language}版本？",
+            "bulkRemoveDescription": "从商品的所有语言中移除所选文档，文件仍保留在媒体库。",
+            "bulkRemoveSuccess": "已移除 {count} 份文档。",
+            "bulkRemoveLanguageVersionSuccess": "已移除 {count} 份文档的{language}版本。",
+            "removeTitle": "移除“{name}”？",
+            "removeDescription": "从商品的所有语言中移除此文档，文件仍保留在媒体库。",
+            "restoreInheritanceTitle": "恢复所有文档的继承？",
+            "restoreInheritanceDescription": "此规格将重新使用父商品的文档名称、文件和顺序，当前规格的文档修改将丢失。",
+            "restoreInheritanceButton": "恢复继承",
+            "restoreInheritanceSuccess": "此规格已恢复使用父商品的文档。",
+            "removeFromVariants": "同时从已取消文档继承的规格中移除",
+            "removeFromVariantsHelp": "对于已取消继承的规格，仅移除名称和文件仍与原文档相同的副本。保持继承的规格会自动移除该文档。",
+            "errorLoadMedia": "上传的文件加载失败，请重试。",
+            "errorDocumentDuplicated": "此文件已添加到商品。",
+            "languageHint": "请先在默认语言中添加文档，再切换内容语言翻译名称和文件。",
+            "fileUploadLabel": "上传文件",
+            "uploadHint": "支持 {extensions}，单个文件不超过 {size}。",
+            "unlinkToAdd": "请先取消继承，再为此规格添加文档。"
         }
     },
     "sw-privileges": {

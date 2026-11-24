@@ -14,14 +14,14 @@ component sw-settings-oauth2-login  private  ts  [private]
 blocks
   sw_settings_oauth2_login_index  [private]
     sw_settings_oauth2_login_content  [private]
-      sw_settings_oauth2_login_content_channel  [private]
+      sw_settings_oauth2_login_content_channel  [after v-if] [private]
         sw_settings_oauth2_login_content_channel_enabled  [private]
         sw_settings_oauth2_login_content_channel_fields  [private]
           sw_settings_oauth2_login_content_channel_field  [private]
         sw_settings_oauth2_login_content_channel_reset  [private]
-      sw_settings_oauth2_login_content_empty_state  [private]
+      sw_settings_oauth2_login_content_empty_state  [after v-if] [private]
       sw_settings_oauth2_login_content_extension  [private]
-      sw_settings_oauth2_login_content_loading  [private]
+      sw_settings_oauth2_login_content_loading  [after v-if] [private]
       sw_settings_oauth2_login_content_tabs  [private]
       sw_settings_oauth2_login_remove_modal  [private]
         sw_settings_oauth2_login_remove_modal_content  [private]
@@ -33,4 +33,8 @@ blocks
     sw_settings_oauth2_login_smart_bar_header  [private]
       sw_settings_oauth2_login_smart_bar_header_title  [private]
         sw_settings_oauth2_login_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_settings_oauth2_login_content_empty_state -> sw_settings_oauth2_login_content_channel  [private]
+  v-if  sw_settings_oauth2_login_content_loading -> sw_settings_oauth2_login_content_empty_state  [private]
 ```

@@ -15,6 +15,6 @@ blocks
   sw_experience_studio_media_collection_field  [private]
     sw_experience_studio_media_collection_field_label  [private]
     sw_experience_studio_media_collection_field_modal  [private]
-    sw_experience_studio_media_collection_field_selection  [private]
+    sw_experience_studio_media_collection_field_selection  [after v-if] [private]
     sw_experience_studio_media_collection_field_upload_listener  [private]
 ```

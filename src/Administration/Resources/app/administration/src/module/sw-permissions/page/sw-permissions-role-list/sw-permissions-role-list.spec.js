@@ -11,7 +11,13 @@ function createRoleCollection(rows) {
     return new EntityCollection('acl_role', 'acl_role', Shopwell.Context.api, new Criteria(1), rows, rows.length);
 }
 
-async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], isSso = false } = {}) {
+async function createWrapper({
+    rows = [],
+    affectedUsers = 0,
+    privileges = [],
+    isSso = false,
+    translatedReason = false,
+} = {}) {
     const roleRepository = {
         search: jest.fn(() => Promise.resolve(createRoleCollection(rows))),
         delete: jest.fn(() => Promise.resolve()),
@@ -33,6 +39,7 @@ async function createWrapper({ rows = [], affectedUsers = 0, privileges = [], is
                 renderStubDefaultSlot: true,
                 mocks: {
                     $t: (key, values) => (values ? `${key} ${JSON.stringify(values)}` : key),
+                    $te: () => translatedReason,
                     $route: route,
                     $router: router,
                 },
@@ -277,5 +284,44 @@ describe('module/sw-permissions/page/sw-permissions-role-list', () => {
         }
 
         expect(roleRepository.delete).toHaveBeenCalledWith('role-1', expect.any(Object));
+    });
+
+    it.each([true, false])('shows only translated API deletion reasons (known=%s)', async (known) => {
+        const { wrapper: roleList, roleRepository } = await createWrapper({
+            rows: [{ id: 'role-1', name: 'Order management' }],
+            privileges: ['permissions.deleter'],
+            isSso: true,
+            translatedReason: known,
+        });
+        wrapper = roleList;
+        const reason = 'sw-permissions.roles.role-grid.notification.deleteError.FRAMEWORK__WEBHOOK_ACL_ROLE_USED_BY_WEBHOOK';
+        const notify = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
+        roleRepository.delete.mockRejectedValueOnce({
+            response: {
+                data: {
+                    errors: [
+                        {
+                            code: 'FRAMEWORK__WEBHOOK_ACL_ROLE_USED_BY_WEBHOOK',
+                            meta: { parameters: { webhookNames: 'Order created', count: 1 } },
+                        },
+                    ],
+                },
+            },
+        });
+
+        await roleList.get('.sw-permissions-role-list__context-menu-delete').trigger('click');
+        await flushPromises();
+        await roleList.get('.sw-permissions-role-list__confirm-delete-button').trigger('click');
+        await flushPromises();
+
+        expect(roleRepository.delete).toHaveBeenCalledWith('role-1', expect.any(Object));
+        expect(notify).toHaveBeenCalledWith(
+            expect.objectContaining({
+                variant: 'error',
+                message: known
+                    ? `sw-permissions.roles.role-grid.notification.deleteError.message {"name":"Order management"} ${reason} {"webhookNames":"Order created","count":1}`
+                    : 'sw-permissions.roles.role-grid.notification.deleteError.message {"name":"Order management"}',
+            }),
+        );
     });
 });

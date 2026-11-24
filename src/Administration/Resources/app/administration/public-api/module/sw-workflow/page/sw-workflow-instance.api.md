@@ -15,15 +15,18 @@ blocks
   sw_workflow_instance  [private]
     sw_workflow_instance_content  [private]
       sw_workflow_instance_error  [private]
-      sw_workflow_instance_layout  [private]
+      sw_workflow_instance_layout  [after v-if] [private]
         sw_workflow_instance_main  [private]
           sw_workflow_instance_form  [private]
           sw_workflow_instance_form_changes  [private]
-          sw_workflow_instance_graph  [private]
+          sw_workflow_instance_graph  [after v-if] [private]
         sw_workflow_instance_side  [private]
-          sw_workflow_instance_actions  [private]
+          sw_workflow_instance_actions  [after v-if] [private]
           sw_workflow_instance_reminders  [private]
-          sw_workflow_instance_timeline  [private]
+          sw_workflow_instance_timeline  [after v-if] [private]
       sw_workflow_instance_remind  [private]
     sw_workflow_instance_smart_bar_header  [private]
+
+crossings
+  v-if  sw_workflow_instance_error -> sw_workflow_instance_layout  [private]
 ```

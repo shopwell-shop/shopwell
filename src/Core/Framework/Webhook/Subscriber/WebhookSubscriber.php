@@ -4,11 +4,14 @@ namespace Shopwell\Core\Framework\Webhook\Subscriber;
 
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\App\AppDefinition;
-use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeletedEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Webhook\Service\WebhookStore;
+use Shopwell\Core\Framework\Webhook\WebhookException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -29,7 +32,7 @@ class WebhookSubscriber implements EventSubscriberInterface
     {
         return [
             EntityWriteEvent::class => 'onAppWrite',
-            AclRoleDefinition::ENTITY_NAME . '.deleted' => 'removeDeletedRoles',
+            PreWriteValidationEvent::class => 'refuseDeletingUsedRoles',
         ];
     }
 
@@ -59,8 +62,21 @@ class WebhookSubscriber implements EventSubscriberInterface
         });
     }
 
-    public function removeDeletedRoles(EntityDeletedEvent $event): void
+    public function refuseDeletingUsedRoles(PreWriteValidationEvent $event): void
     {
-        $this->webhookStore->removeDeletedRoles($event->getIds());
+        $roleIds = [];
+        foreach ($event->getCommandsForEntity(AclRoleDefinition::ENTITY_NAME) as $command) {
+            if ($command instanceof DeleteCommand) {
+                $roleIds[] = Uuid::fromBytesToHex($command->getPrimaryKey()['id']);
+            }
+        }
+
+        if ($roleIds === []) {
+            return;
+        }
+
+        foreach ($this->webhookStore->getWebhookNamesByRole($roleIds) as $roleId => $webhookNames) {
+            $event->getExceptions()->add(WebhookException::aclRoleUsedByWebhook($roleId, $webhookNames));
+        }
     }
 }

@@ -15,7 +15,7 @@ blocks
   sw_organization_unit_tree_item  [private]
     sw_organization_unit_tree_item_children  [private]
     sw_organization_unit_tree_item_row  [private]
-      sw_organization_unit_tree_item_add  [private]
+      sw_organization_unit_tree_item_add  [after v-if] [private]
       sw_organization_unit_tree_item_child_count  [private]
       sw_organization_unit_tree_item_icon  [private]
       sw_organization_unit_tree_item_name  [private]

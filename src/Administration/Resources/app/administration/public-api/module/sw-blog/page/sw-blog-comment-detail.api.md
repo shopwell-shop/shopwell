@@ -17,7 +17,7 @@ blocks
       sw_blog_comment_detail_actions_cancel  [private]
       sw_blog_comment_detail_actions_save  [private]
     sw_blog_comment_detail_content  [private]
-      sw_blog_comment_detail_content_body  [private]
+      sw_blog_comment_detail_content_body  [after v-if] [private]
         sw_blog_comment_detail_content_info  [private]
           sw_blog_comment_detail_content_info_metadata  [private]
             sw_blog_comment_detail_content_info_author  [private]
@@ -33,4 +33,7 @@ blocks
       sw_blog_comment_detail_header_title  [private]
         sw_blog_comment_detail_header_status  [private]
         sw_blog_comment_detail_header_title_text  [private]
+
+crossings
+  v-if  sw_blog_comment_detail_content_loading -> sw_blog_comment_detail_content_body  [private]
 ```

@@ -14,13 +14,13 @@ component sw-settings-sms-gateway-detail  private  ts  [private]
 blocks
   sw_settings_sms_gateway_detail  [private]
     sw_settings_sms_gateway_detail_content  [private]
-      sw_settings_sms_gateway_detail_loaded  [private]
+      sw_settings_sms_gateway_detail_loaded  [after v-if] [private]
         sw_settings_sms_gateway_detail_connection  [private]
           sw_settings_sms_gateway_detail_label  [private]
           sw_settings_sms_gateway_detail_provider  [private]
           sw_settings_sms_gateway_detail_sales_channel  [private]
         sw_settings_sms_gateway_detail_credentials  [private]
-          sw_settings_sms_gateway_detail_credentials_empty  [private]
+          sw_settings_sms_gateway_detail_credentials_empty  [after v-if] [private]
           sw_settings_sms_gateway_detail_credentials_fields  [private]
           sw_settings_sms_gateway_detail_options  [private]
         sw_settings_sms_gateway_detail_extension  [private]
@@ -35,4 +35,8 @@ blocks
     sw_settings_sms_gateway_detail_smart_bar_header  [private]
       sw_settings_sms_gateway_detail_smart_bar_header_title  [private]
         sw_settings_sms_gateway_detail_smart_bar_header_title_text  [private]
+
+crossings
+  v-if  sw_settings_sms_gateway_detail_credentials_fields -> sw_settings_sms_gateway_detail_credentials_empty  [private]
+  v-if  sw_settings_sms_gateway_detail_loading -> sw_settings_sms_gateway_detail_loaded  [private]
 ```
