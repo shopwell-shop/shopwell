@@ -3,7 +3,6 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Mutation;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
-use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonException;
@@ -14,8 +13,6 @@ use Shopwell\Core\Framework\Log\Package;
  * Operations work on a detached wire copy and admit the entire result before returning it.
  * Defaults, storage, actor permissions and loss confirmation belong to their eventual callers.
  *
- * @phpstan-import-type GraphPayload from GraphDiagnostics
- *
  * @internal
  */
 #[Package('framework')]
@@ -23,14 +20,13 @@ class GraphMutator
 {
     public function __construct(
         private readonly GraphCodec $codec,
-        private readonly GraphDiagnostics $diagnostics,
         private readonly GraphJsonDecoder $jsonDecoder,
     ) {
     }
 
     public function addNode(DraftGraph $graph, string $nodeJson): GraphMutationResult
     {
-        $payload = $this->decodeWritablePayload($graph);
+        $payload = $this->codec->decodeWritable($graph);
         $payload->nodes[] = $this->decodeFragment($nodeJson, '/nodes/' . \count($payload->nodes));
 
         return $this->createResult($payload);
@@ -38,7 +34,7 @@ class GraphMutator
 
     public function addConnection(DraftGraph $graph, string $connectionJson): GraphMutationResult
     {
-        $payload = $this->decodeWritablePayload($graph);
+        $payload = $this->codec->decodeWritable($graph);
         $payload->connections[] = $this->decodeFragment($connectionJson, '/connections/' . \count($payload->connections));
 
         return $this->createResult($payload);
@@ -46,7 +42,7 @@ class GraphMutator
 
     public function removeNode(DraftGraph $graph, string $nodeId): GraphMutationResult
     {
-        $payload = $this->decodeWritablePayload($graph);
+        $payload = $this->codec->decodeWritable($graph);
         $removedNodes = [];
         foreach ($payload->nodes as $index => $node) {
             if ($node->id === $nodeId) {
@@ -80,7 +76,7 @@ class GraphMutator
 
     public function removeConnection(DraftGraph $graph, string $connectionId): GraphMutationResult
     {
-        $payload = $this->decodeWritablePayload($graph);
+        $payload = $this->codec->decodeWritable($graph);
         $removed = [];
         foreach ($payload->connections as $index => $connection) {
             if ($connection->id === $connectionId) {
@@ -94,19 +90,6 @@ class GraphMutator
         $payload->connections = array_values($payload->connections);
 
         return $this->createResult($payload, removedConnections: $removed);
-    }
-
-    /**
-     * @return GraphPayload
-     */
-    private function decodeWritablePayload(DraftGraph $graph): \stdClass
-    {
-        $json = $this->codec->encodeDraft($graph);
-        // Write admission above establishes the closed wire shape; decoding gives this operation its own copy.
-        /** @var GraphPayload $payload */
-        $payload = json_decode($json, flags: \JSON_THROW_ON_ERROR);
-
-        return $payload;
     }
 
     private function decodeFragment(string $json, string $path): \stdClass
@@ -134,11 +117,9 @@ class GraphMutator
         array $removedConnections = [],
         array $removedLayout = [],
     ): GraphMutationResult {
-        $mutatedDraft = new DraftGraph($this->encodeObject($payload));
-        $encoded = $this->codec->encodeDraft($mutatedDraft);
-        $graph = new DraftGraph($encoded);
+        $write = $this->codec->prepareWrite($payload);
 
-        return new GraphMutationResult($graph, $this->diagnostics->analyze($graph), $removedNodes, $removedConnections, $removedLayout);
+        return new GraphMutationResult($write['graph'], $write['diagnostics'], $removedNodes, $removedConnections, $removedLayout);
     }
 
     private function encodeObject(\stdClass $value): string

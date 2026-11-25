@@ -21,9 +21,19 @@ use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftStore;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftWriteGuard;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalExecutionPreparation;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalExecutionStore;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalFlowExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalProgressionRunner;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalReleaseLoader;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalTransitionPlanner;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Branch\ApprovalExecutionBranchDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\AdvanceApprovalHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterApprovalNodeHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterEndNodeHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterStartNodeHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\StartInstanceHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffectValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
@@ -39,6 +49,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\AllApprovalPolicy;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\AnyApprovalPolicy;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\ApprovalPolicyRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\SingleApprovalPolicy;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Scope\ApprovalExecutionScopeDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalDecisionEvaluator;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
@@ -132,6 +143,8 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(ApprovalInstanceDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalNodeExecutionDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalExecutionScopeDefinition::class)->tag('shopwell.entity.definition');
+    $services->set(ApprovalExecutionBranchDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalOperationDefinition::class)->tag('shopwell.entity.definition');
     $services->set(ApprovalTaskDefinition::class)->tag('shopwell.entity.definition');
     $services->set(DeliverApprovalResultsTask::class)->tag('shopwell.scheduled.task');
@@ -161,17 +174,52 @@ return static function (ContainerConfigurator $container): void {
         service('approval_flow_execution.repository'),
         service(ApprovalInstanceWriteGuard::class),
         service(ApprovalDecisionEvaluator::class),
+        service(ApprovalExecutionStore::class),
     ]);
+    $services->set(ApprovalExecutionStore::class)->args([
+        service(Connection::class), service('approval_flow_execution.repository'),
+        service('approval_flow_execution_scope.repository'), service('approval_flow_execution_branch.repository'),
+        service('approval_flow_task.repository'), service(ApprovalInstanceWriteGuard::class),
+    ]);
+    $services->set(ApprovalTransitionPlanner::class);
+    $services->set(ApprovalExecutionPreparation::class)->args([
+        service(ApprovalExecutionStore::class),
+        service(ApprovalNodeEntry::class),
+        service(ApprovalTransitionPlanner::class),
+        service(ApprovalAssigneeResolver::class),
+    ]);
+    $services->set(ApprovalFlowExecutor::class)->args([service(ApprovalExecutionStore::class), service(ApprovalExecutionPreparation::class)]);
+    $services->set(StartInstanceHandler::class)->args([
+        service(ApprovalExecutionStore::class), service(ApprovalFlowExecutor::class), service(ApprovalReleaseLoader::class),
+    ]);
+    foreach ([EnterStartNodeHandler::class, EnterApprovalNodeHandler::class, EnterEndNodeHandler::class] as $handler) {
+        $services->set($handler)->args([
+            service(ApprovalExecutionStore::class), service(ApprovalFlowExecutor::class),
+            service(ApprovalNodeEntry::class), service(ApprovalReleaseLoader::class), service(ApprovalExecutionPreparation::class),
+        ]);
+    }
+    $advanceApprovalArgs = [
+        service(ApprovalExecutionStore::class),
+        service(ApprovalFlowExecutor::class),
+        service(ApprovalReleaseLoader::class),
+        service(ApprovalTransitionPlanner::class),
+    ];
+    $services->set(AdvanceApprovalHandler::class)->args([...$advanceApprovalArgs, false]);
+    $services->set('approval_flow.progress_handler', AdvanceApprovalHandler::class)->args([...$advanceApprovalArgs, true]);
     $services->set(ApprovalInstanceStore::class)
         ->args([
             service(Connection::class),
             service('approval_flow_instance.repository'),
             service('approval_flow_operation.repository'),
             service(ApprovalInstanceWriteGuard::class),
-            service('approval_flow_execution.repository'),
-            service(ApprovalNodeEntry::class),
-            service('approval_flow_task.repository'),
-            service(ApprovalAssigneeResolver::class),
+            [
+                ApprovalInstanceStore::START => service(StartInstanceHandler::class),
+                ApprovalInstanceStore::ENTER_START => service(EnterStartNodeHandler::class),
+                ApprovalInstanceStore::ENTER_APPROVAL => service(EnterApprovalNodeHandler::class),
+                ApprovalInstanceStore::ADVANCE_APPROVAL => service(AdvanceApprovalHandler::class),
+                ApprovalInstanceStore::PROGRESS => service('approval_flow.progress_handler'),
+                ApprovalInstanceStore::ENTER_END => service(EnterEndNodeHandler::class),
+            ],
             service(ApprovalTaskDecisionStore::class),
             service(ApprovalResultStore::class),
         ]);
@@ -185,16 +233,15 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalReleaseService::class)
         ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class)]);
     $services->set(ApprovalReleaseLoader::class)
-        ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class)]);
+        ->lazy()
+        ->args([service(ApprovalReleaseStore::class), service(ApprovalReleaseCompiler::class), service(GraphJsonDecoder::class)]);
     $services->set(NodeEffectValidator::class);
-    // Only node entry requires deployment artifacts.
+    // Resolve deployment artifacts only when a command actually loads a release.
     $services->set(ApprovalNodeEntry::class)
         ->lazy()
         ->args([
-            service(ApprovalReleaseLoader::class),
             service(NodeConfigurationCompiler::class),
             service(NodeExecutorRegistry::class),
-            service(GraphJsonDecoder::class),
             service(NodeTypeRegistry::class),
             service(NodeEffectValidator::class),
         ]);
@@ -214,7 +261,6 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service(ApprovalDraftStore::class),
             service(GraphCodec::class),
-            service(GraphDiagnostics::class),
             service(GraphMutator::class),
         ]);
 
@@ -241,9 +287,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(GraphPublicationPreflight::class)
         ->args([
             service(GraphCodec::class),
-            service(GraphDiagnostics::class),
             service(NodeTypeRegistry::class),
-            service(GraphJsonDecoder::class),
             $graphSchema,
         ]);
     $services->set(GraphPlanCompiler::class)
@@ -281,7 +325,7 @@ return static function (ContainerConfigurator $container): void {
             service(ApprovalPolicyRegistry::class),
         ]);
     $services->set(GraphMutator::class)
-        ->args([service(GraphCodec::class), service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);
+        ->args([service(GraphCodec::class), service(GraphJsonDecoder::class)]);
     $services->set(GraphDiagnoseCommand::class)
         ->args([service('filesystem'), service(GraphDiagnostics::class)])
         ->tag('console.command');

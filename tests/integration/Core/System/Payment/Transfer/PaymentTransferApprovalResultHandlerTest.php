@@ -142,6 +142,19 @@ class PaymentTransferApprovalResultHandlerTest extends TestCase
         static::assertSame('created', $this->connection->fetchOne('SELECT s.technical_name FROM payment_transfer t INNER JOIN state_machine_state s ON s.id = t.status_id WHERE t.id = :id', ['id' => Uuid::fromHexToBytes($this->transfer->id)]));
     }
 
+    #[DataProvider('outcomes')]
+    public function testAccountDeactivationDoesNotPreventRecordingTheDecision(ApprovalOutcome $outcome): void
+    {
+        $this->complete($outcome);
+        $this->connection->update('payment_account', ['active' => 0], ['id' => Uuid::fromHexToBytes($this->transfer->accountId)]);
+
+        static::getContainer()->get(DeliverApprovalResultsTaskHandler::class)->run();
+
+        static::assertSame($outcome->value, $this->businessResult()['outcome']);
+        static::assertSame('delivered', $this->connection->fetchOne('SELECT status FROM approval_flow_outbox'));
+        static::assertSame(0, (int) $this->connection->fetchOne('SELECT submit_attempts FROM payment_transfer WHERE id = :id', ['id' => Uuid::fromHexToBytes($this->transfer->id)]));
+    }
+
     public function testACommitBeforeAcknowledgementIsSafeToDeliverAgain(): void
     {
         $this->complete(ApprovalOutcome::Approved);

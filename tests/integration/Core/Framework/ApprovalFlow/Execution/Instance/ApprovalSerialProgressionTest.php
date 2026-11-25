@@ -8,8 +8,15 @@ use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalExecutionStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStore;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\ActivateRoutes;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\ApprovalExecutionPlan;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\MarkExecutionAdvanced;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirectory;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\YamlNodeTypeLoader;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
@@ -20,8 +27,12 @@ use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\ApprovalRuntimeFixture;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\InstanceFixture;
 use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Graph\_fixtures\GraphFixture;
+use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\FinanceNodeCompiler;
+use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\FinanceNodeExecutor;
 use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\PublicationFixture;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -57,7 +68,9 @@ class ApprovalSerialProgressionTest extends TestCase
         $this->connection = $kernel->get(Connection::class);
         $this->filesystem = new Filesystem();
         $this->directory = sys_get_temp_dir() . '/approval-serial-' . Uuid::randomHex();
-        $this->runtime = ApprovalRuntimeFixture::container($kernel, PublicationFixture::writeManifest($this->filesystem, $this->directory));
+        $this->runtime = ApprovalRuntimeFixture::container($kernel, PublicationFixture::writeManifest($this->filesystem, $this->directory), static function (ContainerBuilder $runtime): void {
+            $runtime->getDefinition(ApprovalExecutionStore::class)->setPublic(true);
+        });
         $this->service = $this->runtime->get(ApprovalInstanceService::class);
         $this->reviewerId = TestUser::createNewTestUser($this->connection)->getUserId();
         $source = new AdminApiSource($this->reviewerId);
@@ -167,6 +180,94 @@ class ApprovalSerialProgressionTest extends TestCase
         $this->expectExceptionObject(ApprovalFlowException::instanceVersionConflict($this->instanceId, 0, 4));
 
         $this->service->progress($this->instanceId, $executionId, Uuid::randomHex(), 0, Context::createDefaultContext());
+    }
+
+    public function testAStalePreparedPlanCannotActivateAnotherSuccessor(): void
+    {
+        $this->publish($this->graph());
+        $executionId = $this->decide(ApprovalOutcome::Approved);
+        $store = $this->runtime->get(ApprovalExecutionStore::class);
+        $plan = new ApprovalExecutionPlan(
+            $store->execution($this->instanceId, $executionId),
+            new MarkExecutionAdvanced(),
+            new ActivateRoutes([['connectionId' => 'review-end', 'nextNodeId' => 'end']]),
+        );
+        $this->service->advanceApproval($this->instanceId, $executionId, Uuid::randomHex(), 4, Context::createDefaultContext());
+
+        try {
+            $store->apply($this->instanceId, $plan, Uuid::randomHex(), Context::createDefaultContext());
+            static::fail('A prepared plan must not run against a changed execution.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertSame(ApprovalFlowException::INVALID_NODE_PROGRESSION, $exception->getErrorCode());
+            static::assertSame('The execution changed after its plan was prepared.', $exception->getParameters()['reason']);
+        }
+
+        static::assertSame(5, (int) $this->connection->fetchOne('SELECT aggregate_version FROM approval_flow_instance'));
+        static::assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_execution WHERE node_id = :node', ['node' => 'end']));
+        static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
+    }
+
+    public function testAFailedSecondPlanStepRollsBackItsFirstStepAndCanRetry(): void
+    {
+        $this->publish($this->twoLevels());
+        $executionId = $this->decide(ApprovalOutcome::Approved);
+        $commandId = Uuid::randomHex();
+        $writes = 0;
+        EventHookDispatcher::fromContainer(static::getContainer())->on('approval_flow_execution.written', static function () use (&$writes): void {
+            ++$writes;
+            if ($writes === 2) {
+                throw new \RuntimeException('Successor activation failed.');
+            }
+        });
+
+        try {
+            $this->service->progress($this->instanceId, $executionId, $commandId, 4, Context::createDefaultContext());
+            static::fail('A failed activation must roll back the preceding advancement.');
+        } catch (\RuntimeException $exception) {
+            static::assertSame('Successor activation failed.', $exception->getMessage());
+        }
+
+        static::assertSame(2, $writes);
+        static::assertSame(0, (int) $this->connection->fetchOne('SELECT advanced FROM approval_flow_execution WHERE id = :id', ['id' => Uuid::fromHexToBytes($executionId)]));
+        static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_execution WHERE node_id = :node', ['node' => 'second-review']));
+        static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_operation WHERE command_id = :command', ['command' => Uuid::fromHexToBytes($commandId)]));
+        static::assertSame('approved', $this->connection->fetchOne('SELECT status FROM approval_flow_task'));
+        static::assertSame(4, (int) $this->connection->fetchOne('SELECT aggregate_version FROM approval_flow_instance'));
+        static::assertSame(5, $this->service->progress($this->instanceId, $executionId, $commandId, 4, Context::createDefaultContext())->aggregateVersion);
+        static::assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_task WHERE status = :status', ['status' => 'pending']));
+    }
+
+    public function testBusinessCompletionCannotBypassThePublishedEndBoundary(): void
+    {
+        $manifest = PublicationFixture::writeManifest($this->filesystem, $this->directory, [FinanceNodeCompiler::class, FinanceNodeExecutor::class]);
+        $runtime = ApprovalRuntimeFixture::container(static::getContainer(), $manifest, static function (ContainerBuilder $runtime): void {
+            $runtime->getDefinition(ApprovalInstanceStore::class)->setPublic(true);
+            $runtime->register('finance.node_loader', YamlNodeTypeLoader::class)
+                ->setArguments([
+                    new Reference('filesystem'),
+                    [new Definition(NodeTypeSourceDirectory::class, ['finance', \dirname(__DIR__, 6) . '/unit/Core/Framework/ApprovalFlow/Graph/Type/Registry/_fixtures'])],
+                ])
+                ->addTag('approval_flow.node_type_loader');
+            $runtime->register(FinanceNodeCompiler::class)->addTag('approval_flow.node_compiler');
+            $runtime->register(FinanceNodeExecutor::class)->addTag('approval_flow.node_executor');
+        });
+        $graph = $this->filesystem->readFile(\dirname(__DIR__, 6) . '/unit/Core/Framework/ApprovalFlow/Graph/_fixtures/finance-transfer.json');
+        $releaseId = ApprovalRuntimeFixture::publish($runtime, $runtime, $graph);
+        $instanceId = InstanceFixture::create($this->connection, $releaseId, ApprovalInstanceStatus::Draft);
+
+        try {
+            $runtime->get(ApprovalInstanceStore::class)->start($instanceId, Uuid::randomHex(), 1, '{"source":"system"}', Context::createDefaultContext());
+            static::fail('A business executor must not complete the process before its published end boundary.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertSame(ApprovalFlowException::INVALID_GRAPH_PLAN, $exception->getErrorCode());
+            static::assertSame('Only the published end boundary may complete the process.', $exception->getParameters()['reason']);
+        }
+
+        static::assertSame('draft', $this->connection->fetchOne('SELECT status FROM approval_flow_instance'));
+        static::assertSame(1, (int) $this->connection->fetchOne('SELECT aggregate_version FROM approval_flow_instance'));
+        foreach (['execution', 'task', 'operation', 'result', 'outbox'] as $table) {
+            static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_' . $table));
+        }
     }
 
     public function testInternalProgressionRetainsTheCallerContext(): void

@@ -2,9 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Executor;
 
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\NodeConfiguration;
 use Shopwell\Core\Framework\Log\Package;
@@ -24,5 +22,5 @@ interface NodeExecutor
      */
     public function getVersion(): string;
 
-    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): AdvanceEffect|RequestApprovalEffect|CompleteEffect;
+    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): NodeEffect;
 }

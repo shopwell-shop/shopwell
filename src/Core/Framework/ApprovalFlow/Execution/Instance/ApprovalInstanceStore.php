@@ -8,19 +8,12 @@ use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Api\Context\SystemSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalNodeEntry;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\ApprovalExecutionCommandContext;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\ApprovalExecutionCommandHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationCollection;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskStatus;
-use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalNodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
@@ -30,8 +23,6 @@ use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * @phpstan-import-type EnteredSerialRoute from ApprovalNodeEntry
- *
  * @internal
  *
  * @codeCoverageIgnore
@@ -62,8 +53,6 @@ class ApprovalInstanceStore
 
     public const ENTER_END = 'enter-end';
 
-    private const START_SEQUENCE = 1;
-
     /**
      * @var array<string, true>
      */
@@ -72,18 +61,14 @@ class ApprovalInstanceStore
     /**
      * @param EntityRepository<ApprovalInstanceCollection> $instances
      * @param EntityRepository<ApprovalOperationCollection> $operations
-     * @param EntityRepository<ApprovalNodeExecutionCollection> $executions
-     * @param EntityRepository<ApprovalTaskCollection> $tasks
+     * @param array<string, ApprovalExecutionCommandHandler> $executionCommands
      */
     public function __construct(
         private readonly Connection $connection,
         private readonly EntityRepository $instances,
         private readonly EntityRepository $operations,
         private readonly ApprovalInstanceWriteGuard $writeGuard,
-        private readonly EntityRepository $executions,
-        private readonly ApprovalNodeEntry $nodeEntry,
-        private readonly EntityRepository $tasks,
-        private readonly ApprovalAssigneeResolver $assigneeResolver,
+        private readonly array $executionCommands,
         private readonly ApprovalTaskDecisionStore $decisions,
         private readonly ApprovalResultStore $results,
     ) {
@@ -96,28 +81,15 @@ class ApprovalInstanceStore
      */
     public function pendingProgressions(?string $after, int $limit): array
     {
-        $parameters = ['running' => ApprovalInstanceStatus::Running->value, 'completed' => ApprovalNodeExecutionStatus::Completed->value, 'limit' => $limit];
-        $cursor = '';
-        if ($after !== null) {
-            $cursor = ' AND i.id > :after';
-            $parameters['after'] = Uuid::fromHexToBytes($after);
-        }
-        $rows = $this->connection->fetchAllAssociative(
-            'SELECT i.id, i.aggregate_version, e.id AS execution_id
-             FROM approval_flow_instance i INNER JOIN approval_flow_execution e ON e.instance_id = i.id
-             WHERE i.status = :running AND e.status = :completed AND e.approval_policy IS NOT NULL AND e.outcome IS NOT NULL
-               AND NOT EXISTS (SELECT 1 FROM approval_flow_execution later WHERE later.instance_id = i.id AND later.`sequence` > e.`sequence`)' .
-               $cursor . '
-             ORDER BY i.id LIMIT :limit',
-            $parameters,
-            ['limit' => ParameterType::INTEGER],
-        );
-        $pending = [];
-        foreach ($rows as $row) {
-            $pending[] = ['instanceId' => Uuid::fromBytesToHex($row['id']), 'executionId' => Uuid::fromBytesToHex($row['execution_id']), 'version' => (int) $row['aggregate_version']];
-        }
+        return $this->findProgressions($after, $limit);
+    }
 
-        return $pending;
+    /**
+     * @return array{instanceId: string, executionId: string, version: int}|null
+     */
+    public function nextProgression(string $instanceId): ?array
+    {
+        return $this->findProgressions(null, 1, $instanceId)[0] ?? null;
     }
 
     public function start(string $instanceId, string $commandId, int $expectedVersion, string $actorJson, Context $context): ApprovalInstanceCommandResult
@@ -133,7 +105,9 @@ class ApprovalInstanceStore
             'Start the admitted request and create its initial approval tasks.',
             $actorJson,
             $context,
-            fn (string $releaseId): ApprovalInstanceStatus => $this->startApprovalRoute($instanceId, $releaseId, $context),
+            fn (string $releaseId): ApprovalInstanceStatus|ApprovalOutcome => $this->executionCommands[self::START]->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context),
+            ),
             from: ApprovalInstanceStatus::Draft,
         );
     }
@@ -169,38 +143,9 @@ class ApprovalInstanceStore
             'Enter the published start node.',
             $actorJson,
             $context,
-            function (string $releaseId) use ($instanceId, $context): ApprovalInstanceStatus {
-                $started = $this->connection->fetchOne(
-                    'SELECT id FROM approval_flow_execution WHERE instance_id = :instance AND `sequence` = :sequence FOR UPDATE',
-                    ['instance' => Uuid::fromHexToBytes($instanceId), 'sequence' => self::START_SEQUENCE],
-                );
-                if ($started !== false) {
-                    throw ApprovalFlowException::startNodeAlreadyEntered($instanceId);
-                }
-
-                $transition = $this->nodeEntry->enterStart($releaseId);
-                $this->writeGuard->write($context, function (Context $writeContext) use ($instanceId, $transition): void {
-                    $this->executions->create([
-                        [
-                            'id' => Uuid::randomHex(),
-                            'instanceId' => $instanceId,
-                            'nodeId' => $transition['startNodeId'],
-                            'sequence' => self::START_SEQUENCE,
-                            'status' => ApprovalNodeExecutionStatus::Completed->value,
-                        ],
-                        [
-                            'id' => Uuid::randomHex(),
-                            'instanceId' => $instanceId,
-                            'nodeId' => $transition['nextNodeId'],
-                            'incomingConnectionId' => $transition['connectionId'],
-                            'sequence' => self::START_SEQUENCE + 1,
-                            'status' => ApprovalNodeExecutionStatus::Waiting->value,
-                        ],
-                    ], $writeContext);
-                });
-
-                return ApprovalInstanceStatus::Running;
-            },
+            fn (string $releaseId): ApprovalInstanceStatus|ApprovalOutcome => $this->executionCommands[self::ENTER_START]->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context),
+            ),
         );
     }
 
@@ -218,17 +163,9 @@ class ApprovalInstanceStore
             'Create tasks for node execution ' . $executionId . '.',
             $actorJson,
             $context,
-            function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus {
-                $nodeId = $this->waitingNode($instanceId, $executionId);
-                $effect = $this->nodeEntry->enter($releaseId, $nodeId, $this->executionContext($instanceId));
-                if (!$effect instanceof RequestApprovalEffect) {
-                    throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The node did not request approval.');
-                }
-                $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
-                $this->createApprovalTasks($executionId, $assignees, $effect->configuration, $context);
-
-                return ApprovalInstanceStatus::Running;
-            },
+            fn (string $releaseId): ApprovalInstanceStatus|ApprovalOutcome => $this->executionCommands[self::ENTER_APPROVAL]->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context, $executionId),
+            ),
         );
     }
 
@@ -275,27 +212,9 @@ class ApprovalInstanceStore
             'Advance completed approval ' . $executionId . '.',
             $actorJson,
             $context,
-            function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus|ApprovalOutcome {
-                $execution = $this->completedApproval($instanceId, $executionId);
-                $outcome = ApprovalOutcome::from($execution['outcome']);
-                if ($outcome === ApprovalOutcome::Rejected) {
-                    return $outcome;
-                }
-
-                $route = $this->nodeEntry->successor($releaseId, $execution['node_id']);
-                $this->writeGuard->write($context, function (Context $writeContext) use ($instanceId, $execution, $route): void {
-                    $this->executions->create([[
-                        'id' => Uuid::randomHex(),
-                        'instanceId' => $instanceId,
-                        'nodeId' => $route['nextNodeId'],
-                        'incomingConnectionId' => $route['connectionId'],
-                        'sequence' => $execution['sequence'] + 1,
-                        'status' => ApprovalNodeExecutionStatus::Waiting->value,
-                    ]], $writeContext);
-                });
-
-                return ApprovalInstanceStatus::Running;
-            },
+            fn (string $releaseId): ApprovalInstanceStatus|ApprovalOutcome => $this->executionCommands[self::ADVANCE_APPROVAL]->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context, $executionId),
+            ),
         );
     }
 
@@ -313,15 +232,9 @@ class ApprovalInstanceStore
             'Progress completed approval ' . $executionId . ' to its next wait or end boundary.',
             $actorJson,
             $context,
-            function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus|ApprovalOutcome {
-                $execution = $this->completedApproval($instanceId, $executionId);
-                if (ApprovalOutcome::from($execution['outcome']) === ApprovalOutcome::Rejected) {
-                    return ApprovalOutcome::Rejected;
-                }
-                $route = $this->nodeEntry->enterSuccessors($releaseId, $execution['node_id'], $this->executionContext($instanceId));
-
-                return $this->saveSerialRoute($instanceId, $route, $execution['sequence'] + 1, $context);
-            },
+            fn (string $releaseId): ApprovalInstanceStatus|ApprovalOutcome => $this->executionCommands[self::PROGRESS]->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context, $executionId),
+            ),
         );
     }
 
@@ -339,25 +252,44 @@ class ApprovalInstanceStore
             'Enter the published end at execution ' . $executionId . '.',
             $actorJson,
             $context,
-            function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalOutcome {
-                $execution = $this->lockExecution($instanceId, $executionId);
-                if (ApprovalNodeExecutionStatus::from($execution['status']) !== ApprovalNodeExecutionStatus::Waiting) {
-                    throw ApprovalFlowException::invalidNodeProgression($executionId, 'The end execution must be waiting.');
-                }
-                $this->requireSerialTail($instanceId, $executionId);
-                $this->requireSettledWork($instanceId, $executionId);
-                $effect = $this->nodeEntry->enterEnd($releaseId, $execution['node_id']);
-                $this->writeGuard->write($context, function (Context $writeContext) use ($executionId, $effect): void {
-                    $this->executions->update([[
-                        'id' => $executionId,
-                        'status' => ApprovalNodeExecutionStatus::Completed->value,
-                        'outcome' => $effect->outcome->value,
-                    ]], $writeContext);
-                });
-
-                return $effect->outcome;
-            },
+            fn (string $releaseId): ApprovalInstanceStatus|ApprovalOutcome => $this->executionCommands[self::ENTER_END]->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context, $executionId),
+            ),
         );
+    }
+
+    /**
+     * @return list<array{instanceId: string, executionId: string, version: int}>
+     */
+    private function findProgressions(?string $after, int $limit, ?string $instanceId = null): array
+    {
+        $parameters = ['running' => ApprovalInstanceStatus::Running->value, 'completed' => ApprovalNodeExecutionStatus::Completed->value, 'limit' => $limit];
+        $cursor = '';
+        if ($after !== null) {
+            $cursor = ' AND i.id > :after';
+            $parameters['after'] = Uuid::fromHexToBytes($after);
+        }
+        if ($instanceId !== null) {
+            $cursor .= ' AND i.id = :instance';
+            $parameters['instance'] = Uuid::fromHexToBytes($instanceId);
+        }
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT i.id, i.aggregate_version, e.id AS execution_id
+             FROM approval_flow_instance i INNER JOIN approval_flow_execution e ON e.instance_id = i.id
+             WHERE i.status = :running AND e.status = :completed AND e.approval_policy IS NOT NULL AND e.outcome IS NOT NULL
+               AND e.advanced = 0
+               AND NOT EXISTS (SELECT 1 FROM approval_flow_execution earlier WHERE earlier.instance_id = i.id AND earlier.status = :completed AND earlier.approval_policy IS NOT NULL AND earlier.outcome IS NOT NULL AND earlier.advanced = 0 AND earlier.`sequence` < e.`sequence`)' .
+               $cursor . '
+             ORDER BY i.id LIMIT :limit',
+            $parameters,
+            ['limit' => ParameterType::INTEGER],
+        );
+        $pending = [];
+        foreach ($rows as $row) {
+            $pending[] = ['instanceId' => Uuid::fromBytesToHex($row['id']), 'executionId' => Uuid::fromBytesToHex($row['execution_id']), 'version' => (int) $row['aggregate_version']];
+        }
+
+        return $pending;
     }
 
     /**
@@ -421,184 +353,6 @@ class ApprovalInstanceStore
         };
 
         return json_encode($actor, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
-    }
-
-    private function executionContext(string $instanceId): NodeExecutionContext
-    {
-        $formJson = $this->connection->fetchOne(
-            'SELECT form_json FROM approval_flow_request WHERE instance_id = :instance',
-            ['instance' => Uuid::fromHexToBytes($instanceId)],
-        );
-
-        return new NodeExecutionContext($formJson === false ? '{}' : $formJson);
-    }
-
-    private function startApprovalRoute(string $instanceId, string $releaseId, Context $context): ApprovalInstanceStatus
-    {
-        $start = $this->nodeEntry->enterStart($releaseId);
-        $route = $this->nodeEntry->enterSuccessors($releaseId, $start['startNodeId'], $this->executionContext($instanceId));
-        if (!$route['effect'] instanceof RequestApprovalEffect) {
-            throw ApprovalFlowException::invalidGraphPlan('The initial route must reach an approval node before completing.');
-        }
-        $this->saveSerialRoute($instanceId, $route, self::START_SEQUENCE + 1, $context, [[
-            'id' => Uuid::randomHex(),
-            'instanceId' => $instanceId,
-            'nodeId' => $start['startNodeId'],
-            'sequence' => self::START_SEQUENCE,
-            'status' => ApprovalNodeExecutionStatus::Completed->value,
-        ]]);
-
-        return ApprovalInstanceStatus::Running;
-    }
-
-    /**
-     * @param EnteredSerialRoute $route
-     * @param list<array<string, mixed>> $executions
-     */
-    private function saveSerialRoute(string $instanceId, array $route, int $sequence, Context $context, array $executions = []): ApprovalInstanceStatus|ApprovalOutcome
-    {
-        $effect = $route['effect'];
-        $last = array_key_last($route['nodes']);
-        $boundaryExecutionId = Uuid::randomHex();
-        foreach ($route['nodes'] as $index => $node) {
-            $executionId = $index === $last ? $boundaryExecutionId : Uuid::randomHex();
-            $executions[] = [
-                'id' => $executionId,
-                'instanceId' => $instanceId,
-                'nodeId' => $node['nodeId'],
-                'incomingConnectionId' => $node['connectionId'],
-                'sequence' => $sequence,
-                'status' => $index === $last && $effect instanceof RequestApprovalEffect ? ApprovalNodeExecutionStatus::Waiting->value : ApprovalNodeExecutionStatus::Completed->value,
-                'outcome' => $index === $last && $effect instanceof CompleteEffect ? $effect->outcome->value : null,
-            ];
-            ++$sequence;
-        }
-        $this->writeGuard->write($context, function (Context $writeContext) use ($executions): void {
-            $this->executions->create($executions, $writeContext);
-        });
-        if ($effect instanceof CompleteEffect) {
-            return $effect->outcome;
-        }
-        $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
-        $this->createApprovalTasks($boundaryExecutionId, $assignees, $effect->configuration, $context);
-
-        return ApprovalInstanceStatus::Running;
-    }
-
-    /**
-     * @return array{node_id: string, status: string, sequence: int, approval_policy: string, outcome: string}
-     */
-    private function completedApproval(string $instanceId, string $executionId): array
-    {
-        $execution = $this->lockExecution($instanceId, $executionId);
-        if (ApprovalNodeExecutionStatus::from($execution['status']) !== ApprovalNodeExecutionStatus::Completed || $execution['approval_policy'] === null || $execution['outcome'] === null) {
-            throw ApprovalFlowException::invalidNodeProgression($executionId, 'A completed approval group and its frozen outcome are required.');
-        }
-        $this->requireSerialTail($instanceId, $executionId);
-        $this->requireSettledWork($instanceId, $executionId);
-
-        return $execution;
-    }
-
-    private function waitingNode(string $instanceId, string $executionId): string
-    {
-        $execution = $this->lockExecution($instanceId, $executionId);
-        $status = ApprovalNodeExecutionStatus::from($execution['status']);
-        if ($status !== ApprovalNodeExecutionStatus::Waiting) {
-            throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The current status is ' . $status->value . '.');
-        }
-
-        return $execution['node_id'];
-    }
-
-    /**
-     * @return array{node_id: string, status: string, sequence: int, approval_policy: ?string, outcome: ?string}
-     */
-    private function lockExecution(string $instanceId, string $executionId): array
-    {
-        $parameters = ['execution' => Uuid::fromHexToBytes($executionId), 'instance' => Uuid::fromHexToBytes($instanceId)];
-        $execution = $this->connection->fetchAssociative(
-            'SELECT node_id, status, `sequence`, approval_policy, outcome FROM approval_flow_execution WHERE id = :execution AND instance_id = :instance FOR UPDATE',
-            $parameters,
-        );
-        if ($execution === false) {
-            throw ApprovalFlowException::executionNotFound($executionId, $instanceId);
-        }
-
-        if ($this->connection->getTransactionNestingLevel() > 1 && $this->connection->fetchOne(
-            'SELECT 1 FROM approval_flow_execution WHERE id = :execution AND instance_id = :instance',
-            $parameters,
-        ) === false) {
-            throw ApprovalFlowException::executionOutsideSnapshot($executionId);
-        }
-
-        return [
-            'node_id' => $execution['node_id'],
-            'status' => $execution['status'],
-            'sequence' => (int) $execution['sequence'],
-            'approval_policy' => $execution['approval_policy'],
-            'outcome' => $execution['outcome'],
-        ];
-    }
-
-    private function requireSerialTail(string $instanceId, string $executionId): void
-    {
-        // A committed successor changes the tail, even when a caller supplies a fresh command ID.
-        $tail = $this->connection->fetchOne(
-            'SELECT id FROM approval_flow_execution WHERE instance_id = :instance ORDER BY `sequence` DESC LIMIT 1 FOR UPDATE',
-            ['instance' => Uuid::fromHexToBytes($instanceId)],
-        );
-        if ($tail !== Uuid::fromHexToBytes($executionId)) {
-            throw ApprovalFlowException::invalidNodeProgression($executionId, 'Only the current serial tail may progress.');
-        }
-    }
-
-    private function requireSettledWork(string $instanceId, string $executionId): void
-    {
-        $parameters = ['instance' => Uuid::fromHexToBytes($instanceId), 'execution' => Uuid::fromHexToBytes($executionId), 'completed' => ApprovalNodeExecutionStatus::Completed->value];
-        $unsettled = $this->connection->fetchOne(
-            'SELECT id FROM approval_flow_execution WHERE instance_id = :instance AND id <> :execution AND status <> :completed LIMIT 1 FOR UPDATE',
-            $parameters,
-        );
-        if ($unsettled !== false) {
-            throw ApprovalFlowException::invalidNodeProgression($executionId, 'Other node executions are still active.');
-        }
-        $pending = $this->connection->fetchOne(
-            'SELECT task.id FROM approval_flow_task task INNER JOIN approval_flow_execution execution ON execution.id = task.execution_id
-             WHERE execution.instance_id = :instance AND task.status = :pending LIMIT 1 FOR UPDATE',
-            ['instance' => $parameters['instance'], 'pending' => ApprovalTaskStatus::Pending->value],
-        );
-        if ($pending !== false) {
-            throw ApprovalFlowException::invalidNodeProgression($executionId, 'Approval tasks are still pending.');
-        }
-    }
-
-    /**
-     * @param non-empty-list<string> $assignees
-     */
-    private function createApprovalTasks(string $executionId, array $assignees, ApprovalNodeConfiguration $configuration, Context $context): void
-    {
-        $tasks = [];
-        foreach ($assignees as $assigneeId) {
-            $tasks[] = [
-                'id' => Uuid::randomHex(),
-                'executionId' => $executionId,
-                'assigneeId' => $assigneeId,
-                'status' => ApprovalTaskStatus::Pending->value,
-            ];
-        }
-
-        $this->writeGuard->write($context, function (Context $writeContext) use ($tasks): void {
-            $this->tasks->create($tasks, $writeContext);
-        });
-        $this->writeGuard->write($context, function (Context $writeContext) use ($executionId, $configuration): void {
-            $this->executions->update([[
-                'id' => $executionId,
-                'status' => ApprovalNodeExecutionStatus::AwaitingApproval->value,
-                'approvalPolicy' => $configuration->policy,
-                'approvalPolicyVersion' => $configuration->policyVersion,
-            ]], $writeContext);
-        });
     }
 
     /**

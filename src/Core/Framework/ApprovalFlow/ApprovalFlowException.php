@@ -49,6 +49,8 @@ class ApprovalFlowException extends HttpException
     public const SINGLE_APPROVAL_ASSIGNEE_REQUIRED = 'APPROVAL_FLOW__SINGLE_APPROVAL_ASSIGNEE_REQUIRED';
     public const UNSUPPORTED_START_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_START_ROUTE';
     public const UNSUPPORTED_NODE_ROUTE = 'APPROVAL_FLOW__UNSUPPORTED_NODE_ROUTE';
+    public const INVALID_EXECUTION_SCOPE = 'APPROVAL_FLOW__INVALID_EXECUTION_SCOPE';
+
     public const INVALID_NODE_PROGRESSION = 'APPROVAL_FLOW__INVALID_NODE_PROGRESSION';
     public const RESULT_DELIVERY_TRANSACTION_ACTIVE = 'APPROVAL_FLOW__RESULT_DELIVERY_TRANSACTION_ACTIVE';
     public const INVALID_RESULT_DELIVERY = 'APPROVAL_FLOW__INVALID_RESULT_DELIVERY';
@@ -74,6 +76,8 @@ class ApprovalFlowException extends HttpException
     public const INVALID_GRAPH = 'APPROVAL_FLOW__INVALID_GRAPH';
     public const PUBLICATION_GRAPH_INVALID = 'APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID';
     public const INVALID_GRAPH_PLAN = 'APPROVAL_FLOW__INVALID_GRAPH_PLAN';
+
+    public const INVALID_EXECUTION_PLAN = 'APPROVAL_FLOW__INVALID_EXECUTION_PLAN';
     public const INVALID_NODE_TYPE = 'APPROVAL_FLOW__INVALID_NODE_TYPE';
     public const DUPLICATE_NODE_TYPE = 'APPROVAL_FLOW__DUPLICATE_NODE_TYPE';
     public const NODE_TYPE_NOT_FOUND = 'APPROVAL_FLOW__NODE_TYPE_NOT_FOUND';
@@ -358,6 +362,26 @@ class ApprovalFlowException extends HttpException
             self::UNSUPPORTED_NODE_ROUTE,
             'Node "{{ nodeId }}" in approval release "{{ releaseId }}" requires exactly one selected outgoing connection.',
             ['releaseId' => $releaseId, 'nodeId' => $nodeId]
+        );
+    }
+
+    public static function invalidExecutionPlan(string $reason): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_EXECUTION_PLAN,
+            'Invalid approval execution plan: {{ reason }}',
+            ['reason' => $reason]
+        );
+    }
+
+    public static function invalidExecutionScope(string $nodeId, string $reason): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_EXECUTION_SCOPE,
+            'Invalid execution scope at node "{{ nodeId }}": {{ reason }}',
+            ['nodeId' => $nodeId, 'reason' => $reason],
         );
     }
 

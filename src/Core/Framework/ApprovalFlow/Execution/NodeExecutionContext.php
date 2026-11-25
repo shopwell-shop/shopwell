@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution;
 
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Scope\ApprovalScopeSnapshot;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -14,7 +15,7 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 final readonly class NodeExecutionContext
 {
-    public function __construct(public string $formJson = '{}')
+    public function __construct(public string $formJson = '{}', public ?ApprovalScopeSnapshot $scope = null)
     {
     }
 }

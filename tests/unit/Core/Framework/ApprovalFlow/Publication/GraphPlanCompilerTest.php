@@ -181,7 +181,7 @@ class GraphPlanCompilerTest extends TestCase
         $first = $this->compiler->compile(new DraftGraph(GraphFixture::json()));
         $container = $this->container();
         $schema = (new Filesystem())->readFile(\dirname(__DIR__, 6) . '/src/Core/Framework/ApprovalFlow/Resources/schema/graph/1.0.0/approval-graph.schema.json');
-        $container->getDefinition(GraphPublicationPreflight::class)->setArgument(4, $schema . "\n");
+        $container->getDefinition(GraphPublicationPreflight::class)->setArgument(2, $schema . "\n");
         $container->getDefinition(GraphPlanCompiler::class)->setPublic(true);
         $container->compile();
         $compiler = $container->get(GraphPlanCompiler::class);

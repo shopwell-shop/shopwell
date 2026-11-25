@@ -145,7 +145,8 @@ class PaymentTransferApprovalBindingTest extends TestCase
             static::assertSame('approval_must_not_skip', $exception->getParameter('reason'));
         }
 
-        static::assertSame(1, $this->bindings->head('payment:transfer', $context)->getVersion());
-        static::assertSame($first->getId(), $this->bindings->active('payment:transfer', $context)->getId());
+        $store = $container->get(ApprovalBindingStore::class);
+        static::assertSame(1, $store->head('payment:transfer', $context)->getVersion());
+        static::assertSame($first->getId(), $store->active('payment:transfer', $context)->getId());
     }
 }

@@ -36,6 +36,16 @@ class NodeTypeSpecificationTest extends TestCase
         static::assertSame([NodeEffectType::Advance], $type->allowedEffects);
     }
 
+    public function testDeclarationKeepsItsOwnPortDirections(): void
+    {
+        $direction = 'input';
+        $type = new NodeTypeSpecification('test:review', '1.0.0', 'test.review', 'test', '{"$id":"urn:test:review","type":"object"}', ['in' => &$direction], [NodeEffectType::Advance]);
+
+        $direction = 'output';
+
+        static::assertSame(['in' => 'input'], $type->ports);
+    }
+
     public function testPreservesSchemaObjectAndArrayShapesAndExactBytes(): void
     {
         $schema = '{"$id":"urn:test:review:1","type":"object","properties":{},"required":[]}';

@@ -3,7 +3,6 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Draft;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
-use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Mutation\GraphMutationResult;
@@ -25,17 +24,16 @@ class ApprovalDraftService
     public function __construct(
         private readonly ApprovalDraftStore $store,
         private readonly GraphCodec $codec,
-        private readonly GraphDiagnostics $diagnostics,
         private readonly GraphMutator $mutator,
     ) {
     }
 
     public function create(string $name, string $graphJson, Context $context): ApprovalDraft
     {
-        $graph = new DraftGraph($this->codec->encodeDraft(new DraftGraph($graphJson)));
-        $draft = new ApprovalDraft(Uuid::randomHex(), 1, $graph, $this->diagnostics->analyze($graph));
+        $write = $this->codec->prepareDraft($graphJson);
+        $draft = new ApprovalDraft(Uuid::randomHex(), 1, $write['graph'], $write['diagnostics']);
 
-        $this->store->create($draft->definitionId, $name, $graph->json, $context);
+        $this->store->create($draft->definitionId, $name, $draft->graph->json, $context);
 
         return $draft;
     }
@@ -43,9 +41,9 @@ class ApprovalDraftService
     public function read(string $definitionId, Context $context): ApprovalDraft
     {
         $stored = $this->store->read($definitionId, $context);
-        $graph = $this->codec->decodeDraft($stored->getGraphJson());
+        $read = $this->codec->readDraft($stored->getGraphJson());
 
-        return new ApprovalDraft($stored->getDefinitionId(), $stored->getRevision(), $graph, $this->diagnostics->analyze($graph));
+        return new ApprovalDraft($stored->getDefinitionId(), $stored->getRevision(), $read['graph'], $read['diagnostics']);
     }
 
     public function addNode(string $definitionId, int $expectedRevision, string $nodeJson, Context $context): ApprovalDraftEdit

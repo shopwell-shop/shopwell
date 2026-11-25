@@ -3,9 +3,12 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Node;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Branch\ApprovalExecutionBranchDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Scope\ApprovalExecutionScopeDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\EnumField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\AllowHtml;
@@ -45,6 +48,11 @@ class ApprovalNodeExecutionDefinition extends EntityDefinition
         return ApprovalNodeExecutionCollection::class;
     }
 
+    public function getDefaults(): array
+    {
+        return ['generation' => 1, 'advanced' => false];
+    }
+
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([
@@ -54,6 +62,16 @@ class ApprovalNodeExecutionDefinition extends EntityDefinition
             (new LongTextField('incoming_connection_id', 'incomingConnectionId'))->addFlags(new AllowHtml(sanitized: false)),
             (new IntField('sequence', 'sequence', 1))->addFlags(new Required()),
             (new EnumField('status', 'status', ApprovalNodeExecutionStatus::Waiting))->addFlags(new Required()),
+            new FkField('scope_id', 'scopeId', ApprovalExecutionScopeDefinition::class),
+            new FkField('branch_id', 'branchId', ApprovalExecutionBranchDefinition::class),
+            new FkField('opened_scope_id', 'openedScopeId', ApprovalExecutionScopeDefinition::class),
+            new FkField('waiting_scope_id', 'waitingScopeId', ApprovalExecutionScopeDefinition::class),
+            (new IntField('generation', 'generation', 1))->addFlags(new Required()),
+            (new BoolField('advanced', 'advanced'))->addFlags(new Required()),
+            new ManyToOneAssociationField('scope', 'scope_id', ApprovalExecutionScopeDefinition::class, 'id', false),
+            new ManyToOneAssociationField('branch', 'branch_id', ApprovalExecutionBranchDefinition::class, 'id', false),
+            new ManyToOneAssociationField('openedScope', 'opened_scope_id', ApprovalExecutionScopeDefinition::class, 'id', false),
+            new ManyToOneAssociationField('waitingScope', 'waiting_scope_id', ApprovalExecutionScopeDefinition::class, 'id', false),
             new StringField('approval_policy', 'approvalPolicy'),
             new StringField('approval_policy_version', 'approvalPolicyVersion'),
             new EnumField('outcome', 'outcome', ApprovalOutcome::Approved),

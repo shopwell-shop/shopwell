@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Effect;
 
+use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalNodeConfiguration;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -11,9 +12,14 @@ use Shopwell\Core\Framework\Log\Package;
  * @codeCoverageIgnore
  */
 #[Package('framework')]
-final readonly class RequestApprovalEffect
+final readonly class RequestApprovalEffect implements NodeEffect
 {
     public function __construct(public ApprovalNodeConfiguration $configuration)
     {
+    }
+
+    public function getType(): NodeEffectType
+    {
+        return NodeEffectType::RequestApproval;
     }
 }

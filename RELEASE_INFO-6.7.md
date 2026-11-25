@@ -15,15 +15,23 @@ Payment now contributes `payment:transfer@1.0.0` with a minor-unit integer form 
 This declaration does not switch the existing transfer interface or authorize payout execution.
 Business modules can also register `NodeCompiler` services with `approval_flow.node_compiler` to compile exact node versions into typed `NodeConfiguration` values.
 Configuration compilation rejects missing or conflicting compilers and invalid semantics.
-Register exact-version `NodeExecutor` entry services with `approval_flow.node_executor`; node-plan compilation now rejects missing executors without calling them.
-Executors return controlled advance, approval-request or completion intents; `ApprovalOutcome` represents approved/rejected outcomes as an enum.
-Node declarations require `allowedEffects` (`advance`, `requestApproval`, `complete`); programmatic declarations pass `NodeEffectType` values.
+Register exact-version `NodeExecutor` entry services with `approval_flow.node_executor`.
+Node-plan compilation rejects missing executors without calling them.
+Executors return `NodeEffect` and may use the concrete effect class as their return type.
+`ApprovalOutcome` represents approved/rejected outcomes as an enum.
+Node declarations require `allowedEffects`.
+Programmatic declarations pass `NodeEffectType` values.
 The internal entry path rejects undeclared effects and changes to compiled approval rules or end outcomes; these checks do not authorize runtime writes.
 These entry services do not authorize task creation or process execution.
 Approval strategies implement `ApprovalPolicyHandler` and register `approval_flow.approval_policy` in their owning module.
 Publication pins the selected strategy version and deployment artifact; voting verifies the frozen release and rejects a result that contradicts the published veto rule.
 Node executors receive an optional immutable `NodeExecutionContext` with the submitted form snapshot and can select published output ports through `AdvanceEffect`.
-This supports extension-owned conditional routing along one active path; parallel execution and joins remain separate work.
+This supports extension-owned conditional routing along one active path.
+Executors may also declare and return `OpenScopeEffect` and `WaitEffect` for scoped branches and persistent join waits.
+The runtime supplies an immutable actual-member `ApprovalScopeSnapshot` through `NodeExecutionContext::scope`; the registered executor decides when to return to the enclosing branch.
+Nested scopes, selected subsets and early-return cancellation use the same instance transaction, generation and dispatch markers.
+Task `completionReason` values are namespaced strings, with built-in constants in `ApprovalTaskCompletionReason`, separate from personal opinions.
+These runtime contracts do not add a stock parallel node catalog or Administration designer.
 Internal compilation publication now stores immutable `approval_flow_release` DAL records with expected-revision and full-preview-hash checks.
 Using publication requires a deployment-owned manifest configured through `APPROVAL_FLOW_ARTIFACT_MANIFEST`, binding actual service classes to retained artifact bytes and exact transitive dependencies.
 The deployment attests code origins and dependency completeness; byte verification does not prove loaded-code provenance, historical code loading or worker readiness.
@@ -47,8 +55,10 @@ The handler receives the immutable result and original request; it must commit i
 The scheduled task `approval_flow.deliver_results` retries failed applications and acknowledges only after a handler completes.
 Payment saves the decision for the original transfer request without executing a payout.
 Transfers submitted through Approval Flow can use the existing payout entry point only after their applied approval and unchanged business inputs are checked again inside the atomic attempt claim.
+Approval result delivery records the decision even if an otherwise unchanged payment account has been disabled.
+A payout still requires an eligible account at execution time.
 Pending, rejected and not-yet-delivered decisions cannot authorize a payout.
-The scheduled task `approval_flow.progress` now advances committed serial approval outcomes to the next approval or published end, preserving saved decisions when progression must be retried.
+The scheduled task `approval_flow.progress` now advances committed approval outcomes across serial and scoped branches to the next wait or published end, preserving saved decisions when progression must be retried.
 Register scheduled tasks and run the normal scheduled-task runner and Messenger worker to enable this continuation.
 Internal progression preserves the caller Context; authorization belongs to its actual entry point, while personal decisions retain their assignee checks.
 Payment transfer submission starts the initial approval tasks through the internal request path.

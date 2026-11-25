@@ -1,7 +1,7 @@
 # Approval Flow public surface
 
 The supported extension surface covers node and approval business type declaration, configuration compilation, pure node entry, assembly and business-owned binding validation.
-The DAL models `approval_flow_binding`, `approval_flow_binding_head`, `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
+The DAL models `approval_flow_binding`, `approval_flow_binding_head`, `approval_flow_definition`, `approval_flow_draft`, `approval_flow_release`, `approval_flow_instance`, `approval_flow_operation`, `approval_flow_execution`, `approval_flow_execution_scope`, `approval_flow_execution_branch` and `approval_flow_task` provide typed Definition, Entity and Collection classes using the host's normal repository contracts.
 Writes use the controlled draft, release and instance paths.
 Personal request query HTTP routes are supported as described below; publication and runtime command services remain internal.
 The diagnostic commands `approval-flow:node-types` and `approval-flow:graph:diagnose <file>` inspect declarations and draft graphs without publishing or executing a process.
@@ -119,20 +119,20 @@ Declaring a compiler does not establish runtime capability or a deployment artif
 
 - `NodeExecutor` declares one exact type/version and accepts a compiler-produced `NodeConfiguration` for that identity.
 - Register it with `approval_flow.node_executor`; static analysis enforces the interface.
-- `NodeEffectType` provides `Advance`, `RequestApproval` and `Complete` declaration values.
+- `NodeEffectType` provides the declaration values `Advance`, `RequestApproval`, `Complete`, `OpenScope` and `Wait`.
 - `NodeTypeSpecification` requires an explicit, nonempty `allowedEffects` list without duplicates; YAML declarations use the corresponding wire strings.
-- `enter()` returns the closed union `AdvanceEffect|RequestApprovalEffect|CompleteEffect`, without infrastructure calls or storage changes.
+- `enter()` returns `NodeEffect`. Use the framework effect values `AdvanceEffect`, `RequestApprovalEffect`, `CompleteEffect`, `OpenScopeEffect` and `WaitEffect`.
 - `ApprovalNodeConfiguration` and `ApprovalFieldConfiguration` are supported immutable values for approval rules and candidates carried by `RequestApprovalEffect`.
 - `ApprovalOutcome` fixes approved/rejected process outcomes at the PHP type boundary; `CompleteEffect` accepts this enum rather than an arbitrary string.
 
 A plugin may implement its own node compiler, configuration and executor and return one of the controlled intents without importing internal framework types.
 The current configuration classes identify the v1 core contract; future incompatible versions must retain their own configuration type and exact services.
-The internal entry path rejects effects outside the published permission set, changed approval rules and changed end-node outcomes.
+The internal entry path rejects unsupported effect implementations, effects outside the published permission set, changed approval rules and changed end-node outcomes.
 Approval intents currently require a matching compiled `ApprovalNodeConfiguration`; custom configurations cannot supply unrelated task rules.
 Declared business completion intents remain subject to runtime token, scope and state validation.
 Executors are pure entry services, not authorization or persistence extension points.
-Effects are uncommitted proposals: the future runtime must supply execution identity, resolve candidates, revalidate transitions and validate the whole effect set before any writes.
-The internal entry path restores compiler-produced configurations from verified persisted releases; no supported runtime decoder or instance-execution endpoint exists yet.
+Effects are uncommitted proposals. The runtime supplies execution identity, resolves candidates and validates the resulting plan before applying its changes.
+The internal entry path restores compiler-produced configurations from a command-scoped verified release. The execution plan, command handlers and storage adapter are internal.
 
 ## Internal adapters
 
@@ -170,7 +170,7 @@ Deployment attestation and retained byte checks now cover compilation records; h
 Node configuration tests cover real tagged business compilers, exact versions and missing registrations, semantic rules, deterministic byte freezing, mutable plugin results and rejected compiler outputs.
 Database integration verifies that success and semantic failure leave saved draft bytes and revisions unchanged.
 
-Node entry tests cover typed configuration mismatch, exact version coexistence, duplicate/invalid registration failures and the three core intents.
+Node entry tests cover typed configuration mismatch, exact version coexistence, duplicate/invalid registration failures and the core entry intents.
 Kernel integration composes actual registered compilers and executors and verifies saved draft bytes and revision remain unchanged.
 
 ## Internal compilation publication
@@ -200,8 +200,8 @@ Loading a persisted release requires exact agreement with a fresh compilation of
 Only the selected node's typed configuration is restored, verified against its frozen output and immediately handed to its exact executor.
 No configuration collection escapes for later mutation, and no caller-supplied object grants execution authority.
 The declaration and compiled-rule checks validate the returned effect, which remains uncommitted and cannot authorize instance state or business side effects.
-Whole-release verification runs for each entry call without a cross-command cache.
-The internal serial route operation verifies once before traversing its successors; large-graph performance remains unmeasured.
+Commands that need a published graph verify the whole release once and reuse its executable view for their node entries.
+Ready execution units restore their configurations from a verified release; large-graph performance remains unmeasured.
 
 Integration tests cover every changed frozen document, changed deployment bytes, missing releases and independence from later draft edits.
 Actual DI assemblies exercise core and independently tagged business nodes, missing exact executor versions, missing artifact bindings, whole-release failure before entry and compiler drift during configuration restoration.
@@ -228,10 +228,10 @@ The command records the vote and evaluates the frozen group policy.
 An agreement completes single/any approval; all approval waits for all votes; a rejection vetoes every policy.
 Completing a group records the execution outcome and cancels remaining pending tasks in the same transaction as its instance version and receipt.
 The task's `completionCommandId` links both personal decisions and cancellations to the original actor and reason.
-Internal `advanceApproval` requires a completed approval group at the serial execution tail, with no other active execution or pending task.
+Internal `advanceApproval` requires a completed, unadvanced approval group whose own tasks are settled and whose scope generation is active.
 It queues one unconditional successor from the verified release after approval, and commits `completed/rejected` directly after veto.
-The committed successor prevents another command from expanding the same execution twice.
-Internal `enterEnd` accepts the waiting published end boundary at the tail and verifies its frozen completion effect before committing the execution and instance outcome.
+The committed `advanced` marker prevents another command from expanding the same execution twice.
+Internal `enterEnd` accepts the waiting published end boundary at the root boundary and verifies its frozen completion effect before committing the execution and instance outcome.
 Both instance and receipt DAL models retain the optional `ApprovalOutcome`, distinct from lifecycle status.
 Receipt replay preserves the original outcome even when the instance has since completed.
 These commands require an expected aggregate version and a command identity.
@@ -239,18 +239,18 @@ They preserve the original Context, serialize writes with the instance row lock 
 Personal decisions and suspension recheck their authorization before receipt replay; internal progression retains its entry-point authorization boundary.
 Receipts are bound to their original actor and payload.
 
-The DAL/Sync write guard rejects generic writes to instances, operations, executions and tasks.
+The DAL/Sync write guard rejects generic writes to instances, operations, executions, scopes, branches and tasks.
 The controlled path updates instance status, outcome and version and inserts immutable receipts, node execution records and pending tasks.
 Executions in `approval_flow_execution` retain their instance, node, incoming connection, sequence and status.
 Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
 An internal business admission path creates draft instances and starts them through the original initiator; there is no activation endpoint; personal query and task decision routes are documented above.
-The internal `approval_flow.progress` scheduled task scans completed approval groups and calls `progress` to enter the next serial approval or published end.
-It uses keyset pages of 100, retries failed continuations on subsequent runs and preserves already committed personal votes.
+The internal `approval_flow.progress` scheduled task scans completed approval groups and calls `progress` to dispatch its published successors through the same flow executor and controlled execution store.
+It uses keyset pages of 100 and consumes successive completed groups within each instance, retries failed continuations on subsequent runs and preserves already committed personal votes.
 Its runner and task services introduce no public PHP extension contract, HTTP route or additional service tag.
 Deployments require normal scheduled-task registration, the task runner and Messenger worker.
-Branch/join execution and timers require their own contracts.
+Branch/join execution uses the public intents and scope snapshot described below; timers and external signals remain future work.
 The personal decision service remains internal; its HTTP adapter grants no arbitrary business execution or payment authority.
 
 ## Terminal result boundary
@@ -327,8 +327,8 @@ Result consumer registration is described under terminal results below.
 They accept trusted business-generated data; callers own resource authorization, serialization of their business identity and atomic evidence freezing.
 `find(..., Context)` is an initiator-bound submission retry lookup and is not a general request query contract.
 `start(requestId, Context)` verifies the original initiator and uses the immutable request ID as its single draft-to-running command identity.
-The existing instance transaction saves initial serial executions, first reviewer tasks, version 2 and its receipt atomically.
-Retries replay that receipt without entering nodes again, and unsupported initial splits, joins or completion before approval fail without partial writes.
+The existing instance transaction saves initial ready/scoped executions, their first reviewer tasks, version 2 and its receipt atomically.
+Retries replay that receipt without entering nodes again; implicit splits, invalid scope topology or completion before approval fail without partial writes.
 Same-instance command recursion from DAL events is rejected before a second transaction starts.
 These internal operations do not add a public command or extension contract.
 The shared skeleton has no Payment dependency.
@@ -369,7 +369,7 @@ The v1 core approval contract requires rejection veto, and an incompatible strat
 `NodeExecutor::enter()` accepts the optional public `NodeExecutionContext`, whose form JSON is runtime-provided immutable submission evidence.
 `AdvanceEffect::outputPorts` selects declared outputs; null retains unambiguous single-connection routing.
 Empty, duplicate, input-only and unknown port selections fail.
-The current persistent runner admits one selected outgoing connection, including conditional paths that later reconverge; this does not provide concurrent branch or join semantics.
+Ordinary advance admits one selected outgoing connection, including conditional paths that later reconverge; explicit `OpenScopeEffect` provides scoped concurrent activation.
 Implementations must accept the context argument; the development baseline does not retain a second legacy executor contract.
 
 ## Lifecycle and action boundaries
@@ -378,7 +378,34 @@ Implementations must accept the context argument; the development baseline does 
 Transfer, return, add-sign, withdrawal and timeout recovery require their own command, task-plan and lifecycle semantics; they are not additional verdicts.
 Group policy aggregation and task activation order are separate responsibilities; the current policy seam does not implement sequential activation.
 
-The current runtime implements serial progression and one selected route, not concurrent branch/join, child-process waiting or dynamic task-plan revisions.
+The current runtime implements serial progression, conditional selection and scoped branch/join coordination.
+Child-process waiting, external/timer signals, dynamic task-plan revisions and generation reset remain future work.
 `Withdrawn` and `Terminated` are currently enum values without corresponding runtime commands.
 Result recording currently follows a verdict, so a future withdrawal or termination command must also define its closing fact, pending-work cancellation and business delivery contract.
 Previously delivered verdicts remain immutable; later business reversal requires an explicitly related process or compensation fact.
+
+## Scope execution intents and snapshots
+
+`OpenScopeEffect` and `WaitEffect` are supported public node intents alongside advance, approval request and completion.
+Node declarations must permit their corresponding `NodeEffectType` values before an executor can return them.
+`OpenScopeEffect` supplies the selected published output ports and one return node; all selected paths must return within the enclosing region.
+`WaitEffect` retains the kernel-created scope arrival subscription; it cannot create an arbitrary timer or external callback.
+
+`NodeExecutionContext::scope` contains the supported readonly `ApprovalScopeSnapshot`, with scope ID, generation and actual branch ID/status pairs.
+The exact-version join executor owns its decision to wait or advance from these facts.
+Returning advance closes the child scope, cancels unfinished descendant work and continues in the opening execution’s enclosing branch.
+Closed/generation-mismatched scope work cannot vote or dispatch again; completed opinions survive cancellation.
+The singleton waiting execution is created with the opening command, rather than with the first arrival, so older transaction snapshots can wake it through DAL safely.
+
+`ApprovalExecutionScopeDefinition/Entity/Collection` and `ApprovalExecutionBranchDefinition/Entity/Collection` are normal supported DAL models.
+`ApprovalFlowExecutor` is the internal ready-work coordinator; it interprets intents without depending on DBAL or DAL.
+`ApprovalExecutionStore` owns locked runtime facts and controlled persistence, bound to the existing instance-command transaction and one-use write scope.
+The store does not load the graph or invoke node executors.
+Both run inside `ApprovalInstanceStore::runCommand()`, which owns the instance lock, legal state, expected version, history, receipt and terminal outbox transaction.
+These internal services are not plugin inheritance or direct-write extension contracts.
+`approval_flow_execution` stores `scopeId`, `branchId`, `generation`, `openedScopeId`, `waitingScopeId` and `advanced`.
+The task `completionReason` is an open namespaced string with core constants in `ApprovalTaskCompletionReason`, separate from status, opinion and completion command.
+
+Node and policy IDs stay open registry identities; kernel `NodeEffectType` and shared verdict `ApprovalOutcome` remain controlled enums.
+A custom fork or join rule composes published kernel primitives; it does not gain permission to modify runtime DAL directly.
+No new HTTP operation, Administration designer or stock parallel node declaration is introduced by this runtime increment.

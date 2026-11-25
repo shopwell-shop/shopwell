@@ -20,6 +20,11 @@ final readonly class NodeTypeSpecification
     public string $draftConfigurationSchema;
 
     /**
+     * @var array<string, 'input'|'output'>
+     */
+    public array $ports;
+
+    /**
      * @var non-empty-list<NodeEffectType>
      */
     public array $allowedEffects;
@@ -34,7 +39,7 @@ final readonly class NodeTypeSpecification
         public string $labelSnippet,
         public string $source,
         public string $configurationSchema,
-        public array $ports,
+        array $ports,
         array $allowedEffects,
         ?string $draftConfigurationSchema = null,
     ) {
@@ -44,11 +49,14 @@ final readonly class NodeTypeSpecification
         if (!preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version)) {
             throw ApprovalFlowException::invalidNodeType($source, 'version must be an exact major.minor.patch version');
         }
+        $validatedPorts = [];
         foreach ($ports as $id => $direction) {
             if (!\is_string($id) || $id === '' || !\in_array($direction, ['input', 'output'], true)) {
                 throw ApprovalFlowException::invalidNodeType($source, 'ports must map names to input or output');
             }
+            $validatedPorts[$id] = $direction;
         }
+        $this->ports = $validatedPorts;
 
         if ($allowedEffects === [] || !array_is_list($allowedEffects)) {
             throw ApprovalFlowException::invalidNodeType($source, 'allowedEffects must be a nonempty list of unique effect types');

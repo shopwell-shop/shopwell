@@ -309,7 +309,7 @@ class GraphPublicationPreflightTest extends TestCase
         $decoder = new GraphJsonDecoder();
         $diagnostics = new GraphDiagnostics($registry, new GraphSchemaValidator(), $this->graphSchema, $decoder);
 
-        return new GraphPublicationPreflight(new GraphCodec($diagnostics, $decoder), $diagnostics, $registry, $decoder, $this->graphSchema);
+        return new GraphPublicationPreflight(new GraphCodec($diagnostics, $decoder), $registry, $this->graphSchema);
     }
 }
 

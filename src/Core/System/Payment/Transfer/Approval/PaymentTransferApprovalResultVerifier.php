@@ -39,7 +39,7 @@ class PaymentTransferApprovalResultVerifier
                 throw PaymentTransferApprovalException::blocked($approval['outcome']->value ?? 'pending');
             }
 
-            $facts = $this->requests->snapshot($transfer->id);
+            $facts = $this->requests->snapshot($transfer->id, requirePayoutEligibility: true);
             $snapshot = $facts['snapshot'];
             $revision = Hasher::hash(json_encode($snapshot, \JSON_THROW_ON_ERROR), 'sha256');
             if (!hash_equals($approval['revision'], $revision)) {

@@ -3,8 +3,10 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Instance;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Branch\ApprovalExecutionBranchDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Scope\ApprovalExecutionScopeDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultDefinition;
@@ -38,6 +40,8 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
         ApprovalRequestDefinition::ENTITY_NAME,
         ApprovalOperationDefinition::ENTITY_NAME,
         ApprovalNodeExecutionDefinition::ENTITY_NAME,
+        ApprovalExecutionScopeDefinition::ENTITY_NAME,
+        ApprovalExecutionBranchDefinition::ENTITY_NAME,
         ApprovalTaskDefinition::ENTITY_NAME,
         ApprovalResultDefinition::ENTITY_NAME,
     ];
@@ -127,14 +131,22 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
                 continue;
             }
             if ($command->getEntityName() === ApprovalNodeExecutionDefinition::ENTITY_NAME && $command instanceof UpdateCommand
-                && array_diff(array_keys($command->getPayload()), ['status', 'approval_policy', 'approval_policy_version', 'outcome', 'updated_at']) === []) {
+                && array_diff(array_keys($command->getPayload()), ['status', 'approval_policy', 'approval_policy_version', 'outcome', 'advanced', 'opened_scope_id', 'updated_at']) === []) {
                 continue;
             }
             if ($command->getEntityName() === ApprovalTaskDefinition::ENTITY_NAME && $command instanceof UpdateCommand
-                && array_diff(array_keys($command->getPayload()), ['status', 'completion_command_id', 'updated_at']) === []) {
+                && array_diff(array_keys($command->getPayload()), ['status', 'completion_command_id', 'completion_reason', 'updated_at']) === []) {
                 continue;
             }
 
+            if ($command->getEntityName() === ApprovalExecutionScopeDefinition::ENTITY_NAME && $command instanceof UpdateCommand
+                && array_diff(array_keys($command->getPayload()), ['status', 'updated_at']) === []) {
+                continue;
+            }
+            if ($command->getEntityName() === ApprovalExecutionBranchDefinition::ENTITY_NAME && $command instanceof UpdateCommand
+                && array_diff(array_keys($command->getPayload()), ['status', 'arrival_connection_id', 'updated_at']) === []) {
+                continue;
+            }
             throw ApprovalFlowException::uncontrolledInstanceWrite();
         }
         foreach ($commands as $command) {

@@ -4,11 +4,14 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Graph\Codec;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
+use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnosticsReport;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\ViolationCategory;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
+ * @phpstan-import-type GraphPayload from GraphDiagnostics
+ *
  * @internal
  */
 #[Package('framework')]
@@ -22,28 +25,99 @@ class GraphCodec
 
     public function decodeDraft(string $json): DraftGraph
     {
-        $payload = $this->jsonDecoder->decode($json);
-        $graph = new DraftGraph($json);
-        foreach ($this->diagnostics->analyze($graph)->violations as $violation) {
-            if ($violation->category === ViolationCategory::Structure) {
-                throw ApprovalFlowException::invalidGraph($violation->path, $violation->message);
-            }
-        }
+        return $this->readDraft($json)['graph'];
+    }
 
-        return new DraftGraph($this->canonicalJson($payload));
+    /**
+     * @return array{graph: DraftGraph, diagnostics: GraphDiagnosticsReport}
+     */
+    public function readDraft(string $json): array
+    {
+        $payload = $this->jsonDecoder->decode($json);
+        $report = $this->diagnostics->analyzePayload($payload);
+        $this->requireStructure($report);
+
+        return ['graph' => new DraftGraph($this->canonicalJson($payload)), 'diagnostics' => $report];
     }
 
     public function encodeDraft(DraftGraph $graph): string
     {
-        // Internal draft values can also come from read-only tools; never treat their constructor as write admission.
-        $decoded = $this->decodeDraft($graph->json);
-        foreach ($this->diagnostics->analyze($decoded)->violations as $violation) {
+        return $this->prepareDraft($graph->json)['graph']->json;
+    }
+
+    /**
+     * @return array{graph: DraftGraph, diagnostics: GraphDiagnosticsReport}
+     */
+    public function prepareDraft(string $json): array
+    {
+        return $this->prepareWrite($this->jsonDecoder->decode($json));
+    }
+
+    /**
+     * @return array{graph: DraftGraph, payload: GraphPayload}
+     */
+    public function preparePublication(DraftGraph $draft): array
+    {
+        try {
+            $payload = $this->jsonDecoder->decode($draft->json);
+        } catch (GraphJsonException $exception) {
+            $violation = $exception->violation;
+
+            throw ApprovalFlowException::publicationGraphInvalid($violation->code, $violation->path, $violation->message);
+        }
+
+        $report = $this->diagnostics->analyzePayload($payload);
+        if ($report->violations !== []) {
+            $violation = $report->violations[0];
+
+            throw ApprovalFlowException::publicationGraphInvalid($violation->code, $violation->path, $violation->message);
+        }
+
+        /** @var GraphPayload $payload */
+        return ['graph' => new DraftGraph($this->canonicalJson($payload)), 'payload' => $payload];
+    }
+
+    /**
+     * @return GraphPayload
+     */
+    public function decodeWritable(DraftGraph $graph): \stdClass
+    {
+        $payload = $this->jsonDecoder->decode($graph->json);
+        $this->requireWritable($this->diagnostics->analyzePayload($payload));
+
+        // The wire schema establishes the shape before the payload can cross the write boundary.
+        /** @var GraphPayload $payload */
+        return $payload;
+    }
+
+    /**
+     * @return array{graph: DraftGraph, diagnostics: GraphDiagnosticsReport}
+     */
+    public function prepareWrite(mixed $payload): array
+    {
+        $report = $this->diagnostics->analyzePayload($payload);
+        $this->requireWritable($report);
+
+        return ['graph' => new DraftGraph($this->canonicalJson($payload)), 'diagnostics' => $report];
+    }
+
+    private function requireWritable(GraphDiagnosticsReport $report): void
+    {
+        $this->requireStructure($report);
+        foreach ($report->violations as $violation) {
             if ($violation->category !== ViolationCategory::Draft) {
                 throw ApprovalFlowException::invalidGraph($violation->path, $violation->message);
             }
         }
+    }
 
-        return $decoded->json;
+    private function requireStructure(GraphDiagnosticsReport $report): void
+    {
+        foreach ($report->violations as $violation) {
+            if ($violation->category === ViolationCategory::Structure) {
+                throw ApprovalFlowException::invalidGraph($violation->path, $violation->message);
+            }
+        }
     }
 
     private function canonicalJson(mixed $value): string

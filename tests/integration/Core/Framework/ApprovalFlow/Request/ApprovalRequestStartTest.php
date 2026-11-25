@@ -305,7 +305,7 @@ class ApprovalRequestStartTest extends TestCase
         $bindings->save('payment:transfer', '1.0.0', $releaseId, 1, Context::createDefaultContext());
         $bindings->activate('payment:transfer', 2, 1, Context::createDefaultContext());
         $request = $this->requests->create('payment:transfer', Uuid::randomHex(), 1, hash('sha256', 'split'), $this->request->getFormJson(), $this->context);
-        $this->expectExceptionObject(ApprovalFlowException::unsupportedStartRoute($releaseId));
+        $this->expectExceptionObject(ApprovalFlowException::unsupportedNodeRoute($releaseId, 'start'));
 
         try {
             $this->requests->start($request->getId(), $this->context);

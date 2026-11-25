@@ -8,6 +8,8 @@ use Shopwell\Core\Framework\Log\Package;
 enum NodeEffectType: string
 {
     case Advance = 'advance';
+    case OpenScope = 'openScope';
+    case Wait = 'wait';
     case RequestApproval = 'requestApproval';
     case Complete = 'complete';
 }

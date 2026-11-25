@@ -10,4 +10,6 @@ enum ApprovalNodeExecutionStatus: string
     case Waiting = 'waiting';
     case AwaitingApproval = 'awaiting_approval';
     case Completed = 'completed';
+    case AwaitingSignal = 'awaiting_signal';
+    case Cancelled = 'cancelled';
 }

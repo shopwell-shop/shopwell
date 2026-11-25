@@ -73,6 +73,12 @@ class GraphDiagnostics
         } catch (GraphJsonException $exception) {
             return new GraphDiagnosticsReport([$exception->violation]);
         }
+
+        return $this->analyzePayload($payload);
+    }
+
+    public function analyzePayload(mixed $payload): GraphDiagnosticsReport
+    {
         $violations = $this->schemas->validate($payload, $this->graphSchema);
         if ($violations !== []) {
             return new GraphDiagnosticsReport($violations);
@@ -89,8 +95,9 @@ class GraphDiagnostics
             ...$this->extensionViolations($payload->extensions, '/extensions'),
         ];
 
-        if (!(new GraphDiagnosticsReport($violations))->isWritable()) {
-            return new GraphDiagnosticsReport($violations);
+        $report = new GraphDiagnosticsReport($violations);
+        if (!$report->isWritable()) {
+            return $report;
         }
         array_push($violations, ...$this->controlFlowViolations($payload->nodes, $connectionAnalysis['adjacency'], $connectionAnalysis['reverse']));
 
@@ -122,7 +129,7 @@ class GraphDiagnostics
                 try {
                     $invalidConfig = $this->schemas->validate($node->config, $specification->draftConfigurationSchema, $path . '/config');
                     array_push($violations, ...$invalidConfig);
-                    if ($invalidConfig === []) {
+                    if ($invalidConfig === [] && $specification->draftConfigurationSchema !== $specification->configurationSchema) {
                         array_push($violations, ...$this->schemas->validate($node->config, $specification->configurationSchema, $path . '/config', ViolationCategory::Draft));
                     }
                 } catch (SchemaException $exception) {

@@ -2,10 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Publication;
 
-use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
-use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
-use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
@@ -14,8 +11,6 @@ use Shopwell\Core\Framework\Log\Package;
 /**
  * Freezes complete graph input for publication; executable dependencies require their own admission.
  *
- * @phpstan-import-type GraphPayload from GraphDiagnostics
- *
  * @internal
  */
 #[Package('framework')]
@@ -23,26 +18,15 @@ class GraphPublicationPreflight
 {
     public function __construct(
         private readonly GraphCodec $codec,
-        private readonly GraphDiagnostics $diagnostics,
         private readonly NodeTypeRegistry $nodeTypes,
-        private readonly GraphJsonDecoder $jsonDecoder,
         private readonly string $graphSchema,
     ) {
     }
 
     public function prepare(DraftGraph $draft): GraphPublicationSnapshot
     {
-        $report = $this->diagnostics->analyze($draft);
-        if ($report->violations !== []) {
-            $violation = $report->violations[0];
-
-            throw ApprovalFlowException::publicationGraphInvalid($violation->code, $violation->path, $violation->message);
-        }
-
-        $graph = $this->codec->decodeDraft($draft->json);
-        // Diagnostics admitted the closed graph schema and complete configurations above.
-        /** @var GraphPayload $payload */
-        $payload = $this->jsonDecoder->decode($graph->json);
+        $publication = $this->codec->preparePublication($draft);
+        $payload = $publication['payload'];
         $declarations = [];
         foreach ($payload->nodes as $node) {
             $identity = $node->type . '@' . $node->typeVersion;
@@ -77,6 +61,6 @@ class GraphPublicationPreflight
             'nodeTypes' => array_values($declarations),
         ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
 
-        return new GraphPublicationSnapshot($graph->json, $contractJson);
+        return new GraphPublicationSnapshot($publication['graph']->json, $contractJson);
     }
 }

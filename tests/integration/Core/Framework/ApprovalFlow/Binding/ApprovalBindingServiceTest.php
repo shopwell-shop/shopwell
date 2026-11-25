@@ -47,6 +47,8 @@ class ApprovalBindingServiceTest extends TestCase
 
     private ApprovalBindingService $bindings;
 
+    private ApprovalBindingStore $store;
+
     private ApprovalBusinessTypeSpecification $businessType;
 
     protected function setUp(): void
@@ -62,6 +64,7 @@ class ApprovalBindingServiceTest extends TestCase
             'test:payment',
             '{"$id":"payment:transfer","type":"object","properties":{"amount":{"type":"string"}}}',
         );
+        $this->store = static::getContainer()->get(ApprovalBindingStore::class);
         $this->bindings = $this->service($this->businessType);
     }
 
@@ -85,9 +88,9 @@ class ApprovalBindingServiceTest extends TestCase
         static::assertSame([$context], $observed);
         static::assertNull($binding->getCreatedById());
         static::assertSame(1, $head->getVersion());
-        static::assertSame($binding->getId(), $this->bindings->read('payment:transfer', 1, $context)->getId());
-        static::assertSame($binding->getId(), $this->bindings->active('payment:transfer', $context)->getId());
-        static::assertSame($head->getId(), $this->bindings->head('payment:transfer', $context)->getId());
+        static::assertSame($binding->getId(), $this->store->read('payment:transfer', 1, $context)->getId());
+        static::assertSame($binding->getId(), $this->store->active('payment:transfer', $context)->getId());
+        static::assertSame($head->getId(), $this->store->head('payment:transfer', $context)->getId());
         static::assertSame(Context::USER_SCOPE, $context->getScope());
     }
 
@@ -118,14 +121,14 @@ class ApprovalBindingServiceTest extends TestCase
         static::assertSame($this->businessType->formSchema, $binding->getFormSchema());
         static::assertSame($this->businessType->formSchemaHash, $binding->getFormSchemaHash());
         static::assertSame($this->businessType->formSchemaId, $binding->getFormSchemaId());
-        $head = $this->bindings->head('payment:transfer', $context);
+        $head = $this->store->head('payment:transfer', $context);
         static::assertSame(1, $head->getLatestRevision());
         static::assertSame(0, $head->getVersion());
         static::assertNull($head->getActiveRevision());
-        static::assertSame($binding->getId(), $this->bindings->read('payment:transfer', 1, $context)->getId());
+        static::assertSame($binding->getId(), $this->store->read('payment:transfer', 1, $context)->getId());
         $this->expectExceptionObject(ApprovalFlowException::activeBindingNotFound('payment:transfer'));
 
-        $this->bindings->active('payment:transfer', $context);
+        $this->store->active('payment:transfer', $context);
     }
 
     public function testActivationSwitchesNewLookupsAndCanReturnToAnOlderRevision(): void
@@ -134,19 +137,19 @@ class ApprovalBindingServiceTest extends TestCase
         $first = $this->bindings->save('payment:transfer', '1.0.0', $this->publish(), 0, $context);
         $head = $this->bindings->activate('payment:transfer', 1, 0, $context);
         static::assertSame(1, $head->getVersion());
-        static::assertSame($first->getId(), $this->bindings->active('payment:transfer', $context)->getId());
+        static::assertSame($first->getId(), $this->store->active('payment:transfer', $context)->getId());
         $second = $this->bindings->save('payment:transfer', '1.0.0', $this->publish('Changed transfer process'), 1, $context);
         static::assertSame(2, $second->getRevision());
-        static::assertSame(1, $this->bindings->head('payment:transfer', $context)->getVersion());
-        static::assertSame($first->getId(), $this->bindings->active('payment:transfer', $context)->getId());
+        static::assertSame(1, $this->store->head('payment:transfer', $context)->getVersion());
+        static::assertSame($first->getId(), $this->store->active('payment:transfer', $context)->getId());
 
         $head = $this->bindings->activate('payment:transfer', 2, 1, $context);
         static::assertSame(2, $head->getVersion());
-        static::assertSame($second->getId(), $this->bindings->active('payment:transfer', $context)->getId());
-        static::assertSame($first->getReleaseId(), $this->bindings->read('payment:transfer', 1, $context)->getReleaseId());
+        static::assertSame($second->getId(), $this->store->active('payment:transfer', $context)->getId());
+        static::assertSame($first->getReleaseId(), $this->store->read('payment:transfer', 1, $context)->getReleaseId());
         $head = $this->bindings->activate('payment:transfer', 1, 2, $context);
         static::assertSame(3, $head->getVersion());
-        static::assertSame($first->getId(), $this->bindings->active('payment:transfer', $context)->getId());
+        static::assertSame($first->getId(), $this->store->active('payment:transfer', $context)->getId());
     }
 
     public function testStaleEditorCannotAppendARevision(): void
@@ -206,8 +209,8 @@ class ApprovalBindingServiceTest extends TestCase
         } catch (ApprovalFlowException $exception) {
             static::assertSame(ApprovalFlowException::BINDING_FORM_CHANGED, $exception->getErrorCode());
         }
-        static::assertNull($this->bindings->head('payment:transfer', $context)->getActiveRevision());
-        static::assertSame(0, $this->bindings->head('payment:transfer', $context)->getVersion());
+        static::assertNull($this->store->head('payment:transfer', $context)->getActiveRevision());
+        static::assertSame(0, $this->store->head('payment:transfer', $context)->getVersion());
     }
 
     public function testSavingCannotReenterActivationThroughADalEvent(): void
@@ -224,12 +227,12 @@ class ApprovalBindingServiceTest extends TestCase
         } catch (ApprovalFlowException $exception) {
             static::assertSame('APPROVAL_FLOW__BINDING_WRITE_IN_PROGRESS', $exception->getErrorCode());
         }
-        $head = $this->bindings->head('payment:transfer', $context);
+        $head = $this->store->head('payment:transfer', $context);
         static::assertSame(1, $head->getLatestRevision());
         static::assertNull($head->getActiveRevision());
         static::assertSame(0, $head->getVersion());
         $this->bindings->activate('payment:transfer', 1, 0, $context);
-        static::assertSame(1, $this->bindings->head('payment:transfer', $context)->getVersion());
+        static::assertSame(1, $this->store->head('payment:transfer', $context)->getVersion());
     }
 
     public function testActivationRechecksDeploymentArtifacts(): void
@@ -243,7 +246,7 @@ class ApprovalBindingServiceTest extends TestCase
         } catch (ApprovalFlowException $exception) {
             static::assertSame(ApprovalFlowException::INVALID_ARTIFACT_MANIFEST, $exception->getErrorCode());
         }
-        static::assertNull($this->bindings->head('payment:transfer', $context)->getActiveRevision());
+        static::assertNull($this->store->head('payment:transfer', $context)->getActiveRevision());
     }
 
     public function testDalListenerFailureRollsBackTheBindingAndHeadTogether(): void
@@ -307,7 +310,7 @@ class ApprovalBindingServiceTest extends TestCase
         } catch (ApprovalFlowException $exception) {
             static::assertEquals(ApprovalFlowException::bindingWriteInProgress('payment:transfer'), $exception);
         }
-        $head = $this->bindings->head('payment:transfer', $context);
+        $head = $this->store->head('payment:transfer', $context);
         static::assertSame(1, $head->getLatestRevision());
         static::assertSame(0, $head->getVersion());
         static::assertNull($head->getActiveRevision());

@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Task;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalExecutionStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
@@ -35,6 +36,7 @@ class ApprovalTaskDecisionStore
         private readonly EntityRepository $executions,
         private readonly ApprovalInstanceWriteGuard $writeGuard,
         private readonly ApprovalDecisionEvaluator $evaluator,
+        private readonly ApprovalExecutionStore $executionStore,
     ) {
     }
 
@@ -60,6 +62,7 @@ class ApprovalTaskDecisionStore
             throw ApprovalFlowException::taskNotPending($taskId);
         }
         $executionId = Uuid::fromBytesToHex($task['execution_id']);
+        $this->executionStore->requireActiveExecution($instanceId, $executionId);
         if (ApprovalNodeExecutionStatus::from($task['execution_status']) !== ApprovalNodeExecutionStatus::AwaitingApproval || ($task['approval_policy'] === null || $task['approval_policy_version'] === null)) {
             throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The execution is not awaiting an approval group.');
         }
@@ -79,11 +82,11 @@ class ApprovalTaskDecisionStore
             }
         }
         $outcome = $this->evaluator->evaluate(Uuid::fromBytesToHex($task['release_id']), $task['approval_policy'], $task['approval_policy_version'], $statuses);
-        $updates = [['id' => $taskId, 'status' => $decisionStatus->value, 'completionCommandId' => $commandId]];
+        $updates = [['id' => $taskId, 'status' => $decisionStatus->value, 'completionCommandId' => $commandId, 'completionReason' => ApprovalTaskCompletionReason::DECISION]];
         if ($outcome !== null) {
             foreach ($group as $member) {
                 if ($member['id'] !== Uuid::fromHexToBytes($taskId) && ApprovalTaskStatus::from($member['status']) === ApprovalTaskStatus::Pending) {
-                    $updates[] = ['id' => Uuid::fromBytesToHex($member['id']), 'status' => ApprovalTaskStatus::Cancelled->value, 'completionCommandId' => $commandId];
+                    $updates[] = ['id' => Uuid::fromBytesToHex($member['id']), 'status' => ApprovalTaskStatus::Cancelled->value, 'completionCommandId' => $commandId, 'completionReason' => ApprovalTaskCompletionReason::GROUP_RESOLVED];
                 }
             }
         }

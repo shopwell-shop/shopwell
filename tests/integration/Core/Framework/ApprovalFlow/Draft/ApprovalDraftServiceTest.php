@@ -86,7 +86,7 @@ class ApprovalDraftServiceTest extends TestCase
         $service = $this->service();
         $draft = $service->create('Transfer approval', GraphFixture::json(), $context);
         $diagnostics = GraphFixture::diagnostics();
-        $mutator = new GraphMutator(GraphFixture::codec($diagnostics), $diagnostics, new GraphJsonDecoder());
+        $mutator = new GraphMutator(GraphFixture::codec($diagnostics), new GraphJsonDecoder());
         $preview = $mutator->removeNode($draft->graph, 'review');
 
         try {
@@ -281,8 +281,7 @@ class ApprovalDraftServiceTest extends TestCase
         $service = new ApprovalDraftService(
             static::getContainer()->get(ApprovalDraftStore::class),
             $codec,
-            $diagnostics,
-            new GraphMutator($codec, $diagnostics, new GraphJsonDecoder()),
+            new GraphMutator($codec, new GraphJsonDecoder()),
         );
         $context = $this->designerContext();
         $json = $filesystem->readFile($fixtureDirectory . '/_fixtures/finance-transfer.json');

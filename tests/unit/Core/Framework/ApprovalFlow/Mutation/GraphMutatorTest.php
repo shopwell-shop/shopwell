@@ -22,7 +22,7 @@ class GraphMutatorTest extends TestCase
         $codec = GraphFixture::codec();
         $graph = $codec->decodeDraft(GraphFixture::json());
         $original = $graph->json;
-        $mutator = new GraphMutator($codec, GraphFixture::diagnostics(), new GraphJsonDecoder());
+        $mutator = new GraphMutator($codec, new GraphJsonDecoder());
 
         $result = $mutator->removeNode($graph, 'review');
 
@@ -41,7 +41,7 @@ class GraphMutatorTest extends TestCase
         $codec = GraphFixture::codec();
         $graph = $codec->decodeDraft(GraphFixture::json());
         $original = $graph->json;
-        $mutator = new GraphMutator($codec, GraphFixture::diagnostics(), new GraphJsonDecoder());
+        $mutator = new GraphMutator($codec, new GraphJsonDecoder());
 
         try {
             $mutator->addConnection($graph, '{"id":"invalid","source":"start","target":"gone","sourcePort":"out","targetPort":"in","condition":{"kind":"always"},"extensions":{}}');
@@ -56,7 +56,7 @@ class GraphMutatorTest extends TestCase
     {
         $codec = GraphFixture::codec();
         $graph = $codec->decodeDraft(GraphFixture::json());
-        $mutator = new GraphMutator($codec, GraphFixture::diagnostics(), new GraphJsonDecoder());
+        $mutator = new GraphMutator($codec, new GraphJsonDecoder());
         $node = '{"id":"other","type":"core:end","typeVersion":"1.0.0","config":{},"ports":[{"id":"in","direction":"input","channel":"control","cardinality":"one"}],"position":{"x":0,"y":0},"extensions":{}}';
 
         $added = $mutator->addNode($graph, $node);
@@ -73,7 +73,7 @@ class GraphMutatorTest extends TestCase
     {
         $codec = GraphFixture::codec();
         $graph = $codec->decodeDraft(GraphFixture::json());
-        $mutator = new GraphMutator($codec, GraphFixture::diagnostics(), new GraphJsonDecoder());
+        $mutator = new GraphMutator($codec, new GraphJsonDecoder());
 
         $removed = $mutator->removeConnection($graph, 'review-end');
         $reconnected = $mutator->addConnection($removed->graph, $removed->removedConnections[0]);
@@ -86,7 +86,7 @@ class GraphMutatorTest extends TestCase
     {
         $codec = GraphFixture::codec();
         $graph = $codec->decodeDraft(str_replace('core:approval', 'finance:missing', GraphFixture::json()));
-        $mutator = new GraphMutator($codec, GraphFixture::diagnostics(), new GraphJsonDecoder());
+        $mutator = new GraphMutator($codec, new GraphJsonDecoder());
 
         $this->expectExceptionObject(ApprovalFlowException::invalidGraph('/nodes/1/type', 'Node type finance:missing@1.0.0 is unavailable.'));
         $mutator->removeNode($graph, 'review');
@@ -96,7 +96,7 @@ class GraphMutatorTest extends TestCase
     {
         $codec = GraphFixture::codec();
         $graph = $codec->decodeDraft(GraphFixture::json());
-        $mutator = new GraphMutator($codec, GraphFixture::diagnostics(), new GraphJsonDecoder());
+        $mutator = new GraphMutator($codec, new GraphJsonDecoder());
 
         $this->expectExceptionObject(ApprovalFlowException::invalidGraph('/nodes', 'Node gone does not exist.'));
         $mutator->removeNode($graph, 'gone');
@@ -106,7 +106,7 @@ class GraphMutatorTest extends TestCase
     {
         $codec = GraphFixture::codec();
         $graph = $codec->decodeDraft(GraphFixture::json());
-        $mutator = new GraphMutator($codec, GraphFixture::diagnostics(), new GraphJsonDecoder());
+        $mutator = new GraphMutator($codec, new GraphJsonDecoder());
         $node = '{"id":"other","type":"core:end","typeVersion":"1.0.0","config":{},"ports":[{"id":"in","direction":"input","channel":"control","cardinality":"one"}],"position":{"x":9007199254740991.1,"y":0},"extensions":{}}';
 
         $this->expectException(ApprovalFlowException::class);

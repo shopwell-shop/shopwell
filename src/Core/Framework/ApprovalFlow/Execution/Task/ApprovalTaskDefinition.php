@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -46,6 +47,7 @@ class ApprovalTaskDefinition extends EntityDefinition
             (new IdField('assignee_id', 'assigneeId'))->addFlags(new Required()),
             (new EnumField('status', 'status', ApprovalTaskStatus::Pending))->addFlags(new Required()),
             new IdField('completion_command_id', 'completionCommandId'),
+            new StringField('completion_reason', 'completionReason'),
             new ManyToOneAssociationField('execution', 'execution_id', ApprovalNodeExecutionDefinition::class, 'id', false),
         ]);
     }

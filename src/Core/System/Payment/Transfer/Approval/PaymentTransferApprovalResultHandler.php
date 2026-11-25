@@ -61,7 +61,7 @@ class PaymentTransferApprovalResultHandler implements ApprovalResultHandler
             if ($requestId !== Uuid::fromHexToBytes($request->getId())) {
                 throw PaymentTransferApprovalException::resultConflict($request->getId(), 'The transfer is bound to another approval request.');
             }
-            $facts = $this->requests->snapshot($transferId);
+            $facts = $this->requests->snapshot($transferId, requirePayoutEligibility: false);
             $revision = Hasher::hash(json_encode($facts['snapshot'], \JSON_THROW_ON_ERROR), 'sha256');
             if ($facts['submitAttempts'] !== 0 || $facts['state'] !== PaymentTransferStates::STATE_CREATED || !hash_equals($request->getBusinessRevision(), $revision)) {
                 throw PaymentTransferApprovalException::resultConflict($request->getId(), 'The transfer no longer matches the submitted revision.');

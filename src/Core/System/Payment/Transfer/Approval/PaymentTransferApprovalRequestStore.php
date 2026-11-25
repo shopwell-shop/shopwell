@@ -76,7 +76,7 @@ class PaymentTransferApprovalRequestStore
     /**
      * @return array{state: string, submitAttempts: int, paymentAccountLabel: string, snapshot: array<string, mixed>}
      */
-    public function snapshot(string $transferId): array
+    public function snapshot(string $transferId, bool $requirePayoutEligibility): array
     {
         // Current reads are necessary even when the caller entered with an older repeatable-read snapshot.
         $transfer = $this->connection->fetchAssociative(
@@ -91,14 +91,14 @@ class PaymentTransferApprovalRequestStore
             'SELECT * FROM payment_transfer_recipient WHERE id = :id AND payment_app_id = :app FOR UPDATE',
             ['id' => $transfer['recipient_id'], 'app' => $transfer['payment_app_id']],
         );
-        if ($recipient === false || !(bool) $recipient['payout_enabled'] || $recipient['provider'] !== $transfer['provider']) {
+        if ($recipient === false || $recipient['provider'] !== $transfer['provider'] || ($requirePayoutEligibility && !(bool) $recipient['payout_enabled'])) {
             throw PaymentTransferApprovalException::blocked('recipient_unavailable');
         }
         $account = $this->connection->fetchAssociative(
             'SELECT name, active, provider_technical_name FROM payment_account WHERE id = :id FOR UPDATE',
             ['id' => $transfer['account_id']],
         );
-        if ($account === false || !(bool) $account['active'] || $account['provider_technical_name'] !== $transfer['provider']) {
+        if ($account === false || $account['provider_technical_name'] !== $transfer['provider'] || ($requirePayoutEligibility && !(bool) $account['active'])) {
             throw PaymentTransferApprovalException::blocked('payment_account_unavailable');
         }
         $metadata = $transfer['metadata'] === null ? null : json_decode($transfer['metadata'], associative: true, flags: \JSON_THROW_ON_ERROR);

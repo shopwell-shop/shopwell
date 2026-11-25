@@ -10,7 +10,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * Resumes committed serial approval outcomes without borrowing a personal decision's transaction or identity.
+ * Resumes committed approval outcomes across the instance's active execution frontier without borrowing a personal decision's transaction or identity.
  *
  * @internal
  *
@@ -39,24 +39,27 @@ class ApprovalProgressionRunner
             foreach ($pending as $candidate) {
                 // Advance the cursor on failure too, so one broken deployment cannot starve later instances.
                 $after = $candidate['instanceId'];
-                try {
-                    $this->instances->progress(
-                        $candidate['instanceId'],
-                        $candidate['executionId'],
-                        $candidate['executionId'],
-                        $candidate['version'],
-                        $context,
-                    );
-                } catch (\Throwable $exception) {
-                    if ($exception instanceof ApprovalFlowException && $exception->getErrorCode() === ApprovalFlowException::INSTANCE_VERSION_CONFLICT) {
-                        continue;
+                do {
+                    try {
+                        $this->instances->progress(
+                            $candidate['instanceId'],
+                            $candidate['executionId'],
+                            $candidate['executionId'],
+                            $candidate['version'],
+                            $context,
+                        );
+                    } catch (\Throwable $exception) {
+                        if (!$exception instanceof ApprovalFlowException || $exception->getErrorCode() !== ApprovalFlowException::INSTANCE_VERSION_CONFLICT) {
+                            $this->logger->error('Approval progression failed.', [
+                                'instanceId' => $candidate['instanceId'],
+                                'executionId' => $candidate['executionId'],
+                                'exception' => $exception,
+                            ]);
+                        }
+                        break;
                     }
-                    $this->logger->error('Approval progression failed.', [
-                        'instanceId' => $candidate['instanceId'],
-                        'executionId' => $candidate['executionId'],
-                        'exception' => $exception,
-                    ]);
-                }
+                    $candidate = $this->store->nextProgression($candidate['instanceId']);
+                } while ($candidate !== null);
             }
         } while (\count($pending) === self::BATCH_SIZE);
     }

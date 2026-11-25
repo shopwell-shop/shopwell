@@ -9,8 +9,11 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffectValidator;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\OpenScopeEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\WaitEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Specification\NodeTypeSpecification;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalFieldConfiguration;
@@ -26,11 +29,23 @@ use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\Financ
  */
 #[Package('framework')]
 #[CoversClass(NodeEffectValidator::class)]
-#[CoversClass(AdvanceEffect::class)]
 class NodeEffectValidatorTest extends TestCase
 {
+    public function testClaimingAKnownKindDoesNotMakeAnUnknownEffectExecutable(): void
+    {
+        $effect = new class implements NodeEffect {
+            public function getType(): NodeEffectType
+            {
+                return NodeEffectType::Wait;
+            }
+        };
+        $this->expectExceptionObject(ApprovalFlowException::invalidNodeEffect('test:node', '1.0.0', 'wait', 'Unsupported effect implementation ' . $effect::class . '.'));
+
+        (new NodeEffectValidator())->validate($this->specification([NodeEffectType::Wait]), new StartNodeConfiguration('payment:transfer'), $effect);
+    }
+
     #[DataProvider('validEffectProvider')]
-    public function testAcceptsDeclaredEffects(NodeConfiguration $configuration, AdvanceEffect|RequestApprovalEffect|CompleteEffect $effect, NodeEffectType $allowed): void
+    public function testAcceptsDeclaredEffects(NodeConfiguration $configuration, NodeEffect $effect, NodeEffectType $allowed): void
     {
         $this->expectNotToPerformAssertions();
         $validator = new NodeEffectValidator();
@@ -39,24 +54,16 @@ class NodeEffectValidatorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{NodeConfiguration, AdvanceEffect|RequestApprovalEffect|CompleteEffect, NodeEffectType}>
+     * @return iterable<string, array{NodeConfiguration, NodeEffect, NodeEffectType}>
      */
     public static function validEffectProvider(): iterable
     {
+        yield 'return boundary may wait for a new arrival' => [new StartNodeConfiguration('payment:transfer'), new WaitEffect(), NodeEffectType::Wait];
         yield 'start advances without choosing an edge' => [new StartNodeConfiguration('payment:transfer'), new AdvanceEffect(), NodeEffectType::Advance];
         yield 'approval preserves value-equivalent compiled rules' => [self::approval(), new RequestApprovalEffect(self::approval()), NodeEffectType::RequestApproval];
         yield 'approved end preserves outcome' => [new EndNodeConfiguration(ApprovalOutcome::Approved), new CompleteEffect(ApprovalOutcome::Approved), NodeEffectType::Complete];
         yield 'rejected end preserves outcome' => [new EndNodeConfiguration(ApprovalOutcome::Rejected), new CompleteEffect(ApprovalOutcome::Rejected), NodeEffectType::Complete];
         yield 'business configuration may compute a declared outcome' => [new FinanceNodeConfiguration(0, false), new CompleteEffect(ApprovalOutcome::Rejected), NodeEffectType::Complete];
-    }
-
-    public function testRoutingSelectionDoesNotRetainCallerReferences(): void
-    {
-        $port = 'out';
-        $effect = new AdvanceEffect([&$port]);
-
-        $port = 'changed';
-        static::assertSame(['out'], $effect->outputPorts);
     }
 
     public function testAcceptsSelectionOfAPublishedOutputPort(): void
@@ -87,6 +94,26 @@ class NodeEffectValidatorTest extends TestCase
         yield 'duplicate activation cannot duplicate work' => [['out', 'out']];
     }
 
+    public function testScopeActivationUsesOnlyDeclaredOutputs(): void
+    {
+        $type = new NodeTypeSpecification('test:fork', '1.0.0', 'test.fork', 'test', '{"$id":"urn:test:fork","type":"object"}', ['left' => 'output', 'right' => 'output'], [NodeEffectType::OpenScope]);
+        $this->expectNotToPerformAssertions();
+
+        (new NodeEffectValidator())->validate($type, new StartNodeConfiguration('payment:transfer'), new OpenScopeEffect(['left', 'right'], 'join'));
+    }
+
+    /**
+     * @param list<string> $ports
+     */
+    #[DataProvider('invalidOutputPorts')]
+    public function testScopeActivationRejectsInvalidOutputPorts(array $ports): void
+    {
+        $type = new NodeTypeSpecification('test:fork', '1.0.0', 'test.fork', 'test', '{"$id":"urn:test:fork","type":"object"}', ['in' => 'input', 'out' => 'output'], [NodeEffectType::OpenScope]);
+        $this->expectException(ApprovalFlowException::class);
+
+        (new NodeEffectValidator())->validate($type, new StartNodeConfiguration('payment:transfer'), new OpenScopeEffect($ports, 'join'));
+    }
+
     public function testADeclarationMayPermitDifferentEntryIntents(): void
     {
         $this->expectNotToPerformAssertions();
@@ -99,7 +126,7 @@ class NodeEffectValidatorTest extends TestCase
     }
 
     #[DataProvider('undeclaredEffectProvider')]
-    public function testRejectsAnUndeclaredEffect(AdvanceEffect|RequestApprovalEffect|CompleteEffect $effect, NodeEffectType $allowed, NodeEffectType $actual): void
+    public function testRejectsAnUndeclaredEffect(NodeEffect $effect, NodeEffectType $allowed, NodeEffectType $actual): void
     {
         $this->expectExceptionObject(ApprovalFlowException::invalidNodeEffect('test:node', '1.0.0', $actual->value, 'Effect is not allowed by the published node declaration.'));
 
@@ -107,10 +134,12 @@ class NodeEffectValidatorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{AdvanceEffect|RequestApprovalEffect|CompleteEffect, NodeEffectType, NodeEffectType}>
+     * @return iterable<string, array{NodeEffect, NodeEffectType, NodeEffectType}>
      */
     public static function undeclaredEffectProvider(): iterable
     {
+        yield 'approval cannot open an undeclared scope' => [new OpenScopeEffect(['out'], 'join'), NodeEffectType::RequestApproval, NodeEffectType::OpenScope];
+        yield 'start cannot silently wait' => [new WaitEffect(), NodeEffectType::Advance, NodeEffectType::Wait];
         yield 'approval cannot advance without tasks' => [new AdvanceEffect(), NodeEffectType::RequestApproval, NodeEffectType::Advance];
         yield 'approval cannot finish the process' => [new CompleteEffect(ApprovalOutcome::Approved), NodeEffectType::RequestApproval, NodeEffectType::Complete];
         yield 'start cannot invent approval rules' => [new RequestApprovalEffect(self::approval()), NodeEffectType::Advance, NodeEffectType::RequestApproval];

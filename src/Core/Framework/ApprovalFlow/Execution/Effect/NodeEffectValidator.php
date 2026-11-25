@@ -18,17 +18,23 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 class NodeEffectValidator
 {
-    public function validate(NodeTypeSpecification $type, NodeConfiguration $configuration, AdvanceEffect|RequestApprovalEffect|CompleteEffect $effect): void
+    public function validate(NodeTypeSpecification $type, NodeConfiguration $configuration, NodeEffect $effect): void
     {
-        $kind = match (true) {
-            $effect instanceof AdvanceEffect => NodeEffectType::Advance,
-            $effect instanceof RequestApprovalEffect => NodeEffectType::RequestApproval,
-            $effect instanceof CompleteEffect => NodeEffectType::Complete,
+        $kind = $effect->getType();
+        $supported = match ($kind) {
+            NodeEffectType::Advance => $effect instanceof AdvanceEffect,
+            NodeEffectType::OpenScope => $effect instanceof OpenScopeEffect,
+            NodeEffectType::Wait => $effect instanceof WaitEffect,
+            NodeEffectType::RequestApproval => $effect instanceof RequestApprovalEffect,
+            NodeEffectType::Complete => $effect instanceof CompleteEffect,
         };
+        if (!$supported) {
+            throw ApprovalFlowException::invalidNodeEffect($type->type, $type->version, $kind->value, 'Unsupported effect implementation ' . $effect::class . '.');
+        }
         if (!\in_array($kind, $type->allowedEffects, true)) {
             throw ApprovalFlowException::invalidNodeEffect($type->type, $type->version, $kind->value, 'Effect is not allowed by the published node declaration.');
         }
-        if ($effect instanceof AdvanceEffect && $effect->outputPorts !== null) {
+        if (($effect instanceof AdvanceEffect || $effect instanceof OpenScopeEffect) && $effect->outputPorts !== null) {
             if ($effect->outputPorts === [] || !array_is_list($effect->outputPorts) || \count(array_unique($effect->outputPorts)) !== \count($effect->outputPorts)) {
                 throw ApprovalFlowException::invalidNodeEffect($type->type, $type->version, $kind->value, 'Routing requires a nonempty list of distinct output ports.');
             }

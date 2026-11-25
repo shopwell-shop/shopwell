@@ -43,7 +43,7 @@ class PaymentTransferApprovalRequestService
             if ($this->legacyApprovals->get($transferId) !== null) {
                 throw PaymentTransferApprovalException::blocked('approval_already_started');
             }
-            $facts = $this->store->snapshot($transferId);
+            $facts = $this->store->snapshot($transferId, requirePayoutEligibility: true);
             if ($facts['submitAttempts'] !== 0 || $facts['state'] !== PaymentTransferStates::STATE_CREATED) {
                 throw PaymentTransferApprovalException::blocked('transfer_already_started');
             }

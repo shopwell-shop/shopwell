@@ -52,24 +52,6 @@ class ApprovalBindingService
         });
     }
 
-    public function read(string $type, int $revision, Context $context): ApprovalBindingEntity
-    {
-        return $this->store->read($type, $revision, $context);
-    }
-
-    public function head(string $type, Context $context): ApprovalBindingHeadEntity
-    {
-        return $this->store->head($type, $context);
-    }
-
-    /**
-     * Reads the saved selection only; submitting a business request requires its own admission.
-     */
-    public function active(string $type, Context $context): ApprovalBindingEntity
-    {
-        return $this->store->active($type, $context);
-    }
-
     public function forSubmission(string $type, Context $context): ApprovalBindingEntity
     {
         $binding = $this->store->activeForSubmission($type);
