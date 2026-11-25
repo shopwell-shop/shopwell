@@ -1,8 +1,10 @@
 /** @sw-package framework */
 import type { HttpError } from 'src/core/factory/http-client.types';
-import type { ApprovalDetail, FormValue } from '../../service/approval-flow.api.service';
+import type { ApprovalDetail, ApprovalOutcome, FormValue } from '../../service/approval-flow.api.service';
 import template from './sw-approval-flow-detail.html.twig';
 import './sw-approval-flow-detail.scss';
+
+type DecisionTarget = { instanceId: string; taskId: string; expectedVersion: number; outcome: ApprovalOutcome };
 
 type FormRow = { path: string; value: FormValue };
 
@@ -22,13 +24,38 @@ export default Shopwell.Component.wrapComponentConfig({
     template,
     inject: ['approvalFlowApiService', 'acl'],
     props: { requestId: { type: String, required: true } },
-    data(): { detail: ApprovalDetail | null; isLoading: boolean; loadError: string | null; loadRevision: number } {
-        return { detail: null, isLoading: false, loadError: null, loadRevision: 0 };
+    data(): {
+        detail: ApprovalDetail | null;
+        isLoading: boolean;
+        loadError: string | null;
+        loadRevision: number;
+        decisionTarget: DecisionTarget | null;
+        decisionSaved: boolean;
+    } {
+        return {
+            detail: null,
+            isLoading: false,
+            loadError: null,
+            loadRevision: 0,
+            decisionTarget: null,
+            decisionSaved: false,
+        };
     },
     metaInfo() {
         return { title: this.$createTitle() };
     },
     computed: {
+        actionableTasks() {
+            const userId = Shopwell.Store.get('session').currentUser?.id;
+            if (!this.detail || this.detail.request.status !== 'running' || !this.acl.can('approval_flow.editor')) {
+                return [];
+            }
+            return this.steps.flatMap((step) =>
+                step.tasks
+                    .filter((task) => task.status === 'pending' && task.assigneeId === userId)
+                    .map((task) => ({ id: task.id, sequence: step.sequence })),
+            );
+        },
         backRoute() {
             const { view, ...query } = this.$route.query;
             const inbox = view === 'done' || view === 'started' ? view : 'todo';
@@ -63,6 +90,8 @@ export default Shopwell.Component.wrapComponentConfig({
         requestId: {
             immediate: true,
             handler() {
+                this.decisionTarget = null;
+                this.decisionSaved = false;
                 void this.loadDetail();
             },
         },
@@ -71,6 +100,27 @@ export default Shopwell.Component.wrapComponentConfig({
         this.loadRevision += 1;
     },
     methods: {
+        openDecision(taskId: string, outcome: ApprovalOutcome): void {
+            if (!this.detail) {
+                return;
+            }
+            this.decisionSaved = false;
+            this.decisionTarget = {
+                instanceId: this.detail.request.instanceId,
+                taskId,
+                expectedVersion: this.detail.request.aggregateVersion,
+                outcome,
+            };
+        },
+        onDecisionCompleted(): void {
+            this.decisionTarget = null;
+            this.decisionSaved = true;
+            void this.loadDetail();
+        },
+        refreshAfterDecision(): void {
+            this.decisionTarget = null;
+            void this.loadDetail();
+        },
         async loadDetail(): Promise<void> {
             const revision = ++this.loadRevision;
             this.detail = null;

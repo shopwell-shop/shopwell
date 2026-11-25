@@ -1,0 +1,101 @@
+/** @sw-package framework */
+import ApiService from 'src/core/service/api.service';
+import type { HttpClient } from 'src/core/factory/http-client.types';
+import type { LoginService } from 'src/core/service/login.service';
+
+/** @private */
+export interface ApprovalNodeDescriptor {
+    key: string;
+    type: string;
+    version: string;
+    labelSnippet: string;
+    configurationSchema: string;
+    configurationSchemaId: string;
+    configurationSchemaHash: string;
+    draftConfigurationSchema: string;
+    ports: Record<string, 'input' | 'output'>;
+    allowedEffects: ('advance' | 'requestApproval' | 'complete')[];
+}
+
+/** @private */
+export interface ApprovalBusinessDescriptor {
+    key: string;
+    type: string;
+    version: string;
+    labelSnippet: string;
+    formSchema: string;
+    formSchemaId: string;
+    formSchemaHash: string;
+}
+
+/** @private */
+export interface ApprovalDesignCatalog {
+    graphSchema: string;
+    nodeTypes: ApprovalNodeDescriptor[];
+    businessTypes: ApprovalBusinessDescriptor[];
+}
+
+/** @private */
+export type ApprovalJsonValue =
+    | string
+    | number
+    | boolean
+    | null
+    | ApprovalJsonValue[]
+    | { [key: string]: ApprovalJsonValue };
+
+/** @private */
+export interface ApprovalDesignGraph {
+    schemaVersion: string;
+    id: string;
+    meta: { name: string; editingMode: string; formSchemaRef: string };
+    nodes: {
+        id: string;
+        type: string;
+        typeVersion: string;
+        config: Record<string, ApprovalJsonValue>;
+        ports: { id: string; direction: 'input' | 'output'; channel: 'control'; cardinality: 'one' | 'many' }[];
+        position: { x: number; y: number };
+        extensions: Record<string, ApprovalJsonValue>;
+    }[];
+    connections: {
+        id: string;
+        source: string;
+        target: string;
+        sourcePort: string;
+        targetPort: string;
+        condition: { kind: string; [key: string]: ApprovalJsonValue };
+        extensions: Record<string, ApprovalJsonValue>;
+    }[];
+    layout: { algorithm: string; nodes: { nodeId: string; width: number; height: number; collapsed: boolean }[] };
+    extensions: Record<string, ApprovalJsonValue>;
+}
+
+/** @private */
+export interface ApprovalGraphDiagnostic {
+    category: 'structure' | 'draft' | 'capability';
+    code: string;
+    path: string;
+    message: string;
+}
+
+/** @private */
+export default class ApprovalFlowDesignApiService extends ApiService {
+    constructor(httpClient: HttpClient, loginService: LoginService) {
+        super(httpClient, loginService, 'approval-flow', 'application/json');
+    }
+
+    catalog(): Promise<ApprovalDesignCatalog> {
+        return this.httpClient
+            .get<ApprovalDesignCatalog>('/_action/approval-flow/design/catalog', { headers: this.getBasicHeaders() })
+            .then((response) => response.data);
+    }
+
+    diagnose(graphJson: string): Promise<ApprovalGraphDiagnostic[]> {
+        return this.httpClient
+            .post<
+                ApprovalGraphDiagnostic[]
+            >('/_action/approval-flow/design/diagnose', { graphJson }, { headers: this.getBasicHeaders() })
+            .then((response) => response.data);
+    }
+}

@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Executor;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\CoreNodeType;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\NodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\StartNodeConfiguration;
@@ -25,7 +26,7 @@ class StartExecutor implements NodeExecutor
         return '1.0.0';
     }
 
-    public function enter(NodeConfiguration $configuration): AdvanceEffect
+    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): AdvanceEffect
     {
         if (!$configuration instanceof StartNodeConfiguration) {
             throw ApprovalFlowException::invalidNodeExecutor(self::class, 'Expected StartNodeConfiguration.');

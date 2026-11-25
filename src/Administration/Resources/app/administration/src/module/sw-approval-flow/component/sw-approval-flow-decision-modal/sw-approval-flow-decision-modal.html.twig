@@ -1,0 +1,57 @@
+{% block sw_approval_flow_decision_modal %}
+<sw-modal
+    variant="small"
+    :title="$t(`sw-approval-flow.decision.${outcome}`)"
+    :closable="!isSubmitting"
+    @modal-close="close"
+>
+    {% block sw_approval_flow_decision_modal_content %}
+    <p>{{ $t('sw-approval-flow.decision.confirmation') }}</p>
+    <mt-textarea
+        v-model="reason"
+        :label="$t('sw-approval-flow.decision.reason')"
+        :disabled="command !== null"
+        :max-length="1000"
+    />
+    <mt-banner
+        v-if="failure"
+        variant="critical"
+        role="alert"
+    >
+        {{ $t(`sw-approval-flow.decision.${failure}`) }}
+    </mt-banner>
+    {% endblock %}
+    <template #modal-footer>
+        {% block sw_approval_flow_decision_modal_actions %}
+        <mt-button
+            variant="secondary"
+            size="small"
+            :disabled="isSubmitting"
+            @click="close"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        <mt-button
+            v-if="!failure || canRetry"
+            data-testid="decision-submit"
+            :variant="outcome === 'rejected' ? 'critical' : 'primary'"
+            size="small"
+            :is-loading="isSubmitting"
+            :disabled="isSubmitting"
+            @click="submit"
+        >
+            {{ canRetry ? $t('sw-approval-flow.general.retry') : $t(`sw-approval-flow.decision.${outcome}`) }}
+        </mt-button>
+        <mt-button
+            v-else
+            data-testid="decision-refresh"
+            variant="primary"
+            size="small"
+            @click="$emit('refresh')"
+        >
+            {{ $t('sw-approval-flow.general.refresh') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+</sw-modal>
+{% endblock %}

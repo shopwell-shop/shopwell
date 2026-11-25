@@ -43,4 +43,29 @@ describe('approval flow queries', () => {
 
         await expect(service.detail('request-id')).rejects.toBe(failure);
     });
+    it('posts an exact personal decision command and returns its committed receipt', async () => {
+        const receipt = {
+            instanceId: 'instance',
+            commandId: 'command',
+            status: 'running',
+            aggregateVersion: 4,
+            outcome: null,
+        };
+        const post = jest.fn().mockResolvedValue({ data: receipt });
+        const service = new ApprovalFlowApiService(
+            { post } as unknown as HttpClient,
+            { getToken: () => 'approval-token' } as LoginService,
+        );
+        const command = { commandId: 'command', expectedVersion: 3, outcome: 'approved' as const, reason: 'Reviewed.' };
+
+        expect(await service.decide('instance', 'task', command)).toEqual(receipt);
+        expect(post).toHaveBeenCalledWith('/_action/approval-flow/instances/instance/tasks/task/decide', command, {
+            headers: {
+                Accept: 'application/json',
+                Authorization: 'Bearer approval-token',
+                'Content-Type': 'application/json',
+                'sw-language-id': Shopwell.Context.api.languageId,
+            },
+        });
+    });
 });

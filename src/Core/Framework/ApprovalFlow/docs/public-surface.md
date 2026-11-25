@@ -42,7 +42,28 @@ Routes `sw.approval.flow.todo`, `sw.approval.flow.done` and `sw.approval.flow.st
 The `approval_flow.viewer` role mapping grants only `approval_flow:access`; routes and menu entries use that mapping.
 The list retains page, limit and status in its URL, and detail links preserve the originating inbox and filters.
 The private module API service uses the personal query endpoints above rather than generic entity repositories.
-The pages display visible form data, progress and decision history; public decision commands remain a subsequent increment.
+The pages display visible form data, progress and decision history.
+The `approval_flow.editor` role adds `approval_flow_task:decide` and depends on viewer; it grants no generic entity write or payment execution privileges.
+Only the signed-in user's pending tasks on a running instance display approve and reject actions.
+
+## Personal task decision API
+
+`POST /api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/decide` accepts `commandId`, positive `expectedVersion`, `outcome` (`approved` or `rejected`) and optional `reason` (at most 1000 characters, default empty).
+It requires `approval_flow_task:decide` and the active assigned Administration user; the Context determines the actor even if unrelated identity fields appear in the body.
+The existing instance transaction verifies task assignment and current state, commits one opinion and its group result, and records an immutable command receipt.
+An identical retry returns the original receipt even after subsequent progression; reusing a command ID with different input returns 409.
+A different command with an outdated version also returns 409 and writes no opinion.
+The response contains `instanceId`, `commandId`, `status`, `aggregateVersion` and `outcome` from the committed command.
+A personal opinion receipt remains `running` with null request outcome; it does not assert final approval or payment execution.
+The existing `approval_flow.progress` scheduled task continues the committed group outcome independently.
+The HTTP action delegates strategy execution to the decision command, which verifies the frozen release before evaluating a new opinion.
+It does not perform successor progression inside the decision request; receipt replay does not reload execution artifacts.
+
+The confirmation dialog keeps its first command ID, version, outcome and reason for an uncertain-result retry.
+A definite rejection or state conflict asks the user to refresh rather than silently posting a new command at a new version.
+After success the detail reload is a separate operation; a failed reload does not present the saved opinion as failed.
+The request schema and response receipt are maintained in `AdminApi/paths/approval-flow-task.json`.
+`ApprovalTaskController` remains an internal PHP adapter.
 The legacy Workflow navigation remains hidden until its replacement is complete.
 
 ## Node declarations
@@ -198,7 +219,7 @@ They do not impose a SystemSource whitelist.
 Start entry verifies the instance's bound release and records the start as completed and its single successor as waiting.
 Approval entry takes an execution identity, verifies that the execution belongs to the running instance, and requires a frozen approval effect.
 It stores pending task records for the fixed active assignees and moves the execution to awaiting approval.
-Its single, all or any policy is frozen on that execution using `ApprovalPolicy`.
+Its policy type and exact version are frozen on that execution and resolve through `ApprovalPolicyRegistry`.
 The configuration constructor rejects empty candidates and multiple candidates under single approval, including direct constructions by business compilers.
 An internal personal decision command requires an Administration user with `approval_flow_task:decide`.
 Under the instance lock, it checks the task's instance, assigned identity and the account's current active state before returning any receipt.
@@ -224,13 +245,13 @@ Executions in `approval_flow_execution` retain their instance, node, incoming co
 Each batch receives a one-use write permit which is consumed before ordinary DAL write-event listeners run.
 Only its exact admitted command objects and payloads may pass validation, so event listeners and write callbacks cannot borrow the caller Context to create another write batch.
 The original Context scope is restored and unused permits are removed when the write exits.
-An internal business admission path creates draft instances and starts them through the original initiator; there is no activation endpoint or public command/query route.
+An internal business admission path creates draft instances and starts them through the original initiator; there is no activation endpoint; personal query and task decision routes are documented above.
 The internal `approval_flow.progress` scheduled task scans completed approval groups and calls `progress` to enter the next serial approval or published end.
 It uses keyset pages of 100, retries failed continuations on subsequent runs and preserves already committed personal votes.
 Its runner and task services introduce no public PHP extension contract, HTTP route or additional service tag.
 Deployments require normal scheduled-task registration, the task runner and Messenger worker.
 Branch/join execution and timers require their own contracts.
-The decision command adds no public endpoint, external result delivery or business execution authority.
+The personal decision service remains internal; its HTTP adapter grants no arbitrary business execution or payment authority.
 
 ## Terminal result boundary
 
@@ -316,3 +337,48 @@ Payment registers its private evidence entity and submission services in Payment
 Private snapshot fields are not API-visible, and the existing Payment write protection rejects their mutation or deletion.
 `PaymentTransferApprovalRequestService` is an internal integration entry point that admits and starts an approval in one business transaction; it does not grant payment authority.
 Its per-transfer coordination with the legacy approval store is temporary until the replacement workflow is complete.
+
+## Flow definition reads and design operations
+
+Definition identities, current drafts and immutable publication history use the standard DAL Admin API.
+`approval_flow_definition.draft` is the normal one-to-one association to the current draft, whose primary key is `definitionId`.
+The Administration reads definitions with `repositoryFactory`, `Criteria` and that association, and filters publication history by `definitionId`.
+List and history queries use response includes to omit graph payloads, executable plans and deployment evidence.
+The `approval_flow_definition.viewer` mapping grants `approval_flow_definition:read`, `approval_flow_draft:read` and `approval_flow_release:read` without granting mutation, publication or activation authority.
+Existing write guards continue to require controlled draft and publication operations.
+
+`GET /api/_action/approval-flow/design/catalog` projects exact node and business declarations from the existing tagged registries, including authored schemas and hashes.
+Catalog entries describe declarations; they do not certify compiler, executor or deployment artifact availability.
+`POST /api/_action/approval-flow/design/diagnose` accepts `graphJson` and returns graph diagnostics without persisting changes.
+Both special operations require `approval_flow_definition:read`.
+The OpenAPI contract is maintained in `AdminApi/paths/approval-flow-design.json`.
+`ApprovalDesignCatalog` and `ApprovalDesignController` are internal implementations.
+
+The list and publication history reuse the installed Meteor `mt-data-table`, including its native search, pagination, loading, empty and reload behavior.
+Missing exact extension declarations remain visible without discarding authored configuration or substituting another version.
+The current overview does not yet provide a visual editor, publication controls or business activation controls.
+
+## Approval policies and routing evidence
+
+`ApprovalPolicyHandler` is the supported implementation contract for strategies registered with `approval_flow.approval_policy`.
+The concrete Registry and decision evaluator remain internal.
+Strategies declare a namespaced type and exact version; duplicate identities fail without exposing a partial registry.
+The selected policy identity and executable artifact are frozen in the release; a new decision verifies that release before invoking the current implementation.
+The v1 core approval contract requires rejection veto, and an incompatible strategy result fails the entire command.
+
+`NodeExecutor::enter()` accepts the optional public `NodeExecutionContext`, whose form JSON is runtime-provided immutable submission evidence.
+`AdvanceEffect::outputPorts` selects declared outputs; null retains unambiguous single-connection routing.
+Empty, duplicate, input-only and unknown port selections fail.
+The current persistent runner admits one selected outgoing connection, including conditional paths that later reconverge; this does not provide concurrent branch or join semantics.
+Implementations must accept the context argument; the development baseline does not retain a second legacy executor contract.
+
+## Lifecycle and action boundaries
+
+`ApprovalOutcome` currently represents the approved/rejected verdict used by personal decisions, group evaluation and the final approval result.
+Transfer, return, add-sign, withdrawal and timeout recovery require their own command, task-plan and lifecycle semantics; they are not additional verdicts.
+Group policy aggregation and task activation order are separate responsibilities; the current policy seam does not implement sequential activation.
+
+The current runtime implements serial progression and one selected route, not concurrent branch/join, child-process waiting or dynamic task-plan revisions.
+`Withdrawn` and `Terminated` are currently enum values without corresponding runtime commands.
+Result recording currently follows a verdict, so a future withdrawal or termination command must also define its closing fact, pending-work cancellation and business delivery contract.
+Previously delivered verdicts remain immutable; later business reversal requires an explicitly related process or compensation fact.

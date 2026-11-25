@@ -8,7 +8,8 @@
         "compilerId",
         "compilerVersion",
         "graphPlanHash",
-        "nodes"
+        "nodes",
+        "policies"
     ],
     "properties": {
         "formatVersion": {
@@ -54,6 +55,25 @@
                         "description": "Derived node-specific output from a registered compiler; this envelope does not establish executable semantics."
                     }
                 }
+            }
+        },
+        "policies": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "type",
+                    "version"
+                ]
             }
         }
     }

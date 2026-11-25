@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
@@ -59,7 +60,7 @@ class NodePlanCompilerTest extends TestCase
         static::assertSame($compiled->graphPlan->hash, $plan['graphPlanHash']);
         static::assertSame([
             ['nodeId' => 'start', 'type' => 'core:start', 'typeVersion' => '1.0.0', 'configuration' => ['businessType' => 'payment:transfer']],
-            ['nodeId' => 'review', 'type' => 'core:approval', 'typeVersion' => '1.0.0', 'configuration' => ['userIds' => ['finance-user'], 'policy' => 'core:all', 'reject' => 'veto', 'fields' => [], 'emptyAssignees' => 'incident']],
+            ['nodeId' => 'review', 'type' => 'core:approval', 'typeVersion' => '1.0.0', 'configuration' => ['userIds' => ['finance-user'], 'policy' => 'core:all', 'policyVersion' => '1.0.0', 'reject' => 'veto', 'fields' => [], 'emptyAssignees' => 'incident']],
             ['nodeId' => 'end', 'type' => 'core:end', 'typeVersion' => '1.0.0', 'configuration' => ['outcome' => 'approved']],
         ], $plan['nodes']);
         static::assertSame(GraphFixture::json(), $draft->json);
@@ -443,7 +444,7 @@ class UncalledApprovalExecutor implements NodeExecutor
         return '1.0.0';
     }
 
-    public function enter(NodeConfiguration $configuration): CompleteEffect
+    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): CompleteEffect
     {
         throw new \RuntimeException('Compilation must never execute nodes.');
     }

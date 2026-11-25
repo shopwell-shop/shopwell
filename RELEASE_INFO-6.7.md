@@ -20,6 +20,10 @@ Executors return controlled advance, approval-request or completion intents; `Ap
 Node declarations require `allowedEffects` (`advance`, `requestApproval`, `complete`); programmatic declarations pass `NodeEffectType` values.
 The internal entry path rejects undeclared effects and changes to compiled approval rules or end outcomes; these checks do not authorize runtime writes.
 These entry services do not authorize task creation or process execution.
+Approval strategies implement `ApprovalPolicyHandler` and register `approval_flow.approval_policy` in their owning module.
+Publication pins the selected strategy version and deployment artifact; voting verifies the frozen release and rejects a result that contradicts the published veto rule.
+Node executors receive an optional immutable `NodeExecutionContext` with the submitted form snapshot and can select published output ports through `AdvanceEffect`.
+This supports extension-owned conditional routing along one active path; parallel execution and joins remain separate work.
 Internal compilation publication now stores immutable `approval_flow_release` DAL records with expected-revision and full-preview-hash checks.
 Using publication requires a deployment-owned manifest configured through `APPROVAL_FLOW_ARTIFACT_MANIFEST`, binding actual service classes to retained artifact bytes and exact transitive dependencies.
 The deployment attests code origins and dependency completeness; byte verification does not prove loaded-code provenance, historical code loading or worker readiness.
@@ -50,7 +54,15 @@ Internal progression preserves the caller Context; authorization belongs to its 
 Payment transfer submission starts the initial approval tasks through the internal request path.
 Personal request queries are available at `GET /api/_action/approval-flow/requests` (`view=todo|done|started`) and `GET /api/_action/approval-flow/requests/{requestId}` with `approval_flow:access`.
 Lists apply ownership before pagination; details restrict form fields to the participant's assigned nodes and include personal decision history.
-Instance lifecycle commands remain internal without public approval action routes.
+Assigned Administration reviewers can submit `approved` or `rejected` opinions at `POST /api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/decide` with `approval_flow_task:decide`.
+Provide a command ID and expected instance version; retry an uncertain response with the identical payload to retrieve the original receipt.
+The Administration `approval_flow.editor` mapping adds this decision privilege with a viewer dependency and exposes confirmed approve/reject actions for personal pending tasks.
+A committed opinion does not imply final approval or payment execution; lifecycle commands remain internal.
+The Administration now provides a Flow definitions read surface under Approvals.
+It lists definition identities and draft revisions, shows the current draft with diagnostics and exact node versions, and lists immutable publication history.
+The definition viewer mapping includes definition, draft and release read privileges, separately from personal approval access, and grants no editing, publication or activation authority.
+Reads use standard DAL repositories and the definition’s one-to-one `draft` association; catalog discovery and graph diagnostics remain special design operations.
+The node catalog is sourced from registered exact-version declarations; missing extension versions remain visible as unavailable capabilities.
 Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts retain the complete schema's rules.
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.
 Approval definitions and drafts now have DAL models; writes require the controlled draft path so graph admission, expected revisions and explicit removal confirmation cannot be skipped through ordinary repository or Sync calls.

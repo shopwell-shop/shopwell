@@ -114,7 +114,7 @@ class ApprovalInstanceConcurrencyTest extends TestCase
         $input = new InputStream();
         $writer = new Process([
             \PHP_BINARY, '-d', 'xdebug.mode=off', __DIR__ . '/_fixtures/competing-decision.php',
-            $instanceId, Uuid::fromBytesToHex($tasks[Uuid::fromHexToBytes($second)]), $second,
+            $instanceId, Uuid::fromBytesToHex($tasks[Uuid::fromHexToBytes($second)]), $second, $manifest,
         ]);
         $writer->setInput($input);
         $writer->setTimeout(30);

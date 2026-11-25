@@ -13,13 +13,14 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskStatus;
-use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
+use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalNodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
@@ -219,12 +220,12 @@ class ApprovalInstanceStore
             $context,
             function (string $releaseId) use ($instanceId, $executionId, $context): ApprovalInstanceStatus {
                 $nodeId = $this->waitingNode($instanceId, $executionId);
-                $effect = $this->nodeEntry->enter($releaseId, $nodeId);
+                $effect = $this->nodeEntry->enter($releaseId, $nodeId, $this->executionContext($instanceId));
                 if (!$effect instanceof RequestApprovalEffect) {
                     throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The node did not request approval.');
                 }
                 $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
-                $this->createApprovalTasks($executionId, $assignees, ApprovalPolicy::from($effect->configuration->policy), $context);
+                $this->createApprovalTasks($executionId, $assignees, $effect->configuration, $context);
 
                 return ApprovalInstanceStatus::Running;
             },
@@ -317,7 +318,7 @@ class ApprovalInstanceStore
                 if (ApprovalOutcome::from($execution['outcome']) === ApprovalOutcome::Rejected) {
                     return ApprovalOutcome::Rejected;
                 }
-                $route = $this->nodeEntry->enterSuccessors($releaseId, $execution['node_id']);
+                $route = $this->nodeEntry->enterSuccessors($releaseId, $execution['node_id'], $this->executionContext($instanceId));
 
                 return $this->saveSerialRoute($instanceId, $route, $execution['sequence'] + 1, $context);
             },
@@ -422,10 +423,20 @@ class ApprovalInstanceStore
         return json_encode($actor, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
     }
 
+    private function executionContext(string $instanceId): NodeExecutionContext
+    {
+        $formJson = $this->connection->fetchOne(
+            'SELECT form_json FROM approval_flow_request WHERE instance_id = :instance',
+            ['instance' => Uuid::fromHexToBytes($instanceId)],
+        );
+
+        return new NodeExecutionContext($formJson === false ? '{}' : $formJson);
+    }
+
     private function startApprovalRoute(string $instanceId, string $releaseId, Context $context): ApprovalInstanceStatus
     {
         $start = $this->nodeEntry->enterStart($releaseId);
-        $route = $this->nodeEntry->enterSuccessors($releaseId, $start['startNodeId']);
+        $route = $this->nodeEntry->enterSuccessors($releaseId, $start['startNodeId'], $this->executionContext($instanceId));
         if (!$route['effect'] instanceof RequestApprovalEffect) {
             throw ApprovalFlowException::invalidGraphPlan('The initial route must reach an approval node before completing.');
         }
@@ -469,7 +480,7 @@ class ApprovalInstanceStore
             return $effect->outcome;
         }
         $assignees = $this->assigneeResolver->resolveAssignees($effect->configuration);
-        $this->createApprovalTasks($boundaryExecutionId, $assignees, ApprovalPolicy::from($effect->configuration->policy), $context);
+        $this->createApprovalTasks($boundaryExecutionId, $assignees, $effect->configuration, $context);
 
         return ApprovalInstanceStatus::Running;
     }
@@ -565,7 +576,7 @@ class ApprovalInstanceStore
     /**
      * @param non-empty-list<string> $assignees
      */
-    private function createApprovalTasks(string $executionId, array $assignees, ApprovalPolicy $policy, Context $context): void
+    private function createApprovalTasks(string $executionId, array $assignees, ApprovalNodeConfiguration $configuration, Context $context): void
     {
         $tasks = [];
         foreach ($assignees as $assigneeId) {
@@ -580,11 +591,12 @@ class ApprovalInstanceStore
         $this->writeGuard->write($context, function (Context $writeContext) use ($tasks): void {
             $this->tasks->create($tasks, $writeContext);
         });
-        $this->writeGuard->write($context, function (Context $writeContext) use ($executionId, $policy): void {
+        $this->writeGuard->write($context, function (Context $writeContext) use ($executionId, $configuration): void {
             $this->executions->update([[
                 'id' => $executionId,
                 'status' => ApprovalNodeExecutionStatus::AwaitingApproval->value,
-                'approvalPolicy' => $policy->value,
+                'approvalPolicy' => $configuration->policy,
+                'approvalPolicyVersion' => $configuration->policyVersion,
             ]], $writeContext);
         });
     }

@@ -1,0 +1,49 @@
+{% block sw_approval_flow_release_list %}
+<div>
+    <mt-banner
+        v-if="hasError"
+        variant="critical"
+        role="alert"
+    >
+        {{ $t('sw-approval-flow.design.historyError') }}
+        <mt-button
+            variant="secondary"
+            size="small"
+            @click="loadReleases"
+        >
+            {{ $t('sw-approval-flow.general.retry') }}
+        </mt-button>
+    </mt-banner>
+    <mt-data-table
+        v-else
+        :title="$t('sw-approval-flow.design.releaseHistory')"
+        :subtitle="$t('sw-approval-flow.design.releaseDescription')"
+        :caption="$t('sw-approval-flow.design.releaseHistory')"
+        :data-source="releases"
+        :columns="columns"
+        :is-loading="isLoading"
+        :allow-row-selection="false"
+        :disable-search="true"
+        :disable-edit="true"
+        :disable-delete="true"
+        :disable-settings-table="true"
+        :enable-reload="true"
+        :current-page="page"
+        :pagination-limit="limit"
+        :pagination-total-items="total"
+        :pagination-options="[10, 25, 50]"
+        @reload="loadReleases"
+        @pagination-current-page-change="onPageChange({ page: $event, limit })"
+        @pagination-limit-change="onPageChange({ page: 1, limit: $event })"
+    >
+        {% block sw_approval_flow_release_list_columns %}
+        <template #column-createdAt="{ data }">
+            {{ date(data.createdAt) }}
+        </template>
+        <template #empty-state>
+            <p>{{ $t('sw-approval-flow.design.noReleases') }}</p>
+        </template>
+        {% endblock %}
+    </mt-data-table>
+</div>
+{% endblock %}

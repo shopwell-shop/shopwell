@@ -44,13 +44,13 @@ class ApprovalNodeEntry
     ) {
     }
 
-    public function enter(string $releaseId, string $nodeId): AdvanceEffect|RequestApprovalEffect|CompleteEffect
+    public function enter(string $releaseId, string $nodeId, NodeExecutionContext $context = new NodeExecutionContext()): AdvanceEffect|RequestApprovalEffect|CompleteEffect
     {
         $release = $this->releases->load($releaseId);
         /** @var GraphPayload $graph */
         $graph = $this->jsonDecoder->decode($release->graphJson);
 
-        return $this->enterNode($releaseId, $nodeId, $release, $graph);
+        return $this->enterNode($releaseId, $nodeId, $release, $graph, $context);
     }
 
     /**
@@ -100,7 +100,7 @@ class ApprovalNodeEntry
      *
      * @return EnteredSerialRoute
      */
-    public function enterSuccessors(string $releaseId, string $completedNodeId): array
+    public function enterSuccessors(string $releaseId, string $completedNodeId, NodeExecutionContext $context = new NodeExecutionContext()): array
     {
         $release = $this->releases->load($releaseId);
         /** @var GraphPayload $graph */
@@ -109,17 +109,19 @@ class ApprovalNodeEntry
         $plan = $this->jsonDecoder->decode($release->graphPlanJson);
         $nodes = [];
         $nodeId = $completedNodeId;
+        $routing = new AdvanceEffect();
 
-        // Publication preflight proves acyclicity; each admitted edge selects one successor without a join.
+        // Publication proves acyclicity; a routing extension selects its output from the frozen form.
         while (true) {
-            $route = $this->singleSuccessor($nodeId, $graph);
+            $route = $this->singleSuccessor($nodeId, $graph, $routing->outputPorts);
             if ($route === null) {
                 throw ApprovalFlowException::unsupportedNodeRoute($releaseId, $nodeId);
             }
             $nodeId = $route['nextNodeId'];
-            $effect = $this->enterNode($releaseId, $nodeId, $release, $graph);
+            $effect = $this->enterNode($releaseId, $nodeId, $release, $graph, $context);
             $nodes[] = ['nodeId' => $nodeId, 'connectionId' => $route['connectionId']];
             if ($effect instanceof AdvanceEffect) {
+                $routing = $effect;
                 continue;
             }
             if ($effect instanceof CompleteEffect && $nodeId !== $plan->endNodeId) {
@@ -150,27 +152,23 @@ class ApprovalNodeEntry
 
     /**
      * @param GraphPayload $graph
+     * @param list<string>|null $outputPorts
      *
      * @return array{connectionId: string, nextNodeId: string}|null
      */
-    private function singleSuccessor(string $nodeId, \stdClass $graph): ?array
+    private function singleSuccessor(string $nodeId, \stdClass $graph, ?array $outputPorts = null): ?array
     {
         $outgoing = [];
         foreach ($graph->connections as $connection) {
-            if ($connection->source === $nodeId) {
+            if ($connection->source === $nodeId && ($outputPorts === null || \in_array($connection->sourcePort, $outputPorts, true))) {
                 $outgoing[] = $connection;
             }
         }
-        // Release verification admits only unconditional connections in this runtime increment.
+        // Selected ports must resolve unambiguously; multiple activations need the execution-plan runner.
         if (\count($outgoing) !== 1) {
             return null;
         }
         $edge = $outgoing[0];
-        foreach ($graph->connections as $connection) {
-            if ($connection->target === $edge->target && $connection->id !== $edge->id) {
-                return null;
-            }
-        }
 
         return ['connectionId' => $edge->id, 'nextNodeId' => $edge->target];
     }
@@ -178,7 +176,7 @@ class ApprovalNodeEntry
     /**
      * @param GraphPayload $graph
      */
-    private function enterNode(string $releaseId, string $nodeId, CompiledApprovalRelease $release, \stdClass $graph): AdvanceEffect|RequestApprovalEffect|CompleteEffect
+    private function enterNode(string $releaseId, string $nodeId, CompiledApprovalRelease $release, \stdClass $graph, NodeExecutionContext $context = new NodeExecutionContext()): AdvanceEffect|RequestApprovalEffect|CompleteEffect
     {
         /** @var NodePlan $plan */
         $plan = $this->jsonDecoder->decode($release->nodePlanJson);
@@ -196,7 +194,7 @@ class ApprovalNodeEntry
                 throw ApprovalFlowException::releaseVerificationFailed($releaseId, 'nodePlanJson/nodes/' . $index . '/configuration');
             }
 
-            $effect = $this->executors->get($node->type, $node->typeVersion)->enter($configuration);
+            $effect = $this->executors->get($node->type, $node->typeVersion)->enter($configuration, $context);
             $this->effects->validate($this->nodeTypes->get($node->type, $node->typeVersion), $configuration, $effect);
 
             return $effect;

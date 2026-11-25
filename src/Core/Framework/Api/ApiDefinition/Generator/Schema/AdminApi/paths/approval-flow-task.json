@@ -1,0 +1,139 @@
+{
+    "paths": {
+        "/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/decide": {
+            "post": {
+                "summary": "Submit a personal approval decision",
+                "description": "Only the active assigned Administration user may decide a pending task. Retry an uncertain response using the identical command ID, expected version, outcome and reason. A successful receipt records one opinion and does not imply that the instance has completed.",
+                "operationId": "decideApprovalTask",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    },
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApprovalDecisionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Committed opinion receipt, including an identical replay after later progression.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalDecisionReceipt"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed input"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Decision privilege or active personal task assignment required"
+                    },
+                    "404": {
+                        "description": "Instance or task not found"
+                    },
+                    "409": {
+                        "description": "Version, task state or command identity conflict"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ApprovalDecisionRequest": {
+                "type": "object",
+                "required": [
+                    "commandId",
+                    "expectedVersion",
+                    "outcome"
+                ],
+                "properties": {
+                    "commandId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "expectedVersion": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "outcome": {
+                        "type": "string",
+                        "enum": [
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 1000,
+                        "default": ""
+                    }
+                }
+            },
+            "ApprovalDecisionReceipt": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "instanceId",
+                    "commandId",
+                    "status",
+                    "aggregateVersion",
+                    "outcome"
+                ],
+                "properties": {
+                    "instanceId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "commandId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "running"
+                        ]
+                    },
+                    "aggregateVersion": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "outcome": {
+                        "type": "null"
+                    }
+                }
+            }
+        }
+    }
+}

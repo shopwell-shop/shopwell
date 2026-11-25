@@ -35,7 +35,6 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
 
     /**
      * @param list<string> $userIds
-     * @param self::SINGLE|self::ALL|self::ANY $policy
      * @param list<ApprovalFieldConfiguration> $fields
      * @param self::EMPTY_INCIDENT|self::EMPTY_SKIP $emptyAssignees
      */
@@ -44,6 +43,7 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
         public string $policy,
         array $fields,
         public string $emptyAssignees,
+        public string $policyVersion = '1.0.0',
     ) {
         if ($userIds === []) {
             throw ApprovalFlowException::emptyApprovalAssignees();
@@ -60,7 +60,8 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
     /**
      * @return array{
      *     userIds: non-empty-list<string>,
-     *     policy: self::SINGLE|self::ALL|self::ANY,
+     *     policy: string,
+     *     policyVersion: string,
      *     reject: 'veto',
      *     fields: list<array{field: string, access: 'hidden'|'readOnly'|'editable', required: bool}>,
      *     emptyAssignees: self::EMPTY_INCIDENT|self::EMPTY_SKIP
@@ -71,6 +72,7 @@ final readonly class ApprovalNodeConfiguration implements NodeConfiguration
         return [
             'userIds' => $this->userIds,
             'policy' => $this->policy,
+            'policyVersion' => $this->policyVersion,
             'reject' => self::REJECT_VETO,
             'fields' => array_map(static fn (ApprovalFieldConfiguration $field): array => $field->jsonSerialize(), $this->fields),
             'emptyAssignees' => $this->emptyAssignees,

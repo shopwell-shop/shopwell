@@ -1,0 +1,243 @@
+{
+    "paths": {
+        "/_action/approval-flow/design/catalog": {
+            "get": {
+                "operationId": "approvalDefinitionCatalog",
+                "summary": "Read exact registered design declarations",
+                "description": "Requires approval_flow_definition:read. This read does not grant editing, publication, business activation or execution authority.",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Design projection",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalDesignCatalog"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid read parameters"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Definition read privilege required"
+                    },
+                    "404": {
+                        "description": "Definition not found"
+                    }
+                }
+            }
+        },
+        "/_action/approval-flow/design/diagnose": {
+            "post": {
+                "operationId": "approvalDesignDiagnose",
+                "summary": "Diagnose a draft graph without persisting changes",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "graphJson"
+                                ],
+                                "properties": {
+                                    "graphJson": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Located graph diagnostics",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ApprovalGraphDiagnostic"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Definition read privilege required"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ApprovalDesignNodeType": {
+                "type": "object",
+                "required": [
+                    "key",
+                    "type",
+                    "version",
+                    "labelSnippet",
+                    "configurationSchema",
+                    "configurationSchemaId",
+                    "configurationSchemaHash",
+                    "draftConfigurationSchema",
+                    "ports",
+                    "allowedEffects"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "labelSnippet": {
+                        "type": "string"
+                    },
+                    "configurationSchema": {
+                        "type": "string"
+                    },
+                    "configurationSchemaId": {
+                        "type": "string"
+                    },
+                    "configurationSchemaHash": {
+                        "type": "string"
+                    },
+                    "draftConfigurationSchema": {
+                        "type": "string"
+                    },
+                    "ports": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string",
+                            "enum": [
+                                "input",
+                                "output"
+                            ]
+                        }
+                    },
+                    "allowedEffects": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "advance",
+                                "requestApproval",
+                                "complete"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ApprovalDesignBusinessType": {
+                "type": "object",
+                "required": [
+                    "key",
+                    "type",
+                    "version",
+                    "labelSnippet",
+                    "formSchema",
+                    "formSchemaId",
+                    "formSchemaHash"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "labelSnippet": {
+                        "type": "string"
+                    },
+                    "formSchema": {
+                        "type": "string"
+                    },
+                    "formSchemaId": {
+                        "type": "string"
+                    },
+                    "formSchemaHash": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ApprovalDesignCatalog": {
+                "type": "object",
+                "required": [
+                    "graphSchema",
+                    "nodeTypes",
+                    "businessTypes"
+                ],
+                "properties": {
+                    "graphSchema": {
+                        "type": "string"
+                    },
+                    "nodeTypes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalDesignNodeType"
+                        }
+                    },
+                    "businessTypes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalDesignBusinessType"
+                        }
+                    }
+                }
+            },
+            "ApprovalGraphDiagnostic": {
+                "type": "object",
+                "required": [
+                    "category",
+                    "code",
+                    "path",
+                    "message"
+                ],
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "structure",
+                            "draft",
+                            "capability"
+                        ]
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\ApprovalFlow\Publication;
 
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\ApprovalPolicyRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\NodeCompilerRegistry;
@@ -23,6 +24,7 @@ class ApprovalReleaseCompiler
         private readonly NodeExecutorRegistry $nodeExecutors,
         private readonly GraphJsonDecoder $jsonDecoder,
         private readonly ArtifactManifestLoader $artifacts,
+        private readonly ApprovalPolicyRegistry $policies,
     ) {
     }
 
@@ -35,6 +37,10 @@ class ApprovalReleaseCompiler
         foreach ($plan->nodes as $node) {
             $classes[] = $this->nodeCompilers->get($node->type, $node->typeVersion)::class;
             $classes[] = $this->nodeExecutors->get($node->type, $node->typeVersion)::class;
+        }
+
+        foreach ($plan->policies as $policy) {
+            $classes[] = $this->policies->get($policy->type, $policy->version)::class;
         }
 
         return new CompiledApprovalRelease($nodePlan, $this->artifacts->load($classes));

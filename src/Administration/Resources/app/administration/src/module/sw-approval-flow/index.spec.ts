@@ -25,6 +25,20 @@ describe('approval flow module registration', () => {
         );
     });
 
+    it('puts definition management under approvals with its own read privilege', () => {
+        const module = Shopwell.Module.getModuleRegistry().get('sw-approval-flow');
+        expect(module?.manifest.navigation).toContainEqual(
+            expect.objectContaining({
+                id: 'sw-approval-flow-definitions',
+                path: 'sw.approval.flow.definitions',
+                privilege: 'approval_flow_definition.viewer',
+            }),
+        );
+        expect((module?.routes.get('sw.approval.flow.definition')?.meta as { privilege: string }).privilege).toBe(
+            'approval_flow_definition.viewer',
+        );
+    });
+
     it('grants personal access without opening generic approval or user CRUD', () => {
         const privileges = new PrivilegesService();
         const service = jest
@@ -34,7 +48,16 @@ describe('approval flow module registration', () => {
             jest.isolateModules(() => {
                 jest.requireActual('./acl');
             });
+            expect(privileges.getPrivilegeRole('approval_flow_definition.viewer')?.privileges).toEqual([
+                'approval_flow_definition:read',
+                'approval_flow_draft:read',
+                'approval_flow_release:read',
+            ]);
             expect(privileges.getPrivilegeRole('approval_flow.viewer')?.privileges).toEqual(['approval_flow:access']);
+            expect(privileges.getPrivilegeRole('approval_flow.editor')).toMatchObject({
+                privileges: ['approval_flow_task:decide'],
+                dependencies: ['approval_flow.viewer'],
+            });
         } finally {
             service.mockRestore();
         }

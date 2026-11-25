@@ -9,13 +9,15 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceServ
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\ApprovalRuntimeFixture;
 
 require \dirname(__DIR__, 8) . '/src/Core/TestBootstrap.php';
 
 $container = KernelLifecycleManager::getKernel()->getContainer()->get('test.service_container');
 $connection = $container->get(Connection::class);
-$service = $container->get(ApprovalInstanceService::class);
-[$script, $instanceId, $taskId, $userId] = $argv;
+[$script, $instanceId, $taskId, $userId, $manifest] = $argv;
+$runtime = ApprovalRuntimeFixture::container($container, $manifest);
+$service = $runtime->get(ApprovalInstanceService::class);
 $commandId = Uuid::randomHex();
 $source = new AdminApiSource($userId);
 $source->setPermissions([ApprovalInstanceService::DECIDE_PRIVILEGE]);

@@ -1,0 +1,116 @@
+{% block sw_approval_flow_definition_detail %}
+<sw-page
+    class="sw-approval-flow-definition-detail"
+    :show-search-bar="false"
+>
+    <template #smart-bar-back>
+        <router-link :to="backRoute">
+            {{ $t('sw-approval-flow.design.back') }}
+        </router-link>
+    </template>
+    <template #smart-bar-header>
+        <h2>{{ detail?.definition.name ?? $t('sw-approval-flow.design.title') }}</h2>
+    </template>
+    <template #smart-bar-actions>
+        <mt-button
+            variant="secondary"
+            :disabled="isLoading"
+            @click="loadDefinition"
+        >
+            {{ $t('sw-approval-flow.general.refresh') }}
+        </mt-button>
+    </template>
+    <template #content>
+        <mt-loader v-if="isLoading" />
+        <sw-card-view v-else-if="acl.can('approval_flow_definition.viewer')">
+            <mt-banner
+                v-if="loadError"
+                variant="critical"
+                role="alert"
+            >
+                {{ $t(`sw-approval-flow.design.${loadError}`) }}
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="loadDefinition"
+                >
+                    {{ $t('sw-approval-flow.general.retry') }}
+                </mt-button>
+            </mt-banner>
+            <template v-else-if="detail && graph">
+                {% block sw_approval_flow_definition_detail_summary %}
+                <mt-card
+                    :title="$t('sw-approval-flow.design.draftSummary')"
+                    position-identifier="sw-approval-flow-definition-summary"
+                >
+                    <dl class="sw-approval-flow-definition-detail__summary">
+                        <div><dt>{{ $t('sw-approval-flow.design.name') }}</dt><dd>{{ detail.definition.name }}</dd></div>
+                        <div><dt>{{ $t('sw-approval-flow.design.draftRevision') }}</dt><dd>{{ detail.draft.revision }}</dd></div>
+                        <div><dt>{{ $t('sw-approval-flow.design.form') }}</dt><dd>{{ graph.meta.formSchemaRef }}</dd></div>
+                        <div><dt>{{ $t('sw-approval-flow.design.createdAt') }}</dt><dd>{{ date(detail.definition.createdAt) }}</dd></div>
+                    </dl>
+                </mt-card>
+                {% endblock %}
+                {% block sw_approval_flow_definition_detail_nodes %}
+                <mt-card
+                    :title="$t('sw-approval-flow.design.nodes')"
+                    position-identifier="sw-approval-flow-definition-nodes"
+                >
+                    <mt-banner
+                        v-if="catalogError"
+                        variant="critical"
+                        role="alert"
+                    >
+                        {{ $t('sw-approval-flow.design.catalogError') }}
+                    </mt-banner>
+                    <ul class="sw-approval-flow-definition-detail__nodes">
+                        <li
+                            v-for="node in nodes"
+                            :key="node.id"
+                        >
+                            <div><strong>{{ node.label }}</strong><small>{{ node.id }} · {{ node.key }}</small></div>
+                            <mt-badge
+                                v-if="node.unavailable"
+                                variant="critical"
+                            >
+                                {{ $t('sw-approval-flow.design.nodeUnavailable') }}
+                            </mt-badge>
+                        </li>
+                    </ul>
+                    <p v-if="!nodes.length">
+                        {{ $t('sw-approval-flow.design.noNodes') }}
+                    </p>
+                </mt-card>
+                {% endblock %}
+                {% block sw_approval_flow_definition_detail_diagnostics %}
+                <mt-card
+                    :title="$t('sw-approval-flow.design.diagnostics')"
+                    position-identifier="sw-approval-flow-definition-diagnostics"
+                >
+                    <ul
+                        v-if="detail.draft.diagnostics.length"
+                        class="sw-approval-flow-definition-detail__diagnostics"
+                    >
+                        <li
+                            v-for="(diagnostic, index) in detail.draft.diagnostics"
+                            :key="index"
+                        >
+                            <strong>{{ $t(`sw-approval-flow.design.category.${diagnostic.category}`) }}</strong> · {{ diagnostic.message }}<small>{{ diagnostic.path }}</small>
+                        </li>
+                    </ul>
+                    <p v-else>
+                        {{ $t('sw-approval-flow.design.noDiagnostics') }}
+                    </p>
+                </mt-card>
+                {% endblock %}
+                {% block sw_approval_flow_definition_detail_releases %}
+                <sw-approval-flow-release-list
+                    :key="definitionId"
+                    :definition-id="definitionId"
+                />
+                {% endblock %}
+            </template>
+        </sw-card-view>
+    </template>
+</sw-page>
+{% endblock %}

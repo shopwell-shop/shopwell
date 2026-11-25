@@ -66,7 +66,7 @@
         <title lang="zh-CN">内容</title>
         <menu id="sw-experience-studio" icon="regular-palette" position="10" privilege="experience_studio.viewer" color="var(--color-pink-500)">
             <title lang="en-GB">Experience Studio</title>
-            <title lang="zh-CN">体验工作室</title>
+            <title lang="zh-CN">页面设计</title>
         </menu>
         <menu id="sw-media" icon="regular-image" position="20" privilege="media.viewer" color="var(--sw-color-module-pink-default)">
             <title lang="en-GB">Media</title>
@@ -102,7 +102,7 @@
         </menu>
         <menu id="sw-newsletter-recipient" icon="regular-inbox" position="20" privilege="newsletter_recipient.viewer" color="var(--sw-color-module-yellow-default)">
             <title lang="en-GB">Newsletter recipients</title>
-            <title lang="zh-CN">邮件订阅者</title>
+            <title lang="zh-CN">邮件订阅</title>
         </menu>
     </menu>
     <menu id="sw-approval-flow" type="folder" icon="regular-check-circle" position="71">
@@ -119,6 +119,10 @@
         <menu id="sw-approval-flow-started" position="30" privilege="approval_flow.viewer">
             <title lang="en-GB">My requests</title>
             <title lang="zh-CN">我发起的</title>
+        </menu>
+        <menu id="sw-approval-flow-definitions" position="40" privilege="approval_flow_definition.viewer">
+            <title lang="en-GB">Flow definitions</title>
+            <title lang="zh-CN">流程定义</title>
         </menu>
     </menu>
     <menu id="sw-workflow" type="folder" icon="regular-flow" position="72">
@@ -364,11 +368,11 @@
                 <title lang="zh-CN">消息队列统计</title>
             </menu>
             <menu id="sw-settings-services" icon="regular-view-grid" position="740" privilege="system.plugin_maintain">
-                <title lang="en-GB">Shopwell Services</title>
+                <title lang="en-GB">Cloud Services</title>
                 <title lang="zh-CN">云服务</title>
             </menu>
             <menu id="sw-settings-shopwell-updates" icon="regular-sync" position="750" privilege="system.core_update">
-                <title lang="en-GB">Shopwell updates</title>
+                <title lang="en-GB">System updates</title>
                 <title lang="zh-CN">系统更新</title>
             </menu>
             <menu id="sw-settings-sms" icon="regular-envelope" position="760" privilege="sms_gateway.viewer">

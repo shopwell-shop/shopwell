@@ -28,6 +28,16 @@ class NodeEffectValidator
         if (!\in_array($kind, $type->allowedEffects, true)) {
             throw ApprovalFlowException::invalidNodeEffect($type->type, $type->version, $kind->value, 'Effect is not allowed by the published node declaration.');
         }
+        if ($effect instanceof AdvanceEffect && $effect->outputPorts !== null) {
+            if ($effect->outputPorts === [] || !array_is_list($effect->outputPorts) || \count(array_unique($effect->outputPorts)) !== \count($effect->outputPorts)) {
+                throw ApprovalFlowException::invalidNodeEffect($type->type, $type->version, $kind->value, 'Routing requires a nonempty list of distinct output ports.');
+            }
+            foreach ($effect->outputPorts as $port) {
+                if (($type->ports[$port] ?? null) !== 'output') {
+                    throw ApprovalFlowException::invalidNodeEffect($type->type, $type->version, $kind->value, 'Routing selected an undeclared output port.');
+                }
+            }
+        }
         if ($effect instanceof RequestApprovalEffect
             && (!$configuration instanceof ApprovalNodeConfiguration || $effect->configuration->jsonSerialize() !== $configuration->jsonSerialize())) {
             throw ApprovalFlowException::invalidNodeEffect($type->type, $type->version, $kind->value, 'Approval rules differ from the compiled node configuration.');

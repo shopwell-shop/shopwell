@@ -5,11 +5,21 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Effect;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * Request routing from the current node; the runtime owns edge selection and token consumption.
- *
- * @codeCoverageIgnore
+ * Select published output ports; null requests the unambiguous single outgoing connection.
  */
 #[Package('framework')]
 final readonly class AdvanceEffect
 {
+    /**
+     * @var list<string>|null
+     */
+    public ?array $outputPorts;
+
+    /**
+     * @param list<string>|null $outputPorts
+     */
+    public function __construct(?array $outputPorts = null)
+    {
+        $this->outputPorts = $outputPorts === null ? null : array_map(static fn (string $port): string => $port, $outputPorts);
+    }
 }

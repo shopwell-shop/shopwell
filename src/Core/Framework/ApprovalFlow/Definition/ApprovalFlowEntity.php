@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Definition;
 
+use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -20,6 +21,8 @@ class ApprovalFlowEntity extends Entity
     protected ?string $createdById = null;
 
     protected ?UserEntity $createdBy = null;
+
+    protected ?ApprovalDraftEntity $draft = null;
 
     public function getName(): string
     {
@@ -49,5 +52,15 @@ class ApprovalFlowEntity extends Entity
     public function setCreatedBy(?UserEntity $createdBy): void
     {
         $this->createdBy = $createdBy;
+    }
+
+    public function getDraft(): ?ApprovalDraftEntity
+    {
+        return $this->draft;
+    }
+
+    public function setDraft(?ApprovalDraftEntity $draft): void
+    {
+        $this->draft = $draft;
     }
 }

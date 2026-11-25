@@ -1,0 +1,71 @@
+{% block sw_approval_flow_definition_list %}
+<sw-page
+    class="sw-approval-flow-definition-list"
+    :show-search-bar="false"
+>
+    <template #smart-bar-header>
+        <h2>{{ $t('sw-approval-flow.design.title') }}</h2>
+    </template>
+    <template #content>
+        <div
+            v-if="acl.can('approval_flow_definition.viewer')"
+            class="sw-approval-flow-definition-list__content"
+        >
+            <mt-banner
+                v-if="hasError"
+                variant="critical"
+                role="alert"
+            >
+                {{ $t('sw-approval-flow.design.listError') }}
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="loadDefinitions"
+                >
+                    {{ $t('sw-approval-flow.general.retry') }}
+                </mt-button>
+            </mt-banner>
+            {% block sw_approval_flow_definition_list_grid %}
+            <mt-data-table
+                v-else
+                :data-source="definitions"
+                :columns="columns"
+                :caption="$t('sw-approval-flow.design.title')"
+                layout="full"
+                :is-loading="isLoading"
+                :allow-row-selection="false"
+                :disable-edit="true"
+                :disable-delete="true"
+                :disable-settings-table="true"
+                :enable-reload="true"
+                :current-page="page"
+                :pagination-limit="limit"
+                :pagination-total-items="total"
+                :pagination-options="[10, 25, 50, 100]"
+                :search-value="term"
+                @reload="loadDefinitions"
+                @search-value-change="onSearch"
+                @pagination-current-page-change="onPageChange({ page: $event, limit })"
+                @pagination-limit-change="onPageChange({ page: 1, limit: $event })"
+            >
+                <template #column-name="{ data }">
+                    <router-link :to="definitionRoute(data.id)">
+                        {{ data.name }}
+                    </router-link>
+                </template>
+                <template #column-draftUpdatedAt="{ data }">
+                    {{ date(data.draftUpdatedAt) }}
+                </template>
+                <template #empty-state>
+                    <mt-empty-state
+                        icon="regular-flow"
+                        :headline="$t('sw-approval-flow.design.noDefinitions')"
+                        :description="$t('sw-approval-flow.design.noDefinitionsDescription')"
+                    />
+                </template>
+            </mt-data-table>
+            {% endblock %}
+        </div>
+    </template>
+</sw-page>
+{% endblock %}

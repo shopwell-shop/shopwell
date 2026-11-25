@@ -164,8 +164,6 @@ class ApprovalNodeProgressionTest extends TestCase
         $commandId = Uuid::randomHex();
         $context = $this->reviewerContext($first);
         $taskId = $this->taskIdFor($first);
-        // Decisions consume the frozen group policy, even when deployment artifacts are unavailable.
-        $this->filesystem->remove($this->directory);
 
         $receipt = $this->service->decide($this->instanceId, $taskId, $commandId, 3, ApprovalOutcome::Approved, 'Checked.', $context);
 
@@ -178,6 +176,8 @@ class ApprovalNodeProgressionTest extends TestCase
         static::assertSame(['approved', 'approved'], $this->taskStatuses([$first, $second]));
         static::assertSame('completed', $this->executions()[1]['status']);
         static::assertSame('approved', $this->executions()[1]['outcome']);
+        // Receipt replay does not execute the policy again.
+        $this->filesystem->remove($this->directory);
         static::assertEquals($receipt, $this->service->decide($this->instanceId, $taskId, $commandId, 3, ApprovalOutcome::Approved, 'Checked.', $context));
         static::assertSame(4, $this->receiptCount());
         $operation = $this->connection->fetchAssociative('SELECT actor_json, reason FROM approval_flow_operation WHERE instance_id = :instance AND command_id = :command', [

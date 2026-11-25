@@ -63,12 +63,66 @@
             "noDecisions": "No review has been submitted yet.",
             "noComment": "No comment",
             "notFilled": "Not provided"
+        },
+        "decision": {
+            "approved": "Approve",
+            "rejected": "Reject",
+            "confirmation": "Confirm your opinion for this task. The remaining approval steps continue separately.",
+            "reason": "Comment (optional)",
+            "retryError": "The result could not be confirmed. Retry to check and submit the same opinion.",
+            "conflict": "This approval has changed. Refresh the request before deciding again.",
+            "forbidden": "You can no longer decide this task. Refresh to view the current request.",
+            "unavailable": "This task or opinion is unavailable. Refresh the request.",
+            "saved": "Your opinion has been saved. The remaining steps will continue automatically.",
+            "reloadError": "Your opinion was saved, but the request could not be reloaded. Retry loading the details.",
+            "actions": "Your approval tasks"
+        },
+        "design": {
+            "title": "Flow definitions",
+            "name": "Flow name",
+            "draftRevision": "Draft revision",
+            "updatedAt": "Updated",
+            "listError": "Flow definitions could not be loaded. Please try again.",
+            "noDefinitions": "No matching flow definitions",
+            "noDefinitionsDescription": "Adjust the search or return after a flow draft has been created.",
+            "back": "Back to flow definitions",
+            "draftSummary": "Current draft",
+            "form": "Form reference",
+            "createdAt": "Created",
+            "nodes": "Draft nodes",
+            "nodeUnavailable": "Exact node version unavailable",
+            "noNodes": "This draft has no nodes.",
+            "catalogError": "The node catalog could not be loaded. The draft is still available; refresh to retry.",
+            "diagnostics": "Draft diagnostics",
+            "noDiagnostics": "No draft issues were found. Publication runs additional checks.",
+            "releaseHistory": "Published versions",
+            "releaseDescription": "Published versions are immutable. Business activation is configured separately.",
+            "publishedAt": "Published",
+            "releaseIdentity": "Content hash",
+            "historyError": "Published versions could not be loaded. Please try again.",
+            "noReleases": "This flow has no published versions.",
+            "notFound": "This flow definition no longer exists.",
+            "forbidden": "You do not have permission to view flow definitions.",
+            "detailError": "The flow definition could not be loaded. Please try again.",
+            "category": {
+                "structure": "Structure",
+                "draft": "Configuration",
+                "capability": "Unavailable capability"
+            }
+        },
+        "node": {
+            "start": "Start",
+            "approval": "Approval",
+            "end": "End"
         }
     },
     "sw-privileges": {
         "permissions": {
             "approval_flow": {
                 "label": "Approvals"
+            },
+            "approval_flow_definition": {
+                "label": "Flow definitions"
             }
         }
     }

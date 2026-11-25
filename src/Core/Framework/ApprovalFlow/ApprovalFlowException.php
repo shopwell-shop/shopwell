@@ -10,6 +10,11 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class ApprovalFlowException extends HttpException
 {
+    public const INVALID_APPROVAL_POLICY_RESULT = 'APPROVAL_FLOW__INVALID_APPROVAL_POLICY_RESULT';
+    public const INVALID_APPROVAL_POLICY = 'APPROVAL_FLOW__INVALID_APPROVAL_POLICY';
+    public const APPROVAL_POLICY_NOT_FOUND = 'APPROVAL_FLOW__APPROVAL_POLICY_NOT_FOUND';
+    public const DUPLICATE_APPROVAL_POLICY = 'APPROVAL_FLOW__DUPLICATE_APPROVAL_POLICY';
+
     public const INVALID_REQUEST_QUERY = 'APPROVAL_FLOW__INVALID_REQUEST_QUERY';
 
     public const RESULT_HANDLER_NOT_FOUND = 'APPROVAL_FLOW__RESULT_HANDLER_NOT_FOUND';
@@ -83,6 +88,26 @@ class ApprovalFlowException extends HttpException
     public const DUPLICATE_NODE_COMPILER = 'APPROVAL_FLOW__DUPLICATE_NODE_COMPILER';
     public const INVALID_NODE_COMPILER = 'APPROVAL_FLOW__INVALID_NODE_COMPILER';
     public const INVALID_NODE_CONFIGURATION = 'APPROVAL_FLOW__INVALID_NODE_CONFIGURATION';
+
+    public static function invalidApprovalPolicyResult(string $type, string $version): self
+    {
+        return new self(Response::HTTP_INTERNAL_SERVER_ERROR, self::INVALID_APPROVAL_POLICY_RESULT, 'Approval policy "{{ type }}@{{ version }}" contradicted the published rejection rule.', ['type' => $type, 'version' => $version]);
+    }
+
+    public static function invalidApprovalPolicy(string $source): self
+    {
+        return new self(Response::HTTP_INTERNAL_SERVER_ERROR, self::INVALID_APPROVAL_POLICY, 'Approval policy "{{ source }}" must declare a namespaced type and an exact version.', ['source' => $source]);
+    }
+
+    public static function approvalPolicyNotFound(string $type, string $version): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::APPROVAL_POLICY_NOT_FOUND, 'Approval policy "{{ type }}@{{ version }}" is not installed.', ['type' => $type, 'version' => $version]);
+    }
+
+    public static function duplicateApprovalPolicy(string $type, string $version): self
+    {
+        return new self(Response::HTTP_INTERNAL_SERVER_ERROR, self::DUPLICATE_APPROVAL_POLICY, 'Approval policy "{{ type }}@{{ version }}" is registered more than once.', ['type' => $type, 'version' => $version]);
+    }
 
     public static function invalidRequestQuery(string $reason): self
     {
@@ -331,7 +356,7 @@ class ApprovalFlowException extends HttpException
         return new self(
             Response::HTTP_UNPROCESSABLE_ENTITY,
             self::UNSUPPORTED_NODE_ROUTE,
-            'Node "{{ nodeId }}" in approval release "{{ releaseId }}" requires a single unconditional edge into a node with no other incoming edges.',
+            'Node "{{ nodeId }}" in approval release "{{ releaseId }}" requires exactly one selected outgoing connection.',
             ['releaseId' => $releaseId, 'nodeId' => $nodeId]
         );
     }

@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\CoreNodeType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeSourceDirectory;
@@ -313,7 +314,7 @@ class RecordingFinanceExecutor extends FinanceNodeExecutor
 {
     public int $calls = 0;
 
-    public function enter(NodeConfiguration $configuration): CompleteEffect
+    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): CompleteEffect
     {
         ++$this->calls;
 
@@ -373,7 +374,7 @@ class ChangedNodeExecutor implements NodeExecutor
         return '1.0.0';
     }
 
-    public function enter(NodeConfiguration $configuration): AdvanceEffect|RequestApprovalEffect|CompleteEffect
+    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): AdvanceEffect|RequestApprovalEffect|CompleteEffect
     {
         return $this->effect;
     }

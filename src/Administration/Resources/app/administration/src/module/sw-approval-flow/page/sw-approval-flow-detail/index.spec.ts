@@ -39,11 +39,15 @@ const detail: ApprovalDetail = {
     ],
 };
 
-async function createWrapper(load = jest.fn().mockResolvedValue(detail)) {
+async function createWrapper(load = jest.fn().mockResolvedValue(detail), canDecide = true) {
+    Shopwell.Store.get('session').currentUser = { id: 'reviewer' } as Entity<'user'>;
     const wrapper = shallowMount(await wrapTestComponent('sw-approval-flow-detail', { sync: true }), {
         props: { requestId: 'request-one' },
         global: {
-            provide: { approvalFlowApiService: { detail: load }, acl: { can: () => true } },
+            provide: {
+                approvalFlowApiService: { detail: load },
+                acl: { can: (privilege: string) => privilege !== 'approval_flow.editor' || canDecide },
+            },
             mocks: { $route: { query: { view: 'done', page: '2' } }, $te: () => false },
             stubs: {
                 'sw-page': {
@@ -57,6 +61,10 @@ async function createWrapper(load = jest.fn().mockResolvedValue(detail)) {
                 'mt-banner': { template: '<section role="alert"><slot/></section>' },
                 'sw-loader': true,
                 'sw-approval-flow-status-badge': true,
+                'sw-approval-flow-decision-modal': {
+                    props: ['taskId', 'outcome'],
+                    template: `<div class="decision-dialog"><span>{{ taskId }}:{{ outcome }}</span><button class="commit-decision" @click="$emit('completed')">Confirm</button></div>`,
+                },
             },
         },
     });
@@ -124,5 +132,72 @@ describe('approval detail', () => {
 
         expect(wrapper.text()).toContain('New request');
         expect(wrapper.text()).not.toContain('Transfer approval');
+    });
+    it('opens a confirmation only for the current user pending task with decision privilege', async () => {
+        const pending: ApprovalDetail = { ...detail, tasks: [{ ...detail.tasks[0], status: 'pending' }] };
+        const { wrapper } = await createWrapper(jest.fn().mockResolvedValue(pending));
+        await wrapper.find('[data-testid="decision-approve"]').trigger('click');
+        expect(wrapper.find('.decision-dialog').text()).toContain('task:approved');
+    });
+
+    it.each([
+        'other-user',
+        'completed',
+        'suspended',
+        'viewer',
+    ])('does not offer a decision for %s', async (scenario) => {
+        const pending: ApprovalDetail = {
+            ...detail,
+            request: { ...detail.request },
+            tasks: [{ ...detail.tasks[0], status: 'pending' }],
+        };
+        if (scenario === 'other-user') {
+            pending.tasks[0].assigneeId = 'someone-else';
+        }
+        if (scenario === 'completed') {
+            pending.tasks[0].status = 'approved';
+        }
+        if (scenario === 'suspended') {
+            pending.request.status = 'suspended';
+        }
+        const { wrapper } = await createWrapper(jest.fn().mockResolvedValue(pending), scenario !== 'viewer');
+        expect(wrapper.find('[data-testid="decision-approve"]').exists()).toBe(false);
+        expect(wrapper.find('[data-testid="decision-reject"]').exists()).toBe(false);
+    });
+
+    it('keeps a committed opinion distinct from a failed detail reload', async () => {
+        const pending: ApprovalDetail = { ...detail, tasks: [{ ...detail.tasks[0], status: 'pending' }] };
+        const load = jest
+            .fn()
+            .mockResolvedValueOnce(pending)
+            .mockRejectedValueOnce(new Error('reload failed'))
+            .mockResolvedValueOnce(detail);
+        const { wrapper } = await createWrapper(load);
+        await wrapper.find('[data-testid="decision-approve"]').trigger('click');
+        await wrapper.find('.commit-decision').trigger('click');
+        await flushPromises();
+        expect(wrapper.find('.decision-dialog').exists()).toBe(false);
+        expect(wrapper.text()).toContain('sw-approval-flow.decision.saved');
+        expect(wrapper.text()).toContain('sw-approval-flow.decision.reloadError');
+        await wrapper.find('[role="alert"] button').trigger('click');
+        await flushPromises();
+        expect(wrapper.text()).toContain('Reviewed the amount.');
+        expect(wrapper.find('[data-testid="decision-approve"]').exists()).toBe(false);
+    });
+    it('clears the previous saved notice when starting an opinion on the next assigned task', async () => {
+        const pending: ApprovalDetail = { ...detail, tasks: [{ ...detail.tasks[0], status: 'pending' }] };
+        const next: ApprovalDetail = {
+            ...pending,
+            request: { ...pending.request, aggregateVersion: 4 },
+            tasks: [{ ...pending.tasks[0], id: 'next-task' }],
+        };
+        const { wrapper } = await createWrapper(jest.fn().mockResolvedValueOnce(pending).mockResolvedValueOnce(next));
+        await wrapper.find('[data-testid="decision-approve"]').trigger('click');
+        await wrapper.find('.commit-decision').trigger('click');
+        await flushPromises();
+        expect(wrapper.text()).toContain('sw-approval-flow.decision.saved');
+        await wrapper.find('[data-testid="decision-reject"]').trigger('click');
+        expect(wrapper.text()).not.toContain('sw-approval-flow.decision.saved');
+        expect(wrapper.find('.decision-dialog').text()).toContain('next-task:rejected');
     });
 });

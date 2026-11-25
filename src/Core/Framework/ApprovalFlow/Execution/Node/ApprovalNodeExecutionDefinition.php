@@ -5,7 +5,6 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Node;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
-use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\EnumField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -17,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -54,7 +54,8 @@ class ApprovalNodeExecutionDefinition extends EntityDefinition
             (new LongTextField('incoming_connection_id', 'incomingConnectionId'))->addFlags(new AllowHtml(sanitized: false)),
             (new IntField('sequence', 'sequence', 1))->addFlags(new Required()),
             (new EnumField('status', 'status', ApprovalNodeExecutionStatus::Waiting))->addFlags(new Required()),
-            new EnumField('approval_policy', 'approvalPolicy', ApprovalPolicy::All),
+            new StringField('approval_policy', 'approvalPolicy'),
+            new StringField('approval_policy_version', 'approvalPolicyVersion'),
             new EnumField('outcome', 'outcome', ApprovalOutcome::Approved),
             new ManyToOneAssociationField('instance', 'instance_id', ApprovalInstanceDefinition::class, 'id', false),
             new OneToManyAssociationField('tasks', ApprovalTaskDefinition::class, 'execution_id'),

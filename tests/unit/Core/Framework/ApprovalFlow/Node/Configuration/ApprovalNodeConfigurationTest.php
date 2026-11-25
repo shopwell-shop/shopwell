@@ -54,6 +54,6 @@ class ApprovalNodeConfigurationTest extends TestCase
 
         $json = json_encode($configuration, \JSON_THROW_ON_ERROR);
 
-        static::assertSame('{"userIds":["second","first"],"policy":"core:any","reject":"veto","fields":[{"field":"form.amount","access":"editable","required":false}],"emptyAssignees":"incident"}', $json);
+        static::assertSame('{"userIds":["second","first"],"policy":"core:any","policyVersion":"1.0.0","reject":"veto","fields":[{"field":"form.amount","access":"editable","required":false}],"emptyAssignees":"incident"}', $json);
     }
 }

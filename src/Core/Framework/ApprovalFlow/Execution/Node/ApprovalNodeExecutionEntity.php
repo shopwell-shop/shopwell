@@ -5,7 +5,6 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Node;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskCollection;
-use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -28,7 +27,9 @@ class ApprovalNodeExecutionEntity extends Entity
 
     protected ApprovalNodeExecutionStatus $status;
 
-    protected ?ApprovalPolicy $approvalPolicy = null;
+    protected ?string $approvalPolicy = null;
+
+    protected ?string $approvalPolicyVersion = null;
 
     protected ?ApprovalOutcome $outcome = null;
 
@@ -91,14 +92,24 @@ class ApprovalNodeExecutionEntity extends Entity
         return $this->instance;
     }
 
-    public function getApprovalPolicy(): ?ApprovalPolicy
+    public function getApprovalPolicy(): ?string
     {
         return $this->approvalPolicy;
     }
 
-    public function setApprovalPolicy(?ApprovalPolicy $approvalPolicy): void
+    public function setApprovalPolicy(?string $approvalPolicy): void
     {
         $this->approvalPolicy = $approvalPolicy;
+    }
+
+    public function getApprovalPolicyVersion(): ?string
+    {
+        return $this->approvalPolicyVersion;
+    }
+
+    public function setApprovalPolicyVersion(?string $approvalPolicyVersion): void
+    {
+        $this->approvalPolicyVersion = $approvalPolicyVersion;
     }
 
     public function getOutcome(): ?ApprovalOutcome

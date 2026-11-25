@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
-use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\ApprovalPolicy;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
@@ -61,7 +60,7 @@ class ApprovalTaskDecisionStore
             throw ApprovalFlowException::taskNotPending($taskId);
         }
         $executionId = Uuid::fromBytesToHex($task['execution_id']);
-        if (ApprovalNodeExecutionStatus::from($task['execution_status']) !== ApprovalNodeExecutionStatus::AwaitingApproval || $task['approval_policy'] === null) {
+        if (ApprovalNodeExecutionStatus::from($task['execution_status']) !== ApprovalNodeExecutionStatus::AwaitingApproval || ($task['approval_policy'] === null || $task['approval_policy_version'] === null)) {
             throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The execution is not awaiting an approval group.');
         }
         $this->requireVisibleTask($taskId);
@@ -79,7 +78,7 @@ class ApprovalTaskDecisionStore
                 $statuses[] = ApprovalTaskStatus::from($member['status']);
             }
         }
-        $outcome = $this->evaluator->evaluate(ApprovalPolicy::from($task['approval_policy']), $statuses);
+        $outcome = $this->evaluator->evaluate(Uuid::fromBytesToHex($task['release_id']), $task['approval_policy'], $task['approval_policy_version'], $statuses);
         $updates = [['id' => $taskId, 'status' => $decisionStatus->value, 'completionCommandId' => $commandId]];
         if ($outcome !== null) {
             foreach ($group as $member) {
@@ -103,13 +102,14 @@ class ApprovalTaskDecisionStore
     }
 
     /**
-     * @return array{assignee_id: string, execution_id: string, status: string, execution_status: string, approval_policy: ?string}
+     * @return array{assignee_id: string, execution_id: string, status: string, execution_status: string, approval_policy: ?string, approval_policy_version: ?string, release_id: string}
      */
     private function readTask(string $instanceId, string $taskId): array
     {
         $task = $this->connection->fetchAssociative(
-            'SELECT task.assignee_id, task.execution_id, task.status, execution.status AS execution_status, execution.approval_policy
+            'SELECT task.assignee_id, task.execution_id, task.status, execution.status AS execution_status, execution.approval_policy, execution.approval_policy_version, instance.release_id
              FROM approval_flow_task task INNER JOIN approval_flow_execution execution ON execution.id = task.execution_id
+             INNER JOIN approval_flow_instance instance ON instance.id = execution.instance_id
              WHERE task.id = :task AND execution.instance_id = :instance FOR UPDATE',
             ['task' => Uuid::fromHexToBytes($taskId), 'instance' => Uuid::fromHexToBytes($instanceId)],
         );
@@ -124,6 +124,8 @@ class ApprovalTaskDecisionStore
             'status' => $task['status'],
             'execution_status' => $task['execution_status'],
             'approval_policy' => $task['approval_policy'],
+            'approval_policy_version' => $task['approval_policy_version'],
+            'release_id' => $task['release_id'],
         ];
     }
 

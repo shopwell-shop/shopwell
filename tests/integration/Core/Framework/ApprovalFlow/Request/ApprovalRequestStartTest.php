@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\AdvanceEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Loader\NodeTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\NodeEffectType;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
@@ -437,7 +438,7 @@ class PreparationNodeExecutor implements NodeExecutor
         return '1.0.0';
     }
 
-    public function enter(NodeConfiguration $configuration): AdvanceEffect
+    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): AdvanceEffect
     {
         if (!$configuration instanceof PreparationNodeConfiguration) {
             throw new \LogicException('Expected a preparation configuration.');

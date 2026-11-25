@@ -13,8 +13,10 @@ component sw-approval-flow-detail  private  ts  [private]
 
 blocks
   sw_approval_flow_detail  [private]
+    sw_approval_flow_detail_decision  [after v-if] [private]
     sw_approval_flow_detail_decisions  [private]
     sw_approval_flow_detail_form  [private]
-    sw_approval_flow_detail_progress  [private]
+    sw_approval_flow_detail_progress  [after v-if] [private]
     sw_approval_flow_detail_summary  [private]
+    sw_approval_flow_detail_task_actions  [private]
 ```

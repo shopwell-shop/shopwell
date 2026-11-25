@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Executor;
 
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\CompleteEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\NodeExecutionContext;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\CoreNodeType;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\EndNodeConfiguration;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Configuration\NodeConfiguration;
@@ -25,7 +26,7 @@ class EndExecutor implements NodeExecutor
         return '1.0.0';
     }
 
-    public function enter(NodeConfiguration $configuration): CompleteEffect
+    public function enter(NodeConfiguration $configuration, NodeExecutionContext $context = new NodeExecutionContext()): CompleteEffect
     {
         if (!$configuration instanceof EndNodeConfiguration) {
             throw ApprovalFlowException::invalidNodeExecutor(self::class, 'Expected EndNodeConfiguration.');

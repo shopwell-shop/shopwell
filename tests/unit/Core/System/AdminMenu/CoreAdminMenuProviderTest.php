@@ -135,6 +135,8 @@ class CoreAdminMenuProviderTest extends TestCase
         static::assertNull($definitions['sw-approval-flow']->parent);
         static::assertSame(AdminMenuItemDefinition::TYPE_FOLDER, $definitions['sw-approval-flow']->type);
         static::assertSame('审批', $definitions['sw-approval-flow']->translations['zh-CN']['title']);
+        static::assertSame('sw-approval-flow', $definitions['sw-approval-flow-definitions']->parent);
+        static::assertSame('approval_flow_definition.viewer', $definitions['sw-approval-flow-definitions']->privilege);
         foreach (['todo', 'done', 'started'] as $view) {
             static::assertSame('sw-approval-flow', $definitions['sw-approval-flow-' . $view]->parent);
             static::assertSame('approval_flow.viewer', $definitions['sw-approval-flow-' . $view]->privilege);

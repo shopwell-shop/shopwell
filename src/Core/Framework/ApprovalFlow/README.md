@@ -238,9 +238,10 @@ Exact executable dependency admission and immutable release publication remain r
 Business modules register `NodeExecutor` implementations with `approval_flow.node_executor` in their own DI.
 Each service declares one namespaced type and one exact node version through `getType()` and `getVersion()`.
 The internal registry rejects duplicate or invalid identities and never substitutes another version.
-`enter(NodeConfiguration)` receives the typed result from the compiler for that same exact node identity.
+`enter(NodeConfiguration, NodeExecutionContext)` receives the typed result from the compiler for that exact node identity and immutable runtime evidence.
+The optional context defaults to an empty object for standalone pure-entry calls; authoritative instance commands supply their frozen request form JSON.
 The executor checks the expected concrete configuration type and returns one controlled intent: `AdvanceEffect`, `RequestApprovalEffect` or `CompleteEffect`.
-There is no placeholder resume operation or caller-supplied execution context in this entry-only increment.
+There is no placeholder resume operation; the instance runtime supplies the immutable request evidence.
 
 The start executor requests advancement, the approval executor requests task planning, and the end executor requests a process outcome.
 `ApprovalOutcome` is a string-backed enum for the fixed process outcomes, approved and rejected.
@@ -251,8 +252,8 @@ Their configured users are candidates, not evidence of existence, eligibility or
 An empty resolved candidate set must be handled by the future runtime using the configured rule; entry does not auto-approve or create assignments.
 
 Effects do not grant execution authority and contain no instance, execution, task or token identity.
-The future runtime must bind each intent to its current execution, resolve live facts, validate all effects together and commit through the authoritative write boundary.
-`ApprovalNodeEntry` below connects persisted compilation records to these pure executors; no instance scheduler or authoritative runtime calls them yet.
+The runtime must bind each intent to its current execution, resolve live facts, validate all effects together and commit through the authoritative write boundary.
+`ApprovalNodeEntry` below connects persisted compilation records to these pure executors; the instance command path uses them before committing execution and task facts.
 There is no HTTP route or command that accepts a constructed configuration or plan for execution.
 Exact service availability is only one prerequisite: a class name or version label is not an executable artifact pin.
 The compilation release operation below verifies retained artifact bytes and stores immutable records.
@@ -312,7 +313,7 @@ Missing exact declarations, compilers, executors, bindings or retained bytes fai
 The loader neither caches a successful check nor writes storage.
 This admits only releases that match the current deployment; historical artifact loading and worker readiness remain separate requirements.
 
-`ApprovalNodeEntry::enter(releaseId, nodeId, Context)` accepts identities rather than a caller-constructed plan or configuration.
+`ApprovalNodeEntry::enter(releaseId, nodeId, NodeExecutionContext)` accepts identities rather than a caller-constructed plan or configuration.
 After whole-release verification, it finds the selected node in the freshly verified graph and uses the same exact-version `NodeCompiler` as publication to recover its typed configuration.
 `NodeConfigurationCompiler` shares business-error normalization and lossless object encoding between this path and `NodePlanCompiler`; plugins keep their existing compiler and executor contracts.
 The restored configuration's JSON must exactly match that node's frozen derived configuration before the executor is called.
@@ -346,7 +347,9 @@ Read the closest implementation and adjacent tests before each increment, and re
 The top-level Approvals navigation now groups My pending approvals, My completed reviews and My requests.
 These pages and their shared request detail use the personal query API and `approval_flow.viewer`; they do not expose internal command services.
 The query response carries readable publication and participant names plus labels for visible form fields from the frozen binding schema.
-Public approve and reject actions remain the next increment.
+Assigned reviewers can now confirm approve or reject actions through the public personal task decision endpoint.
+This thin HTTP adapter delegates to the existing `ApprovalInstanceService::decide` transaction; the dialog preserves the original command on an uncertain retry and requests a refresh on conflict.
+A successful personal opinion remains distinct from later group progression, final approval and payment execution.
 The legacy workflow menu is hidden through the existing menu visibility event; removing its code belongs to the completed replacement stage.
 
 ## Source calibration
@@ -389,7 +392,7 @@ Internal start, approval entry, progression and end commands retain the supplied
 They do not require a SystemSource or repeat ID validation already performed by UUID conversion.
 Their audit and request hash retain the caller source and Administration identity.
 Start entry takes the start node from the instance's verified release and validates the exact executor's effect.
-Start entry requires one outgoing connection whose successor has no other incoming connection.
+Start entry requires one unambiguous outgoing connection.
 It inserts a completed start and a waiting successor into `approval_flow_execution`, advances the instance version, and saves the operation receipt in one transaction.
 The waiting record identifies the node and incoming connection for later execution.
 
@@ -409,7 +412,9 @@ Under the instance lock, the task must belong to that instance and its assigned 
 Ownership and current account status are checked before every receipt replay.
 The request hash binds the task, outcome, exact reason, version and actor.
 New votes require a pending task in an execution awaiting approval and a running instance at the expected version.
-They consume the frozen group policy without invoking the node executor again.
+They resolve the frozen policy type and exact version without invoking the node executor again.
+Before executing extensible strategy code, they verify the release against the retained deployment; missing or changed artifacts roll back a new opinion.
+Receipt replay returns the committed result without rerunning the strategy or loading artifacts.
 Single approval completes on its only vote; all approval waits for every required vote; any approval completes on the first agreement.
 Every policy uses the declared rejection veto.
 Once a group reaches an outcome, its pending tasks are cancelled and the execution is completed with that outcome.
@@ -419,7 +424,8 @@ Decision notes may be empty and are retained verbatim.
 `ApprovalInstanceService::advanceApproval(instanceId, executionId, commandId, expectedVersion, Context)` is an internal progression command.
 It requires a completed approval group with a frozen policy and outcome at the current serial execution tail.
 All other executions must be completed and no task may remain pending.
-An approved group queues the verified release's single unconditional successor, whose node must have no other incoming connection.
+An approved group queues its unambiguous successor from the verified release.
+Advance-only extension nodes may then select a published output port from the frozen request form; a conditional merge does not activate an unselected branch.
 The approval executor is not entered again.
 The committed successor becomes the new tail, preventing a fresh command from expanding the same approval twice.
 A rejected group completes the instance as `completed` with `outcome=rejected`, without entering the approved path or requiring deployment artifacts again.
@@ -431,7 +437,8 @@ It completes the end execution and commits the instance's `completed` status, ou
 The instance and receipt store `ApprovalOutcome` separately from lifecycle status.
 Retries return that receipt's original outcome, including a null outcome from an earlier nonterminal command.
 These commands remain available for individual internal steps; the scheduled progression path below advances a completed group to its next approval or end boundary.
-Branch selection, fan-out and joins remain unsupported and cannot be collapsed into an arbitrary single successor.
+Extension-owned selection of a single active route is supported.
+Fan-out, concurrent branch coordination and joins remain unsupported and cannot be collapsed into an arbitrary single successor.
 
 `ApprovalInstanceWriteGuard::write()` scopes each DAL batch to system scope on the original Context and grants one pending write permit.
 The guard consumes that permit at the start of `EntityWriteEvent`, before ordinary listeners run, and admits only the exact command objects and payloads from that batch.
@@ -443,7 +450,7 @@ The guard rejects ordinary DAL and Sync writes to instance, operation, execution
 Trusted in-process PHP with database access remains outside this guard's protection.
 
 Business admission now creates a draft instance through the internal request service described below.
-No activation, resume, termination, decision or query endpoint is installed.
+Activation, resume and termination remain internal; personal query and decision HTTP routes are described below.
 Runtime command tests also seed execution facts explicitly to exercise their commit boundaries independently.
 Suspension does not rewrite execution or task facts and does not require loading code artifacts, so an unhealthy deployment can still be stopped.
 Progression and decision commands check the instance's running status under the same lock.
@@ -481,7 +488,20 @@ Unsupported node types and versions grant no form access; query behavior does no
 `ApprovalRequestQuery`, `ApprovalFormReader` and the HTTP controller remain internal services.
 The instance's `executions` and execution's `tasks` DAL associations express the stored ownership path without a separate query table or a list of every matching task ID.
 The response contract is documented in the Admin OpenAPI schema.
-Administration lists, detail pages and public decision routes remain subsequent increments.
+The Administration exposes personal lists and a shared detail page under the top-level Approvals menu.
+The `approval_flow.viewer` mapping grants personal reads; `approval_flow.editor` depends on viewer and adds `approval_flow_task:decide`.
+
+## Personal task decisions
+
+`POST /api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/decide` delegates to the existing personal decision service.
+It accepts an exact `commandId`, positive `expectedVersion`, `outcome` (`approved` or `rejected`) and optional verbatim `reason` up to 1000 characters.
+The Context supplies the actor; body fields cannot nominate another user.
+A successful receipt represents the saved opinion and returns its original command status/version on an identical retry, even after progression.
+A changed command payload or stale version returns 409 without silently retrying at a newer version.
+The page only offers decisions for the signed-in user's pending tasks on a running instance.
+Its confirmation dialog freezes the first command and reuses it after an uncertain result, asks for a refresh after a definite conflict, and reloads when an attempted command is dismissed.
+A committed opinion and a subsequent detail reload have separate success/failure feedback.
+The HTTP request does not advance successors or perform Payment effects; the existing scheduled tasks own that work.
 
 ## Terminal results and delivery work
 
@@ -657,3 +677,53 @@ Deployments must register scheduled tasks with `bin/console scheduled-task:regis
 Tests cover host task discovery, registered handler execution, repeat runs, suspended instances, failure recovery, 101 candidates across pages and competing processes.
 Actual broker delivery, multi-worker throughput and latency have not been measured.
 This task advances serial approval work only; `approval_flow.deliver_results` separately applies business results without executing transfers.
+
+## Flow definition workbench
+
+The Flow definitions menu provides a read-only list and overview of current drafts, diagnostics and immutable release history.
+Definition identity, editable draft revision, published release and a business binding's active selection remain separate concepts.
+Reads use the host DAL repositories and Criteria, including the definition's one-to-one current `draft` association.
+List and history response includes omit graph payloads and execution evidence.
+Only catalog discovery and graph diagnostics have dedicated design action routes; there is no duplicate CRUD controller.
+The design catalog projects the existing exact-version tagged node and business registries without loading execution artifacts.
+Missing exact node declarations do not substitute another version or discard the old configuration.
+The new lists use Meteor `mt-data-table` and its existing search, pagination, loading, empty and reload behavior.
+The next increment adds controlled editing and publication through the existing write boundary; this workbench does not yet provide an editor or activation controls.
+
+## Approval strategy extensions
+
+Implement `Execution/Policy/ApprovalPolicyHandler` and register `approval_flow.approval_policy` in the owning module.
+Its `getType()` and `getVersion()` select an exact implementation; `evaluate()` receives the effective frozen group statuses and returns pending (null), approved or rejected.
+Single, all and any strategies use this same registration path.
+The current approval-node contract has fixed candidates and `reject: veto`; an extension that contradicts that published rule is rejected before any vote or cancellation is saved.
+The current strategy input does not yet model weighted identities, editable task plans or arbitrary policy parameters.
+
+`ApprovalNodeConfiguration` freezes `policyVersion`.
+The core v1 wire contract uses version `1.0.0` when the optional policy version is omitted; an explicit version must exist exactly and is never replaced with another installed version.
+Node plans include policy references and publication pins their executable services and deployment artifacts.
+The original execution-table MigrationStep stores the open policy name and exact version, replacing the closed built-in-only policy check.
+This is a development baseline change, with no compatibility migration.
+
+## Routing extensions
+
+An advance-only extension can calculate its published output ports using `NodeExecutionContext::formJson` and return `AdvanceEffect(outputPorts: [...])`.
+The context contains the immutable request snapshot, not editor-supplied form values.
+Port selections must be nonempty, distinct declared outputs; the current runner requires exactly one selected outgoing connection.
+Unselected paths create no executions or tasks, and the actual incoming connection is retained in the selected execution record.
+Core has no business amount, threshold or extension-type branch.
+A tagged amount-routing fixture exercises publication, binding, request creation, both selected paths, voting, completion and idempotent start.
+
+This increment proves policy and single-route extension seams.
+It does not prove the planned multi-execution runner, persistent scopes, fork/join, child-process waits, timer resumption or task-plan revisions.
+Those must use the stable execution-plan contract before the complete runtime skeleton can be accepted.
+
+## Lifecycle and action boundaries
+
+`ApprovalOutcome` currently represents the approved/rejected verdict used by personal decisions, group evaluation and the final approval result.
+Transfer, return, add-sign, withdrawal and timeout recovery require their own command, task-plan and lifecycle semantics; they are not additional verdicts.
+Group policy aggregation and task activation order are separate responsibilities; the current policy seam does not implement sequential activation.
+
+The current runtime implements serial progression and one selected route, not concurrent branch/join, child-process waiting or dynamic task-plan revisions.
+`Withdrawn` and `Terminated` are currently enum values without corresponding runtime commands.
+Result recording currently follows a verdict, so a future withdrawal or termination command must also define its closing fact, pending-work cancellation and business delivery contract.
+Previously delivered verdicts remain immutable; later business reversal requires an explicitly related process or compensation fact.

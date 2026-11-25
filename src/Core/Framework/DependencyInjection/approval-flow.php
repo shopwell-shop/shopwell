@@ -4,7 +4,9 @@ namespace Shopwell\Core\Framework\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalDesignController;
 use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalRequestController;
+use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalTaskController;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingHeadDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
@@ -33,6 +35,10 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStor
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationDefinition;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\AllApprovalPolicy;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\AnyApprovalPolicy;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\ApprovalPolicyRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\SingleApprovalPolicy;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalDecisionEvaluator;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
@@ -53,6 +59,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Publication\Artifact\ArtifactManifestLo
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPlanCompiler;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\GraphPublicationPreflight;
 use Shopwell\Core\Framework\ApprovalFlow\Publication\NodePlanCompiler;
+use Shopwell\Core\Framework\ApprovalFlow\Query\ApprovalDesignCatalog;
 use Shopwell\Core\Framework\ApprovalFlow\Query\ApprovalFormReader;
 use Shopwell\Core\Framework\ApprovalFlow\Query\ApprovalRequestQuery;
 use Shopwell\Core\Framework\ApprovalFlow\Release\ApprovalReleaseDefinition;
@@ -80,11 +87,15 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
+    $graphSchema = (new Filesystem())->readFile(__DIR__ . '/../ApprovalFlow/Resources/schema/graph/1.0.0/approval-graph.schema.json');
+    $services->set(ApprovalDesignCatalog::class)->args([service(NodeTypeRegistry::class), service(ApprovalBusinessTypeRegistry::class), $graphSchema]);
     $services->set(ApprovalFormReader::class);
     $services->set(ApprovalRequestQuery::class)->args([
         service('approval_flow_request.repository'), service('approval_flow_execution.repository'), service('approval_flow_operation.repository'), service(ApprovalFormReader::class),
         service('user.repository'),
     ]);
+    $services->set(ApprovalDesignController::class)->args([service(ApprovalDesignCatalog::class), service(GraphDiagnostics::class)])->tag('controller.service_arguments');
+    $services->set(ApprovalTaskController::class)->args([service(ApprovalInstanceService::class)])->tag('controller.service_arguments');
     $services->set(ApprovalRequestController::class)->args([service(ApprovalRequestQuery::class)])->tag('controller.service_arguments');
 
     $services->set(ApprovalProgressionRunner::class)->args([
@@ -139,7 +150,11 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalResultOutbox::class)->args([service(Connection::class), service(ClockInterface::class)]);
     $services->set(ApprovalInstanceWriteGuard::class)->tag('kernel.event_subscriber');
     $services->set(ApprovalAssigneeResolver::class)->args([service(Connection::class)]);
-    $services->set(ApprovalDecisionEvaluator::class);
+    $services->set(SingleApprovalPolicy::class)->tag('approval_flow.approval_policy');
+    $services->set(AllApprovalPolicy::class)->tag('approval_flow.approval_policy');
+    $services->set(AnyApprovalPolicy::class)->tag('approval_flow.approval_policy');
+    $services->set(ApprovalPolicyRegistry::class)->args([tagged_iterator('approval_flow.approval_policy')]);
+    $services->set(ApprovalDecisionEvaluator::class)->lazy()->args([service(ApprovalPolicyRegistry::class), service(ApprovalReleaseLoader::class)]);
     $services->set(ApprovalTaskDecisionStore::class)->args([
         service(Connection::class),
         service('approval_flow_task.repository'),
@@ -217,7 +232,6 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(NodeTypeRegistry::class)])
         ->tag('console.command');
 
-    $graphSchema = (new Filesystem())->readFile(__DIR__ . '/../ApprovalFlow/Resources/schema/graph/1.0.0/approval-graph.schema.json');
     $services->set(GraphSchemaValidator::class);
     $services->set(GraphJsonDecoder::class);
     $services->set(GraphDiagnostics::class)
@@ -264,6 +278,7 @@ return static function (ContainerConfigurator $container): void {
             service(NodeExecutorRegistry::class),
             service(GraphJsonDecoder::class),
             service(ArtifactManifestLoader::class),
+            service(ApprovalPolicyRegistry::class),
         ]);
     $services->set(GraphMutator::class)
         ->args([service(GraphCodec::class), service(GraphDiagnostics::class), service(GraphJsonDecoder::class)]);

@@ -26,6 +26,7 @@ use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Publication\_fixtures\Financ
  */
 #[Package('framework')]
 #[CoversClass(NodeEffectValidator::class)]
+#[CoversClass(AdvanceEffect::class)]
 class NodeEffectValidatorTest extends TestCase
 {
     #[DataProvider('validEffectProvider')]
@@ -47,6 +48,43 @@ class NodeEffectValidatorTest extends TestCase
         yield 'approved end preserves outcome' => [new EndNodeConfiguration(ApprovalOutcome::Approved), new CompleteEffect(ApprovalOutcome::Approved), NodeEffectType::Complete];
         yield 'rejected end preserves outcome' => [new EndNodeConfiguration(ApprovalOutcome::Rejected), new CompleteEffect(ApprovalOutcome::Rejected), NodeEffectType::Complete];
         yield 'business configuration may compute a declared outcome' => [new FinanceNodeConfiguration(0, false), new CompleteEffect(ApprovalOutcome::Rejected), NodeEffectType::Complete];
+    }
+
+    public function testRoutingSelectionDoesNotRetainCallerReferences(): void
+    {
+        $port = 'out';
+        $effect = new AdvanceEffect([&$port]);
+
+        $port = 'changed';
+        static::assertSame(['out'], $effect->outputPorts);
+    }
+
+    public function testAcceptsSelectionOfAPublishedOutputPort(): void
+    {
+        $type = new NodeTypeSpecification('test:node', '1.0.0', 'test.node', 'test', '{"$id":"urn:test:node","type":"object"}', ['out' => 'output'], [NodeEffectType::Advance]);
+        (new NodeEffectValidator())->validate($type, new StartNodeConfiguration('payment:transfer'), new AdvanceEffect(['out']));
+
+        static::assertSame(['out'], (new AdvanceEffect(['out']))->outputPorts);
+    }
+
+    /**
+     * @param list<string> $ports
+     */
+    #[DataProvider('invalidOutputPorts')]
+    public function testRejectsInvalidRoutingOutputPorts(array $ports): void
+    {
+        $type = new NodeTypeSpecification('test:node', '1.0.0', 'test.node', 'test', '{"$id":"urn:test:node","type":"object"}', ['in' => 'input', 'out' => 'output'], [NodeEffectType::Advance]);
+        $this->expectException(ApprovalFlowException::class);
+
+        (new NodeEffectValidator())->validate($type, new StartNodeConfiguration('payment:transfer'), new AdvanceEffect($ports));
+    }
+
+    public static function invalidOutputPorts(): iterable
+    {
+        yield 'missing output' => [['missing']];
+        yield 'input cannot be selected as output' => [['in']];
+        yield 'empty selection cannot silently finish' => [[]];
+        yield 'duplicate activation cannot duplicate work' => [['out', 'out']];
     }
 
     public function testADeclarationMayPermitDifferentEntryIntents(): void

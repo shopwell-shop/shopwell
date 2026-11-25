@@ -266,16 +266,49 @@
                 "sw_app_wrong_app_url_modal"
             ]
         },
+        "sw-approval-flow-decision-modal": {
+            "file": "module/sw-approval-flow/component/sw-approval-flow-decision-modal",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_decision_modal",
+                "sw_approval_flow_decision_modal_actions",
+                "sw_approval_flow_decision_modal_content"
+            ]
+        },
+        "sw-approval-flow-definition-detail": {
+            "file": "module/sw-approval-flow/page/sw-approval-flow-definition-detail",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_definition_detail",
+                "sw_approval_flow_definition_detail_diagnostics",
+                "sw_approval_flow_definition_detail_nodes",
+                "sw_approval_flow_definition_detail_releases",
+                "sw_approval_flow_definition_detail_summary"
+            ]
+        },
+        "sw-approval-flow-definition-list": {
+            "file": "module/sw-approval-flow/page/sw-approval-flow-definition-list",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_definition_list",
+                "sw_approval_flow_definition_list_grid"
+            ]
+        },
         "sw-approval-flow-detail": {
             "file": "module/sw-approval-flow/page/sw-approval-flow-detail",
             "visibility": "private",
             "extends": null,
             "blocks": [
                 "sw_approval_flow_detail",
+                "sw_approval_flow_detail_decision",
                 "sw_approval_flow_detail_decisions",
                 "sw_approval_flow_detail_form",
                 "sw_approval_flow_detail_progress",
-                "sw_approval_flow_detail_summary"
+                "sw_approval_flow_detail_summary",
+                "sw_approval_flow_detail_task_actions"
             ]
         },
         "sw-approval-flow-list": {
@@ -286,6 +319,15 @@
                 "sw_approval_flow_list",
                 "sw_approval_flow_list_columns",
                 "sw_approval_flow_list_content"
+            ]
+        },
+        "sw-approval-flow-release-list": {
+            "file": "module/sw-approval-flow/component/sw-approval-flow-release-list",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_release_list",
+                "sw_approval_flow_release_list_columns"
             ]
         },
         "sw-approval-flow-status-badge": {

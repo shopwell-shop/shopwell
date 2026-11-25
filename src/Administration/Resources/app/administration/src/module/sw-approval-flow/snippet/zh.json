@@ -63,12 +63,66 @@
             "noDecisions": "暂无审批意见。",
             "noComment": "未填写意见",
             "notFilled": "未填写"
+        },
+        "decision": {
+            "approved": "同意",
+            "rejected": "驳回",
+            "confirmation": "确认提交本次审批意见，后续流程将由系统继续处理。",
+            "reason": "审批意见（选填）",
+            "retryError": "暂时无法确认提交结果，请重试以确认并提交同一条意见。",
+            "conflict": "审批状态已变化，请刷新申请后再处理。",
+            "forbidden": "你已无法处理此任务，请刷新查看最新申请。",
+            "unavailable": "任务或提交内容已不可用，请刷新申请。",
+            "saved": "审批意见已保存，后续流程将自动继续。",
+            "reloadError": "审批意见已保存，但详情刷新失败，请重试加载详情。",
+            "actions": "待你审批"
+        },
+        "design": {
+            "title": "流程定义",
+            "name": "流程名称",
+            "draftRevision": "草稿修订",
+            "updatedAt": "更新时间",
+            "listError": "流程定义加载失败，请重试。",
+            "noDefinitions": "暂无匹配的流程定义",
+            "noDefinitionsDescription": "可调整搜索条件，或在创建流程草稿后查看。",
+            "back": "返回流程定义",
+            "draftSummary": "当前草稿",
+            "form": "关联表单",
+            "createdAt": "创建时间",
+            "nodes": "草稿节点",
+            "nodeUnavailable": "该节点版本不可用",
+            "noNodes": "当前草稿还没有节点。",
+            "catalogError": "节点目录加载失败，草稿仍可查看，请刷新重试。",
+            "diagnostics": "草稿诊断",
+            "noDiagnostics": "暂未发现草稿问题，发布时仍需通过完整校验。",
+            "releaseHistory": "发布历史",
+            "releaseDescription": "发布版本固定保存，业务实际使用哪个版本需单独启用。",
+            "publishedAt": "发布时间",
+            "releaseIdentity": "内容摘要",
+            "historyError": "发布历史加载失败，请重试。",
+            "noReleases": "当前流程尚未发布。",
+            "notFound": "流程定义不存在或已被移除。",
+            "forbidden": "你没有查看流程定义的权限。",
+            "detailError": "流程定义加载失败，请重试。",
+            "category": {
+                "structure": "流程结构",
+                "draft": "节点配置",
+                "capability": "能力缺失"
+            }
+        },
+        "node": {
+            "start": "发起",
+            "approval": "审批",
+            "end": "结束"
         }
     },
     "sw-privileges": {
         "permissions": {
             "approval_flow": {
                 "label": "审批"
+            },
+            "approval_flow_definition": {
+                "label": "流程定义"
             }
         }
     }

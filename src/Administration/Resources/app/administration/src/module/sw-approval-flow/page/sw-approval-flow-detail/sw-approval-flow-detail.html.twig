@@ -17,7 +17,7 @@
     <template #smart-bar-actions>
         <mt-button
             variant="secondary"
-            :disabled="isLoading"
+            :disabled="isLoading || decisionTarget !== null"
             @click="loadDetail"
         >
             {{ $t('sw-approval-flow.general.refresh') }}
@@ -27,11 +27,18 @@
         <sw-loader v-if="isLoading" />
         <sw-card-view v-else-if="acl.can('approval_flow.viewer')">
             <mt-banner
+                v-if="decisionSaved"
+                variant="positive"
+                role="status"
+            >
+                {{ $t('sw-approval-flow.decision.saved') }}
+            </mt-banner>
+            <mt-banner
                 v-if="loadError"
                 variant="critical"
                 role="alert"
             >
-                {{ $t(`sw-approval-flow.detail.${loadError}`) }}
+                {{ decisionSaved ? $t('sw-approval-flow.decision.reloadError') : $t(`sw-approval-flow.detail.${loadError}`) }}
                 <mt-button
                     variant="secondary"
                     size="small"
@@ -77,6 +84,37 @@
                     </p>
                 </mt-card>
                 {% endblock %}
+                {% block sw_approval_flow_detail_task_actions %}
+                <mt-card
+                    v-if="actionableTasks.length"
+                    :title="$t('sw-approval-flow.decision.actions')"
+                    position-identifier="sw-approval-flow-detail-task-actions"
+                >
+                    <div
+                        v-for="task in actionableTasks"
+                        :key="task.id"
+                        class="sw-approval-flow-detail__task-actions"
+                    >
+                        <span>{{ $t('sw-approval-flow.detail.step', { number: task.sequence }) }}</span>
+                        <mt-button
+                            data-testid="decision-approve"
+                            variant="primary"
+                            size="small"
+                            @click="openDecision(task.id, 'approved')"
+                        >
+                            {{ $t('sw-approval-flow.decision.approved') }}
+                        </mt-button>
+                        <mt-button
+                            data-testid="decision-reject"
+                            variant="critical"
+                            size="small"
+                            @click="openDecision(task.id, 'rejected')"
+                        >
+                            {{ $t('sw-approval-flow.decision.rejected') }}
+                        </mt-button>
+                    </div>
+                </mt-card>
+                {% endblock %}
                 {% block sw_approval_flow_detail_progress %}
                 <mt-card
                     :title="$t('sw-approval-flow.detail.progress')"
@@ -95,6 +133,7 @@
                                     :key="task.id"
                                 >
                                     {{ personName(task.assigneeId) }} · {{ $t(`sw-approval-flow.taskStatus.${task.status}`) }}
+
                                 </li>
                             </ul>
                         </li>
@@ -125,6 +164,18 @@
                 {% endblock %}
             </template>
         </sw-card-view>
+    {% block sw_approval_flow_detail_decision %}
+        <sw-approval-flow-decision-modal
+            v-if="decisionTarget"
+            :instance-id="decisionTarget.instanceId"
+            :task-id="decisionTarget.taskId"
+            :expected-version="decisionTarget.expectedVersion"
+            :outcome="decisionTarget.outcome"
+            @close="decisionTarget = null"
+            @completed="onDecisionCompleted"
+            @refresh="refreshAfterDecision"
+        />
+    {% endblock %}
     </template>
 </sw-page>
 {% endblock %}

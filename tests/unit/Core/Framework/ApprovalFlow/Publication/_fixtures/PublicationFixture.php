@@ -6,6 +6,10 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\NodeExecutorRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\StartExecutor;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\AllApprovalPolicy;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\AnyApprovalPolicy;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\ApprovalPolicyRegistry;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\SingleApprovalPolicy;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Node\Compilation\CoreNodeCompiler;
@@ -51,6 +55,7 @@ final class PublicationFixture
             $nodeExecutors,
             new GraphJsonDecoder(),
             new ArtifactManifestLoader($filesystem, new GraphJsonDecoder(), new GraphSchemaValidator(), $schema, $manifestPath),
+            new ApprovalPolicyRegistry([new SingleApprovalPolicy(), new AllApprovalPolicy(), new AnyApprovalPolicy()]),
         );
     }
 
@@ -62,7 +67,7 @@ final class PublicationFixture
         $bytes = 'Synthetic retained bytes for test deployment attestation.';
         $filesystem->dumpFile($directory . '/core.artifact', $bytes);
         $services = [];
-        foreach (array_merge([ApprovalReleaseCompiler::class, ArtifactManifestLoader::class, NodePlanCompiler::class, CoreNodeCompiler::class, StartExecutor::class, ApprovalExecutor::class, EndExecutor::class], $classes) as $class) {
+        foreach (array_merge([ApprovalReleaseCompiler::class, ArtifactManifestLoader::class, NodePlanCompiler::class, CoreNodeCompiler::class, StartExecutor::class, ApprovalExecutor::class, EndExecutor::class, SingleApprovalPolicy::class, AllApprovalPolicy::class, AnyApprovalPolicy::class], $classes) as $class) {
             $services[] = ['class' => $class, 'artifact' => 'test:application@1.0.0'];
         }
         $path = $directory . '/manifest.json';

@@ -34,14 +34,15 @@
             "additionalProperties": false,
             "properties": {
                 "kind": {
-                    "enum": [
-                        "core:single",
-                        "core:all",
-                        "core:any"
-                    ]
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-zA-Z0-9_-]*$"
                 },
                 "reject": {
                     "const": "veto"
+                },
+                "version": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
                 }
             },
             "required": [

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Definition;
 
+use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftWriteGuard;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CreatedByField;
@@ -9,6 +10,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
@@ -46,6 +48,7 @@ class ApprovalFlowDefinition extends EntityDefinition
             (new StringField('name', 'name'))->addFlags(new Required()),
             new CreatedByField([ApprovalDraftWriteGuard::WRITE_SCOPE]),
             new ManyToOneAssociationField('createdBy', 'created_by_id', UserDefinition::class, 'id', false),
+            new OneToOneAssociationField('draft', 'id', 'definition_id', ApprovalDraftDefinition::class, false),
         ]);
     }
 }

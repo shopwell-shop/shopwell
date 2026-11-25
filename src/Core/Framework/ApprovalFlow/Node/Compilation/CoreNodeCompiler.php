@@ -20,7 +20,7 @@ use Shopwell\Core\Framework\Log\Package;
 /**
  * @phpstan-type ApprovalConfiguration object{
  *     assignees: non-empty-list<object{kind: 'core:users', userIds: non-empty-list<string>}>,
- *     policy: object{kind: 'core:single'|'core:all'|'core:any', reject: 'veto'},
+ *     policy: object{kind: string, version?: string, reject: 'veto'},
  *     fields: list<object{field: string, access: 'hidden'|'readOnly'|'editable', required: bool, when?: object}>,
  *     emptyAssignees: 'incident'|'skip'
  * }&\stdClass
@@ -124,7 +124,7 @@ class CoreNodeCompiler implements NodeCompiler
             $fields[] = new ApprovalFieldConfiguration($field->field, $field->access, $field->required);
         }
 
-        return new ApprovalNodeConfiguration(array_values($userIds), $configuration->policy->kind, $fields, $configuration->emptyAssignees);
+        return new ApprovalNodeConfiguration(array_values($userIds), $configuration->policy->kind, $fields, $configuration->emptyAssignees, $configuration->policy->version ?? self::VERSION);
     }
 
     private function invalidApproval(string $path, string $reason): ApprovalFlowException

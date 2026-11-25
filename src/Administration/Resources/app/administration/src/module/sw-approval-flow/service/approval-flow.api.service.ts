@@ -59,6 +59,23 @@ export interface ApprovalDetail {
 }
 
 /** @private */
+export interface ApprovalDecision {
+    commandId: string;
+    expectedVersion: number;
+    outcome: ApprovalOutcome;
+    reason: string;
+}
+
+/** @private */
+export interface ApprovalDecisionReceipt {
+    instanceId: string;
+    commandId: string;
+    status: 'running';
+    aggregateVersion: number;
+    outcome: null;
+}
+
+/** @private */
 export interface ApprovalSearch {
     view: ApprovalView;
     limit: number;
@@ -81,6 +98,16 @@ export default class ApprovalFlowApiService extends ApiService {
     search(params: ApprovalSearch): Promise<ApprovalPage> {
         return this.httpClient
             .get<ApprovalPage>('/_action/approval-flow/requests', { params, headers: this.getBasicHeaders() })
+            .then((response) => response.data);
+    }
+
+    decide(instanceId: string, taskId: string, command: ApprovalDecision): Promise<ApprovalDecisionReceipt> {
+        return this.httpClient
+            .post<ApprovalDecisionReceipt>(
+                `/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/decide`,
+                command,
+                { headers: this.getBasicHeaders() },
+            )
             .then((response) => response.data);
     }
 

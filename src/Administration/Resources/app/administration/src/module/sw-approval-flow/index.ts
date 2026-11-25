@@ -1,11 +1,13 @@
 /** @sw-package framework */
 import './acl';
 import ApprovalFlowApiService from './service/approval-flow.api.service';
+import ApprovalFlowDesignApiService from './service/approval-flow-design.api.service';
 import type { SubContainer } from 'src/global.types';
 
 declare global {
     interface ServiceContainer extends SubContainer<'service'> {
         approvalFlowApiService: ApprovalFlowApiService;
+        approvalFlowDesignApiService: ApprovalFlowDesignApiService;
     }
 }
 
@@ -16,11 +18,31 @@ Shopwell.Service().register(
 );
 
 /** @private */
+Shopwell.Service().register(
+    'approvalFlowDesignApiService',
+    () =>
+        new ApprovalFlowDesignApiService(
+            Shopwell.Application.getContainer('init').httpClient,
+            Shopwell.Service('loginService'),
+        ),
+);
+
+/** @private */
+Shopwell.Component.register('sw-approval-flow-definition-list', () => import('./page/sw-approval-flow-definition-list'));
+/** @private */
+Shopwell.Component.register('sw-approval-flow-definition-detail', () => import('./page/sw-approval-flow-definition-detail'));
+/** @private */
+Shopwell.Component.register('sw-approval-flow-release-list', () => import('./component/sw-approval-flow-release-list'));
+
+/** @private */
 Shopwell.Component.register('sw-approval-flow-list', () => import('./page/sw-approval-flow-list'));
 /** @private */
 Shopwell.Component.register('sw-approval-flow-detail', () => import('./page/sw-approval-flow-detail'));
 /** @private */
 Shopwell.Component.register('sw-approval-flow-status-badge', () => import('./component/sw-approval-flow-status-badge'));
+
+/** @private */
+Shopwell.Component.register('sw-approval-flow-decision-modal', () => import('./component/sw-approval-flow-decision-modal'));
 
 /** @private */
 Shopwell.Module.register('sw-approval-flow', {
@@ -31,6 +53,17 @@ Shopwell.Module.register('sw-approval-flow', {
     color: 'var(--sw-color-module-blue-default)',
     icon: 'regular-check-circle',
     routes: {
+        definitions: {
+            component: 'sw-approval-flow-definition-list',
+            path: 'definitions',
+            meta: { privilege: 'approval_flow_definition.viewer' },
+        },
+        definition: {
+            component: 'sw-approval-flow-definition-detail',
+            path: 'definition/:id',
+            props: { default: (route: { params: { id: string } }) => ({ definitionId: route.params.id }) },
+            meta: { privilege: 'approval_flow_definition.viewer', parentPath: 'sw.approval.flow.definitions' },
+        },
         todo: {
             component: 'sw-approval-flow-list',
             path: 'todo',
@@ -57,6 +90,11 @@ Shopwell.Module.register('sw-approval-flow', {
         },
     },
     navigation: [
+        {
+            id: 'sw-approval-flow-definitions',
+            path: 'sw.approval.flow.definitions',
+            privilege: 'approval_flow_definition.viewer',
+        },
         { id: 'sw-approval-flow' },
         { id: 'sw-approval-flow-todo', path: 'sw.approval.flow.todo', privilege: 'approval_flow.viewer' },
         { id: 'sw-approval-flow-done', path: 'sw.approval.flow.done', privilege: 'approval_flow.viewer' },

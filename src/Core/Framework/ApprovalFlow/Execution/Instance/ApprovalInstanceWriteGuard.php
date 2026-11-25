@@ -127,7 +127,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
                 continue;
             }
             if ($command->getEntityName() === ApprovalNodeExecutionDefinition::ENTITY_NAME && $command instanceof UpdateCommand
-                && array_diff(array_keys($command->getPayload()), ['status', 'approval_policy', 'outcome', 'updated_at']) === []) {
+                && array_diff(array_keys($command->getPayload()), ['status', 'approval_policy', 'approval_policy_version', 'outcome', 'updated_at']) === []) {
                 continue;
             }
             if ($command->getEntityName() === ApprovalTaskDefinition::ENTITY_NAME && $command instanceof UpdateCommand
