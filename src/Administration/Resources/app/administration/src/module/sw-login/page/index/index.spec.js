@@ -1,5 +1,9 @@
 import { mount } from '@vue/test-utils';
 
+const loginViewStub = {
+    template: '<div class="sw-login__options"><slot name="password-recovery"></slot></div>',
+};
+
 async function createWrapper(methodOverrides = {}, mocks = {}) {
     const swLogin = await wrapTestComponent('sw-login', {
         sync: true,
@@ -13,7 +17,11 @@ async function createWrapper(methodOverrides = {}, mocks = {}) {
     return mount(componentConfig, {
         global: {
             stubs: {
-                'router-view': true,
+                'router-view': {
+                    setup(_, { slots }) {
+                        return () => slots.default({ Component: loginViewStub });
+                    },
+                },
                 'sw-loader': true,
             },
             mocks,
@@ -78,7 +86,7 @@ describe('src/module/sw-login/page/index/index.js', () => {
         wrapper.vm.setLoginConfig({ useDefault: true, url: '' });
         await flushPromises();
 
-        expect(wrapper.find('.sw-login__forgot-password-action').exists()).toBe(true);
+        expect(wrapper.find('.sw-login__options .sw-login__forgot-password-action').exists()).toBe(true);
     });
 
     it('should not show the forgot password link when password recovery is disabled', async () => {

@@ -5,11 +5,9 @@
 >
     <div v-if="loginConfigLoaded">
         {% block sw_login_login_form_headline %}
-        <div class="sw-login__heading">
-            <h1 class="sw-login__content-headline">
-                {{ $t('sw-login.index.headlineForm') }}
-            </h1>
-        </div>
+        <h1 class="visually-hidden">
+            {{ $t('sw-login.index.headlineForm') }}
+        </h1>
         {% endblock %}
 
         {% block sw_login_login_alert %}
@@ -112,10 +110,14 @@
 
             {% block sw_login_login_submit %}
             <div class="sw-login__submit">
-                <mt-checkbox
-                    v-model:checked="rememberMe"
-                    :label="$t('sw-login.index.labelKeepLoggedIn')"
-                />
+                <div class="sw-login__options">
+                    <mt-checkbox
+                        v-model:checked="rememberMe"
+                        :label="$t('sw-login.index.labelKeepLoggedIn')"
+                    />
+
+                    <slot name="password-recovery"></slot>
+                </div>
 
                 {% block sw_login_login_submit_button %}
                 <mt-button

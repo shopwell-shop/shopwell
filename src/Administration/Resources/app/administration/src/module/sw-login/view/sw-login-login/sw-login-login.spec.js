@@ -14,13 +14,14 @@ async function createWrapper(
     ssoUrl = 'https://sso.test',
     loginError = null,
     configFails = false,
-    { oauth2Channels = [], $te = () => true, navigateTo } = {},
+    { oauth2Channels = [], $te = () => true, navigateTo, slots = {} } = {},
 ) {
     const component = await wrapTestComponent('sw-login-login', { sync: true });
     const loginComponent = navigateTo
         ? { ...component, methods: { ...component.methods, _navigateTo: navigateTo } }
         : component;
     const wrapper = mount(loginComponent, {
+        slots,
         global: {
             mocks: {
                 $t: (...args) => JSON.stringify([...args]),
@@ -134,6 +135,18 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
 
     afterEach(() => {
         document.cookie = 'oauth2LoginError=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    });
+
+    it('should place the password recovery link beside the remember me checkbox', async () => {
+        const { wrapper } = await createWrapper(true, true, '', null, false, {
+            slots: {
+                'password-recovery': '<a href="#/login/recovery">Forgot password?</a>',
+            },
+        });
+
+        const options = wrapper.get('.sw-login__options');
+        expect(options.find('input[type="checkbox"]').exists()).toBe(true);
+        expect(options.get('a').attributes('href')).toBe('#/login/recovery');
     });
 
     it('should show a warning if the login is rate limited', async () => {

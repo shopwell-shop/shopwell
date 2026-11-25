@@ -9,7 +9,7 @@
         {% block sw_login_logo %}
         <img
             class="sw-login__logo"
-            :src="assetFilter('administration/administration/static/img/shopwell_logo_blue.svg')"
+            :src="assetFilter('administration/administration/static/img/shopwell_login_logo.svg')"
             :alt="$t('sw-login.general.logoAlt')"
         >
         {% endblock %}
@@ -33,7 +33,19 @@
                     @login-error="loginError"
                     @login-success="loginSuccess"
                     @config-loaded="setLoginConfig"
-                />
+                >
+                    <template #password-recovery>
+                        {% block sw_login_forgot_password_link %}
+                        <mt-link
+                            v-if="showForgotPasswordLink"
+                            class="sw-login__forgot-password-action"
+                            :to="{ name: 'sw.login.index.recovery' }"
+                        >
+                            {{ $t('sw-login.index.forgottenPasswordLink') }}
+                        </mt-link>
+                        {% endblock %}
+                    </template>
+                </component>
             </router-view>
             {% endblock %}
 
@@ -54,16 +66,6 @@
             :to="{ name: 'sw.login.index.login' }"
         >
             {{ $t('sw-login.general.linkBackToLogin') }}
-        </mt-link>
-        {% endblock %}
-
-        {% block sw_login_forgot_password_link %}
-        <mt-link
-            v-if="showForgotPasswordLink"
-            class="sw-login__forgot-password-action"
-            :to="{ name: 'sw.login.index.recovery' }"
-        >
-            {{ $t('sw-login.index.forgottenPasswordLink') }}
         </mt-link>
         {% endblock %}
     </div>

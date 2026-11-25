@@ -1,29 +1,38 @@
 .sw-login {
+    --sw-admin-control-height: var(--sw-admin-control-height-large);
+
     height: 100%;
     display: flex;
-    padding: var(--scale-size-20);
+    padding: var(--scale-size-20) var(--scale-size-12) clamp(var(--scale-size-20), 11vh, 6.25rem);
     background-color: var(--color-elevation-surface-sunken);
+    background-image:
+        url("./assets/sw-login-waves.svg"),
+        linear-gradient(
+            145deg,
+            color-mix(in srgb, var(--color-elevation-surface-sunken), var(--color-text-brand-default) 5%),
+            color-mix(in srgb, var(--color-elevation-surface-sunken), var(--color-text-brand-default) 2%) 48%,
+            color-mix(in srgb, var(--color-elevation-surface-sunken), var(--color-text-brand-default) 8%)
+        );
+    background-position:
+        center bottom,
+        center;
+    background-repeat: no-repeat;
+    background-size:
+        max(100%, 48rem) clamp(9rem, 43vh, 24.5rem),
+        cover;
     overflow: auto;
-
-    @media screen and (max-width: 25rem) {
-        background-color: var(--color-elevation-surface-default);
-    }
 
     .sw-login__container {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: var(--scale-size-32);
-        width: 32.5rem;
+        gap: var(--scale-size-40);
+        width: 25.5rem;
         max-width: 100%;
         margin: auto;
         transition:
             transform 0.3s ease-in-out,
             opacity 0.3s ease-in-out;
-
-        @media screen and (max-width: 25rem) {
-            align-items: flex-start;
-        }
 
         @media (prefers-reduced-motion: reduce) {
             transition: none;
@@ -31,16 +40,25 @@
     }
 
     .sw-login__logo {
-        height: var(--scale-size-32);
+        display: block;
+        width: 11.3125rem;
+        height: var(--scale-size-40);
     }
 
     .sw-login__card {
         position: relative;
         width: 100%;
-        padding: var(--scale-size-40);
+        padding: var(--scale-size-48) clamp(var(--scale-size-20), 6vw, 2.6875rem);
         background: var(--color-elevation-surface-raised);
         border: 1px solid var(--color-border-secondary-default);
-        border-radius: var(--border-radius-card);
+        border-radius: var(--scale-size-16);
+        box-shadow: 0 5px 0 color-mix(in srgb, var(--color-text-primary-default), transparent 95%);
+
+        &:has(.sw-login-login) {
+            display: grid;
+            align-content: center;
+            min-height: 26.5rem;
+        }
 
         &.is--login-error {
             animation: sw-login-error-shake 0.15s ease-in-out infinite;
@@ -49,13 +67,19 @@
                 animation: none;
             }
         }
+    }
 
-        @media screen and (max-width: 25rem) {
-            padding: 0;
-            background: none;
-            border: none;
-            border-radius: 0;
-        }
+    .sw-login__options {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--scale-size-8) var(--scale-size-12);
+    }
+
+    .sw-login__forgot-password-action {
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
     }
 
     .sw-login__content-headline {
@@ -95,8 +119,8 @@
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        gap: var(--scale-size-24);
-        margin-top: var(--scale-size-24);
+        gap: var(--scale-size-20);
+        margin-top: var(--scale-size-20);
     }
 
     .sw-login__status {
@@ -155,12 +179,12 @@
         }
     }
 
-    .mt-loader {
-        border-radius: var(--border-radius-card);
+    .sw-login__card > .mt-loader {
+        border-radius: inherit;
     }
 
     .sw-login__view-loader {
-        min-height: 22rem;
+        min-height: 16.875rem;
     }
 
     &.is--login-success {
