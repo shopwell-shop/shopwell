@@ -511,12 +511,28 @@ describe('module/sw-product/page/sw-product-list', () => {
         expect(wrapper.vm.naturalSorting).toBe(false);
     });
 
-    it('should sort products by Manufacturer name', async () => {
-        await wrapper.vm.getList();
+    it('hides the manufacturer column by default', async () => {
+        await flushPromises();
+        const manufacturerColumnHeader = wrapper.get('.sw-data-grid__cell--header.sw-data-grid__cell--2');
+        expect(manufacturerColumnHeader.isVisible()).toBe(false);
+    });
 
-        const currencyColumnHeader = wrapper.find('.sw-data-grid__cell--header.sw-data-grid__cell--2');
+    it('sorts by manufacturer when the column is enabled in the saved list settings', async () => {
+        jest.spyOn(Shopwell.Service('userConfigService'), 'search').mockResolvedValue({
+            data: {
+                'grid.setting.sw-product-list': {
+                    columns: [{ dataIndex: 'manufacturer.name', visible: true }],
+                },
+            },
+        });
+        wrapper.unmount();
+        ({ wrapper } = await createWrapper());
+        await flushPromises();
 
-        await currencyColumnHeader.trigger('click');
+        const manufacturerColumnHeader = wrapper.get('.sw-data-grid__cell--header.sw-data-grid__cell--2');
+        expect(manufacturerColumnHeader.isVisible()).toBe(true);
+
+        await manufacturerColumnHeader.trigger('click');
         await flushPromises();
 
         const manufacturerNamesASCSorted = wrapper.findAll('.sw-data-grid__cell--manufacturer-name');
@@ -525,7 +541,7 @@ describe('module/sw-product/page/sw-product-list', () => {
         expect(firstManufacturerNameASCSorted.text()).toBe('Manufacturer A');
         expect(secondManufacturerNameASCSorted.text()).toBe('Manufacturer B');
 
-        await currencyColumnHeader.trigger('click');
+        await manufacturerColumnHeader.trigger('click');
         await flushPromises();
 
         const manufacturerNamesDESCSorted = wrapper.findAll('.sw-data-grid__cell--manufacturer-name');

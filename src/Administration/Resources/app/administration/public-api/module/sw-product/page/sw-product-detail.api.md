@@ -37,7 +37,7 @@ blocks
         sw_product_detail_content_tabs_specifications  [until v6.8.0]
       sw_product_detail_content_top
       sw_product_detail_content_view
-      sw_product_detail_inheritance_warning
+      sw_product_detail_inheritance_warning  [after v-if]
       sw_product_settings_mode  [after v-if]
     sw_product_detail_header
     sw_product_detail_language_switch

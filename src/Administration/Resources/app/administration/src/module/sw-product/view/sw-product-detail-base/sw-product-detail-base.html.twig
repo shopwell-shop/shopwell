@@ -24,11 +24,71 @@
         </mt-card>
         {% endblock %}
 
+        {% block sw_product_detail_base_media %}
+        <sw-inherit-wrapper
+            v-show="showProductCard('media')"
+            ref="productMediaInheritance"
+            v-model:value="product.media"
+            class="sw-product-detail-base__media"
+            :inherited-value="parentProduct.media"
+            :custom-restore-inheritance-function="mediaRestoreInheritanceFunction"
+            :custom-remove-inheritance-function="mediaRemoveInheritanceFunction"
+            is-association
+        >
+            <template #content="{ isInherited, isInheritField, restoreInheritance, removeInheritance }">
+
+                {% block sw_product_detail_base_media_card %}
+                <mt-card
+                    :title="$t('sw-product.detailBase.cardTitleMedia')"
+                    :is-loading="loading.product || loading.customFieldSets || loading.media"
+                    :class="{ 'sw-card__inherited': isInherited }"
+                    position-identifier="sw-product-detail-base-media"
+                >
+                    <template #title>
+
+                        {% block sw_product_detail_base_media_card_title %}
+                        <div
+                            class="sw-inherit-wrapper__card-title"
+                            :class="{ 'sw-inherit-wrapper__card-title--inherited': isInherited }"
+                        >
+                            <sw-inheritance-switch
+                                v-if="isInheritField"
+                                class="sw-inherit-wrapper__inheritance-icon"
+                                :is-inherited="isInherited"
+                                @inheritance-restore="restoreInheritance"
+                                @inheritance-remove="removeInheritance"
+                            />
+                            {# TODO: headline is not clickable yet #}
+                            <h3 class="mt-card__title">
+                                {{ $t('sw-product.detailBase.cardTitleMedia') }}
+                            </h3>
+                        </div>
+                        {% endblock %}
+
+                    </template>
+
+                    {% block sw_product_detail_base_media_card_form %}
+                    <sw-product-media-form
+                        v-if="mediaFormVisible"
+                        :key="isInherited"
+                        :product-id="isInherited ? parentProduct.id : product.id"
+                        :is-inherited="isInherited"
+                        :disabled="isInherited || !acl.can('product.editor')"
+                        @media-open="onOpenMediaModal"
+                    />
+                    {% endblock %}
+
+                </mt-card>
+                {% endblock %}
+
+            </template>
+        </sw-inherit-wrapper>
+        {% endblock %}
+
         <mt-card
             v-if="isDownloadCardVisible"
             class="sw-product-detail-base__downloads"
             :title="$t('sw-product.detailBase.cardTitleDownloads')"
-            :subtitle="$t('sw-product.detailBase.cardSubtitleDownloads')"
             :is-loading="loading.product || loading.customFieldSets || loading.downloads"
             position-identifier="sw-product-detail-base-downloads"
         >
@@ -132,68 +192,6 @@
             {% endblock %}
 
         </mt-card>
-        {% endblock %}
-
-        {% block sw_product_detail_base_media %}
-        <sw-inherit-wrapper
-            v-show="showProductCard('media')"
-            ref="productMediaInheritance"
-            v-model:value="product.media"
-            class="sw-product-detail-base__media"
-            :inherited-value="parentProduct.media"
-            :custom-restore-inheritance-function="mediaRestoreInheritanceFunction"
-            :custom-remove-inheritance-function="mediaRemoveInheritanceFunction"
-            is-association
-        >
-            <template #content="{ isInherited, isInheritField, restoreInheritance, removeInheritance }">
-
-                {% block sw_product_detail_base_media_card %}
-                <mt-card
-                    :title="$t('sw-product.detailBase.cardTitleMedia')"
-                    :subtitle="$t('sw-product.detailBase.cardSubtitleMedia')"
-                    :is-loading="loading.product || loading.customFieldSets || loading.media"
-                    :class="{ 'sw-card__inherited': isInherited }"
-                    position-identifier="sw-product-detail-base-media"
-                >
-                    <template #title>
-
-                        {% block sw_product_detail_base_media_card_title %}
-                        <div
-                            class="sw-inherit-wrapper__card-title"
-                            :class="{ 'sw-inherit-wrapper__card-title--inherited': isInherited }"
-                        >
-                            <sw-inheritance-switch
-                                v-if="isInheritField"
-                                class="sw-inherit-wrapper__inheritance-icon"
-                                :is-inherited="isInherited"
-                                @inheritance-restore="restoreInheritance"
-                                @inheritance-remove="removeInheritance"
-                            />
-                            {# TODO: headline is not clickable yet #}
-                            <h3 class="mt-card__title">
-                                {{ $t('sw-product.detailBase.cardTitleMedia') }}
-                            </h3>
-                        </div>
-                        {% endblock %}
-
-                    </template>
-
-                    {% block sw_product_detail_base_media_card_form %}
-                    <sw-product-media-form
-                        v-if="mediaFormVisible"
-                        :key="isInherited"
-                        :product-id="isInherited ? parentProduct.id : product.id"
-                        :is-inherited="isInherited"
-                        :disabled="isInherited || !acl.can('product.editor')"
-                        @media-open="onOpenMediaModal"
-                    />
-                    {% endblock %}
-
-                </mt-card>
-                {% endblock %}
-
-            </template>
-        </sw-inherit-wrapper>
         {% endblock %}
 
         {% block sw_product_detail_base_documents %}

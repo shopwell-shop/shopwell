@@ -28,7 +28,7 @@
     {% endblock %}
 
     <sw-container
-        columns="2fr 1fr"
+        columns="repeat(auto-fit, minmax(min(100%, calc(var(--scale-size-224) + var(--scale-size-26))), 1fr))"
         gap="0 var(--scale-size-30)"
     >
         {% block sw_product_basic_form_manufacturer_field %}
@@ -71,18 +71,6 @@
         />
         {% endblock %}
     </sw-container>
-
-    {% block sw_product_basic_form_cover_image_description_hint %}
-    <mt-banner
-        v-if="!hideCoverImageDescriptionHint"
-        class="sw-product-basic-form__cover-image-description-hint"
-        variant="info"
-        closable
-        @close="onCloseCoverImageDescriptionHint"
-    >
-        {{ $t('sw-product.basicForm.hintCoverImageDescription') }}
-    </mt-banner>
-    {% endblock %}
 
     {% block sw_product_basic_form_description_field %}
     <sw-inherit-wrapper

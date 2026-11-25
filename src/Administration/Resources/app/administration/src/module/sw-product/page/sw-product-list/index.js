@@ -481,6 +481,7 @@ export default {
                     property: 'manufacturer.name',
                     label: this.$t('sw-product.list.columnManufacturer'),
                     allowResize: true,
+                    visible: false,
                 },
                 {
                     property: 'active',

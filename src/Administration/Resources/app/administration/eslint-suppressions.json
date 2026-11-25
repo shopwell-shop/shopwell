@@ -8420,7 +8420,7 @@
       "count": 2
     },
     "sw-test-rules/no-vm-access": {
-      "count": 65
+      "count": 64
     }
   },
   "src/module/sw-product/view/sw-product-detail-base/index.js": {

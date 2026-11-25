@@ -9533,7 +9533,6 @@
             "extends": null,
             "blocks": [
                 "sw_product_basic_form",
-                "sw_product_basic_form_cover_image_description_hint",
                 "sw_product_basic_form_description_field",
                 "sw_product_basic_form_id_field",
                 "sw_product_basic_form_manufacturer_field",
@@ -9548,15 +9547,11 @@
             "blocks": [
                 "sw_product_category_form",
                 "sw_product_category_form_active_field",
-                "sw_product_category_form_categories_body",
-                "sw_product_category_form_categories_title",
                 "sw_product_category_form_category_field",
                 "sw_product_category_form_search_keyword_field",
                 "sw_product_category_form_tags_field",
-                "sw_product_category_form_visibility_body",
                 "sw_product_category_form_visibility_field",
-                "sw_product_category_form_visibility_field_link",
-                "sw_product_category_form_visibility_title"
+                "sw_product_category_form_visibility_field_link"
             ]
         },
         "sw-product-clone-modal": {
@@ -9986,7 +9981,6 @@
             "blocks": [
                 "sw_product_guarantee_form",
                 "sw_product_guarantee_form_content",
-                "sw_product_guarantee_form_description",
                 "sw_product_guarantee_form_guarantee_confirmed_field",
                 "sw_product_guarantee_form_guarantee_months_field",
                 "sw_product_guarantee_form_guarantee_terms_media_field",

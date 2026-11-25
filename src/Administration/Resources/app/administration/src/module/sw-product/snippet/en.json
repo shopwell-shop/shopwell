@@ -14,7 +14,6 @@
             "visibilityModalDescription": "“Hide in listing” will exclude the product from product overview listings but also from product sliders and cross selling lists. Selecting the option “Hide in listing and search” will also exclude the product from search actions. Products can still be reached via URL.",
             "linkAdvancedVisibility": "Set visibility for selected Sales Channels",
             "labelVisibility": "Sales Channels",
-            "bodyVisibility": "Add Sales Channels in which this product should be displayed. You may further define the product visibility for each Storefront Sales Channel via the link below.",
             "errorMessage": "Unable to load default Sales Channel configuration."
         },
         "general": {
@@ -36,7 +35,6 @@
         "basicForm": {
             "labelTitle": "Name",
             "labelDescription": "Description",
-            "hintCoverImageDescription": "Begin the description with one or two short sentences describing the product shown in the cover image. This improves accessibility and the presentation in product listings.",
             "labelProductNumber": "Product number",
             "labelManufacturer": "Manufacturer",
             "labelManufacturerCreation": "manufacturer",
@@ -62,11 +60,7 @@
             "placeholderSearchKeywords": "Enter keywords that find this product...",
             "textAddSearchKeyword": "Click here to add search keyword",
             "textEnterValidSearchKeyword": "Searchable keywords",
-            "helpTextSearchKeyword": "The product in the Storefront can also be found using these keywords.",
-            "helpTextTags": "Tags are meant for internal use only. They can help you manage groups of products, apply rules or serve as custom search terms.",
-            "categoriesTitle": "Categories and tags",
-            "descriptionCategories": "Add categories so that the product can be found via the Storefront main menu or by API connections. Make sure you select  categories that are available and active in the selected Sales Channel.",
-            "descriptionTags": "Tags help you find products faster. They make it easier to group products and can be  utilised to automate task with the Rule Builder."
+            "labelTags": "Internal tags"
         },
         "priceForm": {
             "labelTaxRate": "Tax rate",
@@ -130,7 +124,6 @@
             "helpTextAllowMultipleUnits": "If multiple units aren't allowed, customers can only buy one unit of the digital product per order.",
             "labelEan": "GTIN/EAN",
             "labelManufacturerNumber": "Manufacturer product number",
-            "labelGuaranteeDescription": "This label represents a commercial guarantee of durability expressed in years. The guarantee is offered by the producer at no additional costs, covering the entire good and with a duration of more than two years.",
             "labelGuaranteeMonths": "Producer guarantee duration in months",
             "helpTextGuaranteeMonths": "Between 30 and 600, in steps of 6.",
             "labelGuaranteeConfirmed": "Show label in Storefront",
@@ -199,12 +192,10 @@
             "linkMaintainCurrencyPrices": "Currency dependent pricing",
             "cardTitleReviews": "Reviews",
             "cardTitleMedia": "Media",
-            "cardSubtitleMedia": "Add files to the product's media gallery.",
             "labelContextMenuAddToProduct": "Add to product",
             "cardTitleSeo": "SEO",
             "cardTitleVisibilityStructure": "Visibility Structure",
             "cardTitleDownloads": "Files",
-            "cardSubtitleDownloads": "Add files to your digital product.",
             "downloadExternalManagementLabel": "File not required or provided externally",
             "downloadExternalManagementTooltip": "Enable this option if the product has no file, e.g. for licenses or access codes, or if files are added externally.",
             "downloadsExternalManagementRequired": "Upload at least one file or enable \"File not required or provided externally\" below.",
@@ -373,7 +364,6 @@
         "variations": {
             "generatedListColumnDownload": "Files",
             "emptyStateTitle": "No variants yet",
-            "emptyStateDescription": "Manage product variants here.",
             "emptyStatePropertyTitle": "No properties yet",
             "emptyStatePropertyDescription": "Please create properties first to be able to use them for variant generation.",
             "emptyStateButton": "Generate variants",
@@ -623,7 +613,6 @@
         "documentForm": {
             "variantOnly": "Variant only",
             "cardTitle": "Documents ({count})",
-            "cardSubtitle": "Files customers can download on the product detail page in the Storefront.",
             "emptyState": "No documents yet",
             "emptyDescription": "Add files such as manuals, datasheets or certificates. Customers download them on the product detail page in the Storefront.",
             "emptyDescriptionOtherLanguage": "Switch the content language to the default language {language} to add documents.",

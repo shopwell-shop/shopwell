@@ -163,8 +163,8 @@
 
             {% block sw_product_detail_content_language_info %}
             <sw-language-info
+                v-if="productId"
                 :entity-description="placeholder(product, 'name', $t('sw-product.detail.textHeadline'))"
-                :is-new-entity="!productId"
             />
             {% endblock %}
 

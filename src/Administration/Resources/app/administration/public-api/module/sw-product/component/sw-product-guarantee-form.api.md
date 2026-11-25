@@ -15,7 +15,6 @@ blocks
     sw_product_guarantee_form_content
       sw_product_guarantee_form_guarantee_confirmed_field
       sw_product_guarantee_form_guarantee_months_field
-    sw_product_guarantee_form_description
     sw_product_guarantee_form_requirements_notice
     sw_product_guarantee_form_terms
       sw_product_guarantee_form_guarantee_terms_media_field

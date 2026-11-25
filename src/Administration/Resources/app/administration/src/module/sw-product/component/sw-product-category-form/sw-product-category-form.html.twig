@@ -1,44 +1,29 @@
 {% block sw_product_category_form %}
 <div class="sw-product-category-form">
-    <sw-container class="sw-product-category-form__description">
-        {% block sw_product_category_form_visibility_title %}
-        <span class="sw-product-category-form__visibility-title">
-            {{ $t('sw-product.visibility.labelVisibility') }}
-        </span>
-        {% endblock %}
-
-        {% block sw_product_category_form_visibility_body %}
-        <p class="sw-product-category-form__visibility-body">
-            {{ $t('sw-product.visibility.bodyVisibility') }}
-        </p>
-        {% endblock %}
-
-        {% block sw_product_category_form_visibility_field %}
-        <sw-inherit-wrapper
-            ref="productVisibilitiesInheritance"
-            v-model:value="product.visibilities"
-            :has-parent="!!parentProduct.id"
-            class="sw-product-category-form__visibility_field"
-            :inherited-value="parentProduct.visibilities"
-            :label="$t('sw-product.visibility.labelVisibility')"
-            :custom-remove-inheritance-function="visibilitiesRemoveInheritanceFunction"
-            is-association
-        >
-            <template #content="{ currentValue, isInherited, updateCurrentValue }">
-                <sw-product-visibility-select
-                    v-if="!loading.product && !loading.parentProduct && multiSelectVisible"
-                    ref="productVisibility"
-                    :key="isInherited"
-                    class="sw-product-detail__select-visibility"
-                    :entity-collection="currentValue"
-                    :placeholder="$t('sw-product.visibility.placeholderVisibility')"
-                    :disabled="isInherited || !allowEdit"
-                    @update:entity-collection="updateCurrentValue"
-                />
-            </template>
-        </sw-inherit-wrapper>
-        {% endblock %}
-    </sw-container>
+    {% block sw_product_category_form_visibility_field %}
+    <sw-inherit-wrapper
+        ref="productVisibilitiesInheritance"
+        v-model:value="product.visibilities"
+        :has-parent="!!parentProduct.id"
+        :inherited-value="parentProduct.visibilities"
+        :label="$t('sw-product.visibility.labelVisibility')"
+        :custom-remove-inheritance-function="visibilitiesRemoveInheritanceFunction"
+        is-association
+    >
+        <template #content="{ currentValue, isInherited, updateCurrentValue }">
+            <sw-product-visibility-select
+                v-if="!loading.product && !loading.parentProduct && multiSelectVisible"
+                ref="productVisibility"
+                :key="isInherited"
+                class="sw-product-detail__select-visibility"
+                :entity-collection="currentValue"
+                :placeholder="$t('sw-product.visibility.placeholderVisibility')"
+                :disabled="isInherited || !allowEdit"
+                @update:entity-collection="updateCurrentValue"
+            />
+        </template>
+    </sw-inherit-wrapper>
+    {% endblock %}
 
     {% block sw_product_category_form_visibility_field_link %}
     <sw-container
@@ -108,24 +93,11 @@
     </sw-modal>
     {% endblock %}
 
-    {% block sw_product_category_form_category_field %}
     <sw-container
-        class="sw-product-feature-set-form__description"
+        columns="repeat(auto-fit, minmax(min(100%, calc(var(--scale-size-224) + var(--scale-size-26))), 1fr))"
+        gap="0 var(--scale-size-30)"
     >
-        {% block sw_product_category_form_categories_title %}
-        <span class="sw-product-category-form__visibility-title">
-            {{ $t('sw-product.categoryForm.categoriesTitle') }}
-        </span>
-        {% endblock %}
-
-        {% block sw_product_category_form_categories_body %}
-        <p class="sw-product-category-form__categories-body">
-            {{ $t('sw-product.categoryForm.descriptionCategories') }}
-        </p>
-        <p class="sw-product-category-form__categories-body">
-            {{ $t('sw-product.categoryForm.descriptionTags') }}
-        </p>
-        {% endblock %}
+        {% block sw_product_category_form_category_field %}
         <sw-inherit-wrapper
             v-model:value="product.categories"
             is-association
@@ -143,41 +115,39 @@
                 />
             </template>
         </sw-inherit-wrapper>
+        {% endblock %}
+
+        {% block sw_product_category_form_tags_field %}
+        <sw-inherit-wrapper
+            v-if="showModeSetting"
+            v-model:value="product.tags"
+            class="sw-product-category-form__tag-field-wrapper"
+            :inherited-value="parentProduct.tags"
+            :has-parent="!!parentProduct.id"
+            is-association
+            :label="$t('sw-product.categoryForm.labelTags')"
+        >
+
+            <template #content="{ currentValue, isInherited, updateCurrentValue }">
+                <sw-entity-tag-select
+                    v-if="!loading.product && !loading.parentProduct"
+                    :key="isInherited"
+                    class="sw-product-category-form__tag-field"
+                    :disabled="isInherited || !allowEdit"
+                    :placeholder="$t('sw-product.categoryForm.placeholderTags')"
+                    :error="productTagsError"
+                    :entity-collection="currentValue ? currentValue : {}"
+                    @update:entity-collection="updateCurrentValue"
+                />
+            </template>
+        </sw-inherit-wrapper>
+        {% endblock %}
     </sw-container>
-    {% endblock %}
-
-    {% block sw_product_category_form_tags_field %}
-    <sw-inherit-wrapper
-        v-if="showModeSetting"
-        v-model:value="product.tags"
-        class="sw-product-category-form__tag-field-wrapper"
-        :inherited-value="parentProduct.tags"
-        :has-parent="!!parentProduct.id"
-        is-association
-        :help-text="$t('sw-product.categoryForm.helpTextTags')"
-        :label="$t('global.sw-tag-field.title')"
-    >
-
-        <template #content="{ currentValue, isInherited, updateCurrentValue }">
-            <sw-entity-tag-select
-                v-if="!loading.product && !loading.parentProduct"
-                :key="isInherited"
-                class="sw-product-category-form__tag-field"
-                :disabled="isInherited || !allowEdit"
-                :placeholder="$t('sw-product.categoryForm.placeholderTags')"
-                :error="productTagsError"
-                :entity-collection="currentValue ? currentValue : {}"
-                @update:entity-collection="updateCurrentValue"
-            />
-        </template>
-    </sw-inherit-wrapper>
-    {% endblock %}
 
     {% block sw_product_category_form_search_keyword_field %}
     <sw-inherit-wrapper
         v-if="showModeSetting"
         v-model:value="product.customSearchKeywords"
-        :help-text="$t('sw-product.categoryForm.helpTextSearchKeyword')"
         :inherited-value="parentProduct.customSearchKeywords"
         :has-parent="!!parentProduct.id"
         :label="$t('sw-product.categoryForm.labelSearchKeyword')"

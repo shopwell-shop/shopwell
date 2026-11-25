@@ -33,7 +33,6 @@ export default {
     data() {
         return {
             productNumberRangeId: null,
-            hideCoverImageDescriptionHint: true,
         };
     },
 
@@ -126,24 +125,6 @@ export default {
     methods: {
         createdComponent() {
             this.loadProductNumberRangeId();
-            this.loadCoverImageDescriptionHintConfig();
-        },
-
-        async loadCoverImageDescriptionHintConfig() {
-            const config = (await Shopwell.Service('userConfigService').search(['product.hideCoverImageDescriptionHint']))
-                ?.data?.['product.hideCoverImageDescriptionHint'];
-
-            this.hideCoverImageDescriptionHint = !!config?.value;
-        },
-
-        async onCloseCoverImageDescriptionHint() {
-            this.hideCoverImageDescriptionHint = true;
-
-            await Shopwell.Service('userConfigService').upsert({
-                'product.hideCoverImageDescriptionHint': {
-                    value: true,
-                },
-            });
         },
 
         updateIsTitleRequired() {
