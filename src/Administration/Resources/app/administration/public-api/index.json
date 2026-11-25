@@ -266,6 +266,36 @@
                 "sw_app_wrong_app_url_modal"
             ]
         },
+        "sw-approval-flow-detail": {
+            "file": "module/sw-approval-flow/page/sw-approval-flow-detail",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_detail",
+                "sw_approval_flow_detail_decisions",
+                "sw_approval_flow_detail_form",
+                "sw_approval_flow_detail_progress",
+                "sw_approval_flow_detail_summary"
+            ]
+        },
+        "sw-approval-flow-list": {
+            "file": "module/sw-approval-flow/page/sw-approval-flow-list",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_list",
+                "sw_approval_flow_list_columns",
+                "sw_approval_flow_list_content"
+            ]
+        },
+        "sw-approval-flow-status-badge": {
+            "file": "module/sw-approval-flow/component/sw-approval-flow-status-badge",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_status_badge"
+            ]
+        },
         "sw-arrow-field": {
             "file": "app/component/rule/sw-arrow-field",
             "visibility": "private",

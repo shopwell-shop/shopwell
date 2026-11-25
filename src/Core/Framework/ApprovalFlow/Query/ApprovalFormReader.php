@@ -44,6 +44,35 @@ class ApprovalFormReader
         return $this->project($form, $rules, 'form', inheritedAccess: false);
     }
 
+    public function labels(\stdClass $visibleForm, string $schemaJson): \stdClass
+    {
+        $schema = json_decode($schemaJson, true, flags: \JSON_THROW_ON_ERROR);
+        $labels = new \stdClass();
+        $this->collectLabels($visibleForm, $schema, 'form', $labels);
+
+        return $labels;
+    }
+
+    /**
+     * @param array<string, mixed> $schema
+     */
+    private function collectLabels(\stdClass $form, array $schema, string $prefix, \stdClass $labels): void
+    {
+        foreach (get_object_vars($form) as $name => $value) {
+            $key = (string) $name;
+            $path = $prefix . '.' . $key;
+            $property = $schema['properties'][$key] ?? [];
+            $property = \is_array($property) ? $property : [];
+            $labels->$path = [
+                'title' => \is_string($property['title'] ?? null) ? $property['title'] : $key,
+                'labelSnippet' => \is_string($property['x-shopwell-label-snippet'] ?? null) ? $property['x-shopwell-label-snippet'] : null,
+            ];
+            if ($value instanceof \stdClass) {
+                $this->collectLabels($value, $property, $path, $labels);
+            }
+        }
+    }
+
     /**
      * @param array<string, bool> $rules
      */

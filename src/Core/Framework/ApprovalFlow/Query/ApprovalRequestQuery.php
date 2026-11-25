@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Query;
 
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
+use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
@@ -19,6 +20,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\User\UserCollection;
 
 /**
  * Personal approval queries apply ownership before pagination and return explicit projections.
@@ -29,7 +31,9 @@ use Shopwell\Core\Framework\Log\Package;
  *
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Query\ApprovalRequestQueryTest
  *
- * @phpstan-type RequestSummary array{id: string, businessType: string, businessId: string, submissionRound: int, instanceId: string, initiatorId: string, createdAt: string|null, status: string, outcome: string|null, aggregateVersion: int}
+ * @phpstan-import-type GraphPayload from GraphDiagnostics
+ *
+ * @phpstan-type RequestSummary array{id: string, title: string, businessType: string, businessId: string, submissionRound: int, instanceId: string, initiatorId: string, initiatorName: string|null, createdAt: string|null, status: string, outcome: string|null, aggregateVersion: int}
  * @phpstan-type ExecutionSummary array{id: string, nodeId: string, sequence: int, status: string, outcome: string|null}
  * @phpstan-type TaskSummary array{id: string, executionId: string, assigneeId: string, status: string}
  * @phpstan-type DecisionSummary array{taskId: string, nodeId: string, assigneeId: string, decision: string, reason: string, decidedAt: string|null, aggregateVersion: int}
@@ -41,12 +45,14 @@ class ApprovalRequestQuery
      * @param EntityRepository<ApprovalRequestCollection> $requests
      * @param EntityRepository<ApprovalNodeExecutionCollection> $executions
      * @param EntityRepository<ApprovalOperationCollection> $operations
+     * @param EntityRepository<UserCollection> $users
      */
     public function __construct(
         private readonly EntityRepository $requests,
         private readonly EntityRepository $executions,
         private readonly EntityRepository $operations,
         private readonly ApprovalFormReader $forms,
+        private readonly EntityRepository $users,
     ) {
     }
 
@@ -57,7 +63,7 @@ class ApprovalRequestQuery
     {
         $userId = $this->userId($context);
         $criteria = (new Criteria())
-            ->addAssociation('instance')
+            ->addAssociation('instance.release')
             ->setLimit($limit)
             ->setOffset($offset)
             ->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT)
@@ -80,20 +86,21 @@ class ApprovalRequestQuery
             $criteria->addFilter(new EqualsFilter('instance.status', $status->value));
         }
         $result = $this->requests->search($criteria, $context);
+        $names = $this->userNames(array_values($result->getEntities()->map(static fn (ApprovalRequestEntity $request): string => $request->getInitiatorId())), $context);
 
         return [
-            'data' => array_values($result->getEntities()->map($this->summary(...))),
+            'data' => array_values($result->getEntities()->map(fn (ApprovalRequestEntity $request): array => $this->summary($request, $names[$request->getInitiatorId()] ?? null))),
             'meta' => ['total' => $result->getTotal()],
         ];
     }
 
     /**
-     * @return array{request: RequestSummary, form: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>}
+     * @return array{request: RequestSummary, form: \stdClass, formLabels: \stdClass, participantNames: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>}
      */
     public function detail(string $requestId, Context $context): array
     {
         $userId = $this->userId($context);
-        $criteria = (new Criteria([$requestId]))->addAssociation('instance.release');
+        $criteria = (new Criteria([$requestId]))->addAssociation('instance.release')->addAssociation('binding');
         $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, [
             new EqualsFilter('initiatorId', $userId),
             new EqualsFilter('instance.executions.tasks.assigneeId', $userId),
@@ -157,30 +164,68 @@ class ApprovalRequestQuery
             ? json_decode($request->getFormJson(), flags: \JSON_THROW_ON_ERROR)
             : $this->forms->read($request->getFormJson(), $release->getNodePlanJson(), $assignedNodeIds);
         \assert($form instanceof \stdClass);
+        $binding = $request->getBinding();
+        \assert($binding !== null);
+        $names = $this->userNames([$request->getInitiatorId(), ...array_column($tasks, 'assigneeId')], $context);
 
-        return ['request' => $this->summary($request), 'form' => $form, 'executions' => $executionSummaries, 'tasks' => $tasks, 'decisions' => $decisions];
+        return [
+            'request' => $this->summary($request, $names[$request->getInitiatorId()] ?? null),
+            'form' => $form,
+            'formLabels' => $this->forms->labels($form, $binding->getFormSchema()),
+            'participantNames' => (object) $names,
+            'executions' => $executionSummaries,
+            'tasks' => $tasks,
+            'decisions' => $decisions,
+        ];
     }
 
     /**
      * @return RequestSummary
      */
-    private function summary(ApprovalRequestEntity $request): array
+    private function summary(ApprovalRequestEntity $request, ?string $initiatorName): array
     {
         $instance = $request->getInstance();
         \assert($instance !== null);
+        $release = $instance->getRelease();
+        \assert($release !== null);
+        /** @var GraphPayload $graph */
+        $graph = json_decode($release->getGraphJson(), flags: \JSON_THROW_ON_ERROR);
 
         return [
             'id' => $request->getId(),
+            'title' => $graph->meta->name,
             'businessType' => $request->getBusinessType(),
             'businessId' => $request->getBusinessId(),
             'submissionRound' => $request->getSubmissionRound(),
             'instanceId' => $request->getInstanceId(),
             'initiatorId' => $request->getInitiatorId(),
+            'initiatorName' => $initiatorName,
             'createdAt' => $request->getCreatedAt()?->format(\DATE_ATOM),
             'status' => $instance->getStatus()->value,
             'outcome' => $instance->getOutcome()?->value,
             'aggregateVersion' => $instance->getAggregateVersion(),
         ];
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return array<string, string>
+     */
+    private function userNames(array $ids, Context $context): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        $criteria = (new Criteria(array_values(array_unique($ids))))->addFields(['id', 'name']);
+        $names = [];
+        foreach ($this->users->search($criteria, $context)->getEntities() as $user) {
+            $name = $user->get('name');
+            \assert(\is_string($name));
+            $names[$user->getId()] = $name;
+        }
+
+        return $names;
     }
 
     private function userId(Context $context): string

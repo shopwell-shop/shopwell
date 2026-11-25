@@ -8,25 +8,44 @@
             "description": "Integer amount in the currency's minor units, within the payment transfer limit.",
             "type": "integer",
             "minimum": 1,
-            "maximum": 10000000000
+            "maximum": 10000000000,
+            "title": "Transfer amount (minor units)",
+            "x-shopwell-label-snippet": "sw-finance.transfer.approvalForm.amount"
         },
         "currency": {
             "type": "string",
-            "pattern": "^[A-Z]{3}$"
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "x-shopwell-label-snippet": "sw-finance.transfer.approvalForm.currency"
         },
         "recipient": {
             "description": "Business-generated recipient label with the account identity masked; never the raw or encrypted account identity.",
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "title": "Recipient",
+            "x-shopwell-label-snippet": "sw-finance.transfer.approvalForm.recipient"
         },
         "paymentAccount": {
             "description": "Business-generated merchant account label; never account credentials.",
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "title": "Payment account",
+            "x-shopwell-label-snippet": "sw-finance.transfer.approvalForm.paymentAccount"
         },
         "reason": {
-            "type": ["string", "null"]
+            "type": [
+                "string",
+                "null"
+            ],
+            "title": "Reason",
+            "x-shopwell-label-snippet": "sw-finance.transfer.approvalForm.reason"
         }
     },
-    "required": ["amount", "currency", "recipient", "paymentAccount", "reason"]
+    "required": [
+        "amount",
+        "currency",
+        "recipient",
+        "paymentAccount",
+        "reason"
+    ]
 }

@@ -30,7 +30,20 @@ These queries grant no task decision, form edit or payment execution authority.
 The response schema is maintained in `AdminApi/paths/approval-flow-query.json`.
 `ApprovalRequestQuery`, `ApprovalFormReader`, `ApprovalRequestView` and `ApprovalRequestController` are implementation services rather than supported PHP extension contracts.
 The `executions` instance association and `tasks` execution association use the normal DAL collection model and do not add tables or write authority.
-Frontend pages and public decision commands remain subsequent increments.
+Summary responses also include the frozen publication name as `title` and the current nullable `initiatorName`.
+Details include `formLabels` keyed by visible field path and `participantNames` for the initiator and assigned reviewers.
+Field labels use the binding's frozen JSON Schema `title` and optional `x-shopwell-label-snippet`; hidden fields have no label entry.
+Names are display data and grant no generic user read access.
+
+## Administration entry points
+
+The top-level Approvals menu contains My pending approvals, My completed reviews and My requests.
+Routes `sw.approval.flow.todo`, `sw.approval.flow.done` and `sw.approval.flow.started` share the personal list page; `sw.approval.flow.detail` opens an application from a list.
+The `approval_flow.viewer` role mapping grants only `approval_flow:access`; routes and menu entries use that mapping.
+The list retains page, limit and status in its URL, and detail links preserve the originating inbox and filters.
+The private module API service uses the personal query endpoints above rather than generic entity repositories.
+The pages display visible form data, progress and decision history; public decision commands remain a subsequent increment.
+The legacy Workflow navigation remains hidden until its replacement is complete.
 
 ## Node declarations
 

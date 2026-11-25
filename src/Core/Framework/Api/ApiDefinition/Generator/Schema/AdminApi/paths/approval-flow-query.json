@@ -140,7 +140,9 @@
                     "createdAt",
                     "status",
                     "outcome",
-                    "aggregateVersion"
+                    "aggregateVersion",
+                    "title",
+                    "initiatorName"
                 ],
                 "properties": {
                     "id": {
@@ -192,6 +194,15 @@
                     },
                     "aggregateVersion": {
                         "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "initiatorName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 }
             },
@@ -346,7 +357,9 @@
                     "form",
                     "executions",
                     "tasks",
-                    "decisions"
+                    "decisions",
+                    "formLabels",
+                    "participantNames"
                 ],
                 "properties": {
                     "request": {
@@ -373,6 +386,33 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ApprovalDecisionSummary"
+                        }
+                    },
+                    "formLabels": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "object",
+                            "required": [
+                                "title",
+                                "labelSnippet"
+                            ],
+                            "properties": {
+                                "title": {
+                                    "type": "string"
+                                },
+                                "labelSnippet": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "participantNames": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
                         }
                     }
                 }

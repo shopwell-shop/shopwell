@@ -1,0 +1,112 @@
+{% block sw_approval_flow_list %}
+<sw-page
+    class="sw-approval-flow-list"
+    :show-search-bar="false"
+>
+    <template #smart-bar-header>
+        <h2>{{ $t('sw-approval-flow.general.title') }} <span
+            v-if="!isLoading && !hasError"
+            class="sw-page__smart-bar-amount"
+        >({{ total }})</span></h2>
+    </template>
+    <template #smart-bar-actions>
+        <mt-button
+            variant="secondary"
+            :disabled="isLoading"
+            @click="loadRequests"
+        >
+            {{ $t('sw-approval-flow.general.refresh') }}
+        </mt-button>
+    </template>
+    <template #content>
+        {% block sw_approval_flow_list_content %}
+        <div
+            v-if="acl.can('approval_flow.viewer')"
+            class="sw-approval-flow-list__content"
+        >
+            <div class="sw-approval-flow-list__toolbar">
+                <mt-tabs
+                    :key="view"
+                    :items="tabs"
+                    :default-item="view"
+                    @new-item-active="onViewChange"
+                />
+                <mt-select
+                    class="sw-approval-flow-list__status"
+                    :label="$t('sw-approval-flow.list.status')"
+                    :model-value="status"
+                    :options="statusOptions"
+                    :hide-clearable-button="true"
+                    @update:model-value="onStatusChange"
+                />
+            </div>
+            <mt-banner
+                v-if="hasError"
+                variant="critical"
+                role="alert"
+            >
+                {{ $t('sw-approval-flow.list.loadError') }}
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="loadRequests"
+                >
+                    {{ $t('sw-approval-flow.general.retry') }}
+                </mt-button>
+            </mt-banner>
+            <div
+                v-else-if="isLoading || requests.length || total"
+                class="sw-approval-flow-list__listing"
+            >
+                <sw-data-grid
+                    :data-source="requests"
+                    :columns="columns"
+                    :is-loading="isLoading"
+                    :show-selection="false"
+                    :show-actions="false"
+                    :allow-inline-edit="false"
+                    :full-page="true"
+                    identifier="id"
+                    class="sw-approval-flow-list__grid"
+                >
+                {% block sw_approval_flow_list_columns %}
+                    <template #column-title="{ item }">
+                        <router-link :to="detailRoute(item.id)">
+                            {{ item.title }}
+                        </router-link>
+                    </template>
+                    <template #column-initiatorName="{ item }">
+                        {{ item.initiatorName ?? $t('sw-approval-flow.general.deletedUser') }}
+                    </template>
+                    <template #column-status="{ item }">
+                        <sw-approval-flow-status-badge
+                            :status="item.status"
+                            :outcome="item.outcome"
+                        />
+                    </template>
+                    <template #column-createdAt="{ item }">
+                        {{ date(item.createdAt) }}
+                    </template>
+                {% endblock %}
+                    <template #pagination>
+                        <sw-pagination
+                            :page="page"
+                            :limit="limit"
+                            :total="total"
+                            :auto-hide="false"
+                            @page-change="onPageChange"
+                        />
+                    </template>
+                </sw-data-grid>
+            </div>
+            <mt-empty-state
+                v-else
+                icon="regular-check-circle"
+                :headline="$t(`sw-approval-flow.empty.${view}`)"
+                :description="$t('sw-approval-flow.empty.description')"
+            />
+        </div>
+        {% endblock %}
+    </template>
+</sw-page>
+{% endblock %}

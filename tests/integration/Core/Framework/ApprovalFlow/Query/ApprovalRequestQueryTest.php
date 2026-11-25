@@ -58,6 +58,7 @@ class ApprovalRequestQueryTest extends TestCase
         $this->authorId = TestUser::createNewTestUser($this->connection)->getUserId();
         $this->reviewerId = TestUser::createNewTestUser($this->connection)->getUserId();
         $this->otherReviewerId = TestUser::createNewTestUser($this->connection)->getUserId();
+        $this->connection->update('user', ['name' => 'Alice'], ['id' => Uuid::fromHexToBytes($this->authorId)]);
         $this->filesystem = new Filesystem();
         $this->directory = sys_get_temp_dir() . '/approval-query-' . Uuid::randomHex();
         $this->runtime = ApprovalRuntimeFixture::container($kernel, PublicationFixture::writeManifest($this->filesystem, $this->directory));
@@ -90,6 +91,8 @@ class ApprovalRequestQueryTest extends TestCase
         static::assertSame(1, $result['meta']['total']);
         static::assertSame($this->request->getId(), $result['data'][0]['id']);
         static::assertSame('running', $result['data'][0]['status']);
+        static::assertSame('Transfer approval', $result['data'][0]['title']);
+        static::assertSame('Alice', $result['data'][0]['initiatorName']);
         static::assertArrayNotHasKey('form', $result['data'][0]);
         static::assertSame(0, $query->search(ApprovalRequestView::Todo, 25, 0, null, $this->context($this->authorId))['meta']['total']);
     }
@@ -140,6 +143,8 @@ class ApprovalRequestQueryTest extends TestCase
         $detail = $query->detail($this->request->getId(), $this->context($this->reviewerId));
 
         static::assertEquals((object) ['amount' => 100], $detail['form']);
+        static::assertSame(['form.amount'], array_keys(get_object_vars($detail['formLabels'])));
+        static::assertSame('Alice', $detail['participantNames']->{$this->authorId});
         static::assertCount(2, $detail['tasks']);
         static::assertCount(1, $detail['decisions']);
         static::assertSame('rejected', $detail['decisions'][0]['decision']);

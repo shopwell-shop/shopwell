@@ -61,6 +61,7 @@ class ApprovalRequestDefinition extends EntityDefinition
             (new IdField('initiator_id', 'initiatorId'))->addFlags(new Required()),
             (new LongTextField('form_json', 'formJson'))->addFlags(new Required(), new AllowHtml(sanitized: false)),
             new ManyToOneAssociationField('instance', 'instance_id', ApprovalInstanceDefinition::class, 'id', false),
+            new ManyToOneAssociationField('binding', 'binding_id', ApprovalBindingDefinition::class, 'id', false),
         ]);
     }
 }

@@ -304,6 +304,13 @@
                 "historyUnavailable": "Approval history could not be loaded. Refresh to retry.",
                 "reason": "Decision reason",
                 "actor": "Handled by"
+            },
+            "approvalForm": {
+                "amount": "Transfer amount (minor units)",
+                "currency": "Currency",
+                "recipient": "Recipient",
+                "paymentAccount": "Payment account",
+                "reason": "Reason"
             }
         },
         "walletTransactions": {

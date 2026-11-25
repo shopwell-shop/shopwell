@@ -128,6 +128,19 @@ class CoreAdminMenuProviderTest extends TestCase
         static::assertNull((new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getPluginTechnicalName());
     }
 
+    public function testPersonalApprovalsBelongToTheirOwnTopLevelFolder(): void
+    {
+        $definitions = array_column($this->definitions, null, 'internalKey');
+        static::assertArrayHasKey('sw-approval-flow', $definitions);
+        static::assertNull($definitions['sw-approval-flow']->parent);
+        static::assertSame(AdminMenuItemDefinition::TYPE_FOLDER, $definitions['sw-approval-flow']->type);
+        static::assertSame('审批', $definitions['sw-approval-flow']->translations['zh-CN']['title']);
+        foreach (['todo', 'done', 'started'] as $view) {
+            static::assertSame('sw-approval-flow', $definitions['sw-approval-flow-' . $view]->parent);
+            static::assertSame('approval_flow.viewer', $definitions['sw-approval-flow-' . $view]->privilege);
+        }
+    }
+
     public function testSettingsRetainTheirOriginalGroups(): void
     {
         $definitions = array_column($this->definitions, null, 'internalKey');

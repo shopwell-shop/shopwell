@@ -72,4 +72,28 @@ class ApprovalFormReaderTest extends TestCase
 
         static::assertSame('{"1":false,"report":{"2026":{"amount":100}}}', json_encode($form, \JSON_THROW_ON_ERROR));
     }
+
+    public function testLabelsDescribeOnlyFieldsPresentInTheVisibleForm(): void
+    {
+        $schema = '{"properties":{"amount":{"title":"Amount (minor units)","x-shopwell-label-snippet":"finance.amount"},"address":{"properties":{"city":{"title":"City"},"street":{"title":"Hidden street"}}},"secret":{"title":"Secret"}}}';
+        $form = json_decode('{"amount":0,"address":{"city":"Shanghai"},"note":null}', flags: \JSON_THROW_ON_ERROR);
+        static::assertInstanceOf(\stdClass::class, $form);
+
+        $labels = (new ApprovalFormReader())->labels($form, $schema);
+
+        static::assertSame(['title' => 'Amount (minor units)', 'labelSnippet' => 'finance.amount'], $labels->{'form.amount'});
+        static::assertSame(['title' => 'City', 'labelSnippet' => null], $labels->{'form.address.city'});
+        static::assertFalse(property_exists($labels, 'form.secret'));
+        static::assertFalse(property_exists($labels, 'form.address.street'));
+    }
+
+    public function testBooleanPropertySchemasUseFieldNamesForNestedLabels(): void
+    {
+        $form = (object) ['open' => (object) ['note' => 'Visible']];
+
+        $labels = (new ApprovalFormReader())->labels($form, '{"properties":{"open":true}}');
+
+        static::assertSame(['title' => 'open', 'labelSnippet' => null], $labels->{'form.open'});
+        static::assertSame(['title' => 'note', 'labelSnippet' => null], $labels->{'form.open.note'});
+    }
 }

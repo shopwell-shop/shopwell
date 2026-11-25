@@ -56,7 +56,10 @@ Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete
 Approval definitions and drafts now have DAL models; writes require the controlled draft path so graph admission, expected revisions and explicit removal confirmation cannot be skipped through ordinary repository or Sync calls.
 An unavailable exact node declaration keeps an existing draft readable and blocks edits until the declaration returns.
 The legacy Workflow navigation is hidden during the replacement, while its existing routes and business execution remain available.
-The new Approval navigation and business pages will be added with their corresponding capabilities.
+The Administration now groups My pending approvals, My completed reviews and My requests under the top-level Approvals menu, with a shared request detail page.
+Assign `approval_flow.viewer` to grant personal query access without generic approval or user entity read privileges.
+Query summaries include `title` and nullable `initiatorName`; details include `formLabels` for visible fields and `participantNames` for the initiator and assigned reviewers.
+Business form schemas may provide `title` and `x-shopwell-label-snippet` annotations for display labels.
 
 ### Dynamic workflow reviewers
 

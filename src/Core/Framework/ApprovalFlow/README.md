@@ -343,7 +343,10 @@ There is no HTTP endpoint for this path and no instance, task, scheduler or acti
 4. Prove new nodes, operations and transfer integration through the public seams before expanding complex execution semantics.
 
 Read the closest implementation and adjacent tests before each increment, and review naming, responsibility, failures and dependency direction alongside tests and lint.
-Introduce Approval navigation when the corresponding capabilities and user paths need an entry point.
+The top-level Approvals navigation now groups My pending approvals, My completed reviews and My requests.
+These pages and their shared request detail use the personal query API and `approval_flow.viewer`; they do not expose internal command services.
+The query response carries readable publication and participant names plus labels for visible form fields from the frozen binding schema.
+Public approve and reject actions remain the next increment.
 The legacy workflow menu is hidden through the existing menu visibility event; removing its code belongs to the completed replacement stage.
 
 ## Source calibration

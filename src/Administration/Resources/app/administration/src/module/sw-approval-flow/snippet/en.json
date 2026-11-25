@@ -1,0 +1,75 @@
+{
+    "sw-approval-flow": {
+        "general": {
+            "title": "Approvals",
+            "description": "Personal approval requests and review history",
+            "refresh": "Refresh",
+            "retry": "Retry",
+            "deletedUser": "Unavailable user",
+            "notAvailable": "Not available"
+        },
+        "views": {
+            "todo": "My pending approvals",
+            "done": "My completed reviews",
+            "started": "My requests"
+        },
+        "list": {
+            "request": "Request",
+            "initiator": "Initiated by",
+            "status": "Status",
+            "createdAt": "Submitted on",
+            "allStatuses": "All statuses",
+            "loadError": "Approvals could not be loaded. Please try again."
+        },
+        "status": {
+            "draft": "Draft",
+            "running": "In progress",
+            "suspended": "Paused",
+            "completed": "Completed",
+            "terminated": "Terminated",
+            "withdrawn": "Withdrawn",
+            "approved": "Approved",
+            "rejected": "Rejected"
+        },
+        "taskStatus": {
+            "pending": "Awaiting review",
+            "approved": "Approved",
+            "rejected": "Rejected",
+            "cancelled": "No longer required"
+        },
+        "executionStatus": {
+            "waiting": "Waiting to start",
+            "awaiting_approval": "Awaiting review",
+            "completed": "Completed"
+        },
+        "empty": {
+            "todo": "No pending approvals",
+            "done": "No completed reviews",
+            "started": "No requests submitted",
+            "description": "Change the status filter or return later."
+        },
+        "detail": {
+            "title": "Approval details",
+            "back": "Back to approvals",
+            "summary": "Request information",
+            "form": "Submitted form",
+            "progress": "Process progress",
+            "decisions": "Review history",
+            "step": "Step {number}",
+            "notFound": "This request is unavailable or you do not have access.",
+            "forbidden": "You do not have permission to view approvals.",
+            "loadError": "The request could not be loaded. Please try again.",
+            "noVisibleFields": "There are no form fields available to view.",
+            "noDecisions": "No review has been submitted yet.",
+            "noComment": "No comment",
+            "notFilled": "Not provided"
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "approval_flow": {
+                "label": "Approvals"
+            }
+        }
+    }
+}

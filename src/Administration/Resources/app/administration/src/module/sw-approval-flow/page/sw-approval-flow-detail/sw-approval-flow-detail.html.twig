@@ -1,0 +1,130 @@
+{% block sw_approval_flow_detail %}
+<sw-page
+    class="sw-approval-flow-detail"
+    :show-search-bar="false"
+>
+    <template #smart-bar-back>
+        <router-link
+            :to="backRoute"
+            class="sw-approval-flow-detail__back"
+        >
+            {{ $t('sw-approval-flow.detail.back') }}
+        </router-link>
+    </template>
+    <template #smart-bar-header>
+        <h2>{{ detail?.request.title ?? $t('sw-approval-flow.detail.title') }}</h2>
+    </template>
+    <template #smart-bar-actions>
+        <mt-button
+            variant="secondary"
+            :disabled="isLoading"
+            @click="loadDetail"
+        >
+            {{ $t('sw-approval-flow.general.refresh') }}
+        </mt-button>
+    </template>
+    <template #content>
+        <sw-loader v-if="isLoading" />
+        <sw-card-view v-else-if="acl.can('approval_flow.viewer')">
+            <mt-banner
+                v-if="loadError"
+                variant="critical"
+                role="alert"
+            >
+                {{ $t(`sw-approval-flow.detail.${loadError}`) }}
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="loadDetail"
+                >
+                    {{ $t('sw-approval-flow.general.retry') }}
+                </mt-button>
+            </mt-banner>
+            <template v-else-if="detail">
+                {% block sw_approval_flow_detail_summary %}
+                <mt-card
+                    :title="$t('sw-approval-flow.detail.summary')"
+                    position-identifier="sw-approval-flow-detail-summary"
+                >
+                    <dl class="sw-approval-flow-detail__fields">
+                        <div><dt>{{ $t('sw-approval-flow.list.status') }}</dt><dd><sw-approval-flow-status-badge
+                            :status="detail.request.status"
+                            :outcome="detail.request.outcome"
+                        /></dd></div>
+                        <div><dt>{{ $t('sw-approval-flow.list.initiator') }}</dt><dd>{{ detail.request.initiatorName ?? $t('sw-approval-flow.general.deletedUser') }}</dd></div>
+                        <div><dt>{{ $t('sw-approval-flow.list.createdAt') }}</dt><dd>{{ date(detail.request.createdAt) }}</dd></div>
+                    </dl>
+                </mt-card>
+                {% endblock %}
+                {% block sw_approval_flow_detail_form %}
+                <mt-card
+                    :title="$t('sw-approval-flow.detail.form')"
+                    position-identifier="sw-approval-flow-detail-form"
+                >
+                    <dl
+                        v-if="formRows.length"
+                        class="sw-approval-flow-detail__fields"
+                    >
+                        <div
+                            v-for="field in formRows"
+                            :key="field.path"
+                        >
+                            <dt>{{ field.label }}</dt><dd>{{ formValue(field.value) }}</dd>
+                        </div>
+                    </dl>
+                    <p v-else>
+                        {{ $t('sw-approval-flow.detail.noVisibleFields') }}
+                    </p>
+                </mt-card>
+                {% endblock %}
+                {% block sw_approval_flow_detail_progress %}
+                <mt-card
+                    :title="$t('sw-approval-flow.detail.progress')"
+                    position-identifier="sw-approval-flow-detail-progress"
+                >
+                    <ol class="sw-approval-flow-detail__steps">
+                        <li
+                            v-for="step in steps"
+                            :key="step.id"
+                        >
+                            <strong>{{ $t('sw-approval-flow.detail.step', { number: step.sequence }) }}</strong>
+                            <span>{{ $t(`sw-approval-flow.executionStatus.${step.status}`) }}</span>
+                            <ul v-if="step.tasks.length">
+                                <li
+                                    v-for="task in step.tasks"
+                                    :key="task.id"
+                                >
+                                    {{ personName(task.assigneeId) }} · {{ $t(`sw-approval-flow.taskStatus.${task.status}`) }}
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                </mt-card>
+                {% endblock %}
+                {% block sw_approval_flow_detail_decisions %}
+                <mt-card
+                    :title="$t('sw-approval-flow.detail.decisions')"
+                    position-identifier="sw-approval-flow-detail-decisions"
+                >
+                    <ol
+                        v-if="detail.decisions.length"
+                        class="sw-approval-flow-detail__decisions"
+                    >
+                        <li
+                            v-for="decision in detail.decisions"
+                            :key="decision.taskId"
+                        >
+                            <div><strong>{{ personName(decision.assigneeId) }}</strong> · {{ $t(`sw-approval-flow.taskStatus.${decision.decision}`) }}<time :datetime="decision.decidedAt">{{ date(decision.decidedAt) }}</time></div>
+                            <p>{{ decision.reason || $t('sw-approval-flow.detail.noComment') }}</p>
+                        </li>
+                    </ol>
+                    <p v-else>
+                        {{ $t('sw-approval-flow.detail.noDecisions') }}
+                    </p>
+                </mt-card>
+                {% endblock %}
+            </template>
+        </sw-card-view>
+    </template>
+</sw-page>
+{% endblock %}

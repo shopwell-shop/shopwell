@@ -40,6 +40,7 @@ final class ApprovalRuntimeFixture
             'event_dispatcher' => $kernel->get('event_dispatcher'),
             'logger' => $kernel->get('logger'),
             'scheduled_task.repository' => $kernel->get('scheduled_task.repository'),
+            'user.repository' => $kernel->get('user.repository'),
             ApprovalDraftStore::class => $kernel->get(ApprovalDraftStore::class),
             ApprovalRequestStore::class => $kernel->get(ApprovalRequestStore::class),
             ApprovalBusinessTypeRegistry::class => $kernel->get(ApprovalBusinessTypeRegistry::class),

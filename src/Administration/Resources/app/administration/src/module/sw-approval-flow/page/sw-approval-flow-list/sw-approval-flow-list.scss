@@ -1,0 +1,28 @@
+.sw-approval-flow-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+    }
+
+    &__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: var(--scale-size-16);
+        padding: var(--scale-size-16) var(--scale-size-24);
+        background: var(--color-background-primary-default);
+    }
+
+    &__status {
+        flex: 0 1 240px;
+    }
+
+    &__listing {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+    }
+}

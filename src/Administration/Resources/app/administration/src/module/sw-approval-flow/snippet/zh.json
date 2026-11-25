@@ -1,0 +1,75 @@
+{
+    "sw-approval-flow": {
+        "general": {
+            "title": "审批",
+            "description": "查看个人审批申请和处理记录",
+            "refresh": "刷新",
+            "retry": "重试",
+            "deletedUser": "用户不可用",
+            "notAvailable": "暂无"
+        },
+        "views": {
+            "todo": "我的待办",
+            "done": "我的已办",
+            "started": "我发起的"
+        },
+        "list": {
+            "request": "审批申请",
+            "initiator": "发起人",
+            "status": "状态",
+            "createdAt": "发起时间",
+            "allStatuses": "全部状态",
+            "loadError": "审批列表加载失败，请重试。"
+        },
+        "status": {
+            "draft": "草稿",
+            "running": "审批中",
+            "suspended": "已暂停",
+            "completed": "已结束",
+            "terminated": "已终止",
+            "withdrawn": "已撤回",
+            "approved": "已通过",
+            "rejected": "已驳回"
+        },
+        "taskStatus": {
+            "pending": "待审批",
+            "approved": "已同意",
+            "rejected": "已驳回",
+            "cancelled": "无需处理"
+        },
+        "executionStatus": {
+            "waiting": "待进入",
+            "awaiting_approval": "待审批",
+            "completed": "已完成"
+        },
+        "empty": {
+            "todo": "暂无待办审批",
+            "done": "暂无已办审批",
+            "started": "暂无发起的审批",
+            "description": "可调整状态筛选，或稍后再来查看。"
+        },
+        "detail": {
+            "title": "审批详情",
+            "back": "返回审批列表",
+            "summary": "申请信息",
+            "form": "申请内容",
+            "progress": "流程进度",
+            "decisions": "审批记录",
+            "step": "第 {number} 步",
+            "notFound": "申请不存在，或你没有查看权限。",
+            "forbidden": "你没有查看审批的权限。",
+            "loadError": "审批详情加载失败，请重试。",
+            "noVisibleFields": "暂无可查看的表单内容。",
+            "noDecisions": "暂无审批意见。",
+            "noComment": "未填写意见",
+            "notFilled": "未填写"
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "approval_flow": {
+                "label": "审批"
+            }
+        }
+    }
+}

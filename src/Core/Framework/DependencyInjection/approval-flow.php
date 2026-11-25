@@ -83,6 +83,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalFormReader::class);
     $services->set(ApprovalRequestQuery::class)->args([
         service('approval_flow_request.repository'), service('approval_flow_execution.repository'), service('approval_flow_operation.repository'), service(ApprovalFormReader::class),
+        service('user.repository'),
     ]);
     $services->set(ApprovalRequestController::class)->args([service(ApprovalRequestQuery::class)])->tag('controller.service_arguments');
 

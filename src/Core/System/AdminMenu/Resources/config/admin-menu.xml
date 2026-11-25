@@ -105,6 +105,22 @@
             <title lang="zh-CN">邮件订阅者</title>
         </menu>
     </menu>
+    <menu id="sw-approval-flow" type="folder" icon="regular-check-circle" position="71">
+        <title lang="en-GB">Approvals</title>
+        <title lang="zh-CN">审批</title>
+        <menu id="sw-approval-flow-todo" position="10" privilege="approval_flow.viewer">
+            <title lang="en-GB">My pending approvals</title>
+            <title lang="zh-CN">我的待办</title>
+        </menu>
+        <menu id="sw-approval-flow-done" position="20" privilege="approval_flow.viewer">
+            <title lang="en-GB">My completed reviews</title>
+            <title lang="zh-CN">我的已办</title>
+        </menu>
+        <menu id="sw-approval-flow-started" position="30" privilege="approval_flow.viewer">
+            <title lang="en-GB">My requests</title>
+            <title lang="zh-CN">我发起的</title>
+        </menu>
+    </menu>
     <menu id="sw-workflow" type="folder" icon="regular-flow" position="72">
         <title lang="en-GB">Workflow</title>
         <title lang="zh-CN">工作流</title>

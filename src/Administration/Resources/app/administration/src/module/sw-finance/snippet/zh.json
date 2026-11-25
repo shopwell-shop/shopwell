@@ -304,6 +304,13 @@
                 "historyUnavailable": "审批记录加载失败，请刷新重试。",
                 "reason": "处理意见",
                 "actor": "处理人"
+            },
+            "approvalForm": {
+                "amount": "转账金额（最小货币单位）",
+                "currency": "转账币种",
+                "recipient": "收款人",
+                "paymentAccount": "付款账户",
+                "reason": "转账说明"
             }
         },
         "walletTransactions": {
