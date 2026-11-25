@@ -88,6 +88,14 @@ export interface ApprovalDesignDraft {
 }
 
 /** @private */
+export interface ApprovalReleaseActivation {
+    businessType: string;
+    businessVersion: string;
+    expectedRevision: number;
+    expectedVersion: number;
+}
+
+/** @private */
 export default class ApprovalFlowDesignApiService extends ApiService {
     constructor(httpClient: HttpClient, loginService: LoginService) {
         super(httpClient, loginService, 'approval-flow', 'application/json');
@@ -125,5 +133,31 @@ export default class ApprovalFlowDesignApiService extends ApiService {
                 { headers: this.getBasicHeaders() },
             )
             .then((response) => response.data);
+    }
+
+    previewPublication(definitionId: string, expectedRevision: number): Promise<{ contentHash: string }> {
+        return this.httpClient
+            .post<{
+                contentHash: string;
+            }>(`/_action/approval-flow/design/drafts/${definitionId}/publication-preview`, { expectedRevision }, { headers: this.getBasicHeaders() })
+            .then((response) => response.data);
+    }
+
+    publish(definitionId: string, expectedRevision: number, expectedHash: string): Promise<void> {
+        return this.httpClient
+            .post(
+                `/_action/approval-flow/design/drafts/${definitionId}/publish`,
+                { expectedRevision, expectedHash },
+                { headers: this.getBasicHeaders() },
+            )
+            .then(() => undefined);
+    }
+
+    activateRelease(releaseId: string, activation: ApprovalReleaseActivation): Promise<void> {
+        return this.httpClient
+            .post(`/_action/approval-flow/design/releases/${releaseId}/activate`, activation, {
+                headers: this.getBasicHeaders(),
+            })
+            .then(() => undefined);
     }
 }

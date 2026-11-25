@@ -249,6 +249,23 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         expect(saveButton(wrapper).attributes('data-loading')).toBe('false');
     });
 
+    it('submits to the active Approval Flow without displaying the legacy preview', async () => {
+        const { wrapper, createTransfer } = await createWrapper({
+            getOptions: jest.fn().mockResolvedValue({
+                apps,
+                defaultAppId: 'app-1',
+                workflowAvailable: true,
+                approvalFlowActive: true,
+            }),
+        });
+        await fillExistingRecipient(wrapper);
+
+        expect(wrapper.find('.preview-probe').exists()).toBe(false);
+        await saveButton(wrapper).trigger('click');
+        await flushPromises();
+        expect(createTransfer).toHaveBeenCalledTimes(1);
+    });
+
     it('should preserve a settlement amount and use its booking handler', async () => {
         const bookTransfer = jest.fn(() => Promise.resolve({ transfer: { id: 'settlement-transfer' }, replayed: false }));
         const { wrapper, createTransfer } = await createWrapper(

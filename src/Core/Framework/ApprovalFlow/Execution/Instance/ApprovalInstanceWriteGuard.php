@@ -47,7 +47,7 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
     ];
 
     /**
-     * @var \WeakMap<Context, self::COMMAND_WRITE|self::REQUEST_WRITE>
+     * @var \WeakMap<Context, array{mode: self::COMMAND_WRITE|self::REQUEST_WRITE, scope: string}>
      */
     private \WeakMap $pendingWrites;
 
@@ -101,14 +101,13 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
             return;
         }
         $context = $event->getContext();
-        $mode = $this->pendingWrites->offsetExists($context) ? $this->pendingWrites->offsetGet($context) : null;
-        $expectedScope = $mode === self::REQUEST_WRITE ? self::REQUEST_SCOPE : Context::SYSTEM_SCOPE;
-        $allowed = $context->getScope() === $expectedScope && $mode !== null;
+        $pending = $this->pendingWrites->offsetExists($context) ? $this->pendingWrites->offsetGet($context) : null;
         // Consume before ordinary listeners run; system scope alone never authorizes another batch.
         $this->pendingWrites->offsetUnset($context);
-        if (!$allowed) {
+        if ($pending === null || $context->getScope() !== $pending['scope']) {
             throw ApprovalFlowException::uncontrolledInstanceWrite();
         }
+        $mode = $pending['mode'];
         foreach ($commands as $command) {
             if ($mode === self::REQUEST_WRITE) {
                 if (!$command instanceof InsertCommand || !\in_array($command->getEntityName(), [ApprovalRequestDefinition::ENTITY_NAME, ApprovalInstanceDefinition::ENTITY_NAME], true)) {
@@ -173,9 +172,12 @@ final class ApprovalInstanceWriteGuard implements EventSubscriberInterface
      */
     private function runWrite(Context $context, \Closure $write, string $mode): void
     {
-        $this->pendingWrites->offsetSet($context, $mode);
+        $scope = $mode === self::REQUEST_WRITE && $context->getScope() !== Context::SYSTEM_SCOPE
+            ? self::REQUEST_SCOPE
+            : Context::SYSTEM_SCOPE;
+        $this->pendingWrites->offsetSet($context, ['mode' => $mode, 'scope' => $scope]);
         try {
-            $context->scope($mode === self::REQUEST_WRITE ? self::REQUEST_SCOPE : Context::SYSTEM_SCOPE, $write);
+            $context->scope($scope, $write);
         } finally {
             $this->pendingWrites->offsetUnset($context);
         }

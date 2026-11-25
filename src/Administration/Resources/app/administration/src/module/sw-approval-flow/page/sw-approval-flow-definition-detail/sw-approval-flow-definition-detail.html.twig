@@ -14,10 +14,20 @@
     <template #smart-bar-actions>
         <mt-button
             variant="secondary"
-            :disabled="isLoading"
+            :disabled="isLoading || isPublishing"
             @click="loadDefinition"
         >
             {{ $t('sw-approval-flow.general.refresh') }}
+        </mt-button>
+        <mt-button
+            v-if="detail && acl.can('approval_flow_definition.publisher')"
+            data-testid="approval-publication-preview"
+            variant="secondary"
+            :disabled="isPublishing"
+            :is-loading="isPublishing && !publicationPreview"
+            @click="preparePublication"
+        >
+            {{ $t('sw-approval-flow.design.publish') }}
         </mt-button>
         <mt-button
             is="router-link"
@@ -46,6 +56,19 @@
                 </mt-button>
             </mt-banner>
             <template v-else-if="detail && graph">
+                <mt-banner
+                    v-if="publicationError"
+                    variant="critical"
+                    role="alert"
+                >
+                    {{ publicationError }}
+                </mt-banner>
+                <mt-banner
+                    v-else-if="releaseListVersion"
+                    variant="positive"
+                >
+                    {{ $t('sw-approval-flow.design.published') }}
+                </mt-banner>
                 {% block sw_approval_flow_definition_detail_summary %}
                 <mt-card
                     :title="$t('sw-approval-flow.design.draftSummary')"
@@ -113,12 +136,47 @@
                 {% endblock %}
                 {% block sw_approval_flow_definition_detail_releases %}
                 <sw-approval-flow-release-list
-                    :key="definitionId"
+                    :key="releaseListVersion"
                     :definition-id="definitionId"
+                    :allow-activation="acl.can('approval_flow_definition.activator')"
+                    :business-types="catalog?.businessTypes ?? []"
                 />
                 {% endblock %}
             </template>
         </sw-card-view>
+        <mt-modal-root
+            v-if="publicationPreview"
+            :is-open="true"
+            :closable="!isPublishing"
+            @change="!$event && closePublication()"
+        >
+            <mt-modal
+                width="s"
+                :title="$t('sw-approval-flow.design.publish')"
+            >
+                <p>{{ $t('sw-approval-flow.design.confirmPublication', { revision: publicationPreview.revision }) }}</p>
+                <template #footer>
+                    <div class="sw-approval-flow-definition-detail__modal-footer">
+                        <mt-button
+                            variant="secondary"
+                            :disabled="isPublishing"
+                            @click="closePublication"
+                        >
+                            {{ $t('global.default.cancel') }}
+                        </mt-button>
+                        <mt-button
+                            data-testid="approval-publish"
+                            variant="primary"
+                            :disabled="isPublishing"
+                            :is-loading="isPublishing"
+                            @click="publish"
+                        >
+                            {{ $t('sw-approval-flow.design.publish') }}
+                        </mt-button>
+                    </div>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
     </template>
 </sw-page>
 {% endblock %}

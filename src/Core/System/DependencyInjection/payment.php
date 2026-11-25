@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingStore;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeSourceDirectory;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\YamlApprovalBusinessTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
@@ -115,6 +116,7 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionEntity;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBindingSubscriber;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBooking;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestEntity;
@@ -125,6 +127,7 @@ use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResult
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultVerifier;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalView;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferResubmissionSubscriber;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferWriteProtection;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
@@ -735,6 +738,19 @@ return static function (ContainerConfigurator $container): void {
         service('event_dispatcher'),
         service(PaymentTransferApprovalResultVerifier::class),
     ])->tag('kernel.event_listener', ['event' => WorkflowRequestCatalogueEvent::class, 'method' => 'restrictRequestCatalogue']);
+    $services->set(PaymentTransferApprovalBooking::class)->args([
+        service(Connection::class),
+        service(ApprovalBindingStore::class),
+        service(PaymentTransferBooking::class),
+        service(PaymentTransferApprovalStore::class),
+        service(PaymentTransferApprovalRequestStore::class),
+        service(PaymentTransferApprovalService::class),
+        service(PaymentTransferApprovalRequestService::class),
+    ]);
+    $services->set(PaymentTransferApprovalView::class)->args([
+        service('approval_flow_request.repository'),
+        service('payment_transfer_approval_result.repository'),
+    ]);
     $services->set(PaymentTransferWriteProtection::class)->tag('kernel.event_subscriber');
 
     $services->set(PaymentTransferResultBooker::class)
@@ -793,6 +809,8 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentTransferPresenter::class),
             service(PaymentProviderRegistry::class),
             service(PaymentTransferApprovalService::class),
+            service(PaymentTransferApprovalBooking::class),
+            service(PaymentTransferApprovalView::class),
         ])
         ->tag('controller.service_arguments');
 

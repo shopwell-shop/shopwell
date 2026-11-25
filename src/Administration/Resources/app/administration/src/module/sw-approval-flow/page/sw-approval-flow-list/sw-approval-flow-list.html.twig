@@ -26,7 +26,7 @@
         {% block sw_approval_flow_list_content %}
         <div
             v-if="acl.can('approval_flow.viewer')"
-            class="sw-approval-flow-list__content"
+            class="sw-approval-flow-list__content sw-approval-flow-listing"
         >
             <mt-tabs
                 class="sw-approval-flow-list__tabs"
@@ -36,7 +36,7 @@
                 @new-item-active="onViewChange"
             />
             <mt-data-table
-                class="sw-approval-flow-list__table"
+                class="sw-approval-flow-list__table sw-approval-flow-listing__table"
                 :data-source="requests"
                 :columns="columns"
                 :caption="$t(`sw-approval-flow.views.${view}`)"
@@ -47,6 +47,7 @@
                 :disable-edit="true"
                 :disable-delete="true"
                 :disable-settings-table="true"
+                :additional-context-buttons="[{ key: 'view', label: $t('global.default.view') }]"
                 :show-outlines="false"
                 :enable-outline-framing="false"
                 :current-page="page"
@@ -54,6 +55,7 @@
                 :pagination-total-items="total"
                 :pagination-options="[10, 25, 50, 100]"
                 @search-value-change="onSearch"
+                @context-select="$event.key === 'view' && $router.push(detailRoute($event.data.id))"
                 @pagination-current-page-change="onPageChange({ page: $event, limit })"
                 @pagination-limit-change="onPageChange({ page: 1, limit: $event })"
             >
@@ -93,7 +95,7 @@
                 {% block sw_approval_flow_list_columns %}
                 <template #column-title="{ data }">
                     <router-link
-                        class="sw-approval-flow-list__request"
+                        class="sw-approval-flow-list__request sw-approval-flow-listing__link"
                         :to="detailRoute(data.id)"
                     >
                         {{ data.title }}
@@ -110,16 +112,6 @@
                 </template>
                 <template #column-createdAt="{ data }">
                     {{ date(data.createdAt) }}
-                </template>
-                <template #column-actions="{ data }">
-                    <mt-button
-                        is="router-link"
-                        variant="tertiary"
-                        size="small"
-                        :to="detailRoute(data.id)"
-                    >
-                        {{ $t('global.default.view') }}
-                    </mt-button>
                 </template>
                 {% endblock %}
                 <template #empty-state>

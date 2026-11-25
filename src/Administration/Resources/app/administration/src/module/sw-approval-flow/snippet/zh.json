@@ -111,7 +111,20 @@
                 "structure": "流程结构",
                 "draft": "节点配置",
                 "capability": "能力缺失"
-            }
+            },
+            "publish": "发布",
+            "published": "版本已发布。",
+            "confirmPublication": "发布草稿修订 {revision}？",
+            "publicationConflict": "草稿或发布内容已变化，请刷新后重试。",
+            "publicationError": "版本发布失败。",
+            "activate": "启用",
+            "activated": "版本已启用，新申请将使用此版本。",
+            "alreadyActive": "当前已启用此版本。",
+            "confirmActivation": "让此业务的新申请使用修订 {revision}？已发起的申请继续使用原版本。",
+            "activationConflict": "当前生效的流程已变化，请刷新后重新确认。",
+            "activationError": "版本启用失败。",
+            "bindingLoadError": "当前流程配置加载失败。",
+            "noCompatibleBusiness": "此版本暂无可用的业务类型。"
         },
         "node": {
             "start": "发起",
@@ -160,6 +173,13 @@
             },
             "approval_flow_definition": {
                 "label": "流程定义"
+            }
+        },
+        "additional_permissions": {
+            "approval_flow_definition": {
+                "label": "流程定义",
+                "publisher": "发布审批流程",
+                "activator": "启用审批流程"
             }
         }
     }

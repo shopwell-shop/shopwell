@@ -21,7 +21,11 @@
                   "properties": {
                     "workflowAvailable": {
                       "type": "boolean",
-                      "description": "Whether a mandatory compatible approval workflow is configured and executable."
+                      "description": "Whether a transfer approval flow is configured."
+                    },
+                    "approvalFlowActive": {
+                      "type": "boolean",
+                      "description": "Whether new transfer bookings use the published version selected in Approval Flow."
                     }
                   }
                 }

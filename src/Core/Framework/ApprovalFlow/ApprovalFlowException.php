@@ -76,6 +76,7 @@ class ApprovalFlowException extends HttpException
     public const UNCONTROLLED_DRAFT_WRITE = 'APPROVAL_FLOW__UNCONTROLLED_DRAFT_WRITE';
     public const INVALID_GRAPH = 'APPROVAL_FLOW__INVALID_GRAPH';
     public const PUBLICATION_GRAPH_INVALID = 'APPROVAL_FLOW__PUBLICATION_GRAPH_INVALID';
+    public const INVALID_RELEASE_COMMAND = 'APPROVAL_FLOW__INVALID_RELEASE_COMMAND';
     public const INVALID_GRAPH_PLAN = 'APPROVAL_FLOW__INVALID_GRAPH_PLAN';
 
     public const INVALID_EXECUTION_PLAN = 'APPROVAL_FLOW__INVALID_EXECUTION_PLAN';
@@ -486,6 +487,16 @@ class ApprovalFlowException extends HttpException
             self::PUBLICATION_CONTENT_CONFLICT,
             'Approval publication content changed for "{{ definitionId }}"; prepare a new preview.',
             ['definitionId' => $definitionId, 'expectedHash' => $expectedHash, 'actualHash' => $actualHash]
+        );
+    }
+
+    public static function invalidReleaseCommand(string $field): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_RELEASE_COMMAND,
+            'Approval release requires a valid "{{ field }}".',
+            ['field' => $field],
         );
     }
 

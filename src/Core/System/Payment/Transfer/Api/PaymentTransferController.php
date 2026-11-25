@@ -18,8 +18,10 @@ use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBooking;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalException;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalView;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
@@ -104,6 +106,8 @@ class PaymentTransferController
         private readonly PaymentTransferPresenter $presenter,
         private readonly PaymentProviderRegistry $providerRegistry,
         private readonly PaymentTransferApprovalService $approvals,
+        private readonly PaymentTransferApprovalBooking $approvalBooking,
+        private readonly PaymentTransferApprovalView $approvalView,
     ) {
     }
 
@@ -153,7 +157,13 @@ class PaymentTransferController
             return strcmp($left->technicalName, $right->technicalName);
         });
 
-        return new JsonResponse([...$this->presenter->options($apps, $this->providerRegistry), 'workflowAvailable' => $this->approvals->available($context)]);
+        $approvalFlowActive = $this->approvalBooking->usesApprovalFlow($context);
+
+        return new JsonResponse([
+            ...$this->presenter->options($apps, $this->providerRegistry),
+            'workflowAvailable' => $approvalFlowActive || $this->approvals->available($context),
+            'approvalFlowActive' => $approvalFlowActive,
+        ]);
     }
 
     /**
@@ -234,7 +244,7 @@ class PaymentTransferController
         $app = $this->booking->resolveApp($draft->paymentAppId);
         $replayed = $draft->outNo !== null && $this->transferService->getByOutNo($app, $draft->outNo) !== null;
 
-        $transfer = $this->approvals->book($draft, $context);
+        $transfer = $this->approvalBooking->book($draft, $context);
 
         return new JsonResponse(
             [
@@ -410,13 +420,18 @@ class PaymentTransferController
             $normalized[] = strtolower($id);
         }
 
-        return new JsonResponse(['approvals' => (object) $this->approvals->summaries(array_values(array_unique($normalized)), $context)]);
+        $transferIds = array_values(array_unique($normalized));
+
+        return new JsonResponse(['approvals' => (object) array_replace(
+            $this->approvals->summaries($transferIds, $context),
+            $this->approvalView->summaries($transferIds, $context),
+        )]);
     }
 
     #[Route(path: '/api/_action/payment/transfers/{id}/approval', name: 'api.action.payment.transfer.approval', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read']], methods: [Request::METHOD_GET])]
     public function approval(string $id, Context $context): JsonResponse
     {
-        return new JsonResponse($this->approvals->status($id, $context));
+        return new JsonResponse($this->approvalView->detail($id, $context) + $this->approvals->status($id, $context));
     }
 
     #[Route(path: '/api/_action/payment/transfers/{id}/approval/cancel', name: 'api.action.payment.transfer.approval.cancel', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create']], methods: [Request::METHOD_POST])]

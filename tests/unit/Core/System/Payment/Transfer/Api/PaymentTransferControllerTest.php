@@ -34,7 +34,9 @@ use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBooking;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalView;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -404,6 +406,8 @@ class PaymentTransferControllerTest extends TestCase
             new PaymentTransferPresenter($cipher),
             $providerRegistry,
             $this->approval(),
+            static::createStub(PaymentTransferApprovalBooking::class),
+            static::createStub(PaymentTransferApprovalView::class),
         );
     }
 
@@ -548,6 +552,8 @@ class PaymentTransferControllerTest extends TestCase
             new PaymentTransferPresenter($cipher),
             $providerRegistry,
             $this->approval(),
+            static::createStub(PaymentTransferApprovalBooking::class),
+            static::createStub(PaymentTransferApprovalView::class),
         );
     }
 

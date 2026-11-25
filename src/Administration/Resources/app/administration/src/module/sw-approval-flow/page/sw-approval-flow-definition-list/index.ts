@@ -1,7 +1,6 @@
 /** @sw-package framework */
 import type Repository from 'src/core/data/repository.data';
 import template from './sw-approval-flow-definition-list.html.twig';
-import './sw-approval-flow-definition-list.scss';
 
 /** @private */
 export default Shopwell.Component.wrapComponentConfig({

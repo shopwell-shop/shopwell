@@ -81,7 +81,6 @@ export default Shopwell.Component.wrapComponentConfig({
                 initiatorName: this.$t('sw-approval-flow.list.initiator'),
                 status: this.$t('sw-approval-flow.list.status'),
                 createdAt: this.$t('sw-approval-flow.list.createdAt'),
-                actions: this.$t('sw-approval-flow.list.actions'),
             };
 
             return Object.entries(labels).map(([property, label], position) => ({
@@ -89,7 +88,6 @@ export default Shopwell.Component.wrapComponentConfig({
                 label,
                 position,
                 renderer: 'text' as const,
-                width: property === 'actions' ? 112 : undefined,
                 sortable: false,
                 allowResize: false,
             }));

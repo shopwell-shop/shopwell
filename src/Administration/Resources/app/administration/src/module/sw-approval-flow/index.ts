@@ -1,5 +1,6 @@
 /** @sw-package framework */
 import './acl';
+import './sw-approval-flow-listing.scss';
 import ApprovalDesignerService from './designer/approval-designer.service';
 import ApprovalFlowApiService from './service/approval-flow.api.service';
 import ApprovalFlowDesignApiService from './service/approval-flow-design.api.service';
@@ -96,6 +97,11 @@ Shopwell.Component.register('sw-approval-flow-definition-list', () => import('./
 Shopwell.Component.register('sw-approval-flow-definition-detail', () => import('./page/sw-approval-flow-definition-detail'));
 /** @private */
 Shopwell.Component.register('sw-approval-flow-release-list', () => import('./component/sw-approval-flow-release-list'));
+/** @private */
+Shopwell.Component.register(
+    'sw-approval-flow-release-activation',
+    () => import('./component/sw-approval-flow-release-activation'),
+);
 
 /** @private */
 Shopwell.Component.register('sw-approval-flow-list', () => import('./page/sw-approval-flow-list'));

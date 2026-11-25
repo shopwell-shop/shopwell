@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalDesignController;
+use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalReleaseController;
 use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalRequestController;
 use Shopwell\Core\Framework\ApprovalFlow\Api\ApprovalTaskController;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingDefinition;
@@ -106,6 +107,9 @@ return static function (ContainerConfigurator $container): void {
         service('user.repository'), service(Connection::class),
     ]);
     $services->set(ApprovalDesignController::class)->args([service(ApprovalDesignCatalog::class), service(GraphDiagnostics::class), service(ApprovalDraftService::class)])->tag('controller.service_arguments');
+    $services->set(ApprovalReleaseController::class)->args([
+        service(ApprovalDraftService::class), service(ApprovalReleaseService::class), service(ApprovalBindingService::class),
+    ])->tag('controller.service_arguments');
     $services->set(ApprovalTaskController::class)->args([service(ApprovalInstanceService::class)])->tag('controller.service_arguments');
     $services->set(ApprovalRequestController::class)->args([service(ApprovalRequestQuery::class)])->tag('controller.service_arguments');
 

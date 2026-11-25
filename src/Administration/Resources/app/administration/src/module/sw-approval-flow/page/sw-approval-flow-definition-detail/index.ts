@@ -27,8 +27,23 @@ export default Shopwell.Component.wrapComponentConfig({
         loadError: string | null;
         catalogError: boolean;
         loadRevision: number;
+        publicationPreview: { revision: number; contentHash: string } | null;
+        isPublishing: boolean;
+        publicationError: string | null;
+        releaseListVersion: number;
     } {
-        return { detail: null, catalog: null, isLoading: false, loadError: null, catalogError: false, loadRevision: 0 };
+        return {
+            detail: null,
+            catalog: null,
+            isLoading: false,
+            loadError: null,
+            catalogError: false,
+            loadRevision: 0,
+            publicationPreview: null,
+            isPublishing: false,
+            publicationError: null,
+            releaseListVersion: 0,
+        };
     },
     metaInfo() {
         return { title: this.$createTitle() };
@@ -102,6 +117,10 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
             this.loadError = null;
             this.catalogError = false;
+            this.publicationPreview = null;
+            this.publicationError = null;
+            this.isPublishing = false;
+            this.releaseListVersion = 0;
             const [definition, catalog] = await Promise.allSettled([
                 this.loadDocument(),
                 this.approvalFlowDesignApiService.catalog(),
@@ -123,6 +142,67 @@ export default Shopwell.Component.wrapComponentConfig({
                 this.catalog = catalog.value;
             } else {
                 this.catalogError = true;
+            }
+        },
+        async preparePublication(): Promise<void> {
+            if (!this.detail) {
+                return;
+            }
+            const { revision } = this.detail.draft;
+            const loadRevision = this.loadRevision;
+            this.isPublishing = true;
+            this.publicationError = null;
+            try {
+                const { contentHash } = await this.approvalFlowDesignApiService.previewPublication(
+                    this.definitionId,
+                    revision,
+                );
+                if (loadRevision === this.loadRevision) {
+                    this.publicationPreview = { revision, contentHash };
+                }
+            } catch (error) {
+                this.showPublicationError(error, loadRevision);
+            } finally {
+                if (loadRevision === this.loadRevision) {
+                    this.isPublishing = false;
+                }
+            }
+        },
+        async publish(): Promise<void> {
+            const preview = this.publicationPreview;
+            if (!preview) {
+                return;
+            }
+
+            const loadRevision = this.loadRevision;
+            this.isPublishing = true;
+            try {
+                await this.approvalFlowDesignApiService.publish(this.definitionId, preview.revision, preview.contentHash);
+                if (loadRevision === this.loadRevision) {
+                    this.releaseListVersion += 1;
+                }
+            } catch (error) {
+                this.showPublicationError(error, loadRevision);
+            } finally {
+                if (loadRevision === this.loadRevision) {
+                    this.publicationPreview = null;
+                    this.isPublishing = false;
+                }
+            }
+        },
+        showPublicationError(error: unknown, loadRevision: number): void {
+            if (loadRevision !== this.loadRevision) {
+                return;
+            }
+            const response = (error as HttpError<{ errors?: { detail?: string }[] }>).response;
+            this.publicationError =
+                response?.status === 409
+                    ? this.$t('sw-approval-flow.design.publicationConflict')
+                    : (response?.data.errors?.[0]?.detail ?? this.$t('sw-approval-flow.design.publicationError'));
+        },
+        closePublication(): void {
+            if (!this.isPublishing) {
+                this.publicationPreview = null;
             }
         },
         date(value: string | null): string {

@@ -1,0 +1,12 @@
+.sw-approval-flow-release-activation {
+    &__business {
+        margin-block-end: var(--scale-size-12);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--scale-size-8);
+    }
+}

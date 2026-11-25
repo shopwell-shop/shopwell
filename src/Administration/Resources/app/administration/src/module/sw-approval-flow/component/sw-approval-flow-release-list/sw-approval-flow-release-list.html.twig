@@ -40,10 +40,32 @@
         <template #column-createdAt="{ data }">
             {{ date(data.createdAt) }}
         </template>
+        <template #column-actions="{ data }">
+            <mt-button
+                variant="secondary"
+                size="small"
+                @click="onActivate(data)"
+            >
+                {{ $t('sw-approval-flow.design.activate') }}
+            </mt-button>
+        </template>
         <template #empty-state>
             <p>{{ $t('sw-approval-flow.design.noReleases') }}</p>
         </template>
         {% endblock %}
     </mt-data-table>
+    <mt-banner
+        v-if="activatedReleaseId"
+        variant="positive"
+    >
+        {{ $t('sw-approval-flow.design.activated') }}
+    </mt-banner>
+    <sw-approval-flow-release-activation
+        v-if="selectedRelease"
+        :release="selectedRelease"
+        :business-types="activationBusinessTypes"
+        @close="selectedRelease = null"
+        @activated="onActivated"
+    />
 </div>
 {% endblock %}

@@ -254,7 +254,7 @@
         {% endblock %}
         {% block sw_finance_transfer_create_modal_approval_preview %}
         <sw-finance-transfer-approval-preview
-            v-if="!bookTransfer"
+            v-if="!bookTransfer && !approvalFlowActive"
             v-model:blocked="previewBlocked"
             :payload="approvalPreviewPayload"
         />

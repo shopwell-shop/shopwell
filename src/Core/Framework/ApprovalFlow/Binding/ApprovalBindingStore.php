@@ -48,35 +48,14 @@ class ApprovalBindingStore
     public function save(ApprovalBusinessTypeSpecification $businessType, string $releaseId, int $expectedRevision, Context $context, \Closure $verify): ApprovalBindingEntity
     {
         return $this->writeBinding($businessType->type, function () use ($businessType, $releaseId, $expectedRevision, $context, $verify): ApprovalBindingEntity {
-            // The unique type coordinates the first save too; a losing initializer waits for the current writer.
-            $this->connection->executeStatement(
-                'INSERT INTO approval_flow_binding_head (id, business_type, latest_revision, active_revision, version, created_at)
-                 VALUES (:id, :type, 0, NULL, 0, :createdAt) ON DUPLICATE KEY UPDATE business_type = business_type',
-                ['id' => Uuid::randomBytes(), 'type' => $businessType->type, 'createdAt' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT)],
-            );
-            $head = $this->lockHead($businessType->type);
+            $head = $this->initializeHead($businessType->type);
             $revision = (int) $head['latest_revision'];
             if ($expectedRevision !== $revision) {
                 throw ApprovalFlowException::bindingRevisionConflict($businessType->type, $expectedRevision, $revision);
             }
             $verify();
-            $id = Uuid::randomHex();
-            $this->guard->write($context, function (Context $writeContext) use ($id, $businessType, $revision, $releaseId): void {
-                $this->bindings->create([[
-                    'id' => $id,
-                    'businessType' => $businessType->type,
-                    'businessVersion' => $businessType->version,
-                    'revision' => $revision + 1,
-                    'releaseId' => $releaseId,
-                    'formSchemaId' => $businessType->formSchemaId,
-                    'formSchemaHash' => $businessType->formSchemaHash,
-                    'formSchema' => $businessType->formSchema,
-                ]], $writeContext);
-            });
-            $this->connection->executeStatement(
-                'UPDATE approval_flow_binding_head SET latest_revision = :revision, updated_at = :updatedAt WHERE id = :id',
-                ['revision' => $revision + 1, 'updatedAt' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT), 'id' => $head['id']],
-            );
+
+            $this->saveRevision($businessType, $releaseId, $head['id'], $revision + 1, $context);
 
             return $this->read($businessType->type, $revision + 1, $context);
         });
@@ -102,11 +81,32 @@ class ApprovalBindingStore
                 throw ApprovalFlowException::bindingNotFound($type, $revision);
             }
             $verify((string) $binding['business_version'], (string) $binding['form_schema'], Uuid::fromBytesToHex($binding['release_id']));
-            // This coordination row is changed from its locked state, independent of DAL existence snapshots.
-            $this->connection->executeStatement(
-                'UPDATE approval_flow_binding_head SET active_revision = :revision, version = :version, updated_at = :updatedAt WHERE id = :id',
-                ['revision' => $revision, 'version' => $version + 1, 'updatedAt' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT), 'id' => $head['id']],
-            );
+            $this->selectRevision($head['id'], $revision, $version + 1);
+
+            return $this->head($type, $context);
+        });
+    }
+
+    /**
+     * @param \Closure(): void $verify Validates the selected release before saving or activating it.
+     */
+    public function activateRelease(ApprovalBusinessTypeSpecification $businessType, string $releaseId, int $expectedRevision, int $expectedVersion, Context $context, \Closure $verify): ApprovalBindingHeadEntity
+    {
+        $type = $businessType->type;
+
+        return $this->writeBinding($type, function () use ($businessType, $type, $releaseId, $expectedRevision, $expectedVersion, $context, $verify): ApprovalBindingHeadEntity {
+            $head = $this->initializeHead($type);
+            $revision = (int) $head['latest_revision'];
+            $version = (int) $head['version'];
+            if ($expectedRevision !== $revision) {
+                throw ApprovalFlowException::bindingRevisionConflict($type, $expectedRevision, $revision);
+            }
+            if ($expectedVersion !== $version) {
+                throw ApprovalFlowException::bindingVersionConflict($type, $expectedVersion, $version);
+            }
+            $verify();
+            $this->saveRevision($businessType, $releaseId, $head['id'], $revision + 1, $context);
+            $this->selectRevision($head['id'], $revision + 1, $version + 1);
 
             return $this->head($type, $context);
         });
@@ -121,9 +121,14 @@ class ApprovalBindingStore
 
     public function head(string $type, Context $context): ApprovalBindingHeadEntity
     {
+        return $this->findHead($type, $context) ?? throw ApprovalFlowException::activeBindingNotFound($type);
+    }
+
+    public function findHead(string $type, Context $context): ?ApprovalBindingHeadEntity
+    {
         $criteria = (new Criteria())->addFilter(new EqualsFilter('businessType', $type));
 
-        return $this->heads->search($criteria, $context)->getEntities()->first() ?? throw ApprovalFlowException::activeBindingNotFound($type);
+        return $this->heads->search($criteria, $context)->first();
     }
 
     public function active(string $type, Context $context): ApprovalBindingEntity
@@ -167,6 +172,49 @@ class ApprovalBindingStore
         ]);
 
         return $binding;
+    }
+
+    /**
+     * @return array{id: string, latest_revision: int|string, version: int|string}
+     */
+    private function initializeHead(string $type): array
+    {
+        // The unique type coordinates the first save too; a losing initializer waits for the current writer.
+        $this->connection->executeStatement(
+            'INSERT INTO approval_flow_binding_head (id, business_type, latest_revision, active_revision, version, created_at)
+             VALUES (:id, :type, 0, NULL, 0, :createdAt) ON DUPLICATE KEY UPDATE business_type = business_type',
+            ['id' => Uuid::randomBytes(), 'type' => $type, 'createdAt' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT)],
+        );
+
+        return $this->lockHead($type);
+    }
+
+    private function saveRevision(ApprovalBusinessTypeSpecification $businessType, string $releaseId, string $headId, int $revision, Context $context): void
+    {
+        $this->guard->write($context, function (Context $writeContext) use ($businessType, $releaseId, $revision): void {
+            $this->bindings->create([[
+                'id' => Uuid::randomHex(),
+                'businessType' => $businessType->type,
+                'businessVersion' => $businessType->version,
+                'revision' => $revision,
+                'releaseId' => $releaseId,
+                'formSchemaId' => $businessType->formSchemaId,
+                'formSchemaHash' => $businessType->formSchemaHash,
+                'formSchema' => $businessType->formSchema,
+            ]], $writeContext);
+        });
+        $this->connection->executeStatement(
+            'UPDATE approval_flow_binding_head SET latest_revision = :revision, updated_at = :updatedAt WHERE id = :id',
+            ['revision' => $revision, 'updatedAt' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT), 'id' => $headId],
+        );
+    }
+
+    private function selectRevision(string $headId, int $revision, int $version): void
+    {
+        $this->connection->executeStatement(
+            'UPDATE approval_flow_binding_head SET active_revision = :revision, version = :version, updated_at = :updatedAt WHERE id = :id',
+            ['revision' => $revision, 'version' => $version, 'updatedAt' => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT), 'id' => $headId],
+        );
     }
 
     /**

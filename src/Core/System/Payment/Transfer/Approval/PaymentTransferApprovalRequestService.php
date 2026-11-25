@@ -21,7 +21,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 #[Package('framework')]
 class PaymentTransferApprovalRequestService
 {
-    private const BUSINESS_TYPE = 'payment:transfer';
+    public const BUSINESS_TYPE = 'payment:transfer';
 
     public function __construct(
         private readonly PaymentTransferApprovalRequestStore $store,

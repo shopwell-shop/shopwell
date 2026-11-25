@@ -4,9 +4,19 @@
     :show-search-bar="false"
 >
     <template #smart-bar-header>
-        <h2>{{ $t('sw-approval-flow.design.title') }}</h2>
+        <h2>{{ $t('sw-approval-flow.design.title') }} <span
+            v-if="!isLoading && !hasError"
+            class="sw-page__smart-bar-amount"
+        >({{ total }})</span></h2>
     </template>
     <template #smart-bar-actions>
+        <mt-button
+            variant="secondary"
+            :disabled="isLoading"
+            @click="loadDefinitions"
+        >
+            {{ $t('sw-approval-flow.general.refresh') }}
+        </mt-button>
         <mt-button
             is="router-link"
             v-if="acl.can('approval_flow_definition.creator')"
@@ -19,25 +29,11 @@
     <template #content>
         <div
             v-if="acl.can('approval_flow_definition.viewer')"
-            class="sw-approval-flow-definition-list__content"
+            class="sw-approval-flow-definition-list__content sw-approval-flow-listing"
         >
-            <mt-banner
-                v-if="hasError"
-                variant="critical"
-                role="alert"
-            >
-                {{ $t('sw-approval-flow.design.listError') }}
-                <mt-button
-                    size="small"
-                    variant="secondary"
-                    @click="loadDefinitions"
-                >
-                    {{ $t('sw-approval-flow.general.retry') }}
-                </mt-button>
-            </mt-banner>
             {% block sw_approval_flow_definition_list_grid %}
             <mt-data-table
-                v-else
+                class="sw-approval-flow-listing__table"
                 :data-source="definitions"
                 :columns="columns"
                 :caption="$t('sw-approval-flow.design.title')"
@@ -47,19 +43,24 @@
                 :disable-edit="true"
                 :disable-delete="true"
                 :disable-settings-table="true"
-                :enable-reload="true"
+                :additional-context-buttons="[{ key: 'view', label: $t('global.default.view') }]"
+                :show-outlines="false"
+                :enable-outline-framing="false"
                 :current-page="page"
                 :pagination-limit="limit"
                 :pagination-total-items="total"
                 :pagination-options="[10, 25, 50, 100]"
                 :search-value="term"
-                @reload="loadDefinitions"
                 @search-value-change="onSearch"
+                @context-select="$event.key === 'view' && $router.push(definitionRoute($event.data.id))"
                 @pagination-current-page-change="onPageChange({ page: $event, limit })"
                 @pagination-limit-change="onPageChange({ page: 1, limit: $event })"
             >
                 <template #column-name="{ data }">
-                    <router-link :to="definitionRoute(data.id)">
+                    <router-link
+                        class="sw-approval-flow-listing__link"
+                        :to="definitionRoute(data.id)"
+                    >
                         {{ data.name }}
                     </router-link>
                 </template>
@@ -67,7 +68,23 @@
                     {{ date(data.draftUpdatedAt) }}
                 </template>
                 <template #empty-state>
+                    <mt-banner
+                        v-if="hasError"
+                        variant="critical"
+                        role="alert"
+                    >
+                        {{ $t('sw-approval-flow.design.listError') }}
+                        <mt-button
+                            variant="secondary"
+                            size="small"
+                            @click="loadDefinitions"
+                        >
+                            {{ $t('sw-approval-flow.general.retry') }}
+                        </mt-button>
+                    </mt-banner>
                     <mt-empty-state
+                        v-else
+                        centered
                         icon="regular-flow"
                         :headline="$t('sw-approval-flow.design.noDefinitions')"
                         :description="$t('sw-approval-flow.design.noDefinitionsDescription')"

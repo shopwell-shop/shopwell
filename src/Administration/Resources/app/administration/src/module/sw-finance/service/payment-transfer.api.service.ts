@@ -286,6 +286,7 @@ export type PaymentTransferView = {
  */
 export type PaymentTransferOptions = {
     workflowAvailable: boolean;
+    approvalFlowActive?: boolean;
     apps: TransferAppOption[];
     defaultAppId: string | null;
 };
@@ -387,6 +388,7 @@ export type TransferApproval = {
  */
 type OptionsResponse = {
     workflowAvailable?: boolean;
+    approvalFlowActive?: boolean;
     apps?: TransferAppOption[];
     defaultAppId?: string | null;
 };
@@ -445,6 +447,7 @@ export default class PaymentTransferApiService {
             .then((response): PaymentTransferOptions => {
                 return {
                     workflowAvailable: response.data.workflowAvailable === true,
+                    approvalFlowActive: response.data.approvalFlowActive === true,
                     apps: response.data.apps || [],
                     defaultAppId: response.data.defaultAppId || null,
                 };

@@ -111,7 +111,20 @@
                 "structure": "Structure",
                 "draft": "Configuration",
                 "capability": "Unavailable capability"
-            }
+            },
+            "publish": "Publish",
+            "published": "Version published.",
+            "confirmPublication": "Publish draft revision {revision}?",
+            "publicationConflict": "The draft or its publication preview changed. Refresh and try again.",
+            "publicationError": "The version could not be published.",
+            "activate": "Activate",
+            "activated": "Version activated for new requests.",
+            "alreadyActive": "This version is already active.",
+            "confirmActivation": "Use revision {revision} for new requests of this business type? Requests already submitted keep their original version.",
+            "activationConflict": "The active workflow changed. Refresh and review the selection again.",
+            "activationError": "The version could not be activated.",
+            "bindingLoadError": "The current workflow selection could not be loaded.",
+            "noCompatibleBusiness": "No compatible business type is registered for this version."
         },
         "node": {
             "start": "Start",
@@ -160,6 +173,13 @@
             },
             "approval_flow_definition": {
                 "label": "Flow definitions"
+            }
+        },
+        "additional_permissions": {
+            "approval_flow_definition": {
+                "label": "Flow definitions",
+                "publisher": "Publish approval versions",
+                "activator": "Activate approval versions"
             }
         }
     }

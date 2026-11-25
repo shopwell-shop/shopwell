@@ -30,14 +30,27 @@ async function createWrapper(
                 },
                 'mt-data-table': {
                     name: 'mt-data-table',
-                    props: ['dataSource'],
-                    template: `<section><input @input="$emit('search-value-change', $event.target.value)"/><slot v-for="item in dataSource" name="column-name" :data="item"/><slot v-if="!dataSource.length" name="empty-state"/></section>`,
+                    props: ['additionalContextButtons', 'dataSource'],
+                    template: `
+                        <section>
+                            <input @input="$emit('search-value-change', $event.target.value)"/>
+                            <div v-for="item in dataSource" :key="item.id">
+                                <slot name="column-name" :data="item"/>
+                                <button
+                                    v-for="action in additionalContextButtons"
+                                    :key="action.key"
+                                    :data-action="action.key"
+                                    @click="$emit('context-select', { key: action.key, data: item })"
+                                />
+                            </div>
+                            <slot v-if="!dataSource.length" name="empty-state"/>
+                        </section>`,
                 },
                 'router-link': { props: ['to'], template: '<a :data-route="to.name"><slot/></a>' },
-                'mt-button': { template: '<button><slot/></button>' },
-                'mt-text-field': {
-                    props: ['modelValue'],
-                    template: `<input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                'mt-button': {
+                    props: ['is', 'to'],
+                    template:
+                        '<router-link v-if="is === \'router-link\'" :to="to"><slot/></router-link><button v-else><slot/></button>',
                 },
                 'mt-banner': { template: '<div role="alert"><slot/></div>' },
                 'mt-empty-state': { template: '<div class="empty"/>' },
@@ -58,8 +71,24 @@ describe('approval definition list', () => {
         expect(wrapper.findComponent({ name: 'mt-data-table' }).props('dataSource')).toEqual([
             expect.objectContaining({ id: 'flow', draftRevision: 3 }),
         ]);
-        expect(wrapper.find('a').text()).toBe('采购审批');
-        expect(wrapper.find('a').attributes('data-route')).toBe('sw.approval.flow.definition');
+        expect(wrapper.get('a[data-route="sw.approval.flow.definition"]').text()).toBe('采购审批');
+        expect(wrapper.getComponent({ name: 'mt-data-table' }).props('additionalContextButtons')).toEqual([
+            { key: 'view', label: 'global.default.view' },
+        ]);
+        expect(wrapper.find('.sw-page__smart-bar-amount').text()).toBe('(1)');
+    });
+
+    it('keeps the listing search and page when opening a definition from its action', async () => {
+        const { wrapper, route, push } = await createWrapper();
+        route.query = { term: '采购', page: '2', limit: '25' };
+        await flushPromises();
+        await wrapper.get('[data-action="view"]').trigger('click');
+
+        expect(push).toHaveBeenCalledWith({
+            name: 'sw.approval.flow.definition',
+            params: { id: definition.id },
+            query: route.query,
+        });
     });
 
     it('applies name search through the route and resets its page', async () => {

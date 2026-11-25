@@ -1,5 +1,7 @@
 /** @sw-package framework */
 import type Repository from 'src/core/data/repository.data';
+import type { PropType } from 'vue';
+import type { ApprovalBusinessDescriptor, ApprovalDesignGraph } from '../../service/approval-flow-design.api.service';
 import template from './sw-approval-flow-release-list.html.twig';
 
 /** @private */
@@ -7,7 +9,11 @@ export default Shopwell.Component.wrapComponentConfig({
     name: 'sw-approval-flow-release-list',
     template,
     inject: ['repositoryFactory'],
-    props: { definitionId: { type: String, required: true } },
+    props: {
+        definitionId: { type: String, required: true },
+        allowActivation: { type: Boolean, default: false },
+        businessTypes: { type: Array as PropType<ApprovalBusinessDescriptor[]>, default: () => [] },
+    },
     data(): {
         releases: Entity<'approval_flow_release'>[];
         page: number;
@@ -16,15 +22,27 @@ export default Shopwell.Component.wrapComponentConfig({
         isLoading: boolean;
         hasError: boolean;
         loadRevision: number;
+        selectedRelease: Entity<'approval_flow_release'> | null;
+        activatedReleaseId: string | null;
     } {
-        return { releases: [], page: 1, limit: 10, total: 0, isLoading: false, hasError: false, loadRevision: 0 };
+        return {
+            releases: [],
+            page: 1,
+            limit: 10,
+            total: 0,
+            isLoading: false,
+            hasError: false,
+            loadRevision: 0,
+            selectedRelease: null,
+            activatedReleaseId: null,
+        };
     },
     computed: {
         releaseRepository(): Repository<'approval_flow_release'> {
             return this.repositoryFactory.create('approval_flow_release');
         },
         columns() {
-            return [
+            const columns = [
                 {
                     property: 'draftRevision',
                     label: this.$t('sw-approval-flow.design.draftRevision'),
@@ -51,6 +69,28 @@ export default Shopwell.Component.wrapComponentConfig({
                     cellWrap: 'normal' as const,
                 },
             ];
+            if (this.allowActivation) {
+                columns.push({
+                    property: 'actions',
+                    label: this.$t('sw-approval-flow.list.actions'),
+                    renderer: 'text',
+                    position: 3,
+                    sortable: false,
+                    allowResize: false,
+                    cellWrap: 'normal',
+                });
+            }
+            return columns;
+        },
+        activationBusinessTypes(): ApprovalBusinessDescriptor[] {
+            if (!this.selectedRelease) {
+                return [];
+            }
+            const graph = JSON.parse(this.selectedRelease.graphJson) as ApprovalDesignGraph;
+            const businessType = graph.nodes.find((node) => node.type === 'core:start')?.config.businessType;
+            return this.businessTypes.filter(
+                (business) => business.type === businessType && business.formSchemaId === graph.meta.formSchemaRef,
+            );
         },
     },
     watch: {
@@ -58,6 +98,8 @@ export default Shopwell.Component.wrapComponentConfig({
             immediate: true,
             handler() {
                 this.page = 1;
+                this.selectedRelease = null;
+                this.activatedReleaseId = null;
                 void this.loadReleases();
             },
         },
@@ -80,6 +122,7 @@ export default Shopwell.Component.wrapComponentConfig({
                         'draftRevision',
                         'createdAt',
                         'contentHash',
+                        ...(this.allowActivation ? ['graphJson'] : []),
                     ],
                 });
                 criteria.addFilter(Shopwell.Data.Criteria.equals('definitionId', this.definitionId));
@@ -99,6 +142,13 @@ export default Shopwell.Component.wrapComponentConfig({
                     this.isLoading = false;
                 }
             }
+        },
+        onActivate(release: Entity<'approval_flow_release'>): void {
+            this.selectedRelease = release;
+        },
+        onActivated(releaseId: string): void {
+            this.activatedReleaseId = releaseId;
+            this.selectedRelease = null;
         },
         onPageChange({ page, limit }: { page: number; limit: number }): void {
             this.page = Number.isSafeInteger(page) && page > 0 ? page : 1;

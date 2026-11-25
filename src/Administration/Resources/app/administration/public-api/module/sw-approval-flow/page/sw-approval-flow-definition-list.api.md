@@ -13,5 +13,5 @@ component sw-approval-flow-definition-list  private  ts  [private]
 
 blocks
   sw_approval_flow_definition_list  [private]
-    sw_approval_flow_definition_list_grid  [after v-if] [private]
+    sw_approval_flow_definition_list_grid  [private]
 ```

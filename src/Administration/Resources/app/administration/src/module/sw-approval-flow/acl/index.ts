@@ -29,5 +29,26 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     },
 });
 
+Shopwell.Service('privileges').addPrivilegeMappingEntry({
+    category: 'additional_permissions',
+    parent: null,
+    key: 'approval_flow_definition',
+    roles: {
+        publisher: {
+            privileges: ['approval_flow_release:create'],
+            dependencies: ['approval_flow_definition.viewer'],
+        },
+        activator: {
+            privileges: [
+                'approval_flow_binding:activate',
+                'approval_flow_binding:create',
+                'approval_flow_binding:read',
+                'approval_flow_binding_head:read',
+            ],
+            dependencies: ['approval_flow_definition.viewer'],
+        },
+    },
+});
+
 /** @private */
 export {};

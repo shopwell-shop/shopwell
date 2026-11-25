@@ -16,5 +16,5 @@ blocks
     sw_approval_flow_definition_detail_diagnostics  [private]
     sw_approval_flow_definition_detail_nodes  [private]
     sw_approval_flow_definition_detail_releases  [private]
-    sw_approval_flow_definition_detail_summary  [private]
+    sw_approval_flow_definition_detail_summary  [after v-if] [private]
 ```

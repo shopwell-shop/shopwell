@@ -1,0 +1,279 @@
+{
+    "paths": {
+        "/_action/approval-flow/design/drafts/{definitionId}/publication-preview": {
+            "post": {
+                "operationId": "approvalDesignPreviewPublication",
+                "summary": "Check a saved draft for publication",
+                "description": "Requires approval_flow_release:create. Returns the hash of the compiled draft and its deployment dependencies.",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "definitionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "expectedRevision"
+                                ],
+                                "properties": {
+                                    "expectedRevision": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Operation result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "contentHash"
+                                    ],
+                                    "properties": {
+                                        "contentHash": {
+                                            "type": "string",
+                                            "pattern": "^[0-9a-f]{64}$"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Permission required"
+                    },
+                    "404": {
+                        "description": "Draft, release or business type not found"
+                    },
+                    "409": {
+                        "description": "The draft revision changed"
+                    },
+                    "422": {
+                        "description": "The draft could not be compiled"
+                    }
+                }
+            }
+        },
+        "/_action/approval-flow/design/drafts/{definitionId}/publish": {
+            "post": {
+                "operationId": "approvalDesignPublish",
+                "summary": "Publish an immutable approval flow version",
+                "description": "Requires approval_flow_release:create. Publishing identical content returns the existing release.",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "definitionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "expectedRevision",
+                                    "expectedHash"
+                                ],
+                                "properties": {
+                                    "expectedRevision": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "expectedHash": {
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{64}$"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Operation result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "id",
+                                        "definitionId",
+                                        "draftRevision",
+                                        "contentHash"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "^[0-9a-f]{32}$"
+                                        },
+                                        "definitionId": {
+                                            "type": "string",
+                                            "pattern": "^[0-9a-f]{32}$"
+                                        },
+                                        "draftRevision": {
+                                            "type": "integer",
+                                            "minimum": 1
+                                        },
+                                        "contentHash": {
+                                            "type": "string",
+                                            "pattern": "^[0-9a-f]{64}$"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Permission required"
+                    },
+                    "404": {
+                        "description": "Draft, release or business type not found"
+                    },
+                    "409": {
+                        "description": "The draft revision or compiled content changed"
+                    },
+                    "422": {
+                        "description": "The draft could not be compiled"
+                    }
+                }
+            }
+        },
+        "/_action/approval-flow/design/releases/{releaseId}/activate": {
+            "post": {
+                "operationId": "approvalDesignActivateRelease",
+                "summary": "Select a published flow for future submissions",
+                "description": "Requires approval_flow_binding:activate and approval_flow_binding:create. Use zero for both expected counters if the business type has never been configured.",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "releaseId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "businessType",
+                                    "businessVersion",
+                                    "expectedRevision",
+                                    "expectedVersion"
+                                ],
+                                "properties": {
+                                    "businessType": {
+                                        "type": "string"
+                                    },
+                                    "businessVersion": {
+                                        "type": "string"
+                                    },
+                                    "expectedRevision": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "expectedVersion": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Operation result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "revision",
+                                        "version"
+                                    ],
+                                    "properties": {
+                                        "revision": {
+                                            "type": "integer",
+                                            "minimum": 1
+                                        },
+                                        "version": {
+                                            "type": "integer",
+                                            "minimum": 1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Permission required"
+                    },
+                    "404": {
+                        "description": "Draft, release or business type not found"
+                    },
+                    "409": {
+                        "description": "The binding state or the verified release changed"
+                    },
+                    "422": {
+                        "description": "The release does not satisfy business validation"
+                    }
+                }
+            }
+        }
+    }
+}

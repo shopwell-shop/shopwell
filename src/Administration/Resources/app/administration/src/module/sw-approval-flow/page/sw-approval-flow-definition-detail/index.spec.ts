@@ -31,6 +31,8 @@ async function createWrapper(
     catalogLoad = jest.fn().mockResolvedValue(catalog),
     get = jest.fn().mockResolvedValue({ ...detail.definition, draft: detail.draft }),
 ) {
+    const previewPublication = jest.fn().mockResolvedValue({ contentHash: 'compiled-content' });
+    const publish = jest.fn().mockResolvedValue({ id: 'release' });
     const wrapper = shallowMount(await wrapTestComponent('sw-approval-flow-definition-detail', { sync: true }), {
         props: { definitionId: 'flow' },
         global: {
@@ -41,6 +43,8 @@ async function createWrapper(
                 approvalFlowDesignApiService: {
                     catalog: catalogLoad,
                     diagnose: jest.fn().mockResolvedValue(detail.draft.diagnostics),
+                    previewPublication,
+                    publish,
                 },
                 acl: { can: () => true },
             },
@@ -54,6 +58,8 @@ async function createWrapper(
                 'mt-card': { props: ['title'], template: '<section><h3>{{ title }}</h3><slot/></section>' },
                 'mt-banner': { template: '<div role="alert"><slot/></div>' },
                 'mt-button': { template: '<button><slot/></button>' },
+                'mt-modal-root': { template: '<div><slot/></div>' },
+                'mt-modal': { template: '<div><slot/><slot name="footer"/></div>' },
                 'router-link': { template: '<a><slot/></a>' },
                 'sw-loader': true,
                 'sw-approval-flow-release-list': true,
@@ -62,10 +68,23 @@ async function createWrapper(
         },
     });
     await flushPromises();
-    return { wrapper };
+    return { wrapper, previewPublication, publish };
 }
 
 describe('approval definition overview', () => {
+    it('publishes only after confirmation, with the revision and hash returned by the preview', async () => {
+        const { wrapper, previewPublication, publish } = await createWrapper();
+        await wrapper.get('[data-testid="approval-publication-preview"]').trigger('click');
+        await flushPromises();
+        expect(previewPublication).toHaveBeenCalledWith('flow', 3);
+        expect(publish).not.toHaveBeenCalled();
+
+        await wrapper.get('[data-testid="approval-publish"]').trigger('click');
+        await flushPromises();
+        expect(publish).toHaveBeenCalledWith('flow', 3, 'compiled-content');
+        expect(wrapper.text()).toContain('sw-approval-flow.design.published');
+    });
+
     it('reports a missing definition or draft through the normal not-found state', async () => {
         const { wrapper } = await createWrapper(undefined, jest.fn().mockResolvedValue(null));
         expect(wrapper.text()).toContain('sw-approval-flow.design.notFound');

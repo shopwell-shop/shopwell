@@ -43,13 +43,18 @@ class PaymentTransferApprovalRequestStore
     {
         return $this->approvals->submitting($transferId, function () use ($transferId, $submit): mixed {
             return RetryableTransaction::transactional($this->connection, function () use ($transferId, $submit): mixed {
-                if ($this->connection->fetchOne('SELECT id FROM payment_transfer WHERE id = :id FOR UPDATE', ['id' => Uuid::fromHexToBytes($transferId)]) === false) {
-                    throw PaymentTransferApprovalException::blocked('missing_transfer');
-                }
+                $this->lockTransfer($transferId);
 
                 return $submit();
             });
         });
+    }
+
+    public function lockTransfer(string $transferId): void
+    {
+        if ($this->connection->fetchOne('SELECT id FROM payment_transfer WHERE id = :id FOR UPDATE', ['id' => Uuid::fromHexToBytes($transferId)]) === false) {
+            throw PaymentTransferApprovalException::blocked('missing_transfer');
+        }
     }
 
     /**

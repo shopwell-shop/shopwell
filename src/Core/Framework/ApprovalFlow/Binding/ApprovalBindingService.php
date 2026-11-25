@@ -52,6 +52,20 @@ class ApprovalBindingService
         });
     }
 
+    public function activateRelease(string $type, string $businessVersion, string $releaseId, int $expectedRevision, int $expectedVersion, Context $context): ApprovalBindingHeadEntity
+    {
+        $businessType = $this->businessTypes->get($type, $businessVersion);
+
+        return $this->store->activateRelease(
+            $businessType,
+            $releaseId,
+            $expectedRevision,
+            $expectedVersion,
+            $context,
+            fn () => $this->verifyRelease($businessType, $releaseId, $context),
+        );
+    }
+
     public function forSubmission(string $type, Context $context): ApprovalBindingEntity
     {
         $binding = $this->store->activeForSubmission($type);

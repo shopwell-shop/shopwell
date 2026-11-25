@@ -101,6 +101,7 @@ export default defineComponent({
         recipientGeneration: number;
         isLoadingOptions: boolean;
         workflowAvailable: boolean;
+        approvalFlowActive: boolean;
         previewBlocked: boolean;
         isSaving: boolean;
         isLoadingRecipients: boolean;
@@ -129,6 +130,7 @@ export default defineComponent({
             recipientGeneration: 0,
             isLoadingOptions: true,
             workflowAvailable: false,
+            approvalFlowActive: false,
             previewBlocked: false,
             isSaving: false,
             isLoadingRecipients: false,
@@ -399,6 +401,7 @@ export default defineComponent({
                 const options = await this.paymentTransferApiService.getOptions();
 
                 this.workflowAvailable = options.workflowAvailable;
+                this.approvalFlowActive = options.approvalFlowActive === true && !this.sourceTransferId;
                 this.apps = options.apps;
                 if (this.initialDraft) {
                     await this.applyInitialDraft(this.initialDraft);

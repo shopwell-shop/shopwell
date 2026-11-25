@@ -1,0 +1,68 @@
+{% block sw_approval_flow_release_activation %}
+<mt-modal-root
+    :is-open="true"
+    :closable="!isActivating"
+    @change="!$event && close()"
+>
+    <mt-modal
+        width="s"
+        :title="$t('sw-approval-flow.design.activate')"
+    >
+        <mt-loader v-if="isLoading" />
+        <mt-banner
+            v-else-if="loadError || activationError || !business"
+            variant="critical"
+            role="alert"
+        >
+            {{ activationError || $t(loadError ? 'sw-approval-flow.design.bindingLoadError' : 'sw-approval-flow.design.noCompatibleBusiness') }}
+        </mt-banner>
+        <template v-if="business && !isLoading && !loadError">
+            <mt-select
+                v-if="businessOptions.length > 1"
+                v-model="businessKey"
+                :label="$t('sw-approval-flow.designer.businessType')"
+                :options="businessOptions"
+                :hide-clearable-button="true"
+                :disabled="isActivating"
+            />
+            <p
+                v-else
+                class="sw-approval-flow-release-activation__business"
+            >
+                {{ businessOptions[0].label }}
+            </p>
+            <p v-if="!activationError">
+                {{ isActive ? $t('sw-approval-flow.design.alreadyActive') : $t('sw-approval-flow.design.confirmActivation', { revision: release.draftRevision }) }}
+            </p>
+        </template>
+        <template #footer>
+            <div class="sw-approval-flow-release-activation__footer">
+                <mt-button
+                    variant="secondary"
+                    :disabled="isActivating"
+                    @click="close"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                <mt-button
+                    v-if="loadError || conflict"
+                    variant="primary"
+                    @click="loadBinding"
+                >
+                    {{ $t('sw-approval-flow.general.refresh') }}
+                </mt-button>
+                <mt-button
+                    v-else-if="business && !isActive"
+                    data-testid="activate-approval-release"
+                    variant="primary"
+                    :disabled="isLoading || isActivating"
+                    :is-loading="isActivating"
+                    @click="activate"
+                >
+                    {{ $t('sw-approval-flow.design.activate') }}
+                </mt-button>
+            </div>
+        </template>
+    </mt-modal>
+</mt-modal-root>
+{% endblock %}

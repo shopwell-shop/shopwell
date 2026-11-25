@@ -348,6 +348,14 @@
                 "sw_approval_flow_node_settings"
             ]
         },
+        "sw-approval-flow-release-activation": {
+            "file": "module/sw-approval-flow/component/sw-approval-flow-release-activation",
+            "visibility": "private",
+            "extends": null,
+            "blocks": [
+                "sw_approval_flow_release_activation"
+            ]
+        },
         "sw-approval-flow-release-list": {
             "file": "module/sw-approval-flow/component/sw-approval-flow-release-list",
             "visibility": "private",

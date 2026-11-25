@@ -1,4 +1,10 @@
 .sw-approval-flow-definition-detail {
+    &__modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--scale-size-8);
+    }
+
     &__summary {
         margin: 0;
 

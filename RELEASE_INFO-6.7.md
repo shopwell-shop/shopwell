@@ -69,6 +69,9 @@ Provide a command ID and expected instance version; retry an uncertain response 
 The Administration `approval_flow.editor` mapping adds this decision privilege with a viewer dependency and exposes confirmed approve/reject actions for personal pending tasks.
 A committed opinion does not imply final approval or payment execution; lifecycle commands remain internal.
 The Administration now provides a Flow definitions read surface under Approvals.
+Approval Flow publishers can preview the saved draft and publish its immutable release from the Administration.
+Activators can select a published release for a business type, which affects only future submissions and preserves the release of applications already underway.
+New Administration transfer bookings use Approval Flow after a transfer release is activated.
 It lists definition identities and draft revisions, shows the current draft with diagnostics and exact node versions, and lists immutable publication history.
 The definition viewer mapping includes definition, draft and release read privileges, separately from personal approval access, and grants no editing, publication or activation authority.
 Reads use standard DAL repositories and the definition’s one-to-one `draft` association; catalog discovery and graph diagnostics remain special design operations.

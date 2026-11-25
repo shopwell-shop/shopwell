@@ -32,7 +32,9 @@ async function createWrapper(search = jest.fn().mockResolvedValue({ data: [reque
                         '<div><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/></div>',
                 },
                 'mt-data-table': {
+                    name: 'mt-data-table',
                     props: [
+                        'additionalContextButtons',
                         'dataSource',
                         'currentPage',
                         'paginationTotalItems',
@@ -46,7 +48,12 @@ async function createWrapper(search = jest.fn().mockResolvedValue({ data: [reque
                             <div v-for="data in dataSource" :key="data.id">
                                 <slot name="column-title" :data="data"/>
                                 <slot name="column-initiatorName" :data="data"/>
-                                <slot name="column-actions" :data="data"/>
+                                <button
+                                    v-for="action in additionalContextButtons"
+                                    :key="action.key"
+                                    :data-action="action.key"
+                                    @click="$emit('context-select', { key: action.key, data })"
+                                />
                             </div>
                             <slot v-if="!isLoading && dataSource.length === 0" name="empty-state"/>
                             <output class="table-page">{{ currentPage }}</output>
@@ -54,11 +61,7 @@ async function createWrapper(search = jest.fn().mockResolvedValue({ data: [reque
                         </div>`,
                 },
                 'router-link': { props: ['to'], template: '<a :data-route="to.name"><slot/></a>' },
-                'mt-button': {
-                    props: ['is', 'to'],
-                    template:
-                        '<router-link v-if="is === \'router-link\'" :to="to"><slot/></router-link><button v-else><slot/></button>',
-                },
+                'mt-button': { template: '<button><slot/></button>' },
                 'mt-popover': {
                     setup() {
                         const open = ref(false);
@@ -104,9 +107,24 @@ describe('personal approval list', () => {
         expect(wrapper.text()).toContain('Transfer approval');
         expect(wrapper.text()).toContain('Alice');
         expect(wrapper.find('a').attributes('data-route')).toBe('sw.approval.flow.detail');
-        expect(wrapper.findAll('a').map((link) => link.text())).toContain('global.default.view');
+        expect(wrapper.getComponent({ name: 'mt-data-table' }).props('additionalContextButtons')).toEqual([
+            { key: 'view', label: 'global.default.view' },
+        ]);
         expect(wrapper.find('.status-option').exists()).toBe(false);
         expect(wrapper.text()).not.toContain('instance-one');
+    });
+
+    it('opens a request from Meteor’s row menu with the current list query', async () => {
+        const { wrapper, route, push } = await createWrapper();
+        route.query = { page: '2', term: 'Transfer' };
+        await flushPromises();
+        await wrapper.get('[data-action="view"]').trigger('click');
+
+        expect(push).toHaveBeenCalledWith({
+            name: 'sw.approval.flow.detail',
+            params: { id: request.id },
+            query: { page: '2', term: 'Transfer', view: 'todo' },
+        });
     });
 
     it('reads page and status from the route and resets them when changing inbox', async () => {

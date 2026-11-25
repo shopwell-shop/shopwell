@@ -1,24 +1,4 @@
 .sw-approval-flow-list {
-    &__content {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-12);
-        height: 100%;
-        min-height: 0;
-        padding: var(--scale-size-24);
-        background: var(--color-background-secondary-default);
-    }
-
-    &__table {
-        flex: 1;
-        min-height: 0;
-
-        &.mt-data-table .mt-data-table__search {
-            flex: 0 1 19rem;
-            min-width: 0;
-        }
-    }
-
     &__tabs {
         min-width: 0;
         margin-block-end: 0;
@@ -28,27 +8,5 @@
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        min-height: var(--scale-size-40);
-    }
-
-    &__request {
-        font-weight: var(--font-weight-medium);
-    }
-
-    @media (max-width: 760px) {
-        &__content {
-            padding: var(--scale-size-12);
-        }
-
-        &__content .mt-data-table {
-            .mt-data-table__footer-inset {
-                flex-wrap: wrap;
-                gap: var(--scale-size-8);
-            }
-
-            .mt-data-table__footer-right {
-                margin-inline-start: 0;
-            }
-        }
     }
 }
