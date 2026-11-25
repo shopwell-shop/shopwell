@@ -1,0 +1,13 @@
+{% block sw_approval_flow_canvas %}
+<div
+    class="sw-approval-flow-designer__viewport"
+    :class="{ 'sw-approval-flow-designer__viewport--free': document.meta.editingMode === 'free' }"
+    role="region"
+    :aria-label="$t('sw-approval-flow.designer.canvas')"
+>
+    <div
+        ref="viewport"
+        class="sw-approval-flow-designer__graph"
+    ></div>
+</div>
+{% endblock %}

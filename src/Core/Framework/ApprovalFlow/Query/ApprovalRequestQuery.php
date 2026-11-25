@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Query;
 
+use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Diagnostics\GraphDiagnostics;
@@ -20,6 +21,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\User\UserCollection;
 
 /**
@@ -53,13 +55,14 @@ class ApprovalRequestQuery
         private readonly EntityRepository $operations,
         private readonly ApprovalFormReader $forms,
         private readonly EntityRepository $users,
+        private readonly Connection $connection,
     ) {
     }
 
     /**
      * @return array{data: list<RequestSummary>, meta: array{total: int}}
      */
-    public function search(ApprovalRequestView $view, int $limit, int $offset, ?ApprovalInstanceStatus $status, Context $context): array
+    public function search(ApprovalRequestView $view, int $limit, int $offset, ?ApprovalInstanceStatus $status, Context $context, string $term = ''): array
     {
         $userId = $this->userId($context);
         $criteria = (new Criteria())
@@ -84,6 +87,10 @@ class ApprovalRequestQuery
         }
         if ($status !== null) {
             $criteria->addFilter(new EqualsFilter('instance.status', $status->value));
+        }
+        if ($term !== '') {
+            $releaseIds = $this->findReleasesByTitle($term);
+            $criteria->addFilter(new EqualsAnyFilter('instance.releaseId', $releaseIds));
         }
         $result = $this->requests->search($criteria, $context);
         $names = $this->userNames(array_values($result->getEntities()->map(static fn (ApprovalRequestEntity $request): string => $request->getInitiatorId())), $context);
@@ -205,6 +212,27 @@ class ApprovalRequestQuery
             'outcome' => $instance->getOutcome()?->value,
             'aggregateVersion' => $instance->getAggregateVersion(),
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function findReleasesByTitle(string $term): array
+    {
+        // Only the title is visible in the list. The rest of the frozen graph can contain private configuration.
+        $ids = $this->connection->fetchFirstColumn(
+            <<<'SQL'
+                SELECT id
+                FROM approval_flow_release
+                WHERE LOCATE(
+                    :term,
+                    CONVERT(JSON_UNQUOTE(JSON_EXTRACT(graph_json, '$.meta.name')) USING utf8mb4) COLLATE utf8mb4_unicode_ci
+                ) > 0
+                SQL,
+            ['term' => $term],
+        );
+
+        return array_map(static fn (string $id): string => Uuid::fromBytesToHex($id), $ids);
     }
 
     /**

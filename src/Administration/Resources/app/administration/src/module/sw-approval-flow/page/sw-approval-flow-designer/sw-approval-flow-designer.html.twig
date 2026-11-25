@@ -1,0 +1,289 @@
+{% block sw_approval_flow_designer %}
+<sw-page
+    class="sw-approval-flow-designer"
+    :show-search-bar="false"
+    :back-route="definitionId
+        ? { name: 'sw.approval.flow.definition', params: { id: definitionId } }
+        : { name: 'sw.approval.flow.definitions' }"
+    :back-label="$t('sw-approval-flow.design.title')"
+>
+    <template #smart-bar-header>
+        <h2>{{ graph?.meta.name || $t('sw-approval-flow.designer.title') }}</h2>
+    </template>
+    <template #smart-bar-actions>
+        <mt-button
+            v-if="canEdit"
+            variant="primary"
+            :is-loading="isSaving"
+            :disabled="readOnly || isLoading || loadError || !isDirty || !graph?.meta.name.trim()"
+            @click="saveDraft"
+        >
+            {{ $t('sw-approval-flow.designer.save') }}
+        </mt-button>
+    </template>
+
+    <template #content>
+        <mt-loader v-if="isLoading" />
+        <mt-banner
+            v-else-if="loadError"
+            variant="critical"
+            role="alert"
+        >
+            {{ $t('sw-approval-flow.design.detailError') }}
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="loadDesigner"
+            >
+                {{ $t('sw-approval-flow.general.retry') }}
+            </mt-button>
+        </mt-banner>
+        <div
+            v-else-if="graph"
+            class="sw-approval-flow-designer__workspace"
+        >
+            <mt-banner
+                v-if="saveError"
+                variant="critical"
+                role="alert"
+            >
+                {{ $t(`sw-approval-flow.designer.${saveError}`) }}
+            </mt-banner>
+            <div class="sw-approval-flow-designer__body">
+                <div class="sw-approval-flow-designer__stage">
+                    {% block sw_approval_flow_designer_canvas %}
+                    <sw-approval-flow-canvas
+                        ref="canvas"
+                        :document="graph"
+                        :views="nodeViews"
+                        :can-insert="!readOnly && canInsertNode"
+                        :selected-id="selectedNodeId"
+                        :selected-connection="selectedConnection"
+                        :read-only="readOnly"
+                        @select-node="selectNode"
+                        @select-connection="selectConnection"
+                        @move-node="moveNode"
+                        @connect="connect"
+                        @insert-node="insertNode"
+                    />
+                    {% endblock %}
+                    {% block sw_approval_flow_designer_toolbar %}
+                    <div
+                        v-if="canEdit || toolbarActions.length"
+                        class="sw-approval-flow-designer__toolbar"
+                    >
+                        <div
+                            v-if="canEdit"
+                            class="sw-approval-flow-designer__tools"
+                        >
+                            <mt-select
+                                v-if="nodeOptions.length > 1"
+                                v-model="selectedType"
+                                class="sw-approval-flow-designer__node-type"
+                                :aria-label="$t('sw-approval-flow.designer.nodeType')"
+                                :hide-clearable-button="true"
+                                :options="nodeOptions"
+                                :disabled="readOnly"
+                            />
+                            <mt-button
+                                size="small"
+                                variant="secondary"
+                                :disabled="readOnly || !selectedType"
+                                @click="addNode"
+                            >
+                                <template #iconFront>
+                                    <mt-icon
+                                        name="regular-plus"
+                                        size="14px"
+                                    />
+                                </template>
+                                {{ $t('sw-approval-flow.designer.addNode') }}
+                            </mt-button>
+                            <mt-button
+                                square
+                                size="small"
+                                variant="tertiary"
+                                :aria-label="$t('sw-approval-flow.designer.undo')"
+                                :title="$t('sw-approval-flow.designer.undo')"
+                                :disabled="readOnly || !editorState?.canUndo"
+                                @click="undo"
+                            >
+                                <mt-icon
+                                    name="regular-undo"
+                                    size="16px"
+                                />
+                            </mt-button>
+                            <mt-button
+                                square
+                                size="small"
+                                variant="tertiary"
+                                :aria-label="$t('sw-approval-flow.designer.redo')"
+                                :title="$t('sw-approval-flow.designer.redo')"
+                                :disabled="readOnly || !editorState?.canRedo"
+                                @click="redo"
+                            >
+                                <mt-icon
+                                    name="regular-redo"
+                                    size="16px"
+                                />
+                            </mt-button>
+                        </div>
+                        <div
+                            v-if="toolbarActions.length"
+                            class="sw-approval-flow-designer__tools"
+                        >
+                            <mt-button
+                                v-for="action in toolbarActions"
+                                :key="action.name"
+                                size="small"
+                                variant="secondary"
+                                :disabled="!editorSession.canRunAction(action.name)"
+                                @click="editorSession.runAction(action.name)"
+                            >
+                                {{ $t(action.labelKey) }}
+                            </mt-button>
+                        </div>
+                        <mt-button
+                            v-if="!definitionId && !showSettings"
+                            square
+                            size="small"
+                            variant="tertiary"
+                            :aria-label="$t('sw-approval-flow.designer.settings')"
+                            :title="$t('sw-approval-flow.designer.settings')"
+                            @click="showDraftSettings = true"
+                        >
+                            <mt-icon
+                                name="regular-cog"
+                                size="16px"
+                            />
+                        </mt-button>
+                    </div>
+                    {% endblock %}
+                    <div class="sw-approval-flow-designer__navigation">
+                        <mt-button
+                            size="small"
+                            variant="tertiary"
+                            :aria-label="$t('sw-approval-flow.designer.zoomOut')"
+                            :title="$t('sw-approval-flow.designer.zoomOut')"
+                            @click="zoom(-0.15)"
+                        >
+                            −
+                        </mt-button>
+                        <mt-button
+                            size="small"
+                            variant="tertiary"
+                            square
+                            :aria-label="$t('sw-approval-flow.designer.fit')"
+                            :title="$t('sw-approval-flow.designer.fit')"
+                            @click="fit"
+                        >
+                            <mt-icon
+                                name="regular-compress-arrows"
+                                size="16px"
+                            />
+                        </mt-button>
+                        <mt-button
+                            size="small"
+                            variant="tertiary"
+                            :aria-label="$t('sw-approval-flow.designer.zoomIn')"
+                            :title="$t('sw-approval-flow.designer.zoomIn')"
+                            @click="zoom(0.15)"
+                        >
+                            +
+                        </mt-button>
+                        <mt-button
+                            v-if="diagnostics.length"
+                            size="small"
+                            variant="tertiary"
+                            :aria-expanded="showDiagnostics"
+                            @click="showDiagnostics = !showDiagnostics"
+                        >
+                            {{ $t('sw-approval-flow.design.diagnostics') }} ({{ diagnostics.length }})
+                        </mt-button>
+                    </div>
+                </div>
+                {% block sw_approval_flow_designer_settings %}
+                <aside
+                    v-if="showSettings"
+                    class="sw-approval-flow-designer__settings"
+                >
+                    <header class="sw-approval-flow-designer__settings-header">
+                        <h3>{{ settingsTitle }}</h3>
+                        <mt-button
+                            square
+                            size="small"
+                            variant="tertiary"
+                            :aria-label="$t('global.default.close')"
+                            :title="$t('global.default.close')"
+                            @click="closeSettings"
+                        >
+                            <mt-icon
+                                name="regular-times"
+                                size="16px"
+                            />
+                        </mt-button>
+                    </header>
+                    <div class="sw-approval-flow-designer__settings-content">
+
+                        <mt-text-field
+                            v-if="!definitionId"
+                            :model-value="graph.meta.name"
+                            :label="$t('sw-approval-flow.design.name')"
+                            :disabled="readOnly"
+                            maxlength="255"
+                            @update:model-value="setName"
+                        />
+                        <mt-select
+                            v-if="nodeSelectionOptions.length > 3"
+                            :model-value="selectedNodeId"
+                            :aria-label="$t('sw-approval-flow.designer.selection')"
+                            :placeholder="$t('sw-approval-flow.designer.selection')"
+                            :options="nodeSelectionOptions"
+                            @update:model-value="selectNode"
+                        />
+                        <component
+                            :is="selectedSettings"
+                            v-if="selectedSettings && selectedNode"
+                            :key="selectedNode.id"
+                            :node="selectedNode"
+                            :business-types="catalog?.businessTypes ?? []"
+                            :read-only="readOnly"
+                            @update:configuration="updateConfiguration"
+                            @select-business="selectBusiness"
+                        />
+                        <component
+                            :is="panel.component"
+                            v-for="panel in panels"
+                            :key="panel.name"
+                            :context="editorSession.contextForComponent(panel.name)"
+                        />
+                        <mt-button
+                            v-if="canEdit && (selectedConnection || (selectedNode && !['core:start', 'core:end'].includes(selectedNode.type)))"
+                            size="small"
+                            variant="critical"
+                            ghost
+                            :disabled="readOnly"
+                            @click="removeSelection"
+                        >
+                            {{ $t(selectedConnection ? 'sw-approval-flow.designer.removeConnection' : 'sw-approval-flow.designer.removeNode') }}
+                        </mt-button>
+                    </div>
+                </aside>
+                {% endblock %}
+            </div>
+            <ul
+                v-if="showDiagnostics"
+                class="sw-approval-flow-designer__diagnostics"
+                role="status"
+            >
+                <li
+                    v-for="diagnostic in diagnostics"
+                    :key="`${diagnostic.path}:${diagnostic.code}`"
+                >
+                    {{ diagnostic.message }}
+                </li>
+            </ul>
+        </div>
+    </template>
+</sw-page>
+{% endblock %}

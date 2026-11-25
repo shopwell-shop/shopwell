@@ -70,6 +70,7 @@ class ApprovalFlowException extends HttpException
     public const INVALID_ARTIFACT_MANIFEST = 'APPROVAL_FLOW__INVALID_ARTIFACT_MANIFEST';
     public const ARTIFACT_SERVICE_NOT_FOUND = 'APPROVAL_FLOW__ARTIFACT_SERVICE_NOT_FOUND';
     public const DRAFT_NOT_FOUND = 'APPROVAL_FLOW__DRAFT_NOT_FOUND';
+    public const INVALID_DRAFT_REVISION = 'APPROVAL_FLOW__INVALID_DRAFT_REVISION';
     public const DRAFT_REVISION_CONFLICT = 'APPROVAL_FLOW__DRAFT_REVISION_CONFLICT';
     public const REMOVAL_NOT_CONFIRMED = 'APPROVAL_FLOW__REMOVAL_NOT_CONFIRMED';
     public const UNCONTROLLED_DRAFT_WRITE = 'APPROVAL_FLOW__UNCONTROLLED_DRAFT_WRITE';
@@ -555,6 +556,15 @@ class ApprovalFlowException extends HttpException
             self::DRAFT_NOT_FOUND,
             'No approval draft exists for definition "{{ definitionId }}".',
             ['definitionId' => $definitionId]
+        );
+    }
+
+    public static function invalidDraftRevision(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_DRAFT_REVISION,
+            'The expected draft revision must be a positive integer.'
         );
     }
 

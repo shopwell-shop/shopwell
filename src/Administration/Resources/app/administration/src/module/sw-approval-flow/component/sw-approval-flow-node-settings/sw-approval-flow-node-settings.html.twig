@@ -1,0 +1,51 @@
+{% block sw_approval_flow_node_settings %}
+<div class="sw-approval-flow-designer__fields">
+    <mt-select
+        v-if="node.type === 'core:start'"
+        :model-value="node.config.businessType"
+        :label="$t('sw-approval-flow.designer.businessType')"
+        :options="businessOptions"
+        :hide-clearable-button="true"
+        :disabled="readOnly"
+        @update:model-value="$emit('select-business', $event)"
+    />
+    <template v-else-if="node.type === 'core:approval'">
+        <sw-entity-multi-id-select
+            v-if="canReadUsers"
+            class="sw-approval-flow-designer__reviewers"
+            :criteria="reviewerCriteria"
+            label-property="name"
+            description-position="bottom"
+            :value="reviewerIds"
+            :repository="users"
+            :label="$t('sw-approval-flow.designer.reviewers')"
+            :disabled="readOnly"
+            @update:value="updateReviewers"
+        >
+            <template #result-description-property="{ item }">
+                {{ item.username }}
+            </template>
+        </sw-entity-multi-id-select>
+        <mt-select
+            :model-value="policy"
+            :label="$t('sw-approval-flow.designer.approvalPolicy')"
+            :options="policyOptions"
+            :hide-clearable-button="true"
+            :disabled="readOnly"
+            @update:model-value="updatePolicy"
+        />
+    </template>
+    <mt-select
+        v-else-if="node.type === 'core:end'"
+        :model-value="node.config.outcome"
+        :label="$t('sw-approval-flow.designer.outcome')"
+        :hide-clearable-button="true"
+        :options="[
+            { value: 'approved', label: $t('sw-approval-flow.designer.approved') },
+            { value: 'rejected', label: $t('sw-approval-flow.designer.rejected') }
+        ]"
+        :disabled="readOnly"
+        @update:model-value="update('outcome', $event)"
+    />
+</div>
+{% endblock %}

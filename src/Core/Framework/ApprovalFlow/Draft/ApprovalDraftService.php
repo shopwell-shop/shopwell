@@ -46,6 +46,18 @@ class ApprovalDraftService
         return new ApprovalDraft($stored->getDefinitionId(), $stored->getRevision(), $read['graph'], $read['diagnostics']);
     }
 
+    public function save(string $definitionId, int $expectedRevision, string $graphJson, Context $context): ApprovalDraft
+    {
+        return $this->store->update($definitionId, $expectedRevision, $context, function (string $currentGraphJson, int $revision) use ($definitionId, $graphJson): array {
+            $write = $this->codec->prepareDraft($graphJson);
+
+            return [
+                'graphJson' => $write['graph']->json,
+                'result' => new ApprovalDraft($definitionId, $revision, $write['graph'], $write['diagnostics']),
+            ];
+        });
+    }
+
     public function addNode(string $definitionId, int $expectedRevision, string $nodeJson, Context $context): ApprovalDraftEdit
     {
         return $this->edit($definitionId, $expectedRevision, $context, fn (DraftGraph $graph) => $this->mutator->addNode($graph, $nodeJson));

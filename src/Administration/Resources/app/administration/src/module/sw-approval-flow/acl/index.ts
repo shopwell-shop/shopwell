@@ -18,6 +18,14 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
             privileges: ['approval_flow_definition:read', 'approval_flow_draft:read', 'approval_flow_release:read'],
             dependencies: [],
         },
+        editor: {
+            privileges: ['approval_flow_draft:update', 'user:read'],
+            dependencies: ['approval_flow_definition.viewer'],
+        },
+        creator: {
+            privileges: ['approval_flow_definition:create', 'approval_flow_draft:create'],
+            dependencies: ['approval_flow_definition.editor'],
+        },
     },
 });
 

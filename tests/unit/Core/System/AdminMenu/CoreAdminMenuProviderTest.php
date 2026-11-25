@@ -137,10 +137,12 @@ class CoreAdminMenuProviderTest extends TestCase
         static::assertSame('审批', $definitions['sw-approval-flow']->translations['zh-CN']['title']);
         static::assertSame('sw-approval-flow', $definitions['sw-approval-flow-definitions']->parent);
         static::assertSame('approval_flow_definition.viewer', $definitions['sw-approval-flow-definitions']->privilege);
-        foreach (['todo', 'done', 'started'] as $view) {
-            static::assertSame('sw-approval-flow', $definitions['sw-approval-flow-' . $view]->parent);
-            static::assertSame('approval_flow.viewer', $definitions['sw-approval-flow-' . $view]->privilege);
-        }
+        $personalMenu = $definitions['sw-approval-flow-todo'];
+        static::assertSame('sw-approval-flow', $personalMenu->parent);
+        static::assertSame('approval_flow.viewer', $personalMenu->privilege);
+        static::assertSame('我的审批', $personalMenu->translations['zh-CN']['title']);
+        static::assertArrayNotHasKey('sw-approval-flow-done', $definitions);
+        static::assertArrayNotHasKey('sw-approval-flow-started', $definitions);
     }
 
     public function testSettingsRetainTheirOriginalGroups(): void

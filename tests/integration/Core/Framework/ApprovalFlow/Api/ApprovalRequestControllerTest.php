@@ -104,7 +104,7 @@ class ApprovalRequestControllerTest extends TestCase
         $browser = $this->getBrowser(authorized: false);
         $reviewer->authorizeBrowser($browser);
 
-        $browser->request('GET', '/api/_action/approval-flow/requests?view=todo&limit=1&offset=0&status=running');
+        $browser->request('GET', '/api/_action/approval-flow/requests?view=todo&limit=1&offset=0&status=running&term=transfer');
 
         static::assertSame(200, $browser->getResponse()->getStatusCode(), (string) $browser->getResponse()->getContent());
         $content = (string) $browser->getResponse()->getContent();
@@ -113,6 +113,10 @@ class ApprovalRequestControllerTest extends TestCase
         static::assertSame($request->getId(), $body['data'][0]['id']);
         static::assertArrayNotHasKey('form', $body['data'][0]);
         $this->assertResponseSchema('/_action/approval-flow/requests', $content);
+
+        $browser->request('GET', '/api/_action/approval-flow/requests?term=Merchant');
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        static::assertSame(['data' => [], 'meta' => ['total' => 0]], json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR));
 
         $browser->request('GET', '/api/_action/approval-flow/requests/' . $request->getId());
 
@@ -167,7 +171,7 @@ class ApprovalRequestControllerTest extends TestCase
             $browser->request('GET', '/api/_action/approval-flow/requests/' . $id);
             static::assertSame(404, $browser->getResponse()->getStatusCode());
         }
-        $browser->request('GET', '/api/_action/approval-flow/requests?view=started');
+        $browser->request('GET', '/api/_action/approval-flow/requests?view=started&term=transfer');
         static::assertSame(200, $browser->getResponse()->getStatusCode());
         static::assertSame(['data' => [], 'meta' => ['total' => 0]], json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR));
     }
@@ -191,6 +195,7 @@ class ApprovalRequestControllerTest extends TestCase
         yield 'fractional page size' => ['limit=1.5'];
         yield 'array view' => ['view[]=todo'];
         yield 'array limit' => ['limit[]=1'];
+        yield 'array search term' => ['term[]=transfer'];
     }
 
     private function createRequest(string $reviewerId, string $authorId): ApprovalRequestEntity

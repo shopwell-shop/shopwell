@@ -5,20 +5,24 @@ import PrivilegesService from 'src/app/service/privileges.service';
 jest.mock('./acl', () => jest.fn());
 
 describe('approval flow module registration', () => {
-    it('connects all personal inboxes to the approval menu with the same access boundary', () => {
+    it('keeps one personal approval menu active for all three views', () => {
         const module = Shopwell.Module.getModuleRegistry().get('sw-approval-flow');
-        for (const view of ['todo', 'done', 'started']) {
+        const routes = { todo: undefined, done: 'sw.approval.flow.todo', started: 'sw.approval.flow.todo' };
+        for (const [view, parentPath] of Object.entries(routes)) {
             const route = module?.routes.get(`sw.approval.flow.${view}`);
+            const meta = route?.meta as { privilege?: string; parentPath?: string } | undefined;
             expect(route?.components).toEqual({ default: 'sw-approval-flow-list' });
-            expect((route?.meta as { privilege?: string } | undefined)?.privilege).toBe('approval_flow.viewer');
-            expect(module?.manifest.navigation).toContainEqual(
-                expect.objectContaining({
-                    id: `sw-approval-flow-${view}`,
-                    path: `sw.approval.flow.${view}`,
-                    privilege: 'approval_flow.viewer',
-                }),
-            );
+            expect(meta?.privilege).toBe('approval_flow.viewer');
+            expect(meta?.parentPath).toBe(parentPath);
         }
+        expect(module?.manifest.navigation?.filter((entry) => entry.privilege === 'approval_flow.viewer')).toEqual([
+            {
+                id: 'sw-approval-flow-todo',
+                path: 'sw.approval.flow.todo',
+                privilege: 'approval_flow.viewer',
+                moduleType: 'core',
+            },
+        ]);
         expect(module?.manifest.navigation).toContainEqual({ id: 'sw-approval-flow', moduleType: 'core' });
         expect((module?.routes.get('sw.approval.flow.detail')?.meta as { privilege?: string } | undefined)?.privilege).toBe(
             'approval_flow.viewer',

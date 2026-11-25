@@ -3,8 +3,12 @@
     class="sw-approval-flow-list"
     :show-search-bar="false"
 >
+    {# The list routes are tabs of the same page, even when they declare a sidebar parent. #}
+    <template #smart-bar-back>
+        <span hidden></span>
+    </template>
     <template #smart-bar-header>
-        <h2>{{ $t('sw-approval-flow.general.title') }} <span
+        <h2>{{ $t('sw-approval-flow.list.title') }} <span
             v-if="!isLoading && !hasError"
             class="sw-page__smart-bar-amount"
         >({{ total }})</span></h2>
@@ -24,87 +28,123 @@
             v-if="acl.can('approval_flow.viewer')"
             class="sw-approval-flow-list__content"
         >
-            <div class="sw-approval-flow-list__toolbar">
-                <mt-tabs
-                    :key="view"
-                    :items="tabs"
-                    :default-item="view"
-                    @new-item-active="onViewChange"
-                />
-                <mt-select
-                    class="sw-approval-flow-list__status"
-                    :label="$t('sw-approval-flow.list.status')"
-                    :model-value="status"
-                    :options="statusOptions"
-                    :hide-clearable-button="true"
-                    @update:model-value="onStatusChange"
-                />
-            </div>
-            <mt-banner
-                v-if="hasError"
-                variant="critical"
-                role="alert"
-            >
-                {{ $t('sw-approval-flow.list.loadError') }}
-                <mt-button
-                    variant="secondary"
-                    size="small"
-                    @click="loadRequests"
-                >
-                    {{ $t('sw-approval-flow.general.retry') }}
-                </mt-button>
-            </mt-banner>
-            <div
-                v-else-if="isLoading || requests.length || total"
-                class="sw-approval-flow-list__listing"
-            >
-                <sw-data-grid
-                    :data-source="requests"
-                    :columns="columns"
-                    :is-loading="isLoading"
-                    :show-selection="false"
-                    :show-actions="false"
-                    :allow-inline-edit="false"
-                    :full-page="true"
-                    identifier="id"
-                    class="sw-approval-flow-list__grid"
-                >
-                {% block sw_approval_flow_list_columns %}
-                    <template #column-title="{ item }">
-                        <router-link :to="detailRoute(item.id)">
-                            {{ item.title }}
-                        </router-link>
-                    </template>
-                    <template #column-initiatorName="{ item }">
-                        {{ item.initiatorName ?? $t('sw-approval-flow.general.deletedUser') }}
-                    </template>
-                    <template #column-status="{ item }">
-                        <sw-approval-flow-status-badge
-                            :status="item.status"
-                            :outcome="item.outcome"
-                        />
-                    </template>
-                    <template #column-createdAt="{ item }">
-                        {{ date(item.createdAt) }}
-                    </template>
-                {% endblock %}
-                    <template #pagination>
-                        <sw-pagination
-                            :page="page"
-                            :limit="limit"
-                            :total="total"
-                            :auto-hide="false"
-                            @page-change="onPageChange"
-                        />
-                    </template>
-                </sw-data-grid>
-            </div>
-            <mt-empty-state
-                v-else
-                icon="regular-check-circle"
-                :headline="$t(`sw-approval-flow.empty.${view}`)"
-                :description="$t('sw-approval-flow.empty.description')"
+            <mt-tabs
+                class="sw-approval-flow-list__tabs"
+                :items="tabs"
+                :aria-label="$t('sw-approval-flow.list.title')"
+                :default-item="view"
+                @new-item-active="onViewChange"
             />
+            <mt-data-table
+                class="sw-approval-flow-list__table"
+                :data-source="requests"
+                :columns="columns"
+                :caption="$t(`sw-approval-flow.views.${view}`)"
+                layout="full"
+                :is-loading="isLoading"
+                :allow-row-selection="false"
+                :search-value="term"
+                :disable-edit="true"
+                :disable-delete="true"
+                :disable-settings-table="true"
+                :show-outlines="false"
+                :enable-outline-framing="false"
+                :current-page="page"
+                :pagination-limit="limit"
+                :pagination-total-items="total"
+                :pagination-options="[10, 25, 50, 100]"
+                @search-value-change="onSearch"
+                @pagination-current-page-change="onPageChange({ page: $event, limit })"
+                @pagination-limit-change="onPageChange({ page: 1, limit: $event })"
+            >
+                <template #toolbar>
+                    <div class="sw-approval-flow-list__tools">
+                        <mt-popover
+                            v-if="view !== 'todo' || status"
+                            :title="$t('sw-approval-flow.list.status')"
+                            width="small"
+                        >
+                            <template #trigger="{ toggleFloatingUi, isOpened }">
+                                <mt-button
+                                    variant="secondary"
+                                    size="default"
+                                    :aria-expanded="isOpened"
+                                    @click="toggleFloatingUi"
+                                >
+                                    <mt-icon
+                                        name="solid-filter-s"
+                                        size="14px"
+                                    />
+                                    {{ status ? $t(`sw-approval-flow.status.${status}`) : $t('sw-approval-flow.list.filters') }}
+                                </mt-button>
+                            </template>
+                            <template #popover-items__base="{ toggleFloatingUi }">
+                                <mt-popover-item
+                                    v-for="option in statusOptions"
+                                    :key="option.value"
+                                    :label="option.label"
+                                    :type="status === option.value ? 'active' : 'default'"
+                                    :on-label-click="() => onStatusChange(option.value, toggleFloatingUi)"
+                                />
+                            </template>
+                        </mt-popover>
+                    </div>
+                </template>
+                {% block sw_approval_flow_list_columns %}
+                <template #column-title="{ data }">
+                    <router-link
+                        class="sw-approval-flow-list__request"
+                        :to="detailRoute(data.id)"
+                    >
+                        {{ data.title }}
+                    </router-link>
+                </template>
+                <template #column-initiatorName="{ data }">
+                    {{ data.initiatorName ?? $t('sw-approval-flow.general.deletedUser') }}
+                </template>
+                <template #column-status="{ data }">
+                    <sw-approval-flow-status-badge
+                        :status="data.status"
+                        :outcome="data.outcome"
+                    />
+                </template>
+                <template #column-createdAt="{ data }">
+                    {{ date(data.createdAt) }}
+                </template>
+                <template #column-actions="{ data }">
+                    <mt-button
+                        is="router-link"
+                        variant="tertiary"
+                        size="small"
+                        :to="detailRoute(data.id)"
+                    >
+                        {{ $t('global.default.view') }}
+                    </mt-button>
+                </template>
+                {% endblock %}
+                <template #empty-state>
+                    <mt-banner
+                        v-if="hasError"
+                        variant="critical"
+                        role="alert"
+                    >
+                        {{ $t('sw-approval-flow.list.loadError') }}
+                        <mt-button
+                            variant="secondary"
+                            size="small"
+                            @click="loadRequests"
+                        >
+                            {{ $t('sw-approval-flow.general.retry') }}
+                        </mt-button>
+                    </mt-banner>
+                    <mt-empty-state
+                        v-else
+                        centered
+                        icon="regular-check-circle"
+                        :headline="$t(status || term ? 'sw-approval-flow.empty.filtered' : `sw-approval-flow.empty.${view}`)"
+                    />
+                </template>
+            </mt-data-table>
         </div>
         {% endblock %}
     </template>

@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Api;
 
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
@@ -81,5 +82,46 @@ class ApprovalDesignControllerTest extends TestCase
         $result = json_decode((string) $browser->getResponse()->getContent(), associative: true, flags: \JSON_THROW_ON_ERROR);
         static::assertSame(1, $result['data']['attributes']['revision']);
         static::assertSame($draft->graph->json, $result['data']['attributes']['graphJson']);
+    }
+
+    public function testDesignEditsUseTheDraftRevisionAndSeparateWritePrivileges(): void
+    {
+        $path = '/api/_action/approval-flow/design/drafts';
+        $graph = GraphFixture::codec()->decodeWritable(new DraftGraph(GraphFixture::json()));
+        $graph->nodes[1]->position->x = 180;
+        $body = ['name' => 'Transfer review', 'graphJson' => GraphFixture::json()];
+
+        $viewer = $this->getBrowser(permissions: ['approval_flow_definition:read', 'approval_flow_draft:read']);
+        $viewer->jsonRequest('POST', $path, $body);
+        static::assertSame(403, $viewer->getResponse()->getStatusCode());
+
+        $this->resetBrowser();
+        $editor = $this->getBrowser(permissions: [
+            'approval_flow_definition:create',
+            'approval_flow_draft:create',
+            'approval_flow_draft:update',
+        ]);
+        $editor->jsonRequest('POST', $path, $body);
+        static::assertSame(201, $editor->getResponse()->getStatusCode());
+        $draft = json_decode((string) $editor->getResponse()->getContent(), associative: true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame(1, $draft['revision']);
+
+        $edit = ['expectedRevision' => 1, 'graphJson' => json_encode($graph, \JSON_THROW_ON_ERROR)];
+        $draftPath = $path . '/' . $draft['definitionId'];
+        $viewer->jsonRequest('PATCH', $draftPath, $edit);
+        static::assertSame(403, $viewer->getResponse()->getStatusCode());
+        $editor->jsonRequest('PATCH', $draftPath, $edit);
+        static::assertSame(200, $editor->getResponse()->getStatusCode());
+        $saved = json_decode((string) $editor->getResponse()->getContent(), associative: true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame(2, $saved['revision']);
+        static::assertSame(180, json_decode($saved['graphJson'], true, flags: \JSON_THROW_ON_ERROR)['nodes'][1]['position']['x']);
+
+        $editor->jsonRequest('PATCH', $draftPath, $edit);
+        static::assertSame(409, $editor->getResponse()->getStatusCode());
+        $editor->jsonRequest('PATCH', $draftPath, ['expectedRevision' => 0, 'graphJson' => $edit['graphJson']]);
+        static::assertSame(400, $editor->getResponse()->getStatusCode());
+        $editor->jsonRequest('PATCH', $draftPath, ['expectedRevision' => 2, 'graphJson' => '{}']);
+        static::assertSame(400, $editor->getResponse()->getStatusCode());
+        static::assertSame(2, static::getContainer()->get(ApprovalDraftService::class)->read($draft['definitionId'], Context::createDefaultContext())->revision);
     }
 }

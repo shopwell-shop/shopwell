@@ -19,6 +19,14 @@
         >
             {{ $t('sw-approval-flow.general.refresh') }}
         </mt-button>
+        <mt-button
+            is="router-link"
+            v-if="detail"
+            :to="{ name: 'sw.approval.flow.designer', params: { id: definitionId } }"
+            variant="primary"
+        >
+            {{ $t('sw-approval-flow.designer.open') }}
+        </mt-button>
     </template>
     <template #content>
         <mt-loader v-if="isLoading" />

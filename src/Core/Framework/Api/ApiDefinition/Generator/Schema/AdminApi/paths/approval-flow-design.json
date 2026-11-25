@@ -84,6 +84,129 @@
                     }
                 }
             }
+        },
+        "/_action/approval-flow/design/drafts": {
+            "post": {
+                "operationId": "approvalDesignCreateDraft",
+                "summary": "Create an approval definition and draft",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "name",
+                                    "graphJson"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "graphJson": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Saved draft",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalDesignDraft"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid name, revision or graph"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Draft write privileges required"
+                    }
+                }
+            }
+        },
+        "/_action/approval-flow/design/drafts/{definitionId}": {
+            "patch": {
+                "operationId": "approvalDesignSaveDraft",
+                "summary": "Save the graph at the expected draft revision",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "definitionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "expectedRevision",
+                                    "graphJson"
+                                ],
+                                "properties": {
+                                    "expectedRevision": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "graphJson": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Saved draft",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalDesignDraft"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid name, revision or graph"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Draft write privileges required"
+                    },
+                    "404": {
+                        "description": "Draft not found"
+                    },
+                    "409": {
+                        "description": "Draft revision conflict"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -144,7 +267,9 @@
                             "enum": [
                                 "advance",
                                 "requestApproval",
-                                "complete"
+                                "complete",
+                                "openScope",
+                                "wait"
                             ]
                         }
                     }
@@ -235,6 +360,33 @@
                     },
                     "message": {
                         "type": "string"
+                    }
+                }
+            },
+            "ApprovalDesignDraft": {
+                "type": "object",
+                "required": [
+                    "definitionId",
+                    "revision",
+                    "graphJson",
+                    "diagnostics"
+                ],
+                "properties": {
+                    "definitionId": {
+                        "type": "string"
+                    },
+                    "revision": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "graphJson": {
+                        "type": "string"
+                    },
+                    "diagnostics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalGraphDiagnostic"
+                        }
                     }
                 }
             }

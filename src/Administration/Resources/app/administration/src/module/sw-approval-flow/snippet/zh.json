@@ -9,15 +9,18 @@
             "notAvailable": "暂无"
         },
         "views": {
-            "todo": "我的待办",
-            "done": "我的已办",
+            "todo": "待我审批",
+            "done": "我已审批",
             "started": "我发起的"
         },
         "list": {
+            "title": "我的审批",
             "request": "审批申请",
             "initiator": "发起人",
             "status": "状态",
             "createdAt": "发起时间",
+            "filters": "筛选",
+            "actions": "操作",
             "allStatuses": "全部状态",
             "loadError": "审批列表加载失败，请重试。"
         },
@@ -46,7 +49,7 @@
             "todo": "暂无待办审批",
             "done": "暂无已办审批",
             "started": "暂无发起的审批",
-            "description": "可调整状态筛选，或稍后再来查看。"
+            "filtered": "没有符合筛选条件的申请"
         },
         "detail": {
             "title": "审批详情",
@@ -114,6 +117,40 @@
             "start": "发起",
             "approval": "审批",
             "end": "结束"
+        },
+        "designer": {
+            "title": "流程设计",
+            "create": "新建流程",
+            "open": "流程设计",
+            "save": "保存草稿",
+            "nodeType": "节点类型",
+            "addNode": "添加节点",
+            "undo": "撤销",
+            "redo": "重做",
+            "zoomOut": "缩小",
+            "zoomIn": "放大",
+            "fit": "适应画布",
+            "canvas": "审批流程画布",
+            "selection": "节点",
+            "removeNode": "删除节点",
+            "removeConnection": "删除连线",
+            "businessType": "审批业务",
+            "reviewers": "审批人",
+            "settings": "节点配置",
+            "noReviewers": "未设置审批人",
+            "reviewerCount": "已选 {count} 人",
+            "approvalPolicy": "审批方式",
+            "outcome": "结束结果",
+            "approved": "通过",
+            "rejected": "拒绝",
+            "discard": "放弃未保存的修改？",
+            "conflict": "草稿已被更新。请保留当前修改，重新打开后核对版本。",
+            "saveError": "草稿保存失败。请检查流程配置后重试。",
+            "policy": {
+                "all": "会签",
+                "any": "或签",
+                "single": "单人审批"
+            }
         }
     },
     "sw-privileges": {

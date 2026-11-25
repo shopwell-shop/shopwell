@@ -9,15 +9,18 @@
             "notAvailable": "Not available"
         },
         "views": {
-            "todo": "My pending approvals",
-            "done": "My completed reviews",
+            "todo": "Pending",
+            "done": "Reviewed",
             "started": "My requests"
         },
         "list": {
+            "title": "My approvals",
             "request": "Request",
             "initiator": "Initiated by",
             "status": "Status",
             "createdAt": "Submitted on",
+            "filters": "Filters",
+            "actions": "Actions",
             "allStatuses": "All statuses",
             "loadError": "Approvals could not be loaded. Please try again."
         },
@@ -46,7 +49,7 @@
             "todo": "No pending approvals",
             "done": "No completed reviews",
             "started": "No requests submitted",
-            "description": "Change the status filter or return later."
+            "filtered": "No requests match these filters"
         },
         "detail": {
             "title": "Approval details",
@@ -114,6 +117,40 @@
             "start": "Start",
             "approval": "Approval",
             "end": "End"
+        },
+        "designer": {
+            "title": "Flow designer",
+            "create": "Create flow",
+            "open": "Design flow",
+            "save": "Save draft",
+            "nodeType": "Node type",
+            "addNode": "Add node",
+            "undo": "Undo",
+            "redo": "Redo",
+            "zoomOut": "Zoom out",
+            "zoomIn": "Zoom in",
+            "fit": "Fit view",
+            "canvas": "Approval flow canvas",
+            "selection": "Node",
+            "removeNode": "Remove node",
+            "removeConnection": "Remove connection",
+            "businessType": "Business type",
+            "reviewers": "Reviewers",
+            "settings": "Node settings",
+            "noReviewers": "No approvers selected",
+            "reviewerCount": "{count} approver | {count} approvers",
+            "approvalPolicy": "Approval policy",
+            "outcome": "End result",
+            "approved": "Approved",
+            "rejected": "Rejected",
+            "discard": "Discard unsaved changes?",
+            "conflict": "This draft has changed. Keep your edits and reopen the flow to check the latest revision.",
+            "saveError": "Could not save the draft. Check the flow configuration and try again.",
+            "policy": {
+                "all": "All reviewers",
+                "any": "Any reviewer",
+                "single": "Single reviewer"
+            }
         }
     },
     "sw-privileges": {

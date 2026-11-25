@@ -63,6 +63,7 @@
     "safari >= 7"
   ],
   "dependencies": {
+    "@antv/x6": "3.1.7",
     "@babel/parser": "7.29.7",
     "@babel/types": "7.29.7",
     "@floating-ui/dom": "1.7.6",

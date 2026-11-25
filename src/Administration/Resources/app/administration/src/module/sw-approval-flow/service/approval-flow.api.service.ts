@@ -81,6 +81,7 @@ export interface ApprovalSearch {
     limit: number;
     offset: number;
     status?: ApprovalStatus;
+    term?: string;
 }
 
 /** @private */

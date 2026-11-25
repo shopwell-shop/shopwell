@@ -14,7 +14,7 @@ export interface ApprovalNodeDescriptor {
     configurationSchemaHash: string;
     draftConfigurationSchema: string;
     ports: Record<string, 'input' | 'output'>;
-    allowedEffects: ('advance' | 'requestApproval' | 'complete')[];
+    allowedEffects: ('advance' | 'requestApproval' | 'complete' | 'openScope' | 'wait')[];
 }
 
 /** @private */
@@ -80,6 +80,14 @@ export interface ApprovalGraphDiagnostic {
 }
 
 /** @private */
+export interface ApprovalDesignDraft {
+    definitionId: string;
+    revision: number;
+    graphJson: string;
+    diagnostics: ApprovalGraphDiagnostic[];
+}
+
+/** @private */
 export default class ApprovalFlowDesignApiService extends ApiService {
     constructor(httpClient: HttpClient, loginService: LoginService) {
         super(httpClient, loginService, 'approval-flow', 'application/json');
@@ -96,6 +104,26 @@ export default class ApprovalFlowDesignApiService extends ApiService {
             .post<
                 ApprovalGraphDiagnostic[]
             >('/_action/approval-flow/design/diagnose', { graphJson }, { headers: this.getBasicHeaders() })
+            .then((response) => response.data);
+    }
+
+    createDraft(name: string, graphJson: string): Promise<ApprovalDesignDraft> {
+        return this.httpClient
+            .post<ApprovalDesignDraft>(
+                '/_action/approval-flow/design/drafts',
+                { name, graphJson },
+                { headers: this.getBasicHeaders() },
+            )
+            .then((response) => response.data);
+    }
+
+    saveDraft(definitionId: string, expectedRevision: number, graphJson: string): Promise<ApprovalDesignDraft> {
+        return this.httpClient
+            .patch<ApprovalDesignDraft>(
+                `/_action/approval-flow/design/drafts/${definitionId}`,
+                { expectedRevision, graphJson },
+                { headers: this.getBasicHeaders() },
+            )
             .then((response) => response.data);
     }
 }

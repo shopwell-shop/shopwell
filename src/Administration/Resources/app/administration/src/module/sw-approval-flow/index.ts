@@ -1,11 +1,13 @@
 /** @sw-package framework */
 import './acl';
+import ApprovalDesignerService from './designer/approval-designer.service';
 import ApprovalFlowApiService from './service/approval-flow.api.service';
 import ApprovalFlowDesignApiService from './service/approval-flow-design.api.service';
 import type { SubContainer } from 'src/global.types';
 
 declare global {
     interface ServiceContainer extends SubContainer<'service'> {
+        approvalDesignerService: ApprovalDesignerService;
         approvalFlowApiService: ApprovalFlowApiService;
         approvalFlowDesignApiService: ApprovalFlowDesignApiService;
     }
@@ -26,6 +28,67 @@ Shopwell.Service().register(
             Shopwell.Service('loginService'),
         ),
 );
+
+/**
+ * Register a settings component and initial configuration for an exact node declaration.
+ *
+ * @public
+ */
+Shopwell.Service().register('approvalDesignerService', () => {
+    const designer = new ApprovalDesignerService();
+    const settingsComponent = 'sw-approval-flow-node-settings';
+
+    designer.registerNode('core:start@1.0.0', {
+        settingsComponent,
+        initialConfiguration: () => ({}),
+        view: (node, translate) => ({
+            shape: 'terminal',
+            tone: 'brand',
+            summary: typeof node.config.businessType === 'string' ? translate(node.config.businessType) : undefined,
+        }),
+    });
+    designer.registerNode('core:approval@1.0.0', {
+        settingsComponent,
+        initialConfiguration: () => ({
+            assignees: [{ kind: 'core:users' }],
+            policy: { kind: 'core:all', reject: 'veto' },
+            fields: [],
+            emptyAssignees: 'incident',
+        }),
+        view: (node, translate) => {
+            const assignees = node.config.assignees as { userIds?: string[] }[] | undefined;
+            const count = new Set(assignees?.flatMap((source) => source.userIds ?? [])).size;
+
+            return {
+                tone: count ? 'brand' : 'attention',
+                summary: count
+                    ? translate('sw-approval-flow.designer.reviewerCount', count)
+                    : translate('sw-approval-flow.designer.noReviewers'),
+            };
+        },
+    });
+    designer.registerNode('core:end@1.0.0', {
+        settingsComponent,
+        initialConfiguration: () => ({ outcome: 'approved' }),
+        view: (node, translate) => ({
+            shape: 'terminal',
+            tone: 'neutral',
+            summary:
+                typeof node.config.outcome === 'string'
+                    ? translate(`sw-approval-flow.designer.${node.config.outcome}`)
+                    : undefined,
+        }),
+    });
+
+    return designer;
+});
+
+/** @private */
+Shopwell.Component.register('sw-approval-flow-designer', () => import('./page/sw-approval-flow-designer'));
+/** @private */
+Shopwell.Component.register('sw-approval-flow-canvas', () => import('./component/sw-approval-flow-canvas'));
+/** @private */
+Shopwell.Component.register('sw-approval-flow-node-settings', () => import('./component/sw-approval-flow-node-settings'));
 
 /** @private */
 Shopwell.Component.register('sw-approval-flow-definition-list', () => import('./page/sw-approval-flow-definition-list'));
@@ -64,6 +127,17 @@ Shopwell.Module.register('sw-approval-flow', {
             props: { default: (route: { params: { id: string } }) => ({ definitionId: route.params.id }) },
             meta: { privilege: 'approval_flow_definition.viewer', parentPath: 'sw.approval.flow.definitions' },
         },
+        create: {
+            component: 'sw-approval-flow-designer',
+            path: 'definition/create',
+            meta: { privilege: 'approval_flow_definition.creator', parentPath: 'sw.approval.flow.definitions' },
+        },
+        designer: {
+            component: 'sw-approval-flow-designer',
+            path: 'definition/:id/designer',
+            props: { default: (route: { params: { id: string } }) => ({ definitionId: route.params.id }) },
+            meta: { privilege: 'approval_flow_definition.viewer', parentPath: 'sw.approval.flow.definitions' },
+        },
         todo: {
             component: 'sw-approval-flow-list',
             path: 'todo',
@@ -74,13 +148,13 @@ Shopwell.Module.register('sw-approval-flow', {
             component: 'sw-approval-flow-list',
             path: 'done',
             props: { default: { view: 'done' } },
-            meta: { privilege: 'approval_flow.viewer' },
+            meta: { privilege: 'approval_flow.viewer', parentPath: 'sw.approval.flow.todo' },
         },
         started: {
             component: 'sw-approval-flow-list',
             path: 'started',
             props: { default: { view: 'started' } },
-            meta: { privilege: 'approval_flow.viewer' },
+            meta: { privilege: 'approval_flow.viewer', parentPath: 'sw.approval.flow.todo' },
         },
         detail: {
             component: 'sw-approval-flow-detail',
@@ -97,7 +171,5 @@ Shopwell.Module.register('sw-approval-flow', {
         },
         { id: 'sw-approval-flow' },
         { id: 'sw-approval-flow-todo', path: 'sw.approval.flow.todo', privilege: 'approval_flow.viewer' },
-        { id: 'sw-approval-flow-done', path: 'sw.approval.flow.done', privilege: 'approval_flow.viewer' },
-        { id: 'sw-approval-flow-started', path: 'sw.approval.flow.started', privilege: 'approval_flow.viewer' },
     ],
 });

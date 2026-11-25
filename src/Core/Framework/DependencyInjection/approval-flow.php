@@ -103,9 +103,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ApprovalFormReader::class);
     $services->set(ApprovalRequestQuery::class)->args([
         service('approval_flow_request.repository'), service('approval_flow_execution.repository'), service('approval_flow_operation.repository'), service(ApprovalFormReader::class),
-        service('user.repository'),
+        service('user.repository'), service(Connection::class),
     ]);
-    $services->set(ApprovalDesignController::class)->args([service(ApprovalDesignCatalog::class), service(GraphDiagnostics::class)])->tag('controller.service_arguments');
+    $services->set(ApprovalDesignController::class)->args([service(ApprovalDesignCatalog::class), service(GraphDiagnostics::class), service(ApprovalDraftService::class)])->tag('controller.service_arguments');
     $services->set(ApprovalTaskController::class)->args([service(ApprovalInstanceService::class)])->tag('controller.service_arguments');
     $services->set(ApprovalRequestController::class)->args([service(ApprovalRequestQuery::class)])->tag('controller.service_arguments');
 

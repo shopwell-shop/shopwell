@@ -6,6 +6,16 @@
     <template #smart-bar-header>
         <h2>{{ $t('sw-approval-flow.design.title') }}</h2>
     </template>
+    <template #smart-bar-actions>
+        <mt-button
+            is="router-link"
+            v-if="acl.can('approval_flow_definition.creator')"
+            :to="{ name: 'sw.approval.flow.create' }"
+            variant="primary"
+        >
+            {{ $t('sw-approval-flow.designer.create') }}
+        </mt-button>
+    </template>
     <template #content>
         <div
             v-if="acl.can('approval_flow_definition.viewer')"

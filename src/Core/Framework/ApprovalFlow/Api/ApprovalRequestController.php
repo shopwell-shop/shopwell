@@ -37,11 +37,12 @@ class ApprovalRequestController
         $status = $request->query->has('status') ? $request->query->getEnum('status', ApprovalInstanceStatus::class) : null;
         $limit = $request->query->getInt('limit', 25);
         $offset = $request->query->getInt('offset', 0);
+        $term = trim($request->query->getString('term'));
         if ($limit < 1 || $limit > 100 || $offset < 0) {
             throw ApprovalFlowException::invalidRequestQuery('Limit must be between 1 and 100 and offset must be nonnegative.');
         }
 
-        return new JsonResponse($this->queries->search($view, $limit, $offset, $status, $context));
+        return new JsonResponse($this->queries->search($view, $limit, $offset, $status, $context, $term));
     }
 
     #[Route(path: '/api/_action/approval-flow/requests/{requestId}', name: 'api.action.approval_flow.request.detail', defaults: [PlatformRequest::ATTRIBUTE_ACL => ['approval_flow:access']], methods: [Request::METHOD_GET])]
