@@ -31,6 +31,7 @@ use Shopwell\Core\Content\Category\Subscriber\CategorySubscriber;
 use Shopwell\Core\Content\Category\Subscriber\CategoryTreeMovedSubscriber;
 use Shopwell\Core\Content\Category\Tree\CategoryTreePathResolver;
 use Shopwell\Core\Content\Category\Validation\EntryPointValidator;
+use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutContextFactory;
@@ -130,6 +131,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CategoryBreadcrumbUpdater::class),
             service('event_dispatcher'),
             service('messenger.default_bus'),
+            service(ProductIndexer::class),
         ])
         // Must run before ProductIndexer so ProductCategoryDenormalizer can include parent category paths.
         ->tag('shopwell.entity_indexer', ['priority' => 105]);

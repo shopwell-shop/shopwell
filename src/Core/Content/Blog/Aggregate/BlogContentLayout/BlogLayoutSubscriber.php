@@ -7,7 +7,6 @@ use Shopwell\Core\Content\Blog\BlogException;
 use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Validation\LayoutRootSourceReader;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\Log\Package;
@@ -55,7 +54,7 @@ class BlogLayoutSubscriber implements EventSubscriberInterface
             throw BlogException::invalidLayoutConfiguration(ContentSystemException::contentLayoutNotFound((string) json_encode($layoutId)));
         }
         $expected = $event->getKey() === 'core.content_system.default_blog_listing_content_layout' ? 'none' : 'blog';
-        $rootSource = $this->rootSourceReader->read($layoutId, [], Context::createDefaultContext());
+        $rootSource = $this->rootSourceReader->rootSources([$layoutId], [])[$layoutId] ?? null;
         if ($rootSource === null) {
             throw BlogException::invalidLayoutConfiguration(ContentSystemException::contentLayoutNotFound($layoutId));
         }

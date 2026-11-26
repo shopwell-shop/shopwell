@@ -11,6 +11,7 @@ use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\MeasurementSystem\ProductMeasurement\ProductMeasurementUnitBuilder;
 use Shopwell\Core\Content\MeasurementSystem\Unit\MeasurementUnitConverter;
 use Shopwell\Core\Content\Media\UnusedMediaPurger;
+use Shopwell\Core\Content\Media\Upload\MediaFileExtensionListProvider;
 use Shopwell\Core\Content\Product\AbstractIsNewDetector;
 use Shopwell\Core\Content\Product\AbstractProductMaxPurchaseCalculator;
 use Shopwell\Core\Content\Product\AbstractPropertyGroupSorter;
@@ -257,7 +258,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             param('shopwell.product_documents.allowed_extensions'),
             param('shopwell.product_documents.max_file_size'),
-            param('shopwell.filesystem.allowed_extensions'),
+            service(MediaFileExtensionListProvider::class),
         ]);
 
     $services->set(ProductDocumentValidator::class)

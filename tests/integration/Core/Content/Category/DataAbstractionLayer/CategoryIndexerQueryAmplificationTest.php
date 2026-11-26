@@ -9,6 +9,7 @@ use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryBreadcrumbUpdater;
 use Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryIndexer;
+use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -57,7 +58,8 @@ class CategoryIndexerQueryAmplificationTest extends TestCase
             static::getContainer()->get(TreeUpdater::class),
             static::getContainer()->get(CategoryBreadcrumbUpdater::class),
             static::getContainer()->get('event_dispatcher'),
-            static::getContainer()->get(MessageBusInterface::class)
+            static::getContainer()->get(MessageBusInterface::class),
+            static::getContainer()->get(ProductIndexer::class)
         );
     }
 

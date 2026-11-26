@@ -143,8 +143,10 @@ use Shopwell\Core\Framework\ContentSystem\Validation\StoredMappingValidator;
 use Shopwell\Core\Framework\ContentSystem\Validation\ViolationConstraintMapper;
 use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceDefinition;
 use Shopwell\Core\Framework\ContentSystem\Workspace\ContentWorkspaceWriteValidator;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\RowLoader;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\System\Language\LanguageLoader;
 use Shopwell\Core\System\SalesChannel\Api\StructEncoder;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -786,10 +788,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ViolationConstraintMapper::class);
 
-    // Shared read of a layout's immutable root source (in-flight write batch first, then committed row)
+    // Shared read of a layout's immutable root source (a layout the batch writes from its state after the batch, others from the stored row)
     $services->set(LayoutRootSourceReader::class)
         ->args([
-            service(DefinitionInstanceRegistry::class),
+            service(WriteOutcome::class),
+            service(RowLoader::class),
         ]);
 
     // Data-mapping catalogue: one authority behind both the introspection endpoint and the write gate below
@@ -863,7 +866,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(LayoutGate::class),
             service(ViolationConstraintMapper::class),
             service(RootSourceRegistry::class),
-            service(LayoutRootSourceReader::class),
+            service(WriteOutcome::class),
             service(StoredMappingValidator::class),
         ])
         ->tag('kernel.event_subscriber');
@@ -872,6 +875,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(DefinitionInstanceRegistry::class),
             service(LayoutRootSourceReader::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 

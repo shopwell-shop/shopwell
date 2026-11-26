@@ -7,7 +7,6 @@ use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\ContentSystem\Adapter\Entity\AbstractContentLayoutAssignableDefinition;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Layout\Entity\ContentLayoutDefinition;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityDeleteEvent;
 use Shopwell\Core\Framework\Log\Package;
@@ -53,7 +52,7 @@ class ContentLayoutDefaultValidator implements EventSubscriberInterface
             throw ContentSystemException::contentLayoutNotFound((string) json_encode($layoutId));
         }
 
-        $rootSource = $this->rootSourceReader->read($layoutId, [], Context::createDefaultContext());
+        $rootSource = $this->rootSourceReader->rootSources([$layoutId], [])[$layoutId] ?? null;
 
         if ($rootSource === null) {
             throw ContentSystemException::contentLayoutNotFound($layoutId);

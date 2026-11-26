@@ -9,8 +9,11 @@ use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
 use Shopwell\Core\Framework\ContentSystem\Validation\LayoutGate;
 use Shopwell\Core\Framework\ContentSystem\Validation\LayoutRootSourceReader;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\RowLoader;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\WriteConstraintViolationException;
@@ -30,11 +33,13 @@ class HeaderFooterAssignmentWriteValidatorTest extends TestCase
     public function testAssignmentGate(string $entity, ?string $rootSource, bool $hasField, bool $skip, bool $reject): void
     {
         $reader = static::createStub(LayoutRootSourceReader::class);
-        $reader->method('read')->willReturn($rootSource);
-        $command = static::createStub(WriteCommand::class);
+        $layoutId = str_repeat('a', 16);
+        $reader->method('rootSources')->willReturn($rootSource === null ? [] : [$layoutId => $rootSource]);
+        $outcome = new WriteOutcome(static::createStub(RowLoader::class));
+        $command = $hasField ? static::createStub(InsertCommand::class) : static::createStub(UpdateCommand::class);
         $command->method('getEntityName')->willReturn($entity);
-        $command->method('hasField')->willReturn($hasField);
-        $command->method('getPayload')->willReturn(['content_layout_id' => 'layout-id']);
+        $command->method('getPrimaryKey')->willReturn(['id' => str_repeat('b', 16)]);
+        $command->method('getPayload')->willReturn($hasField ? ['content_layout_id' => $layoutId] : []);
         $command->method('getPath')->willReturn('/assignments/0');
         $context = Context::createDefaultContext();
         if ($skip) {
@@ -42,7 +47,7 @@ class HeaderFooterAssignmentWriteValidatorTest extends TestCase
         }
         $event = new PreWriteValidationEvent(WriteContext::createFromContext($context), [$command]);
         $dispatcher = new EventDispatcher();
-        $dispatcher->addSubscriber(new HeaderFooterAssignmentWriteValidator($reader));
+        $dispatcher->addSubscriber(new HeaderFooterAssignmentWriteValidator($reader, $outcome));
 
         $dispatcher->dispatch($event);
 

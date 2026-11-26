@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\ContentSystem\Adapter\RenderingSpecificationFactory;
 use Shopwell\Core\Framework\ContentSystem\Adapter\RenderingSpecificationResolver;
 use Shopwell\Core\Framework\ContentSystem\ContentSection;
 use Shopwell\Core\Framework\ContentSystem\Validation\LayoutRootSourceReader;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRoute;
 use Shopwell\Storefront\ContentSystem\Extension\ContentLayoutExtension;
 use Shopwell\Storefront\ContentSystem\Extension\SalesChannelDomainExtension;
@@ -91,6 +92,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(HeaderFooterAssignmentWriteValidator::class)
         ->args([
             service(LayoutRootSourceReader::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 };

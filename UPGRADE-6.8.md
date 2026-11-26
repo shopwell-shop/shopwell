@@ -300,3 +300,8 @@ Catch `AppException` and check the error codes `FRAMEWORK__APP_CMS_BLOCK_FILE_MI
 The system config key `core.app.shopId` is no longer read, read the shop ID from `core.app.shopIdV2` instead.
 
 </details>
+
+## Product indexing members removed from `sw-category-tree`
+
+The `syncProducts()` and `indexProducts()` methods and the `productRepository` computed property were removed from `sw-category-tree` without replacement.
+The server re-indexes the products of a moved category itself, so extensions should stop calling or overriding these members.

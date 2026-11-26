@@ -2,6 +2,27 @@
 
 ## Core
 
+### Moving a category re-indexes its products
+
+Changing the `parentId` of a category now queues the product indexer for all products assigned to that category or one of its descendants.
+Before, `product.categoryTree` and `product.categoriesRo` kept the old parents, so listings and "line item in category" rules were wrong until the products were re-indexed.
+Integrations that called `POST /api/_action/index-products` after moving a category no longer need to.
+The Administration category tree no longer sends these requests after a drag and drop.
+Its `syncProducts()` and `indexProducts()` methods and its `productRepository` computed property are deprecated and will be removed in 6.8.
+
+### Environment-specific bundle and plugin configuration
+
+Inline `when@prod` and `when@test` blocks in bundle and plugin configuration now apply in the matching environment.
+PHP configuration files also receive the current environment through `$container->env()`.
+Check existing environment-specific configuration that was previously ignored, including Monolog handler levels.
+
+### Regenerating a document keeps its deep link and its stored files
+
+`DocumentGenerator::generate()` with the id of an existing document now keeps the document's deep link code and its stored PDF and HTML files, and renders only the file type that is missing.
+While a stored file is kept, the document also keeps its order version and config.
+The missing file is rendered from the current order.
+To get fresh files for an existing document, generate a new document instead of regenerating it.
+
 ### Approval Flow skeleton
 
 The independent Approval Flow module provides exact-version node declarations through `NodeTypeLoader` and the `approval_flow.node_type_loader` service tag.
@@ -556,6 +577,10 @@ When updating an Elasticsearch/OpenSearch mapping references an analyzer/normali
 
 ## Administration
 
+### Extension points for document creation and preview
+
+Extensions can add fields through the `sw_order_create_document_modal_type_specific_fields_additional` Twig block and override `createDocumentV2()` and `previewDocumentV2()` on the document card.
+
 ### Removed the empty Shopwell Payments navigation module
 
 The `sw-payments` placeholder module, `sw.payments.index` route and `sw-payments.*` privilege mapping were removed.
@@ -879,6 +904,13 @@ Due to misleading block names, the following blocks have been deprecated and wil
 
 ## Storefront
 
+### Production Vite builds generate JavaScript SBOMs
+
+Production Vite builds now generate CycloneDX JSON inventories at `Resources/sbom/storefront/shopwell.cdx.json` for the shared Shopwell module and `Resources/sbom/storefront/components.cdx.json` for each bundle's components.
+The reports are kept outside public assets and are not published by `assets:install`.
+Extension component builds include bundled npm packages regardless of their development-dependency classification, including when using custom Vite configurations.
+The reports also include dependencies bundled into Web Workers, including shared and inline workers.
+Retain these reports when packaging extensions after source cleanup.
 
 ### Skip link for listing filters
 

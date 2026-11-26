@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Media\Event\BeforeMediaFileReplacedEvent;
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
+use Shopwell\Core\Content\Media\Upload\MediaFileExtensionListProvider;
 use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentConfig;
 use Shopwell\Core\Content\Product\Aggregate\ProductDocument\ProductDocumentValidator;
@@ -215,7 +216,10 @@ class ProductDocumentValidatorTest extends TestCase
             },
         ]);
 
-        return new ProductDocumentValidator($writeOutcome, $mediaRepository, new ProductDocumentConfig(new EventDispatcher(), ['pdf', 'docx'], 1024, ['pdf', 'docx']), $productDocumentRepository);
+        $dispatcher = new EventDispatcher();
+        $config = new ProductDocumentConfig($dispatcher, ['pdf', 'docx'], 1024, new MediaFileExtensionListProvider($dispatcher, ['pdf', 'docx'], []));
+
+        return new ProductDocumentValidator($writeOutcome, $mediaRepository, $config, $productDocumentRepository);
     }
 
     private function translation(string $document, string $languageId, string $path, string $file, ?string $storedFile = null): OutcomeRow

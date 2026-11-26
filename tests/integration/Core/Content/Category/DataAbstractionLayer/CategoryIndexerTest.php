@@ -14,6 +14,7 @@ use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTransla
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryBreadcrumbUpdater;
 use Shopwell\Core\Content\Category\DataAbstractionLayer\CategoryIndexer;
+use Shopwell\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
@@ -63,7 +64,8 @@ class CategoryIndexerTest extends TestCase
             self::getContainer()->get(TreeUpdater::class),
             self::getContainer()->get(CategoryBreadcrumbUpdater::class),
             self::getContainer()->get('event_dispatcher'),
-            $this->messageBus
+            $this->messageBus,
+            self::getContainer()->get(ProductIndexer::class)
         );
     }
 
