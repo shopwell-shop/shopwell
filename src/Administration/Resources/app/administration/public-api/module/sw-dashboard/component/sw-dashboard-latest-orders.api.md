@@ -11,6 +11,32 @@ component sw-dashboard-latest-orders  private  ts  [private]
   template src/module/sw-dashboard/component/sw-dashboard-latest-orders/sw-dashboard-latest-orders.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+  stateStyleDataProviderService  [private]
+
+props
+  period?: DashboardPeriod  default=factory  [private]
+
+data
+  isLoading: any  [private]
+  orders: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+
+computed
+  canViewOrders: boolean  [private]
+  currencyFilter: (value: number, isoCode?: string, decimals?: number) => string  [private]
+  orderRepository: unknown  [private]
+
+methods
+  getCustomerName(order: OrderEntity): string  [private]
+  getOrderStateLabel(order: OrderEntity): string  [private]
+  getVariantFromOrderState(order: OrderEntity): string  [private]
+  loadOrders(): Promise<void>  [private]
+  orderGridColumns(): any  [private]
+
 blocks
   sw_dashboard_latest_orders  [private]
     sw_dashboard_latest_orders_listing  [private]

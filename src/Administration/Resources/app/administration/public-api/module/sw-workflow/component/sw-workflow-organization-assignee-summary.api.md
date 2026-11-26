@@ -11,6 +11,16 @@ component sw-workflow-organization-assignee-summary  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-organization-assignee-summary/sw-workflow-organization-assignee-summary.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowApprovalService  [private]
+
+props
+  node: WorkflowNode  [private]
+
+computed
+  hierarchySummary: string  [private]
+  source: any  [private]
+
 blocks
   sw_workflow_organization_assignee_summary  [private]
 ```

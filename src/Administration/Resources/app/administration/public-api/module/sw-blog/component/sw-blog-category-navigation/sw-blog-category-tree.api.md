@@ -10,4 +10,47 @@ component sw-blog-category-tree  private  ts  [private]
   source src/module/sw-blog/component/sw-blog-category-navigation/tree.ts  [private]
   template src/module/sw-blog/component/sw-blog-category-navigation/tree.html.twig  [private]
   visibility-source export  [private]
+
+props
+  activeTreeItemId?: string  default=null  [private]
+  items: CategoryNode[]  [private]
+  onChangeRoute: (item: TreeItem) => void  [private]
+  openSelectedPath?: boolean  default=true  [private]
+  previewDrop: (preview: DropPreview | null) => void  [private]
+  sortable?: boolean  default=true  [private]
+
+emits
+  drag-end(...args: any[])  [private]
+  drag-start(...args: any[])  [private]
+
+slots
+  actions  { item }  block=(root)  [private]
+  content  { item }  block=(root)  [private]
+
+data
+  draggedId: any  [private]
+  dropPreview: any  [private]
+  expandedIds: any  [private]
+  focusedId: any  [private]
+
+computed
+  focusableId: string | undefined  [private]
+  rows: TreeRow[]  [private]
+
+methods
+  focusRow(id: string | null | undefined): void  [private]
+  onDragLeave(event: DragEvent): void  [private]
+  onDragOver(event: DragEvent, item: TreeItem): void  [private]
+  onDragStart(event: DragEvent, item: TreeItem): void  [private]
+  onDrop(event: DragEvent, item: TreeItem): void  [private]
+  onHorizontalKey(key: string, arg1: TreeRow): void  [private]
+  onRowKeydown(event: KeyboardEvent, row: TreeRow): void  [private]
+  openTreeById(id: string | null): void  [private]
+  resetDrag(): void  [private]
+  resolvePreview(event: DragEvent, item: TreeItem): DropPreview | null  [private]
+  rowClasses(id: string): Record<string, boolean>  [private]
+  toggle(id: string): void  [private]
+
+refs
+  rows  -> div  list  block=(root)  [private]
 ```

@@ -11,6 +11,36 @@ component sw-workflow-start-settings  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-start-settings/sw-workflow-start-settings.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowRequestFormService  [private]
+
+props
+  allowEdit?: boolean  default=true  [private]
+  node: WorkflowNode  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+data
+  activeKey: any  [private]
+  fields: any  [private]
+
+computed
+  dataSources: any  [private]
+  enabled: boolean  [private]
+  types: any  [private]
+
+methods
+  add(): void  [private]
+  addOption(field: WorkflowFormField): void  [private]
+  commit(): void  [private]
+  move(index: number, direction: number): void  [private]
+  remove(key: string): void  [private]
+  removeOption(field: WorkflowFormField, index: number): void  [private]
+  selectDataSource(field: WorkflowFormField, source: string): void  [private]
+  selectType(field: WorkflowFormField, type: WorkflowFormFieldType): void  [private]
+  setCandidates(field: WorkflowFormField, ids: string[]): void  [private]
+
 blocks
   sw_workflow_start_settings  [private]
 ```

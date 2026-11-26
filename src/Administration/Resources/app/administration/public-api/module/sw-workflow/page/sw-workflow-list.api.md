@@ -11,6 +11,38 @@ component sw-workflow-list  private  ts  [private]
   template src/module/sw-workflow/page/sw-workflow-list/sw-workflow-list.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+  workflowService  [private]
+
+data
+  deletion: any  [private]
+  drafts: any  [private]
+  error: any  [private]
+  isDeleting: any  [private]
+  isLoading: any  [private]
+  limit: any  [private]
+  page: any  [private]
+  requestRevision: any  [private]
+  term: any  [private]
+  total: any  [private]
+
+computed
+  allowCreate: boolean  [private]
+  columns: any  [private]
+  isHistory: boolean  [private]
+  repository: Repository<'workflow_draft'>  [private]
+  tabs: any  [private]
+
+methods
+  changePage(arg0: { page: number; limit: number }): void  [private]
+  formatDate(value: string | null): string  [private]
+  load(): Promise<void>  [private]
+  onCreateWorkflow(): void  [private]
+  remove(): Promise<void>  [private]
+  search(term: string): void  [private]
+
 blocks
   sw_workflow_list  [private]
     sw_workflow_list_content  [private]

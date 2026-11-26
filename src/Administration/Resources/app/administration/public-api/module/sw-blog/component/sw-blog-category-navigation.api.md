@@ -11,6 +11,74 @@ component sw-blog-category-navigation  private  ts  [private]
   template src/module/sw-blog/component/sw-blog-category-navigation/sw-blog-category-navigation.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  blogApiService  [private]
+  repositoryFactory  [private]
+
+props
+  beforeStructureChange?: () => Promise<boolean>  default=factory  [private]
+  disabled?: boolean  default=false  [private]
+  refreshKey?: number  default=0  [private]
+  searchTerm?: string  default=''  [private]
+  selectedId?: string  default=null  [private]
+
+emits
+  clear-search(...args: any[])  [private]
+  create(...args: any[])  [private]
+  select(...args: any[])  [private]
+  selection-path(...args: any[])  [private]
+  structure-busy(...args: any[])  [private]
+  structure-change(...args: any[])  [private]
+
+data
+  categories: any  [private]
+  dropPreview: any  [private]
+  expandedIds: any  [private]
+  isLoading: any  [private]
+  isMutating: any  [private]
+  openSelectedPath: any  [private]
+  requestId: any  [private]
+  term: any  [private]
+  total: any  [private]
+  treeRevision: any  [private]
+
+computed
+  canCreate: boolean  [private]
+  canMove: boolean  [private]
+  categoryRepository: any  [private]
+  dropMessage: string  [private]
+  isBusy: boolean  [private]
+  matchingIds: Set<string>  [private]
+  selectedPath: string  [private]
+  sortable: boolean  [private]
+  treeCategories: CategoryNode[]  [private]
+
+methods
+  canMoveSibling(id: string, direction: number): boolean  [private]
+  captureExpandedIds(term?: string): void  [private]
+  categoryName(category: EntitySchema.Entity<'blog_category'>): string  [private]
+  categoryPath(id: string): string  [private]
+  dropClass(id: string): string  [private]
+  loadCategories(): Promise<void>  [private]
+  move(id: string, parentId: string | null, afterId: string | null): Promise<void>  [private]
+  onCollapseAll(): void  [private]
+  onDropPreview(preview: DropPreview | null): void  [private]
+  onExpandAll(): void  [private]
+  onMoveRoot(id: string): Promise<void>  [private]
+  onMoveSibling(id: string, direction: number): Promise<void>  [private]
+  onOpenCreate(parentId?: string | null = null): void  [private]
+  onSelect(item: TreeItem): void  [private]
+  onTreeDrop(arg0: { draggedItem: TreeItem }): Promise<void>  [private]
+  openTreePaths(): void  [private]
+  resetTree(): void  [private]
+
 blocks
   sw_blog_category_navigation  [private]
+
+refs
+  categoryTree  -> sw-blog-category-tree  block=sw_blog_category_navigation  [private]
 ```

@@ -11,6 +11,64 @@ component sw-order-detail-return  private  ts  [private]
   template src/module/sw-order-return/page/sw-order-detail-return/sw-order-detail-return.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  orderReturnApiService  [private]
+  repositoryFactory  [private]
+
+props
+  orderId: string  [private]
+
+data
+  draftNote: any  [private]
+  draftPositions: any  [private]
+  draftReasonId: any  [private]
+  draftType: any  [private]
+  formCurrency: any  [private]
+  formDecimals: any  [private]
+  isLoading: any  [private]
+  isLoadingForm: any  [private]
+  isSubmitting: any  [private]
+  orderNumber: any  [private]
+  orderReturns: any  [private]
+  reasons: any  [private]
+  showCreateModal: any  [private]
+
+computed
+  canEdit: boolean  [private]
+  canSubmit: boolean  [private]
+  columns: Array<Record<string, unknown>>  [private]
+  dateFilter: (value: string | Date) => string  [private]
+  hasDraftPositions: boolean  [private]
+  hasReturns: boolean  [private]
+  isEmptyList: boolean  [private]
+  noReturnablePositions: boolean  [private]
+  orderReturnRepository: RepositoryType<'order_return'>  [private]
+  reasonOptions: Array<{ value: string; label: string }>  [private]
+  selectedPositions: DraftPosition[]  [private]
+  totalCount: number  [private]
+  typeOptions: Array<{ value: string; label: string }>  [private]
+
+methods
+  createdComponent(): Promise<void>  [private]
+  deadlineLabel(item: OrderReturn): string  [private]
+  errorMessage(error: unknown): string  [private]
+  formatAmount(amount: number | null, currency: string | null): string  [private]
+  formatDateOrDash(value: unknown): string  [private]
+  formatUnitPrice(unitPrice: number): string  [private]
+  isOverdue(item: OrderReturn): boolean  [private]
+  loadOrderReturns(): Promise<void>  [private]
+  onCloseCreateModal(): void  [private]
+  onOpenCreateModal(): Promise<void>  [private]
+  onSubmit(): void  [private]
+  stateLabel(item: OrderReturn): string  [private]
+  stateName(item: OrderReturn): string | null  [private]
+  stateVariant(item: OrderReturn): string  [private]
+  typeLabel(type: string | null | undefined): string  [private]
+
 blocks
   sw_order_detail_return  [private]
     sw_order_detail_return_create_modal  [after v-if] [private]

@@ -10,7 +10,46 @@ component sw-canvas-editor  public  ts
   source src/app/component/structure/sw-canvas-editor/index.ts
   template src/app/component/structure/sw-canvas-editor/sw-canvas-editor.html.twig
 
+props
+  edges?: Edge[]  default=factory
+  nodes: Node[]
+
+emits
+  node-sizes-change(...args: any[])
+
+slots
+  default  {}  block=sw_canvas_editor_surface
+  footer  {}  block=sw_canvas_editor
+  node-tools  { node }  block=sw_canvas_editor_surface
+  overlay  {}  block=sw_canvas_editor
+  sidebar-end  {}  block=sw_canvas_editor
+  sidebar-start  {}  block=sw_canvas_editor
+  toolbar  {}  block=sw_canvas_editor
+  viewport-controls  { fit, zoom-in, zoom-out }  block=sw_canvas_editor
+
+data
+  canvasId: any
+  focusedNodeId: any
+  hideNodeToolsTimer: any
+  hoveredNodeId: any
+
+computed
+  flowAttributes: any
+
+methods
+  clearNodeToolsTimer(): void
+  nodeOwner(target: EventTarget | null): string | null
+  onFocusIn(event: FocusEvent): void
+  onFocusOut(event: FocusEvent): void
+  rendererSlots(): string[]
+  scheduleHideNodeTools(nodeId: string): void
+  showNodeTools(nodeId: string): void
+
 blocks
   sw_canvas_editor
     sw_canvas_editor_surface
+
+notes
+  dynamic-slot name
+  unresolved options setup
 ```

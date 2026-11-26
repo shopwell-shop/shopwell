@@ -11,6 +11,46 @@ component sw-settings-sms-gateway-list  private  ts  [private]
   template src/module/sw-settings-sms/page/sw-settings-sms-gateway-list/sw-settings-sms-gateway-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  repositoryFactory  [private]
+  smsGatewayProviderService  [private]
+
+data
+  gateways: any  [private]
+  isLoading: any  [private]
+  isRemoving: any  [private]
+  limit: any  [private]
+  naturalSorting: any  [private]
+  page: any  [private]
+  providers: any  [private]
+  removeTarget: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  term: any  [private]
+  total: any  [private]
+
+computed
+  columns: Array<{ property: string; label: string; primary?: boolean }>  [private]
+  createButtonTooltip: any  [private]
+  gatewayRepository: RepositoryType<'sms_gateway'>  [private]
+
+methods
+  gatewayName(gateway: EntitySchema.Entity<'sms_gateway'>): string  [private]
+  getList(): Promise<void>  [private]
+  loadProviders(): Promise<void>  [private]
+  onCloseRemoveModal(): void  [private]
+  onConfirmRemove(): Promise<void>  [private]
+  onOpenRemoveModal(target: EntitySchema.Entity<'sms_gateway'>): void  [private]
+  onPageChange(arg0: { page: number; limit: number }): void  [private]
+  onRemoveModalChange(isOpen: boolean): void  [private]
+  onSearch(term: string): void  [private]
+  onSortColumn(arg0: { sortBy: string; sortDirection: 'ASC' | 'DESC' }): void  [private]
+  providerLabel(technicalName: string): string  [private]
+
 blocks
   sw_settings_sms_gateway_list  [private]
     sw_settings_sms_gateway_list_actions  [private]

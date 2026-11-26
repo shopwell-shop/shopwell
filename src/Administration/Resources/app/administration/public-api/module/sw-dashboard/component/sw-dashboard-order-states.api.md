@@ -11,6 +11,34 @@ component sw-dashboard-order-states  private  ts  [private]
   template src/module/sw-dashboard/component/sw-dashboard-order-states/sw-dashboard-order-states.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+props
+  period?: DashboardPeriod  default=factory  [private]
+
+data
+  buckets: any  [private]
+  isLoading: any  [private]
+  loadError: any  [private]
+  requestId: any  [private]
+
+computed
+  canViewOrders: boolean  [private]
+  chartHeight: number  [private]
+  chartOptions: ComposeOption<PieSeriesOption>  [private]
+  hasData: boolean  [private]
+  orderRepository: Repository<'order'>  [private]
+  stateMachineStateRepository: Repository<'state_machine_state'>  [private]
+  stateRows: Array<{ key: string; name: string; count: number; percentage: number; color: string }>  [private]
+  totalOrders: number  [private]
+
+methods
+  fetchOrderStateNames(): Promise<Array<{ technicalName: string; name: string }>>  [private]
+  fetchStateBuckets(): Promise<StateBucket[]>  [private]
+  loadStates(): Promise<void>  [private]
+
 blocks
   sw_dashboard_order_states  [private]
     sw_dashboard_order_states_chart  [private]

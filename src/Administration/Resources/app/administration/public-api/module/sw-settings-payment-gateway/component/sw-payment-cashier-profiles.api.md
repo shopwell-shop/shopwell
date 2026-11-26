@@ -11,6 +11,31 @@ component sw-payment-cashier-profiles  private  ts  [private]
   template src/module/sw-settings-payment-gateway/component/sw-payment-cashier-profiles/sw-payment-cashier-profiles.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+props
+  appId: string  [private]
+  methodOptions: MethodOption[]  [private]
+
+data
+  busyIds: any  [private]
+  isLoading: any  [private]
+  profiles: any  [private]
+
+computed
+  canEdit: boolean  [private]
+  repository: RepositoryType<'payment_cashier_config'>  [private]
+
+methods
+  addProfile(): void  [private]
+  deleteProfile(profile: CashierProfile): Promise<void>  [private]
+  loadProfiles(): Promise<void>  [private]
+  normalizeProfile(profile: Entity<'payment_cashier_config'>): CashierProfile  [private]
+  notifyError(): void  [private]
+  saveProfile(profile: CashierProfile): Promise<void>  [private]
+
 blocks
   sw_payment_cashier_profiles  [private]
 ```

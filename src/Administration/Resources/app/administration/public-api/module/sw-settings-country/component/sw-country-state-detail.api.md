@@ -10,6 +10,34 @@ component sw-country-state-detail  public  js
   source src/module/sw-settings-country/component/sw-country-state-detail/index.js
   template src/module/sw-settings-country/component/sw-country-state-detail/sw-country-state-detail.html.twig
 
+mixins
+  placeholder
+
+inject
+  acl
+
+props
+  countryState: object
+  level?: string  default='state'
+
+emits
+  attribute-edit-cancel(...args: any[])
+  attribute-edit-save(...args: any[])
+
+computed
+  codeLabel: any
+  codeProperty: any
+  editTitles: any
+  isNew: any
+  isStateLevel: any
+  modalTitle: any
+  newTitles: any
+  tooltipSave: any
+
+methods
+  onCancel(): any
+  onSave(): any
+
 blocks
   sw_country_state_detail
     sw_country_state_detail_modal

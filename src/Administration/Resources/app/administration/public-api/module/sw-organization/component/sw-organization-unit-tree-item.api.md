@@ -11,6 +11,33 @@ component sw-organization-unit-tree-item  private  ts  [private]
   template src/module/sw-organization/component/sw-organization-unit-tree-item/sw-organization-unit-tree-item.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
+props
+  expandedIds: Record<string, boolean>  [private]
+  filteredUnits: OrganizationUnitEntity[]  [private]
+  isSearching?: boolean  default=false  [private]
+  selectedUnitId?: string | null  default=null  [private]
+  unit: OrganizationUnitEntity  [private]
+  unitTree: object  [private]
+
+emits
+  add-child(...args: any[])  [private]
+  select-unit(...args: any[])  [private]
+  toggle-expand(...args: any[])  [private]
+
+computed
+  childUnits: OrganizationUnitEntity[]  [private]
+  isOpened: boolean  [private]
+  isSelected: boolean  [private]
+  unitName: string  [private]
+
+methods
+  onAddChild(event: MouseEvent): void  [private]
+  onSelectUnit(): void  [private]
+  onToggleExpand(event: MouseEvent): void  [private]
+
 blocks
   sw_organization_unit_tree_item  [private]
     sw_organization_unit_tree_item_children  [private]

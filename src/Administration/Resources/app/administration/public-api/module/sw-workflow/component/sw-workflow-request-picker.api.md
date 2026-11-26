@@ -11,6 +11,30 @@ component sw-workflow-request-picker  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-request-picker/sw-workflow-request-picker.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowReleaseActionService  [private]
+  workflowService  [private]
+
+emits
+  modal-close(...args: any[])  [private]
+
+data
+  hasError: any  [private]
+  isLoading: any  [private]
+  limit: any  [private]
+  page: any  [private]
+  releases: any  [private]
+  requestRevision: any  [private]
+  total: any  [private]
+
+computed
+  columns: any  [private]
+
+methods
+  actionComponent(release: WorkflowRelease): string | null  [private]
+  changePage(arg0: { page: number; limit: number }): void  [private]
+  load(): Promise<void>  [private]
+
 blocks
   sw_workflow_request_picker  [private]
 ```

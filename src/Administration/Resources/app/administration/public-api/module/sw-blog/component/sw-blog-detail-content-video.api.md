@@ -11,6 +11,19 @@ component sw-blog-detail-content-video  private  ts  [private]
   template src/module/sw-blog/component/sw-blog-detail-content-video/sw-blog-detail-content-video.html.twig  [private]
   visibility-source export  [private]
 
+props
+  blog: object  [private]
+  isDisabled?: boolean  default=false  [private]
+  video?: object  default=null  [private]
+
+computed
+  posterSource: string | null  [private]
+  providerOptions: Array<{ value: string; label: string }>  [private]
+
+methods
+  onPosterRemoved(): void  [private]
+  onPosterSelected(media: Array<{ id: string }>): void  [private]
+
 blocks
   sw_blog_detail_content_video  [private]
     sw_blog_detail_content_video_empty  [private]

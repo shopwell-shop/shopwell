@@ -10,6 +10,10 @@ component sw-membership-plan-create  public  ts
   registered src/module/sw-settings-membership/index.ts
   source src/module/sw-settings-membership/page/sw-membership-plan-create/index.ts
 
+methods
+  createdComponent(): void
+  onSave(): Promise<void>
+
 blocks
   sw_loyalty_plan_detail  [inherited]
     sw_loyalty_plan_detail_actions  [inherited]

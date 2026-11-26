@@ -11,6 +11,26 @@ component sw-order-return-decline-modal  private  ts  [private]
   template src/module/sw-order-return/component/sw-order-return-decline-modal/sw-order-return-decline-modal.html.twig  [private]
   visibility-source export  [private]
 
+props
+  returnNumber: string  [private]
+
+emits
+  decline(...args: any[])  [private]
+  modal-close(...args: any[])  [private]
+
+data
+  reason: any  [private]
+
+computed
+  isConfirmDisabled: boolean  [private]
+  isReasonTooLong: boolean  [private]
+  reasonLength: number  [private]
+  reasonLimit: number  [private]
+
+methods
+  onClose(): void  [private]
+  onConfirm(): void  [private]
+
 blocks
   sw_order_return_decline_modal  [private]
     sw_order_return_decline_modal_counter  [private]

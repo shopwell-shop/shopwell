@@ -11,6 +11,49 @@ component sw-payment-order-detail  private  ts  [private]
   template src/module/sw-payment/page/sw-payment-order-detail/sw-payment-order-detail.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+props
+  paymentOrderId: string  [private]
+
+data
+  isLoading: any  [private]
+  order: any  [private]
+  orderStates: any  [private]
+  refundStates: any  [private]
+
+computed
+  activities: PaymentActivity[]  [private]
+  alerts: PaymentAlert[]  [private]
+  channelDataJson: string  [private]
+  dateFilter: (value: string | Date) => string  [private]
+  hasChannelData: boolean  [private]
+  notifications: PaymentNotification[]  [private]
+  orderLink: { name: string; params: { id: string } } | null  [private]
+  orderRepository: RepositoryType<'payment_order'>  [private]
+  refunds: PaymentRefund[]  [private]
+  stateRepository: RepositoryType<'state_machine_state'>  [private]
+  transactions: PaymentTransaction[]  [private]
+  webhookDeliveries: PaymentWebhookDelivery[]  [private]
+
+methods
+  createdComponent(): Promise<void>  [private]
+  detailOf(parts: Array<string | null | undefined>): string  [private]
+  formatAmount(amount: number, currency: string): string  [private]
+  formatDateOrDash(value: string | null | undefined): string  [private]
+  loadOrder(): Promise<void>  [private]
+  notificationResultLabel(result: string | null | undefined): string  [private]
+  onRefresh(): Promise<void>  [private]
+  orderStateLabel(stateId: string): string  [private]
+  orderStateVariant(stateId: string): string  [private]
+  refundStateLabel(stateId: string): string  [private]
+  refundStateVariant(stateId: string): string  [private]
+  transactionStatusLabel(status: string | null | undefined): string  [private]
+  transactionTypeLabel(type: string | null | undefined): string  [private]
+  webhookStatusLabel(status: string | null | undefined): string  [private]
+
 blocks
   sw_payment_order_detail  [private]
     sw_payment_order_detail_content  [private]

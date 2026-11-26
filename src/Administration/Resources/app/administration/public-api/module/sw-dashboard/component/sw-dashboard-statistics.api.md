@@ -11,6 +11,25 @@ component sw-dashboard-statistics  private  ts  [private]
   template src/module/sw-dashboard/component/sw-dashboard-statistics/sw-dashboard-statistics.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
+props
+  hours?: HourBucket[]  default=factory  [private]
+  isLoading?: boolean  default=false  [private]
+  salesError?: boolean  default=false  [private]
+
+computed
+  canViewOrders: boolean  [private]
+  chartOptions: Record<string, unknown>  [private]
+  currencyFilter: (value: number, isoCode: string, decimals: number) => string  [private]
+  hasData: boolean  [private]
+  series: Array<{ name: string; data: Array<{ x: string; y: number | null }> }>  [private]
+
+methods
+  formatValue(value: number, metric: string): string  [private]
+  metricLabel(metric: string): string  [private]
+
 blocks
   sw_dashboard_statistics  [private]
     sw_dashboard_statistics_chart  [private]

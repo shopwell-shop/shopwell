@@ -11,6 +11,19 @@ component sw-payment-identifier  private  ts  [private]
   template src/module/sw-payment/component/sw-payment-identifier/sw-payment-identifier.html.twig  [private]
   visibility-source export  [private]
 
+props
+  value?: string | null  default=null  [private]
+
+data
+  copied: any  [private]
+
+computed
+  displayValue: string  [private]
+  hasValue: boolean  [private]
+
+methods
+  onCopy(): Promise<void>  [private]
+
 blocks
   sw_payment_identifier  [private]
     sw_payment_identifier_copy  [private]

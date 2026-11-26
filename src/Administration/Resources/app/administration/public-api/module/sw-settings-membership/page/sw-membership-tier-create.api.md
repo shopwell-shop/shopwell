@@ -10,6 +10,10 @@ component sw-membership-tier-create  public  ts
   registered src/module/sw-settings-membership/index.ts
   source src/module/sw-settings-membership/page/sw-membership-tier-create/index.ts
 
+methods
+  createdComponent(): void
+  onSave(): Promise<void>
+
 blocks
   sw_loyalty_tier_detail  [inherited]
     sw_loyalty_tier_detail_actions  [inherited]

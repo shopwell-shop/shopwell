@@ -10,4 +10,38 @@ component sw-permissions-role-info-modal  private  ts  [private]
   source src/module/sw-permissions/component/sw-permissions-role-info-modal/index.ts  [private]
   template src/module/sw-permissions/component/sw-permissions-role-info-modal/sw-permissions-role-info-modal.html.twig  [private]
   visibility-source export  [private]
+
+inject
+  acl  [private]
+  privileges  [private]
+  repositoryFactory  [private]
+  ssoSettingsService  [private]
+
+props
+  copyFromId?: string  default=null  [private]
+  role?: Entity<'acl_role'> | null  default=null  [private]
+
+emits
+  close(...args: any[])  [private]
+  confirm(...args: any[])  [private]
+  created(...args: any[])  [private]
+
+data
+  confirmPasswordModal: any  [private]
+  formRole: any  [private]
+  hasError: any  [private]
+  isLoading: any  [private]
+  isSourceLoaded: any  [private]
+  newRole: any  [private]
+
+computed
+  canEdit: boolean  [private]
+  canSubmit: boolean  [private]
+  roleRepository: Repository<'acl_role'>  [private]
+
+methods
+  close(): void  [private]
+  initializeRole(): Promise<void>  [private]
+  saveRole(context: apiContext): Promise<void>  [private]
+  submit(): Promise<void>  [private]
 ```

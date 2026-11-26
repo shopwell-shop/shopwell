@@ -11,6 +11,33 @@ component sw-approval-flow-node-settings  private  ts  [private]
   template src/module/sw-approval-flow/component/sw-approval-flow-node-settings/sw-approval-flow-node-settings.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+props
+  businessTypes: ApprovalBusinessDescriptor[]  [private]
+  node: ApprovalDesignNode  [private]
+  readOnly?: boolean  default=false  [private]
+
+emits
+  select-business(...args: any[])  [private]
+  update:configuration(...args: any[])  [private]
+
+computed
+  businessOptions: any  [private]
+  canReadUsers: boolean  [private]
+  policy: string  [private]
+  policyOptions: any  [private]
+  reviewerCriteria: any  [private]
+  reviewerIds: string[]  [private]
+  users: Repository<'user'>  [private]
+
+methods
+  update(key: string, value: ApprovalJsonValue): void  [private]
+  updatePolicy(kind: string): void  [private]
+  updateReviewers(userIds: string[]): void  [private]
+
 blocks
   sw_approval_flow_node_settings  [private]
 ```

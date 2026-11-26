@@ -11,6 +11,31 @@ component sw-icon-picker  private  ts  [private]
   template src/app/component/form/sw-icon-picker/sw-icon-picker.html.twig  [private]
   visibility-source export  [private]
 
+props
+  disabled?: boolean  default=false  [private]
+  label: string  [private]
+  modelValue?: string  default=''  [private]
+
+emits
+  update:model-value(...args: any[])  [private]
+
+data
+  fieldId: any  [private]
+  isOpen: any  [private]
+  limit: any  [private]
+  style: any  [private]
+  term: any  [private]
+
+computed
+  filteredIcons: any  [private]
+  icons: string[]  [private]
+  styleOptions: any  [private]
+  visibleIcons: any  [private]
+
+methods
+  choose(name: string): any  [private]
+  open(): any  [private]
+
 blocks
   sw_icon_picker  [private]
 ```

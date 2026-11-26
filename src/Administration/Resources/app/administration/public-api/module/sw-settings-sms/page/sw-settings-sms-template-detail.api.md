@@ -11,6 +11,50 @@ component sw-settings-sms-template-detail  private  ts  [private]
   template src/module/sw-settings-sms/page/sw-settings-sms-template-detail/sw-settings-sms-template-detail.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  repositoryFactory  [private]
+  smsGatewayProviderService  [private]
+
+props
+  templateId?: string  default=null  [private]
+
+data
+  defaultLanguageLabel: any  [private]
+  gateways: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  paramsSchemaText: any  [private]
+  providers: any  [private]
+  template: any  [private]
+
+computed
+  defaultLanguageName: string  [private]
+  gatewayRepository: RepositoryType<'sms_gateway'>  [private]
+  isNew: boolean  [private]
+  languageRepository: RepositoryType<'language'>  [private]
+  mappings: Array<EntitySchema.Entity<'sms_template_mapping'>>  [private]
+  missingProviderLabel: string  [private]
+  providersMissingMapping: SmsGatewayProvider[]  [private]
+  sceneOptions: Array<{ value: string; label: string }>  [private]
+  templateRepository: RepositoryType<'sms_template'>  [private]
+  title: string  [private]
+
+methods
+  collectParamsSchema(): Array<Record<string, unknown>> | null  [private]
+  createdComponent(): Promise<void>  [private]
+  loadDefaultLanguage(): Promise<void>  [private]
+  loadGateways(): Promise<void>  [private]
+  loadProviders(): Promise<void>  [private]
+  loadTemplate(): Promise<void>  [private]
+  onLanguageChange(): Promise<void>  [private]
+  onMappingChanged(): Promise<void>  [private]
+  onSave(): Promise<void>  [private]
+  providerLabelOf(technicalName: string): string  [private]
+
 blocks
   sw_settings_sms_template_detail  [private]
     sw_settings_sms_template_detail_content  [private]

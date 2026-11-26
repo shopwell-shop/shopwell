@@ -11,6 +11,46 @@ component sw-payment-order-list  private  ts  [private]
   template src/module/sw-payment/page/sw-payment-order-list/sw-payment-order-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  activeFilters: any  [private]
+  defaultFilters: any  [private]
+  isLoading: any  [private]
+  orders: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  states: any  [private]
+  storeKey: any  [private]
+
+computed
+  criteria: CriteriaType  [private]
+  hasActiveSearchOrFilter: boolean  [private]
+  listFilterOptions: Record<string, FilterDefinition>  [private]
+  listFilters: FilterDefinition[]  [private]
+  orderColumns: Array<Record<string, unknown>>  [private]
+  orderRepository: RepositoryType<'payment_order'>  [private]
+  paymentAppCriteria: CriteriaType  [private]
+  stateFilterOptions: FilterOption[]  [private]
+  stateRepository: RepositoryType<'state_machine_state'>  [private]
+
+methods
+  createdComponent(): Promise<void>  [private]
+  formatAmount(amount: number, currency: string): string  [private]
+  getList(): Promise<void>  [private]
+  onRefresh(): void  [private]
+  paymentAppLabel(item: PaymentOrder): string  [private]
+  paymentStateLabel(stateId: string): string  [private]
+  paymentStateVariant(stateId: string): string  [private]
+  updateCriteria(filters: CriteriaType['filters']): void  [private]
+
 blocks
   sw_payment_order_list  [private]
     sw_payment_order_list_content  [private]
@@ -32,4 +72,7 @@ blocks
 
 crossings
   v-if  sw_payment_order_list_empty_state -> sw_payment_order_list_grid  [private]
+
+refs
+  listing  -> sw-entity-listing  block=sw_payment_order_list_grid  [private]
 ```

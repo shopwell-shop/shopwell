@@ -11,6 +11,55 @@ component sw-blog-author-detail  private  ts  [private]
   template src/module/sw-blog/page/sw-blog-author-detail/sw-blog-author-detail.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  blogApiService  [private]
+  repositoryFactory  [private]
+
+props
+  authorId?: string  default=null  [private]
+
+data
+  author: any  [private]
+  entries: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  mediaUploadTag: any  [private]
+  showDeleteModal: any  [private]
+
+computed
+  authorRepository: RepositoryType<'blog_author'>  [private]
+  blogRepository: RepositoryType<'blog'>  [private]
+  canDelete: boolean  [private]
+  canEdit: boolean  [private]
+  deleteMessage: string  [private]
+  entriesColumns: Array<Record<string, unknown>>  [private]
+  entryCount: number  [private]
+  isDeleteBlocked: boolean  [private]
+  isNameMissing: boolean  [private]
+  isNew: boolean  [private]
+  name: string  [private]
+
+methods
+  abortOnLanguageChange(): boolean  [private]
+  loadAuthor(): Promise<void>  [private]
+  loadEntries(): Promise<void>  [private]
+  onAvatarRemoved(): void  [private]
+  onAvatarSelected(media: Array<Pick<EntitySchema.Entity<'media'>, 'id'>>): void  [private]
+  onCancel(): void  [private]
+  onChangeLanguage(languageId: EntitySchema.EntityKey<'language'>): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onDeactivateInstead(): void  [private]
+  onDelete(): void  [private]
+  onOpenDeleteModal(): void  [private]
+  onSave(redirect?: boolean = false): Promise<boolean>  [private]
+  saveOnLanguageChange(): Promise<void>  [private]
+  setApiLanguageId(languageId: EntitySchema.EntityKey<'language'>): void  [private]
+  setAvatar(mediaId: EntitySchema.EntityKey<'media'> | null): void  [private]
+
 blocks
   sw_blog_author_detail  [private]
     sw_blog_author_detail_content  [private]

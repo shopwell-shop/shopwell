@@ -146,6 +146,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('shopwell.demodata_generator', ['option-name' => 'product-content-layouts', 'option-default' => 1, 'option-description' => 'Product detail page content layouts (assigned to products)', 'option_name' => 'product-content-layouts', 'option_default' => 1, 'option_description' => 'Product detail page content layouts (assigned to products)']);
+
     $services->set(ProductDocumentFileProvider::class)
         ->args([
             service(EntityWriter::class),

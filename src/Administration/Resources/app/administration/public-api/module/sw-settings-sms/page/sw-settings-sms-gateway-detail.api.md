@@ -11,6 +11,53 @@ component sw-settings-sms-gateway-detail  private  ts  [private]
   template src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail/sw-settings-sms-gateway-detail.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+  smsGatewayProviderService  [private]
+
+props
+  gatewayId?: string  default=null  [private]
+
+data
+  acceptUnknownRegion: any  [private]
+  credentialValues: any  [private]
+  gateway: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  optionValues: any  [private]
+  providers: any  [private]
+
+computed
+  credentialFields: SmsCredentialDefinition[]  [private]
+  gatewayRepository: RepositoryType<'sms_gateway'>  [private]
+  isNew: boolean  [private]
+  optionFields: SmsCredentialDefinition[]  [private]
+  provider: SmsGatewayProvider | null  [private]
+  providerOptions: Array<{ value: string; label: string }>  [private]
+  regionsLabel: string  [private]
+  templateModeLabel: string  [private]
+  title: string  [private]
+
+methods
+  collectCredentials(): Record<string, unknown> | null  [private]
+  collectCustomFields(): Record<string, unknown>  [private]
+  collectOptions(): Record<string, unknown> | null  [private]
+  createdComponent(): Promise<void>  [private]
+  credentialLabel(field: SmsCredentialDefinition): string  [private]
+  fillCredentialValues(): void  [private]
+  fillOptionValues(): void  [private]
+  formFieldConfig(field: SmsCredentialDefinition): any  [private]
+  formFieldType(field: SmsCredentialDefinition): string  [private]
+  isEmpty(value: unknown): boolean  [private]
+  loadGateway(): Promise<void>  [private]
+  loadProviders(): Promise<void>  [private]
+  onProviderChange(): void  [private]
+  onSave(): Promise<void>  [private]
+  providerLabel(provider: SmsGatewayProvider): string  [private]
+  setCredentialValue(field: SmsCredentialDefinition, value: string | number | boolean): void  [private]
+  storedAcceptUnknownRegion(): boolean  [private]
+
 blocks
   sw_settings_sms_gateway_detail  [private]
     sw_settings_sms_gateway_detail_content  [private]
@@ -39,4 +86,7 @@ blocks
 crossings
   v-if  sw_settings_sms_gateway_detail_credentials_fields -> sw_settings_sms_gateway_detail_credentials_empty  [private]
   v-if  sw_settings_sms_gateway_detail_loading -> sw_settings_sms_gateway_detail_loaded  [private]
+
+notes
+  unresolved options setup  [private]
 ```

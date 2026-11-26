@@ -10,6 +10,84 @@ component sw-customer-detail-points  public  ts
   source src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-points/index.ts
   template src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-points/sw-customer-detail-points.html.twig
 
+mixins
+  notification
+
+inject
+  acl
+  loyaltyApiService
+  repositoryFactory
+
+props
+  customer: PointsCustomer
+
+data
+  isLoading: any
+  isSavingMembership: any
+  isSavingPoints: any
+  limit: any
+  loyaltySummary: any
+  membershipForm: object
+    durationDays: any
+    tierId: any
+  orders: any
+  page: any
+  pointsForm: object
+    comment: any
+    points: any
+  showMembershipModal: any
+  showPointsModal: any
+  tiers: any
+  total: any
+  transactions: any
+  typeFilter: any
+
+computed
+  allowAdjustPoints: boolean
+  currencyFilter: any
+  currentTier: TierOption | null
+  customerId: string
+  dateFilter: any
+  isMembershipFormValid: boolean
+  isPointsFormValid: boolean
+  loyaltyTierRepository: any
+  membershipIsRunning: boolean
+  membershipPaidUntil: string | null
+  membershipPurchaseRepository: any
+  nextTier: TierOption | null
+  orderColumns: any
+  orderCriteria: CriteriaType
+  pointsTransactionColumns: any
+  tierCriteria: CriteriaType
+  tierLabel: string
+  tierOptions: any
+  tierPoints: number
+  tierPointsProgress: number
+  typeFilterOptions: any
+
+methods
+  closeMembershipModal(): any
+  closePointsModal(): any
+  createdComponent(): Promise<void>
+  formatAmount(amount: number, currency: string): string
+  formatDate(date: string | null): string
+  formatExpiry(date: string | null): string
+  getOrderStateLabel(state: string): string
+  getOrderStateVariant(state: string): string
+  getPointsTransactionTypeLabel(type: string): string
+  loadData(): Promise<void>
+  loadLoyaltySummary(): Promise<void>
+  loadOrders(): Promise<void>
+  loadTiers(): Promise<void>
+  loadTransactions(): Promise<void>
+  onFilterChange(): void
+  onPageChange(arg0: { page: number; limit: number }): void
+  onSaveMembership(): Promise<void>
+  onSavePoints(): Promise<void>
+  openMembershipModal(): any
+  openPointsModal(): any
+  resolveTypeSnippetKey(type: string): string
+
 blocks
   sw_customer_detail_points
     sw_customer_detail_points_membership_card

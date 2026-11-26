@@ -1021,7 +1021,9 @@
                 "previewSalesChannelPlaceholder": "Select sales channel for preview",
                 "save": "Save layout",
                 "reviewChanges": "Review changes",
-                "discardLayout": "Discard changes to {name}"
+                "discardLayout": "Discard changes to {name}",
+                "previewLanguage": "Language",
+                "previewLanguageLoadError": "The available languages for this preview sales channel could not be loaded."
             },
             "assignmentModal": {
                 "title": "Layout assignments",
@@ -1111,7 +1113,8 @@
                         "rootEntity": "Root entity",
                         "navigationLabel": "Data sources"
                     }
-                }
+                },
+                "editingLanguage": "Editing in {language}"
             },
             "elementPicker": {
                 "title": "Add element",
@@ -1155,7 +1158,7 @@
                 "customViewport": "Custom",
                 "viewportToolbar": "Preview viewport",
                 "moveFrame": "Move preview frame. Use arrow keys to reposition.",
-                "closeFrame": "Close layout {name}",
+                "closeFrame": "Close preview {name}",
                 "panelsToolbar": "Canvas panels",
                 "structure": "Structure",
                 "settings": "Settings",
@@ -1167,14 +1170,18 @@
                 "zoomTo100": "Zoom to 100%",
                 "resetZoom": "Reset zoom to 100%",
                 "fit": "Zoom to fit",
-                "resizeNorth": "Resize preview frame from the top",
-                "resizeNorthEast": "Resize preview frame from the top right",
                 "resizeEast": "Resize preview frame from the right",
-                "resizeSouthEast": "Resize preview frame from the bottom right",
                 "resizeSouth": "Resize preview frame from the bottom",
-                "resizeSouthWest": "Resize preview frame from the bottom left",
                 "resizeWest": "Resize preview frame from the left",
-                "resizeNorthWest": "Resize preview frame from the top left"
+                "previewLabel": "{name} · {viewport} · Preview {number}",
+                "previewActions": "Actions for {name}",
+                "openAnotherPreview": "Open another preview"
+            },
+            "translationSettings": {
+                "title": "Translations",
+                "openAction": "Translate layout",
+                "showMore": "Show more fields",
+                "emptyState": "This layout has no translatable fields."
             }
         },
         "builtinLayouts": {
@@ -1208,7 +1215,6 @@
                 "emptyDescription": "Create a layout to start editing.",
                 "loadError": "The layout list could not be loaded.",
                 "open": "Open layout",
-                "activate": "Go to layout",
                 "deleteTitle": "Delete layout?",
                 "deleteDescription": "Permanently delete “{name}”? Unsaved changes to this layout will be lost.",
                 "deleteError": "The layout could not be deleted."
@@ -1220,7 +1226,9 @@
                 "create": "Create",
                 "unsaved": "Unsaved changes",
                 "assignments": "Manage assignments for {name}",
-                "close": "Close {name}"
+                "close": "Close {name}",
+                "expandPreviews": "Show previews of {name}",
+                "collapsePreviews": "Hide previews of {name}"
             },
             "closeDirty": {
                 "title": "Save changes?",
@@ -1242,7 +1250,9 @@
                 "deleteTitle": "Delete workspace?",
                 "deleteDescription": "Delete “{name}”? Its layouts will remain available.",
                 "switchDirtyDescription": "Some open layouts have unsaved changes. Save or discard these layout changes before continuing. Canvas setup is saved automatically.",
-                "workspaceMissing": "This workspace was deleted. Open or create another workspace. Unsaved layout changes remain available in this session."
+                "workspaceMissing": "This workspace was deleted. Open or create another workspace. Unsaved layout changes remain available in this session.",
+                "createdBy": "Created by {name}",
+                "unknownCreator": "Unknown user"
             }
         },
         "presets": {

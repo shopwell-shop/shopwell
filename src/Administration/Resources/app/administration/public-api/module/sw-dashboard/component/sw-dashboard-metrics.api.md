@@ -11,6 +11,27 @@ component sw-dashboard-metrics  private  ts  [private]
   template src/module/sw-dashboard/component/sw-dashboard-metrics/sw-dashboard-metrics.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
+props
+  salesError?: boolean  default=false  [private]
+  salesLoading?: boolean  default=false  [private]
+  summary?: TodayStatistics | null  default=null  [private]
+
+computed
+  canViewMemberships: boolean  [private]
+  canViewOrders: boolean  [private]
+  canViewWallet: boolean  [private]
+  currencyFilter: (value: number, isoCode: string, decimals: number) => string  [private]
+  metricCards: MetricCard[]  [private]
+
+methods
+  buildDelta(current: number, previous: number, money: boolean, reverse: boolean): MetricCard['delta']  [private]
+  formatMetricValue(value: number | null | undefined, money: boolean): string  [private]
+  metricCount(key: string): number  [private]
+  metricFootnote(key: string): string  [private]
+
 blocks
   sw_dashboard_metrics  [private]
     sw_dashboard_metrics_grid  [private]

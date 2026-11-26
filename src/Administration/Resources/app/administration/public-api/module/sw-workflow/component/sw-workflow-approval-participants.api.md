@@ -11,6 +11,17 @@ component sw-workflow-approval-participants  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-approval-participants/sw-workflow-approval-participants.html.twig  [private]
   visibility-source export  [private]
 
+props
+  stages?: RuntimeStage[]  default=factory  [private]
+  tasks: RuntimeTask[]  [private]
+
+computed
+  groups: ApprovalGroup[]  [private]
+
+methods
+  rule(mode: string): string  [private]
+  stateLabel(state: string): string  [private]
+
 blocks
   sw_workflow_approval_participants  [private]
 ```

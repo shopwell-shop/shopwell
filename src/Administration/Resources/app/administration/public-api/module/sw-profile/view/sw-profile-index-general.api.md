@@ -11,6 +11,53 @@ component sw-profile-index-general  private  js  [private]
   template src/module/sw-profile/view/sw-profile-index-general/sw-profile-index-general.html.twig  [private]
   visibility-source registration  [private]
 
+inject
+  acl  [private]
+  ssoSettingsService  [private]
+
+props
+  avatarMediaItem?: object  default=null  [private]
+  isDisabled: boolean  [private]
+  isUserLoading: boolean  [private]
+  languageId?: string  default=null  [private]
+  languages: any[]  [private]
+  newPassword?: string  default=null  [private]
+  newPasswordConfirm?: string  default=null  [private]
+  timezoneOptions: any[]  [private]
+  user: object  [private]
+  userModuleIconColors?: boolean  default=false  [private]
+  userNavigationLayout?: string  default=DEFAULT_NAVIGATION_LAYOUT  [private]
+  userRepository: object  [private]
+  userTheme?: string  default='system'  [private]
+
+emits
+  media-open(...args: any[])  [private]
+  media-remove(...args: any[])  [private]
+  media-upload(...args: any[])  [private]
+  new-password-change(...args: any[])  [private]
+  new-password-confirm-change(...args: any[])  [private]
+  user-module-icon-colors-change(...args: any[])  [private]
+  user-navigation-layout-change(...args: any[])  [private]
+  user-theme-change(...args: any[])  [private]
+
+data
+  showPasswordChangeCard: any  [private]
+
+computed
+  computedNewPassword: any  [private]
+  computedNewPasswordConfirm: any  [private]
+  computedUserModuleIconColors: any  [private]
+  computedUserTheme: any  [private]
+  localeOptions: any  [private]
+  moduleIconColorsOptions: any  [private]
+  userPasswordError: any  [private]
+
+methods
+  onDropMedia(media: any): any  [private]
+  onOpenMedia(): any  [private]
+  onRemoveMedia(): any  [private]
+  onUploadMedia(media: any): any  [private]
+
 blocks
   sw_profile_index_general  [private]
     sw_profile_index_general_information  [private]

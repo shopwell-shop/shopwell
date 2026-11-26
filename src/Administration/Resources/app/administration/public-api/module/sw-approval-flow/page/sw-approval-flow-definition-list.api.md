@@ -11,6 +11,33 @@ component sw-approval-flow-definition-list  private  ts  [private]
   template src/module/sw-approval-flow/page/sw-approval-flow-definition-list/sw-approval-flow-definition-list.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+data
+  definitions: any  [private]
+  hasError: any  [private]
+  isLoading: any  [private]
+  loadRevision: any  [private]
+  total: any  [private]
+
+computed
+  columns: any  [private]
+  definitionRepository: Repository<'approval_flow_definition'>  [private]
+  limit: number  [private]
+  page: number  [private]
+  parameters: any  [private]
+  term: string  [private]
+
+methods
+  date(value: string | null): string  [private]
+  definitionRoute(id: string): any  [private]
+  loadDefinitions(): Promise<void>  [private]
+  onPageChange(arg0: { page: number; limit: number }): void  [private]
+  onSearch(term: string): void  [private]
+  routeInteger(value: unknown, fallback: number): number  [private]
+
 blocks
   sw_approval_flow_definition_list  [private]
     sw_approval_flow_definition_list_grid  [private]

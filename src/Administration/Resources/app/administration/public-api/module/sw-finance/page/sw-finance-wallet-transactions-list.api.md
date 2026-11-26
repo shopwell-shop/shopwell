@@ -11,6 +11,47 @@ component sw-finance-wallet-transactions-list  private  ts  [private]
   template src/module/sw-finance/page/sw-finance-wallet-transactions-list/sw-finance-wallet-transactions-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  defaultFilters: any  [private]
+  isLoading: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  storeKey: any  [private]
+  transactions: any  [private]
+
+computed
+  columns: Array<Record<string, unknown>>  [private]
+  currencyFilter: (value: number, currency: string) => string  [private]
+  dateFilter: (value: string | Date) => string  [private]
+  hasActiveSearchOrFilter: boolean  [private]
+  listFilterOptions: Record<string, FilterDefinition>  [private]
+  listFilters: FilterDefinition[]  [private]
+  transactionCriteria: CriteriaType  [private]
+  transactionRepository: RepositoryType<'customer_wallet_transaction'>  [private]
+  typeFilterOptions: Array<{ id: string; name: string }>  [private]
+
+methods
+  currencyIsoCode(transaction: WalletTransaction): string  [private]
+  customerLabel(transaction: WalletTransaction): string  [private]
+  formatAmount(transaction: WalletTransaction): string  [private]
+  formatBalanceAfter(transaction: WalletTransaction): string  [private]
+  formatDateOrDash(value: string | null | undefined): string  [private]
+  getList(): Promise<void>  [private]
+  onRefresh(): void  [private]
+  orderNumber(transaction: WalletTransaction): string  [private]
+  typeLabel(type: string | null): string  [private]
+  typeVariant(type: string | null): string  [private]
+  updateCriteria(filters: unknown[]): void  [private]
+
 blocks
   sw_finance_wallet_transactions_list  [private]
     sw_finance_wallet_transactions_list_content  [private]
@@ -37,4 +78,7 @@ blocks
 crossings
   v-if  sw_finance_wallet_transactions_list_empty_state -> sw_finance_wallet_transactions_list_empty_state_no_result  [private]
   v-if  sw_finance_wallet_transactions_list_empty_state_no_result -> sw_finance_wallet_transactions_list_grid  [private]
+
+refs
+  listing  -> sw-entity-listing  block=sw_finance_wallet_transactions_list_grid  [private]
 ```

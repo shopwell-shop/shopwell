@@ -10,6 +10,41 @@ component sw-membership-plan-detail  public  ts
   source src/module/sw-settings-membership/page/sw-membership-plan-detail/index.ts
   template src/module/sw-settings-membership/page/sw-membership-plan-detail/sw-membership-plan-detail.html.twig
 
+mixins
+  notification, placeholder, discard-detail-page-changes
+
+inject
+  acl
+  repositoryFactory
+
+props
+  planId?: string  default=null
+
+data
+  isLoading: any
+  isSaveSuccessful: any
+  plan: any
+
+computed
+  allowSave: boolean
+  entityDescription: string
+  identifier: string
+  planCriteria: CriteriaType
+  planDurationDaysError: any
+  planNameError: any
+  planPriceError: any
+  planRepository: RepositoryType<'membership_plan'>
+  planTechnicalNameError: any
+  tooltipCancel: any
+  tooltipSave: any
+
+methods
+  createdComponent(): void
+  loadPlan(): Promise<void>
+  onCancel(): void
+  onChangeLanguage(): void
+  onSave(): Promise<void>
+
 blocks
   sw_loyalty_plan_detail
     sw_loyalty_plan_detail_actions

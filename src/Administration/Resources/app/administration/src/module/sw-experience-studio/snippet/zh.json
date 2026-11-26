@@ -1021,7 +1021,9 @@
                 "previewSalesChannelPlaceholder": "请选择预览销售渠道",
                 "save": "保存布局",
                 "reviewChanges": "查看修改",
-                "discardLayout": "放弃“{name}”的修改"
+                "discardLayout": "放弃“{name}”的修改",
+                "previewLanguage": "语言",
+                "previewLanguageLoadError": "预览销售渠道的可用语言加载失败。"
             },
             "assignmentModal": {
                 "title": "布局分配",
@@ -1111,7 +1113,8 @@
                         "rootEntity": "主体对象",
                         "navigationLabel": "数据源"
                     }
-                }
+                },
+                "editingLanguage": "正在编辑{language}内容"
             },
             "elementPicker": {
                 "title": "添加元素",
@@ -1155,7 +1158,7 @@
                 "customViewport": "自定义",
                 "viewportToolbar": "预览视口",
                 "moveFrame": "移动预览框，可使用方向键调整位置。",
-                "closeFrame": "关闭布局“{name}”",
+                "closeFrame": "关闭“{name}”预览",
                 "panelsToolbar": "画布面板",
                 "structure": "结构",
                 "settings": "设置",
@@ -1167,14 +1170,18 @@
                 "zoomTo100": "缩放至 100%",
                 "resetZoom": "重置缩放至 100%",
                 "fit": "缩放至适合画布",
-                "resizeNorth": "从顶部调整预览框大小",
-                "resizeNorthEast": "从右上角调整预览框大小",
                 "resizeEast": "从右侧调整预览框大小",
-                "resizeSouthEast": "从右下角调整预览框大小",
                 "resizeSouth": "从底部调整预览框大小",
-                "resizeSouthWest": "从左下角调整预览框大小",
                 "resizeWest": "从左侧调整预览框大小",
-                "resizeNorthWest": "从左上角调整预览框大小"
+                "previewLabel": "{name} · {viewport} · 预览 {number}",
+                "previewActions": "“{name}”的操作",
+                "openAnotherPreview": "新增预览"
+            },
+            "translationSettings": {
+                "title": "翻译",
+                "openAction": "翻译布局",
+                "showMore": "显示更多字段",
+                "emptyState": "此布局没有可翻译字段。"
             }
         },
         "builtinLayouts": {
@@ -1208,7 +1215,6 @@
                 "emptyDescription": "创建布局后即可开始编辑。",
                 "loadError": "无法加载布局列表。",
                 "open": "打开布局",
-                "activate": "切换到布局",
                 "deleteTitle": "删除布局？",
                 "deleteDescription": "确定永久删除“{name}”？此布局未保存的修改将丢失。",
                 "deleteError": "无法删除布局。"
@@ -1220,7 +1226,9 @@
                 "create": "创建",
                 "unsaved": "有未保存的修改",
                 "assignments": "管理“{name}”的分配",
-                "close": "关闭“{name}”"
+                "close": "关闭“{name}”",
+                "expandPreviews": "展开“{name}”的预览",
+                "collapsePreviews": "收起“{name}”的预览"
             },
             "closeDirty": {
                 "title": "保存修改？",
@@ -1242,7 +1250,9 @@
                 "deleteTitle": "删除工作区？",
                 "deleteDescription": "确定删除“{name}”？其中的布局仍可继续使用。",
                 "switchDirtyDescription": "部分已打开的布局有未保存的修改。请先保存或放弃修改，再继续操作。画布设置会自动保存。",
-                "workspaceMissing": "此工作区已被删除。请打开或创建其他工作区。本次会话中未保存的布局修改仍会保留。"
+                "workspaceMissing": "此工作区已被删除。请打开或创建其他工作区。本次会话中未保存的布局修改仍会保留。",
+                "createdBy": "创建者：{name}",
+                "unknownCreator": "未知用户"
             }
         },
         "presets": {

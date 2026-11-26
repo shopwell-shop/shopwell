@@ -11,6 +11,22 @@ component sw-workflow-studio-toolbar  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-studio-toolbar/sw-workflow-studio-toolbar.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  canRedo?: boolean  default=false  [private]
+  canUndo?: boolean  default=false  [private]
+  downloadUrl: string  [private]
+
+emits
+  redo(...args: any[])  [private]
+  templates(...args: any[])  [private]
+  undo(...args: any[])  [private]
+
+slots
+  document-actions  {}  block=sw_workflow_studio_toolbar_right  [private]
+  document-info  {}  block=sw_workflow_studio_toolbar_left  [private]
+  extension-actions  {}  block=sw_workflow_studio_toolbar_right  [private]
+
 blocks
   sw_workflow_studio_toolbar  [private]
     sw_workflow_studio_toolbar_left  [private]

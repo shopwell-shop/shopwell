@@ -11,6 +11,42 @@ component sw-settings-sms-template-list  private  ts  [private]
   template src/module/sw-settings-sms/page/sw-settings-sms-template-list/sw-settings-sms-template-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+data
+  isLoading: any  [private]
+  isRemoving: any  [private]
+  limit: any  [private]
+  naturalSorting: any  [private]
+  page: any  [private]
+  removeTarget: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  templates: any  [private]
+  term: any  [private]
+  total: any  [private]
+
+computed
+  columns: Array<{ property: string; label: string; primary?: boolean }>  [private]
+  createButtonTooltip: any  [private]
+  templateRepository: RepositoryType<'sms_template'>  [private]
+
+methods
+  getList(): Promise<void>  [private]
+  onCloseRemoveModal(): void  [private]
+  onConfirmRemove(): Promise<void>  [private]
+  onOpenRemoveModal(target: EntitySchema.Entity<'sms_template'>): void  [private]
+  onPageChange(arg0: { page: number; limit: number }): void  [private]
+  onRemoveModalChange(isOpen: boolean): void  [private]
+  onSearch(term: string): void  [private]
+  onSortColumn(arg0: { sortBy: string; sortDirection: 'ASC' | 'DESC' }): void  [private]
+  sceneLabel(scene: string): string  [private]
+
 blocks
   sw_settings_sms_template_list  [private]
     sw_settings_sms_template_list_actions  [private]

@@ -11,6 +11,44 @@ component sw-workflow-approval-actions  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-approval-actions/sw-workflow-approval-actions.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  workflowApprovalService  [private]
+
+props
+  approveDisabled?: boolean  default=false  [private]
+  availableActions?: string[]  default=factory  [private]
+  isLoading?: boolean  default=false  [private]
+  progress?: string  default=''  [private]
+  taskId?: string  default=''  [private]
+
+emits
+  approve(...args: any[])  [private]
+  completed(...args: any[])  [private]
+  participate(...args: any[])  [private]
+  reject(...args: any[])  [private]
+  return(...args: any[])  [private]
+
+data
+  comment: any  [private]
+  participationAction: any  [private]
+  targetUserId: any  [private]
+
+computed
+  canApprove: any  [private]
+  canParticipate: boolean  [private]
+  canReject: any  [private]
+  extensionOperations: any  [private]
+  participantCriteria: any  [private]
+  participationActions: string[]  [private]
+
+methods
+  confirmParticipation(): void  [private]
+  onApprove(): any  [private]
+  onReject(): any  [private]
+  onReturn(): void  [private]
+  openParticipation(action: string): void  [private]
+
 blocks
   sw_workflow_approval_actions  [private]
     sw_workflow_approval_actions_buttons  [private]

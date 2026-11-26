@@ -11,6 +11,25 @@ component sw-workflow-position-assignee-select  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-position-assignee-select/sw-workflow-position-assignee-select.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  config: Record<string, unknown>  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+computed
+  collection: EntityCollection<'position'>  [private]
+  criteria: any  [private]
+  unavailableCount: number  [private]
+
+methods
+  change(positions: Entity<'position'>[]): void  [private]
+  label(position: Entity<'position'>): string  [private]
+
 blocks
   sw_workflow_position_assignee_select  [private]
+
+notes
+  unresolved options setup  [private]
 ```

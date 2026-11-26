@@ -11,6 +11,42 @@ component sw-blog-comment-detail  private  ts  [private]
   template src/module/sw-blog/page/sw-blog-comment-detail/sw-blog-comment-detail.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  blogApiService  [private]
+  repositoryFactory  [private]
+
+props
+  commentId: string  [private]
+
+data
+  comment: any  [private]
+  customerEmail: any  [private]
+  customerName: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+
+computed
+  authorEmail: string  [private]
+  authorName: string  [private]
+  blogTitle: string  [private]
+  canEdit: boolean  [private]
+  commentRepository: RepositoryType<'blog_comment'>  [private]
+  customerRepository: RepositoryType<'customer'>  [private]
+  headerTitle: string  [private]
+  languageCriteria: CriteriaType  [private]
+  statusLabel: string  [private]
+
+methods
+  loadComment(): Promise<void>  [private]
+  loadCustomer(): Promise<void>  [private]
+  onCancel(): void  [private]
+  onOpenBlog(): void  [private]
+  onSave(): Promise<void>  [private]
+
 blocks
   sw_blog_comment_detail  [private]
     sw_blog_comment_detail_actions  [private]

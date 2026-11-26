@@ -11,6 +11,13 @@ component sw-blog-detail-content-unknown  private  ts  [private]
   template src/module/sw-blog/component/sw-blog-detail-content-unknown/sw-blog-detail-content-unknown.html.twig  [private]
   visibility-source export  [private]
 
+props
+  blog: object  [private]
+
+computed
+  description: string  [private]
+  type: string  [private]
+
 blocks
   sw_blog_detail_content_unknown  [private]
     sw_blog_detail_content_unknown_banner  [private]

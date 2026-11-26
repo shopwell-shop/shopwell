@@ -1112,6 +1112,22 @@ Without a reachable database, theme compilation still works and skips the runtim
 
 The product detail page has a new "Documents" tab that lists the documents of the product, which customers can click to download.
 
+### Paginated category listings are crawlable
+
+The default storefront `robots.txt` now contains `Allow: /*?p=` and `Disallow: /*?p=*&` alongside the existing rule `Disallow: /*?`, so search engines can crawl paginated category listings like `/category/?p=2`.
+The default rules still block sorted, filtered, and search pagination URLs such as `/category/?p=2&order=price-asc`, `/category/?p=2&properties=…`, and `/search?p=2&search=…`.
+Shops that want to keep pagination out of crawling can override the `robots_txt_content_default_rules` block.
+
+A category page only gets a paginated canonical like `/category/?p=2` when it shows a product listing on that page, other pages keep their clean canonical.
+From the second listing page on, the meta title ends with the page number, for example `Seasonal decoration – Page 2`.
+The format comes from the new snippet `general.pagination.metaPageSuffix`, set it to `%content%` to keep the title unchanged.
+
+### Text alternative for the legal guarantee notice
+
+The notice SVGs are now `aria-hidden`, and the notice link is described by the notice's text, visually hidden and rendered by the new Twig filter `sw_legal_guarantee_notice_text`.
+The link's `aria-label` uses the new snippet `checkout.confirmLegalGuaranteeNoticeYourEuropeLink`, which says that it opens a new tab.
+Theme overrides of the notice templates should keep the link's `aria-label` and `aria-describedby` and the hidden text.
+
 
 ## API
 
@@ -1252,6 +1268,11 @@ PATCH /api/webhook/{id}
 The new `GET|POST /store-api/product/{productId}/documents` route returns the documents of a product, each with its file in the requested language, or in the default language if it has none.
 CMS product pages return the same documents in the `documents` data of the description and reviews element (`product-description-reviews`).
 
+### Legal guarantee notice text in the Store API
+
+`GET /store-api/legal-guarantee-notice` also returns `text`, the notice as HTML in the language of `svg`.
+The SVG is now `aria-hidden`, so headless frontends should render `text` as its text alternative.
+
 
 ## App System
 
@@ -1281,6 +1302,11 @@ Script nodes evaluate bounded Symfony expressions with only `form` and `round` v
 
 The system config key `core.app.shopId` is deprecated, read the shop ID from `core.app.shopIdV2` instead.
 
+### App manifests can contain sections from newer Shopwell versions
+
+A top-level manifest section the shop's Shopwell version doesn't know is now skipped and reported as a notice, instead of failing the install.
+Apps that need such a section should require that version in `<compatibility>`.
+
 
 ## Critical Fixes
 
@@ -1291,6 +1317,13 @@ Before, a failure between the two writes left the theme without any of its saved
 The theme is compiled after the commit.
 For that, `ThemeService::updateTheme()` skips the compile when the context has the new state `ThemeService::STATE_SKIP_COMPILE`.
 Classes overriding `updateTheme()` without calling the parent method should handle that state.
+
+### Shopwell can be installed with Composer again
+
+Twig 3.31.1 fixes security issues in the Twig sandbox, and Composer now refuses to install older Twig versions. Together with the Twig version cap in `shopwell/conflicts` 0.6.3, no installable Twig version was left, so installing or updating Shopwell 6.7.15.0 to 6.7.16.1 with Composer failed.
+
+Shopwell now requires `shopwell/conflicts` 0.6.4 and `twig/twig` ^3.31.1, so it can be installed and updated again.
+
 
 ## Features
 

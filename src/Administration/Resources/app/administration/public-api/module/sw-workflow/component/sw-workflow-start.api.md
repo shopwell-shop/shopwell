@@ -11,6 +11,37 @@ component sw-workflow-start  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-start/sw-workflow-start.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  workflowRequestFormService  [private]
+  workflowRuntimeApiService  [private]
+  workflowService  [private]
+
+props
+  release: Release  [private]
+
+data
+  errorDetail: any  [private]
+  fields: any  [private]
+  hasError: any  [private]
+  isLoading: any  [private]
+  isReady: any  [private]
+  isSubmitting: any  [private]
+  requestRevision: any  [private]
+  showModal: any  [private]
+  showValidation: any  [private]
+  title: any  [private]
+  values: any  [private]
+
+computed
+  canStart: boolean  [private]
+  fieldErrors: Record<string, string>  [private]
+
+methods
+  errorMessage(error: unknown): string  [private]
+  open(): Promise<void>  [private]
+  start(): Promise<void>  [private]
+
 blocks
   sw_workflow_start  [private]
 ```

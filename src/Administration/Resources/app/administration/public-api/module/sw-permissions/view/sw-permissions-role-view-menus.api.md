@@ -11,6 +11,51 @@ component sw-permissions-role-view-menus  private  ts  [private]
   template src/module/sw-permissions/view/sw-permissions-role-view-menus/sw-permissions-role-view-menus.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  privileges  [private]
+
+props
+  isLoading?: boolean  default=false  [private]
+  role?: Role | null  default=null  [private]
+  searchTerm?: string  default=''  [private]
+
+emits
+  update-role(...args: any[])  [private]
+
+data
+  expandedIds: any  [private]
+  expansionInitialized: any  [private]
+  expectedSelection: any  [private]
+  explicitPrivileges: any  [private]
+
+computed
+  disabled: boolean  [private]
+  effectivePrivileges: string[]  [private]
+  isAllExpanded: boolean  [private]
+  lockedPrivileges: string[]  [private]
+  menuRequirements: string[]  [private]
+  permissionRows: PermissionRow[]  [private]
+  selectedPrivileges: string[]  [private]
+  store: any  [private]
+  tree: any  [private]
+  visibleRows: { item: PermissionRow; depth: number }[]  [private]
+
+methods
+  canSelectMenu(row: PermissionRow): boolean  [private]
+  emitSelection(roots: string[], menuIds: string[]): any  [private]
+  hasMenuSelection(row: PermissionRow): boolean  [private]
+  isOperationDisabled(row: PermissionRow, id: string): boolean  [private]
+  loadMenus(): Promise<any>  [private]
+  menuLabel(row: PermissionRow): string  [private]
+  operationLabel(row: PermissionRow, label: string): string  [private]
+  selectionState(row: PermissionRow): any  [private]
+  syncPrivileges(): any  [private]
+  toggleAll(): any  [private]
+  toggleExpanded(id: string): any  [private]
+  toggleOperation(row: PermissionRow, id: string, checked: boolean): any  [private]
+  toggleSelection(row: PermissionRow, checked: boolean): any  [private]
+
 blocks
   sw_permissions_role_view_menus  [private]
 ```

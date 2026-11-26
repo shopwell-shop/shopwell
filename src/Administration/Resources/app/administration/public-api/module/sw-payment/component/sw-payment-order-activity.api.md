@@ -11,6 +11,21 @@ component sw-payment-order-activity  private  ts  [private]
   template src/module/sw-payment/component/sw-payment-order-activity/sw-payment-order-activity.html.twig  [private]
   visibility-source export  [private]
 
+props
+  activities: PaymentActivity[]  [private]
+
+data
+  activeKind: any  [private]
+
+computed
+  filters: Array<{ value: PaymentActivityKind | 'all'; label: string; count: number }>  [private]
+  visibleActivities: PaymentActivity[]  [private]
+
+methods
+  kindIcon(kind: PaymentActivityKind): string  [private]
+  kindLabel(kind: PaymentActivityKind): string  [private]
+  onFilter(value: PaymentActivityKind | 'all'): void  [private]
+
 blocks
   sw_payment_order_activity  [private]
     sw_payment_order_activity_empty  [private]

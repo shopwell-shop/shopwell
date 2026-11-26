@@ -11,6 +11,39 @@ component sw-settings-payment-provider-detail  private  ts  [private]
   template src/module/sw-settings-payment-provider/page/sw-settings-payment-provider-detail/sw-settings-payment-provider-detail.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  paymentGatewayService  [private]
+
+props
+  accountId?: string  default=null  [private]
+
+data
+  account: any  [private]
+  credentials: any  [private]
+  error: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  productParams: any  [private]
+  providers: any  [private]
+
+computed
+  accountName: string  [private]
+  canEdit: boolean  [private]
+  multilineFields: PaymentConfigField[]  [private]
+  products: ProductDefinition[]  [private]
+  provider: ProviderDefinition | null  [private]
+  providerOptions: { value: string; label: string }[]  [private]
+  shortFields: PaymentConfigField[]  [private]
+
+methods
+  initializeFields(): void  [private]
+  label(label: string): string  [private]
+  load(): Promise<void>  [private]
+  save(): Promise<void>  [private]
+  selectProvider(value: string): void  [private]
+  setProduct(product: string, enabled: boolean): void  [private]
+
 blocks
   sw_settings_payment_provider_detail  [private]
 ```

@@ -11,6 +11,33 @@ component sw-workflow-approval-form  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-approval-form/sw-workflow-approval-form.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowService  [private]
+
+props
+  disabled?: boolean  default=false  [private]
+  instance: RuntimeInstance  [private]
+
+emits
+  update-patch(...args: any[])  [private]
+  validity-change(...args: any[])  [private]
+
+data
+  fields: any  [private]
+  initialValues: any  [private]
+  isLoading: any  [private]
+  loadError: any  [private]
+  revision: any  [private]
+  values: any  [private]
+
+computed
+  errors: Record<string, string>  [private]
+  patch: Record<string, WorkflowFormValue>  [private]
+  valid: boolean  [private]
+
+methods
+  loadFields(): Promise<void>  [private]
+
 blocks
   sw_workflow_approval_form  [private]
     sw_workflow_approval_form_fields  [after v-if] [private]

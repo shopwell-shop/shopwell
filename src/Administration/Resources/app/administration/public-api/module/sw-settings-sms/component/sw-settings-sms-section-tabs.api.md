@@ -11,6 +11,19 @@ component sw-settings-sms-section-tabs  private  ts  [private]
   template src/module/sw-settings-sms/component/sw-settings-sms-section-tabs/sw-settings-sms-section-tabs.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
+props
+  active: string  [private]
+
+computed
+  activeRoute: string  [private]
+  tabs: TabItem[]  [private]
+
+methods
+  navigate(section: string): void  [private]
+
 blocks
   sw_settings_sms_section_tabs  [private]
 ```

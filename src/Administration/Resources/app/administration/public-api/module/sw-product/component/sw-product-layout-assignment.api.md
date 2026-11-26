@@ -10,6 +10,12 @@ component sw-product-layout-assignment  public  js
   source src/module/sw-product/component/sw-product-layout-assignment/index.js
   template src/module/sw-product/component/sw-product-layout-assignment/sw-product-layout-assignment.html.twig
 
+inject
+  acl
+
+props
+  isLoading?: boolean  default=false
+
 blocks
   sw_product_layout_assignment
 ```

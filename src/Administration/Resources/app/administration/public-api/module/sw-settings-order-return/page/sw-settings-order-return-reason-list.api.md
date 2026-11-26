@@ -11,6 +11,35 @@ component sw-settings-order-return-reason-list  private  ts  [private]
   template src/module/sw-settings-order-return/page/sw-settings-order-return-reason-list/sw-settings-order-return-reason-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+data
+  isLoading: any  [private]
+  reasonToEdit: any  [private]
+  reasons: any  [private]
+  showModal: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+
+computed
+  canEdit: boolean  [private]
+  columns: Array<Record<string, unknown>>  [private]
+  criteria: CriteriaType  [private]
+  reasonRepository: RepositoryType<'order_return_reason'>  [private]
+
+methods
+  getList(): Promise<void>  [private]
+  onCloseModal(): void  [private]
+  onCreate(): void  [private]
+  onEdit(reason: OrderReturnReason): void  [private]
+  onRefresh(): void  [private]
+  onSaved(): void  [private]
+
 blocks
   sw_settings_order_return_reason_list  [private]
     sw_settings_order_return_reason_list_actions  [private]
@@ -27,4 +56,10 @@ blocks
       sw_settings_order_return_reason_list_smart_bar_header_title  [private]
         sw_settings_order_return_reason_list_smart_bar_header_amount  [private]
         sw_settings_order_return_reason_list_smart_bar_header_title_text  [private]
+
+refs
+  reasonListing  -> sw-entity-listing  block=sw_settings_order_return_reason_list_grid  [private]
+
+notes
+  unresolved options setup  [private]
 ```

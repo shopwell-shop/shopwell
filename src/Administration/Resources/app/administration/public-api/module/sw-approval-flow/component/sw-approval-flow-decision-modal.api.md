@@ -11,6 +11,34 @@ component sw-approval-flow-decision-modal  private  ts  [private]
   template src/module/sw-approval-flow/component/sw-approval-flow-decision-modal/sw-approval-flow-decision-modal.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  approvalFlowApiService  [private]
+
+props
+  expectedVersion: number  [private]
+  instanceId: string  [private]
+  outcome: ApprovalOutcome  [private]
+  taskId: string  [private]
+
+emits
+  close(...args: any[])  [private]
+  completed(...args: any[])  [private]
+  refresh(...args: any[])  [private]
+
+data
+  command: any  [private]
+  failure: any  [private]
+  isActive: any  [private]
+  isSubmitting: any  [private]
+  reason: any  [private]
+
+computed
+  canRetry: boolean  [private]
+
+methods
+  close(): void  [private]
+  submit(): Promise<void>  [private]
+
 blocks
   sw_approval_flow_decision_modal  [private]
     sw_approval_flow_decision_modal_actions  [private]

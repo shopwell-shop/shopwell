@@ -11,6 +11,47 @@ component sw-workflow-tasks  private  ts  [private]
   template src/module/sw-workflow/page/sw-workflow-tasks/sw-workflow-tasks.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  workflowRuntimeApiService  [private]
+
+data
+  activeTab: any  [private]
+  hasError: any  [private]
+  isLoading: any  [private]
+  limit: any  [private]
+  loadRevision: any  [private]
+  page: any  [private]
+  rows: any  [private]
+  showRequestPicker: any  [private]
+  total: any  [private]
+
+computed
+  canApprove: any  [private]
+  columns: any  [private]
+  emptyState: { headline: string; description: string }  [private]
+  isTodo: any  [private]
+  tabs: any  [private]
+
+methods
+  completedLabel(row: QueueRow): any  [private]
+  completedTitle(row: QueueRow): any  [private]
+  countersignLabel(type: string): any  [private]
+  decisionLabel(decision: string): any  [private]
+  errorMessage(error: unknown): string  [private]
+  loadRows(): Promise<any>  [private]
+  onOpen(row: QueueRow): Promise<void>  [private]
+  onPageChange(arg0: { page: number; limit: number }): any  [private]
+  onTabChange(key: string): any  [private]
+  requestRows(params: { limit: number; offset: number }): Promise<RuntimePage<QueueRow>>  [private]
+  statusLabel(status: string): string  [private]
+  statusVariant(status: string): string  [private]
+  waitingLabel(row: QueueRow): any  [private]
+  waitingTitle(row: QueueRow): any  [private]
+
 blocks
   sw_workflow_tasks  [private]
     sw_workflow_tasks_content  [private]

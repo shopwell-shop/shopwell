@@ -11,6 +11,47 @@ component sw-permissions-role-detail  private  js  [private]
   template src/module/sw-permissions/page/sw-permissions-role-detail/sw-permissions-role-detail.html.twig  [private]
   visibility-source registration  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  appAclService  [private]
+  feature  [private]
+  loginService  [private]
+  privileges  [private]
+  repositoryFactory  [private]
+  ssoSettingsService  [private]
+  userService  [private]
+
+data
+  confirmPasswordModal: any  [private]
+  detailedPrivileges: any  [private]
+  isLoading: any  [private]
+  isSaveSuccessful: any  [private]
+  permissionSearchTerm: any  [private]
+  role: any  [private]
+
+computed
+  languageId: any  [private]
+  roleId: any  [private]
+  roleRepository: any  [private]
+  tooltipCancel: any  [private]
+  tooltipSave: any  [private]
+  unresolvedDependencies: any  [private]
+
+methods
+  createNewRole(): any  [private]
+  createdComponent(): any  [private]
+  getRole(): Promise<any>  [private]
+  onCancel(): any  [private]
+  onCloseConfirmPasswordModal(): any  [private]
+  onSave(): Promise<any>  [private]
+  saveFinish(): any  [private]
+  saveRole(context: any): Promise<any>  [private]
+  updateCurrentUser(): Promise<any>  [private]
+  updateRole(patch: any): any  [private]
+
 blocks
   sw_permissions_role_detail  [private]
     sw_permissions_role_detail_content  [private]

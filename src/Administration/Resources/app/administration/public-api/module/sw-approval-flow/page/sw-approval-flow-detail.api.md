@@ -11,6 +11,36 @@ component sw-approval-flow-detail  private  ts  [private]
   template src/module/sw-approval-flow/page/sw-approval-flow-detail/sw-approval-flow-detail.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  approvalFlowApiService  [private]
+
+props
+  requestId: string  [private]
+
+data
+  decisionSaved: any  [private]
+  decisionTarget: any  [private]
+  detail: any  [private]
+  isLoading: any  [private]
+  loadError: any  [private]
+  loadRevision: any  [private]
+
+computed
+  actionableTasks: any  [private]
+  backRoute: any  [private]
+  formRows: any  [private]
+  steps: any  [private]
+
+methods
+  date(value: string | null): string  [private]
+  formValue(value: FormValue): string  [private]
+  loadDetail(): Promise<void>  [private]
+  onDecisionCompleted(): void  [private]
+  openDecision(taskId: string, outcome: ApprovalOutcome): void  [private]
+  personName(id: string): string  [private]
+  refreshAfterDecision(): void  [private]
+
 blocks
   sw_approval_flow_detail  [private]
     sw_approval_flow_detail_decision  [after v-if] [private]

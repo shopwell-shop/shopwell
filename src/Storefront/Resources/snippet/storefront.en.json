@@ -130,7 +130,8 @@
             "next": "Next page",
             "last": "Last page",
             "page": "Page",
-            "title": "Pagination"
+            "title": "Pagination",
+            "metaPageSuffix": "%content% – Page %page%"
         },
         "breadcrumbPlaceholder": "Breadcrumb not available",
         "breadcrumbLabel": "Breadcrumb",
@@ -808,7 +809,8 @@
         "walletBalanceLoading": "Loading wallet balance...",
         "walletPaymentPlaceholder": "Amount to pay",
         "walletPaymentApply": "Apply",
-        "shipmentHeader": "Shipment %number%: %shippingMethod%"
+        "shipmentHeader": "Shipment %number%: %shippingMethod%",
+        "confirmLegalGuaranteeNoticeYourEuropeLink": "Information about your legal guarantee rights on Your Europe (opens in a new tab)"
     },
     "listing": {
         "filterTitleText": "Filter products",

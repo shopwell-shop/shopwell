@@ -11,6 +11,45 @@ component sw-permissions-role-list  private  js  [private]
   template src/module/sw-permissions/page/sw-permissions-role-list/sw-permissions-role-list.html.twig  [private]
   visibility-source registration  [private]
 
+mixins
+  listing, notification  [private]
+
+inject
+  acl  [private]
+  repositoryFactory  [private]
+  ssoSettingsService  [private]
+
+data
+  affectedUserCount: any  [private]
+  isConfirmDeleteModalOpen: any  [private]
+  isConfirmingPasswordModalOpen: any  [private]
+  isLoading: any  [private]
+  itemToDelete: any  [private]
+  roleCopyFrom: any  [private]
+  roles: any  [private]
+  showRoleInfoModal: any  [private]
+
+computed
+  emptyStateTitle: any  [private]
+  roleCriteria: any  [private]
+  roleRepository: any  [private]
+  rolesColumns: any  [private]
+  userRepository: any  [private]
+
+methods
+  createdComponent(): any  [private]
+  deleteRole(context: any): any  [private]
+  getItemToDelete(item: any): any  [private]
+  getList(): Promise<any>  [private]
+  onCloseConfirmPasswordModal(): any  [private]
+  onCloseDeleteModal(): any  [private]
+  onConfirmDelete(): any  [private]
+  onCreateRole(): any  [private]
+  onDelete(role: any): any  [private]
+  onDuplicateRole(role: any): any  [private]
+  onRoleCreated(id: any): any  [private]
+  onSearch(searchTerm: any): any  [private]
+
 blocks
   sw_permissions_role_list  [private]
     sw_permissions_role_list_content  [private]

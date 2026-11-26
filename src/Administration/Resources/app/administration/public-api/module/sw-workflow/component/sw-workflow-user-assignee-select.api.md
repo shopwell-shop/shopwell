@@ -11,6 +11,26 @@ component sw-workflow-user-assignee-select  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-user-assignee-select/sw-workflow-user-assignee-select.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  candidateIds?: string[]  default=null  [private]
+  config: Record<string, unknown>  [private]
+  label?: string  default=''  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+computed
+  criteria: any  [private]
+
+methods
+  clear(): void  [private]
+  displayUser(user: Entity<'user'>): string  [private]
+  select(id: string | null, user?: Entity<'user'>): void  [private]
+
 blocks
   sw_workflow_user_assignee_select  [private]
+
+notes
+  unresolved options setup  [private]
 ```

@@ -11,6 +11,57 @@ component sw-blog-comment-list  private  ts  [private]
   template src/module/sw-blog/page/sw-blog-comment-list/sw-blog-comment-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  blogApiService  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  comments: any  [private]
+  customerNames: any  [private]
+  defaultFilters: any  [private]
+  deleteTarget: any  [private]
+  isLoading: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  storeKey: any  [private]
+
+computed
+  blogCriteria: CriteriaType  [private]
+  canDelete: boolean  [private]
+  canEdit: boolean  [private]
+  columns: Array<Record<string, unknown>>  [private]
+  commentRepository: RepositoryType<'blog_comment'>  [private]
+  customerRepository: RepositoryType<'customer'>  [private]
+  deleteMessage: string  [private]
+  listFilterOptions: Record<string, Record<string, unknown>>  [private]
+  listFilters: Array<Record<string, unknown>>  [private]
+
+methods
+  authorOf(comment: CommentRow): string  [private]
+  blogTitleOf(comment: CommentRow): string  [private]
+  buildCriteria(): CriteriaType  [private]
+  excerptOf(comment: CommentRow): string  [private]
+  getList(): Promise<void>  [private]
+  loadCustomerNames(): Promise<void>  [private]
+  onApprove(comment: CommentRow): void  [private]
+  onBulkApprove(): void  [private]
+  onBulkHide(): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(): void  [private]
+  onDelete(comment: CommentRow): void  [private]
+  onHide(comment: CommentRow): void  [private]
+  onRefresh(): void  [private]
+  selectedRows(): CommentRow[]  [private]
+  setStatus(rows: CommentRow[], status: boolean): void  [private]
+  titleOf(comment: CommentRow): string  [private]
+  updateCriteria(filters: unknown[]): void  [private]
+
 blocks
   sw_blog_comment_list  [private]
     sw_blog_comment_list_content  [private]
@@ -39,4 +90,8 @@ blocks
 
 crossings
   v-if  sw_blog_comment_list_empty_state -> sw_blog_comment_list_grid  [private]
+
+refs
+  filterPanel  -> sw-sidebar-filter-panel  block=sw_blog_comment_list_sidebar_filter  [private]
+  listing  -> sw-entity-listing  block=sw_blog_comment_list_grid  [private]
 ```

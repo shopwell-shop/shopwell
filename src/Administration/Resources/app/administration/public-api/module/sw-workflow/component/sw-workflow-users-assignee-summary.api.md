@@ -11,6 +11,17 @@ component sw-workflow-users-assignee-summary  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-users-assignee-summary/sw-workflow-users-assignee-summary.html.twig  [private]
   visibility-source export  [private]
 
+props
+  config: Record<string, unknown>  [private]
+
+computed
+  members: { label: string; unavailable: boolean }[]  [private]
+  summary: string  [private]
+  tooltip: string | undefined  [private]
+
 blocks
   sw_workflow_users_assignee_summary  [private]
+
+notes
+  unresolved options setup  [private]
 ```

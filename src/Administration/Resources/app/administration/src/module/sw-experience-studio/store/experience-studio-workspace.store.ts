@@ -34,6 +34,11 @@ const workspaceStore = Shopwell.Store.register({
             this.loadError = false;
             try {
                 const criteria = new Criteria(page, 25);
+                if (Shopwell.Service('acl').can('user:read')) {
+                    criteria.addAssociation(
+                        Shopwell.Service('acl').can('media:read') ? 'createdBy.avatarMedia' : 'createdBy',
+                    );
+                }
                 criteria.addSorting(Criteria.sort('name', 'ASC'));
                 if (term.trim()) {
                     criteria.setTerm(term.trim());

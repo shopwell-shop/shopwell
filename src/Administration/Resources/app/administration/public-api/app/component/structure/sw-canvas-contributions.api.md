@@ -10,6 +10,26 @@ component sw-canvas-contributions  public  ts
   source src/app/component/structure/sw-canvas-contributions/index.ts
   template src/app/component/structure/sw-canvas-contributions/sw-canvas-contributions.html.twig
 
+props
+  actionPosition?: CanvasActionPosition  default=null
+  componentPosition?: CanvasComponentPosition  default=null
+  iconOnly?: boolean  default=false
+  session: CanvasContributionHost
+  target?: CanvasUiTarget  default=factory
+
+data
+  revision: any
+  unsubscribe: any
+
+computed
+  actions: any
+  components: any
+  contributionState: any
+  dialog: any
+
+methods
+  contributionProps(name: string): any
+
 blocks
   sw_canvas_contributions
 ```

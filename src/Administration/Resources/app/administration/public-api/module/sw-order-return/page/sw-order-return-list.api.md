@@ -11,6 +11,52 @@ component sw-order-return-list  private  ts  [private]
   template src/module/sw-order-return/page/sw-order-return-list/sw-order-return-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  defaultFilters: any  [private]
+  isLoading: any  [private]
+  orderReturns: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  states: any  [private]
+  storeKey: any  [private]
+
+computed
+  criteria: CriteriaType  [private]
+  dateFilter: (value: string | Date) => string  [private]
+  hasActiveSearchOrFilter: boolean  [private]
+  listFilterOptions: Record<string, FilterDefinition>  [private]
+  listFilters: FilterDefinition[]  [private]
+  orderReturnColumns: Array<Record<string, unknown>>  [private]
+  orderReturnRepository: RepositoryType<'order_return'>  [private]
+  stateFilterOptions: Array<{ id: string; name: string }>  [private]
+  stateRepository: RepositoryType<'state_machine_state'>  [private]
+
+methods
+  createdComponent(): Promise<void>  [private]
+  criteriaForStates(): CriteriaType  [private]
+  customerLabel(item: OrderReturn): string  [private]
+  deadlineLabel(item: OrderReturn): string  [private]
+  formatAmount(amount: number | null, currency: string | null): string  [private]
+  formatDateOrDash(value: string | null): string  [private]
+  getList(): Promise<void>  [private]
+  isOverdue(item: OrderReturn): boolean  [private]
+  onRefresh(): void  [private]
+  stateById(stateId: string | null): StateMachineState | undefined  [private]
+  stateLabel(stateId: string | null): string  [private]
+  stateLabelOf(technicalName: string | null | undefined, fallback: string): string  [private]
+  stateVariant(stateId: string | null): string  [private]
+  typeLabel(type: string | null | undefined): string  [private]
+  updateCriteria(filters: unknown[]): void  [private]
+
 blocks
   sw_order_return_list  [private]
     sw_order_return_list_content  [private]
@@ -36,4 +82,7 @@ blocks
 crossings
   v-if  sw_order_return_list_empty_state -> sw_order_return_list_empty_state_no_result  [private]
   v-if  sw_order_return_list_empty_state_no_result -> sw_order_return_list_grid  [private]
+
+refs
+  listing  -> sw-entity-listing  block=sw_order_return_list_grid  [private]
 ```

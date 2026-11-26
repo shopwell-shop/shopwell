@@ -10,6 +10,41 @@ component sw-membership-purchase-list  public  ts
   source src/module/sw-membership/page/sw-membership-purchase-list/index.ts
   template src/module/sw-membership/page/sw-membership-purchase-list/sw-membership-purchase-list.html.twig
 
+mixins
+  listing
+
+inject
+  filterFactory
+  repositoryFactory
+
+data
+  activeFilterNumber: any
+  activeFilters: any
+  defaultFilters: any
+  isLoading: any
+  purchases: any
+  sortBy: any
+  sortDirection: any
+  storeKey: any
+
+computed
+  columns: Array<Record<string, unknown>>
+  criteria: CriteriaType
+  hasActiveSearchOrFilter: boolean
+  listFilterOptions: Record<string, FilterDefinition>
+  listFilters: FilterDefinition[]
+  purchaseRepository: RepositoryType<'membership_purchase'>
+  stateFilterOptions: FilterOption[]
+
+methods
+  formatAmount(purchase: MembershipPurchase): string
+  formatCustomer(purchase: MembershipPurchase): string
+  formatDate(date: string | null): string
+  getList(): Promise<void>
+  getStateLabel(state: string): string
+  getStateVariant(state: string): string
+  updateCriteria(filters: CriteriaType['filters']): void
+
 blocks
   sw_loyalty_order_list
     sw_loyalty_order_list_content
@@ -33,4 +68,7 @@ blocks
 
 crossings
   v-if  sw_loyalty_order_list_empty_state -> sw_loyalty_order_list_grid
+
+refs
+  listing  -> sw-entity-listing  block=sw_loyalty_order_list_grid
 ```

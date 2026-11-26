@@ -11,6 +11,24 @@ component sw-workflow-role-assignee-select  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-role-assignee-select/sw-workflow-role-assignee-select.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  config: Record<string, unknown>  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+computed
+  collection: EntityCollection<'acl_role'>  [private]
+  criteria: any  [private]
+  unavailableCount: number  [private]
+
+methods
+  change(roles: Entity<'acl_role'>[]): void  [private]
+
 blocks
   sw_workflow_role_assignee_select  [private]
+
+notes
+  unresolved options setup  [private]
 ```

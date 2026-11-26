@@ -11,6 +11,22 @@ component sw-workflow-approval-timeline  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-approval-timeline/sw-workflow-approval-timeline.html.twig  [private]
   visibility-source export  [private]
 
+props
+  currentNode?: { id: string; name: string; enteredAt: string | null } | null  default=null  [private]
+  history?: RuntimeTaskHistory[]  default=factory  [private]
+  logs?: NonNullable<RuntimeInstance['logs']>  default=factory  [private]
+  status?: string  default=WORKFLOW_INSTANCE_STATUSES.RUNNING  [private]
+
+computed
+  pending: any  [private]
+  rows: any  [private]
+
+methods
+  absolute(value: string | null): any  [private]
+  decisionKind(decision: string): string  [private]
+  decisionLabel(decision: string): any  [private]
+  relative(value: string | null): any  [private]
+
 blocks
   sw_workflow_approval_timeline  [private]
     sw_workflow_approval_timeline_list  [private]

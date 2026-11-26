@@ -11,6 +11,17 @@ component sw-workflow-studio-node  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-studio-node/sw-workflow-studio-node.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowNodePresentationService  [private]
+
+props
+  data: WorkflowCanvasNodeData  [private]
+
+computed
+  isActivity: boolean  [private]
+  presentation: any  [private]
+  summary: string  [private]
+
 blocks
   sw_workflow_studio_node  [private]
     sw_workflow_studio_node_heading  [private]

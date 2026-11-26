@@ -11,6 +11,71 @@ component sw-settings-sms-template-mapping-grid  private  ts  [private]
   template src/module/sw-settings-sms/component/sw-settings-sms-template-mapping-grid/sw-settings-sms-template-mapping-grid.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  repositoryFactory  [private]
+  smsGatewayProviderService  [private]
+  smsTemplateAuditService  [private]
+
+props
+  disabled?: boolean  default=false  [private]
+  gateways: any[]  [private]
+  providers: any[]  [private]
+  template: object  [private]
+
+emits
+  reload(...args: any[])  [private]
+
+data
+  approvalStatuses: any  [private]
+  busyMappingId: any  [private]
+  confirmationNote: any  [private]
+  confirmationStatus: any  [private]
+  confirmationTarget: any  [private]
+  isConfirming: any  [private]
+  submissionTarget: any  [private]
+
+computed
+  columns: Array<{ property: string; label: string }>  [private]
+  confirmationStatusOptions: Array<{ value: string; label: string }>  [private]
+  gatewayOptions: Array<{ value: string; label: string }>  [private]
+  mappingCollection: EntityCollection<'sms_template_mapping'> | null  [private]
+  mappings: Array<EntitySchema.Entity<'sms_template_mapping'>>  [private]
+  providerOptions: Array<{ value: string; label: string }>  [private]
+  submissionFields: SmsSubmissionField[]  [private]
+  templateEntity: EntitySchema.Entity<'sms_template'>  [private]
+
+methods
+  auditOf(mapping: EntitySchema.Entity<'sms_template_mapping'>): SmsGatewayAudit  [private]
+  auditStatusLabel(status: string | null | undefined): string  [private]
+  canConfirmStatus(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean  [private]
+  canReadStatus(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean  [private]
+  canSubmit(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean  [private]
+  closeConfirmation(): void  [private]
+  emitReload(): void  [private]
+  isBusy(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean  [private]
+  lastSyncedAtOf(mapping: EntitySchema.Entity<'sms_template_mapping'>): string | null  [private]
+  loadApprovalStatuses(): Promise<void>  [private]
+  needsTemplateCode(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean  [private]
+  onAddMapping(): void  [private]
+  onAnswer(answer: SmsTemplateAuditAnswer): void  [private]
+  onCloseConfirmation(): void  [private]
+  onCloseSubmission(): void  [private]
+  onConfirm(): Promise<void>  [private]
+  onConfirmationModalChange(isOpen: boolean): void  [private]
+  onOpenConfirmation(mapping: EntitySchema.Entity<'sms_template_mapping'>): void  [private]
+  onOpenSubmission(mapping: EntitySchema.Entity<'sms_template_mapping'>): void  [private]
+  onRefresh(mapping: EntitySchema.Entity<'sms_template_mapping'>): Promise<void>  [private]
+  onRemoveMapping(mapping: EntitySchema.Entity<'sms_template_mapping'>): void  [private]
+  onSubmissionFinished(): void  [private]
+  providerFor(mapping: EntitySchema.Entity<'sms_template_mapping'>): SmsGatewayProvider | null  [private]
+  providerLabel(provider: SmsGatewayProvider): string  [private]
+  providerLabelOf(technicalName: string): string  [private]
+  statusCodeOf(mapping: EntitySchema.Entity<'sms_template_mapping'>): string | null  [private]
+  statusMessageOf(mapping: EntitySchema.Entity<'sms_template_mapping'>): string | null  [private]
+
 blocks
   sw_settings_sms_template_mapping_grid  [private]
     sw_settings_sms_template_mapping_grid_actions  [private]

@@ -11,6 +11,44 @@ component sw-settings-dictionary-detail  private  ts  [private]
   template src/module/sw-settings-dictionary/page/sw-settings-dictionary-detail/sw-settings-dictionary-detail.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification, placeholder  [private]
+
+inject
+  acl  [private]
+  dictionaryService  [private]
+  repositoryFactory  [private]
+
+props
+  dictionaryTypeId: string  [private]
+
+data
+  dictionaryType: any  [private]
+  entries: any  [private]
+  isLoading: any  [private]
+  newEntry: any  [private]
+  showCreateModal: any  [private]
+  showDeleteModal: any  [private]
+
+computed
+  dictionaryTypeRepository: RepositoryType<'dictionary_type'>  [private]
+  entryColumns: Array<Record<string, unknown>>  [private]
+  entryRepository: RepositoryType<'dictionary_entry'>  [private]
+
+methods
+  createdComponent(): Promise<void>  [private]
+  loadEntries(): Promise<EntityCollection<'dictionary_entry'>>  [private]
+  nextFreePosition(): number  [private]
+  onAddEntry(): void  [private]
+  onChangeLanguage(): void  [private]
+  onCloseCreateModal(): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(id: string): Promise<void>  [private]
+  onCreateSave(): Promise<void>  [private]
+  onDelete(id: string): void  [private]
+  onEntryActiveChange(item: DictionaryEntryEntity, value: boolean): Promise<void>  [private]
+  onInlineEditSave(promise: Promise<void>, item: DictionaryEntryEntity): Promise<void>  [private]
+
 blocks
   sw_settings_dictionary_detail  [private]
     sw_settings_dictionary_detail_content  [private]
@@ -36,4 +74,7 @@ blocks
     sw_settings_dictionary_detail_smart_bar_header  [private]
       sw_settings_dictionary_detail_smart_bar_header_title  [private]
         sw_settings_dictionary_detail_smart_bar_header_title_text  [private]
+
+refs
+  swSettingsDictionaryEntryGrid  -> sw-entity-listing  block=sw_settings_dictionary_detail_grid_inner  [private]
 ```

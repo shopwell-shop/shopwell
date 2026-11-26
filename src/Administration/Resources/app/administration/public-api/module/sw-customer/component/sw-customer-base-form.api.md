@@ -10,6 +10,29 @@ component sw-customer-base-form  public  js
   source src/module/sw-customer/component/sw-customer-base-form/index.js
   template src/module/sw-customer/component/sw-customer-base-form/sw-customer-base-form.html.twig
 
+inject
+  dictionaryService
+  feature
+
+props
+  customer: object
+
+emits
+  sales-channel-change(...args: any[])
+
+data
+  genders: any
+
+computed
+  accountTypeOptions: any
+  genderOptions: any
+  isBusinessAccountType: any
+  languageCriteria: any
+
+methods
+  createdComponent(): any
+  onSalesChannelChange(salesChannelId: any): any
+
 blocks
   sw_customer_base_form
     sw_customer_base_form_account_type_field
@@ -25,4 +48,7 @@ blocks
     sw_customer_base_form_sales_channel_field
     sw_customer_base_form_tag_field
     sw_customer_base_form_vat_id_field
+
+notes
+  unresolved computed ...mapPropertyErrors('customer', errorConfig['sw.customer.detail.base'].customer...
 ```

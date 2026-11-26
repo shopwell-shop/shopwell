@@ -11,6 +11,13 @@ component sw-blog-detail-content-post  private  ts  [private]
   template src/module/sw-blog/component/sw-blog-detail-content-post/sw-blog-detail-content-post.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  feature  [private]
+
+props
+  blog: object  [private]
+  isDisabled?: boolean  default=false  [private]
+
 blocks
   sw_blog_detail_content_post  [private]
     sw_blog_detail_content_post_body  [private]

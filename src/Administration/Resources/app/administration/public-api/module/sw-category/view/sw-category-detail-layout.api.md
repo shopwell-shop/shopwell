@@ -11,6 +11,9 @@ component sw-category-detail-layout  private  ts  [private]
   template src/module/sw-category/view/sw-category-detail-layout/sw-category-detail-layout.html.twig  [private]
   visibility-source export  [private]
 
+props
+  isLoading: boolean  [private]
+
 blocks
   sw_category_detail_layout  [private]
 ```

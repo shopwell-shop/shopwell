@@ -150,6 +150,7 @@ describe('data mapping', () => {
         expect(
             methods.canMapField.call(
                 {
+                    allowMapping: true,
                     mappingCandidates: [categoryNameCandidate],
                     mappings: {},
                     getMappingCandidatesForField: methods.getMappingCandidatesForField,
@@ -173,6 +174,7 @@ describe('data mapping', () => {
 
     it('hides the map action once the property is mapped', () => {
         const context = {
+            allowMapping: true,
             mappingCandidates: [categoryNameCandidate],
             mappings: { text: 'category.name' },
             getMappingCandidatesForField: methods.getMappingCandidatesForField,
@@ -185,6 +187,7 @@ describe('data mapping', () => {
 
     it('hides the map action when the catalogue offers nothing usable', () => {
         const context = {
+            allowMapping: true,
             mappingCandidates: [mediaCandidate],
             mappings: {},
             getMappingCandidatesForField: methods.getMappingCandidatesForField,
@@ -192,6 +195,17 @@ describe('data mapping', () => {
         };
 
         expect(methods.canMapField.call(context, mappableTextField)).toBe(false);
+    });
+
+    it.each([true, false])('honors whether mapping changes are allowed: %s', (allowMapping) => {
+        const context = {
+            allowMapping,
+            mappingCandidates: [categoryNameCandidate],
+            mappings: {},
+            getMappingCandidatesForField: methods.getMappingCandidatesForField,
+            isFieldMapped: methods.isFieldMapped,
+        };
+        expect(methods.canMapField.call(context, mappableTextField)).toBe(allowMapping);
     });
 
     it('labels a mapping with its snippet, and with the raw path when the catalogue lost it', () => {

@@ -11,6 +11,15 @@ component sw-workflow-role-assignee-summary  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-role-assignee-summary/sw-workflow-role-assignee-summary.html.twig  [private]
   visibility-source export  [private]
 
+props
+  config: Record<string, unknown>  [private]
+
+computed
+  summary: string  [private]
+
 blocks
   sw_workflow_role_assignee_summary  [private]
+
+notes
+  unresolved options setup  [private]
 ```

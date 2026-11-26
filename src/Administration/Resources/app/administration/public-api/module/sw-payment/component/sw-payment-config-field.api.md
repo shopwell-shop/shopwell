@@ -11,6 +11,26 @@ component sw-payment-config-field  private  ts  [private]
   template src/module/sw-payment/component/sw-payment-config-field/sw-payment-config-field.html.twig  [private]
   visibility-source export  [private]
 
+props
+  disabled?: boolean  default=false  [private]
+  field: PaymentConfigField  [private]
+  modelValue?: boolean | number | string  default=''  [private]
+
+emits
+  update:modelValue(...args: any[])  [private]
+
+computed
+  currentBoolean: boolean  [private]
+  currentNumber: number | null  [private]
+  currentValue: string | number | boolean  [private]
+  helpText: string | null  [private]
+  label: string  [private]
+  options: Array<{ value: string; label: string }>  [private]
+  placeholder: string | undefined  [private]
+
+methods
+  localized(declared: LocalizedText | null | undefined): string | null  [private]
+
 blocks
   sw_payment_config_field  [private]
 ```

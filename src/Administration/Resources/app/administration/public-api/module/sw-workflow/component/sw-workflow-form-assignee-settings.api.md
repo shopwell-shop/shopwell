@@ -11,6 +11,21 @@ component sw-workflow-form-assignee-settings  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-form-assignee-settings/sw-workflow-form-assignee-settings.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  config: Record<string, unknown>  [private]
+  document?: WorkflowDocument | null  default=null  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+computed
+  options: { value: string; label: string }[]  [private]
+  peopleFields: any  [private]
+
+methods
+  select(key: string): void  [private]
+
 blocks
   sw_workflow_form_assignee_settings  [private]
 ```

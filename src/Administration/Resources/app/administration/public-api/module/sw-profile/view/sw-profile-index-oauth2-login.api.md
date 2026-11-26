@@ -11,6 +11,26 @@ component sw-profile-index-oauth2-login  private  ts  [private]
   template src/module/sw-profile/view/sw-profile-index-oauth2-login/sw-profile-index-oauth2-login.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  oauth2IdentityService  [private]
+
+data
+  bindings: any  [private]
+  isLoading: any  [private]
+  isUnbinding: any  [private]
+  removeTarget: any  [private]
+
+methods
+  channelLabel(binding: OAuth2IdentityBinding): any  [private]
+  loadBindings(): Promise<any>  [private]
+  onCloseRemoveModal(): any  [private]
+  onConfirmRemove(): Promise<any>  [private]
+  onOpenRemoveModal(binding: OAuth2IdentityBinding): any  [private]
+  onRemoveModalChange(isOpen: boolean): any  [private]
+
 blocks
   sw_profile_index_oauth2_login  [private]
     sw_profile_index_oauth2_login_card  [private]

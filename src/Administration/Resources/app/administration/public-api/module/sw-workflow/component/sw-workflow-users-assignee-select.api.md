@@ -11,6 +11,33 @@ component sw-workflow-users-assignee-select  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-users-assignee-select/sw-workflow-users-assignee-select.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  repositoryFactory  [private]
+
+props
+  allowEdit?: boolean  default=true  [private]
+  candidateIds?: string[]  default=null  [private]
+  config: Record<string, unknown>  [private]
+  labelKey?: string  default='sw-workflow.approval.assignee'  [private]
+  labelText?: string  default=''  [private]
+  placeholderKey?: string  default='sw-workflow.approval.multiple.status.empty'  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+computed
+  collection: EntityCollection<'user'>  [private]
+  criteria: any  [private]
+  repository: any  [private]
+  unavailableCount: number  [private]
+
+methods
+  change(users: Entity<'user'>[]): void  [private]
+  label(user: Entity<'user'>): string  [private]
+
 blocks
   sw_workflow_users_assignee_select  [private]
+
+notes
+  unresolved options setup  [private]
 ```

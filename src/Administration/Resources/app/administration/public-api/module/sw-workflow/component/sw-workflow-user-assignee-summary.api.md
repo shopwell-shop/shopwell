@@ -11,6 +11,12 @@ component sw-workflow-user-assignee-summary  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-user-assignee-summary/sw-workflow-user-assignee-summary.html.twig  [private]
   visibility-source export  [private]
 
+props
+  config: Record<string, unknown>  [private]
+
 blocks
   sw_workflow_user_assignee_summary  [private]
+
+notes
+  unresolved options setup  [private]
 ```

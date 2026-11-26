@@ -11,6 +11,54 @@ component sw-workflow-studio  private  ts  [private]
   template src/module/sw-workflow/page/sw-workflow-studio/sw-workflow-studio.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  workflowService  [private]
+  workflowTemplateService  [private]
+
+props
+  workflowId?: string  default=null  [private]
+
+data
+  allowNavigation: any  [private]
+  diagnosticError: any  [private]
+  diagnosticRevision: any  [private]
+  diagnosticTimer: any  [private]
+  document: any  [private]
+  draftId: any  [private]
+  hasDiagnosed: any  [private]
+  hasError: any  [private]
+  hasPendingSettings: any  [private]
+  isDiagnosing: any  [private]
+  isInitialized: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  loadRevision: any  [private]
+  name: any  [private]
+  nodeTypes: any  [private]
+  pendingNavigation: any  [private]
+  revision: any  [private]
+  saveError: any  [private]
+  savedSnapshot: any  [private]
+  unloadHandler: any  [private]
+  violations: any  [private]
+
+computed
+  allowEdit: boolean  [private]
+  canSave: boolean  [private]
+  hasChanges: boolean  [private]
+
+methods
+  applyDraft(draft: WorkflowDraft): void  [private]
+  beforeUnload(event: BeforeUnloadEvent): void  [private]
+  confirmLeave(): void  [private]
+  diagnose(document: WorkflowDocument): Promise<void>  [private]
+  guardNavigation(path: string, next: NavigationGuardNext): void  [private]
+  load(force?: any = false): Promise<void>  [private]
+  onDocumentChange(document: WorkflowDocument): void  [private]
+  reload(): void  [private]
+  save(): Promise<void>  [private]
+
 blocks
   sw_workflow_studio  [private]
 ```

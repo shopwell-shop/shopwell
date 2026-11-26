@@ -11,6 +11,18 @@ component sw-settings-sms-page  private  ts  [private]
   template src/module/sw-settings-sms/component/sw-settings-sms-page/sw-settings-sms-page.html.twig  [private]
   visibility-source export  [private]
 
+props
+  activeSection: string  [private]
+  backRoute?: string  default=null  [private]
+
+slots
+  content  {}  block=sw_settings_sms_page_content  [private]
+  language-switch  {}  block=sw_settings_sms_page  [private]
+  search-bar  {}  block=sw_settings_sms_page  [private]
+  sidebar  {}  block=sw_settings_sms_page  [private]
+  smart-bar-actions  {}  block=sw_settings_sms_page_actions  [private]
+  smart-bar-header  {}  block=sw_settings_sms_page_header  [private]
+
 blocks
   sw_settings_sms_page  [private]
     sw_settings_sms_page_actions  [private]

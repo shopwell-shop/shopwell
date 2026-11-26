@@ -11,6 +11,23 @@ component sw-workflow-form-permissions  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-form-permissions/sw-workflow-form-permissions.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  copy?: boolean  default=false  [private]
+  fields: WorkflowFormField[]  [private]
+  permissions?: Record<string, WorkflowFormPermission>  default=factory  [private]
+
+emits
+  update-permissions(...args: any[])  [private]
+
+computed
+  options: any  [private]
+
+methods
+  changeAccess(key: string, access: WorkflowFormPermission['access']): void  [private]
+  changeRequired(key: string, required: boolean): void  [private]
+  permission(key: string): WorkflowFormPermission  [private]
+
 blocks
   sw_workflow_form_permissions  [private]
     sw_workflow_form_permissions_fields  [after v-if] [private]

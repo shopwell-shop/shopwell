@@ -98,6 +98,8 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/php.yml
     secrets: inherit
+    with:
+      nightly: "true"
   storefront:
     if: (github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch') && github.ref_type != 'tag'
     uses: ./.github/workflows/storefront.yml

@@ -11,6 +11,45 @@ component sw-tree-select  private  ts  [private]
   template src/app/component/form/sw-tree-select/sw-tree-select.html.twig  [private]
   visibility-source export  [private]
 
+props
+  clearable?: boolean  default=false  [private]
+  disabled?: boolean  default=false  [private]
+  helpText?: string  default=''  [private]
+  label: string  [private]
+  modelValue?: string  default=''  [private]
+  options: TreeSelectOption[]  [private]
+  placeholder?: string  default=''  [private]
+  required?: boolean  default=false  [private]
+
+emits
+  update:model-value(...args: any[])  [private]
+
+data
+  expanded: any  [private]
+  fieldId: any  [private]
+  focusedIndex: any  [private]
+  isOpen: any  [private]
+  term: any  [private]
+
+computed
+  rows: any  [private]
+  selectedPath: any  [private]
+
+methods
+  choose(row: TreeSelectRow): any  [private]
+  clear(): any  [private]
+  close(): any  [private]
+  onHorizontalKey(key: string, row: TreeSelectRow): any  [private]
+  onKeydown(event: KeyboardEvent): any  [private]
+  onSearchKeydown(event: KeyboardEvent): any  [private]
+  open(): any  [private]
+  toggle(row: TreeSelectRow): any  [private]
+
 blocks
   sw_tree_select  [private]
+
+refs
+  popup  -> div  block=sw_tree_select  [private]
+  tree  -> ul  block=sw_tree_select  [private]
+  trigger  -> mt-button  block=sw_tree_select  [private]
 ```

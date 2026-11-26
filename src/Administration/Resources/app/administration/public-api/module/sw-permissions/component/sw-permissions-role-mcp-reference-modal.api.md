@@ -11,6 +11,38 @@ component sw-permissions-role-mcp-reference-modal  private  js  [private]
   template src/module/sw-permissions/component/sw-permissions-role-mcp-reference-modal/sw-permissions-role-mcp-reference-modal.html.twig  [private]
   visibility-source registration  [private]
 
+inject
+  mcpToolService  [private]
+
+props
+  mcpIntegrations?: any[]  default=factory  [private]
+  role: object  [private]
+
+emits
+  modal-close(...args: any[])  [private]
+
+data
+  availableTools: any  [private]
+  hasPreselected: any  [private]
+  isLoading: any  [private]
+  viewMode: any  [private]
+
+computed
+  allMissingStatic: any  [private]
+  allowlistedToolNames: any  [private]
+  displayRows: any  [private]
+  filterOptions: any  [private]
+  relevantTools: any  [private]
+  rolePrivileges: any  [private]
+
+methods
+  closeModal(): any  [private]
+  getBadgeVariant(chip: any): any  [private]
+  grantAllMissing(): any  [private]
+  grantPrivilege(chip: any): any  [private]
+  grantRow(row: any): any  [private]
+  loadTools(): any  [private]
+
 blocks
   sw_permissions_role_mcp_reference_modal  [private]
     sw_permissions_role_mcp_reference_modal_content  [private]

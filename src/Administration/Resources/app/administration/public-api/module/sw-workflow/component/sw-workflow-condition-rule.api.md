@@ -11,6 +11,34 @@ component sw-workflow-condition-rule  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-condition-rule/sw-workflow-condition-rule.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  branchSize?: number  default=null  [private]
+  depth?: number  default=0  [private]
+  fields: WorkflowField[]  [private]
+  modelValue: WorkflowCondition  [private]
+
+emits
+  update:modelValue(...args: any[])  [private]
+
+computed
+  canAdd: boolean  [private]
+  canAddComparison: boolean  [private]
+  canAddGroup: boolean  [private]
+  conditionCount: number  [private]
+  group: WorkflowConditionGroup | null  [private]
+  operatorOptions: any  [private]
+  quotaExceeded: boolean  [private]
+  quotaLabel: string  [private]
+
+methods
+  add(nested?: any = false): void  [private]
+  canEditChild(condition: unknown): boolean  [private]
+  removeChild(index: number): void  [private]
+  setOperator(operator: string): void  [private]
+  update(condition: WorkflowCondition): void  [private]
+  updateChild(index: number, condition: WorkflowCondition): void  [private]
+
 blocks
   sw_workflow_condition_rule  [private]
 ```

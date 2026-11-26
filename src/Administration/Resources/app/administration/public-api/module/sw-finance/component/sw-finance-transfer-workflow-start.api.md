@@ -11,6 +11,9 @@ component sw-finance-transfer-workflow-start  private  ts  [private]
   template src/module/sw-finance/component/sw-finance-transfer-workflow-start/sw-finance-transfer-workflow-start.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
 blocks
   sw_finance_transfer_workflow_start  [private]
 ```

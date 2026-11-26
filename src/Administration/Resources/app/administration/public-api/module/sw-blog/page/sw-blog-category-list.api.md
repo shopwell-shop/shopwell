@@ -11,6 +11,61 @@ component sw-blog-category-list  private  ts  [private]
   template src/module/sw-blog/page/sw-blog-category-list/sw-blog-category-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  blogApiService  [private]
+  repositoryFactory  [private]
+
+props
+  categoryId?: string  default=null  [private]
+
+computed
+  assignmentRepository: RepositoryType<'blog_category_assignment'>  [private]
+  blogRepository: RepositoryType<'blog'>  [private]
+  canDelete: boolean  [private]
+  canEdit: boolean  [private]
+  categoryRepository: RepositoryType<'blog_category'>  [private]
+  deleteMessage: string  [private]
+  entriesColumns: Array<Record<string, unknown>>  [private]
+  entryOptionsCriteria: CriteriaType  [private]
+  hasChildren: boolean  [private]
+  isBusy: boolean  [private]
+  isNew: boolean  [private]
+  name: string  [private]
+  tabItems: Array<{ name: string; label: string }>  [private]
+  visibleEntries: EntitySchema.Entity<'blog'>[]  [private]
+
+methods
+  abortOnLanguageChange(): boolean  [private]
+  completePendingNavigation(discard: boolean): Promise<void>  [private]
+  findAssignment(blogId: EntitySchema.EntityKey<'blog'>): Promise<EntitySchema.Entity<'blog_category_assignment'> | null>  [private]
+  guardNavigation(next: (allow?: boolean) => void): void  [private]
+  loadCategory(): Promise<boolean>  [private]
+  loadEntries(): Promise<void>  [private]
+  onAddEntry(id: EntitySchema.EntityKey<'blog'> | null, entry?: EntitySchema.Entity<'blog'>): Promise<void>  [private]
+  onBeforeStructureChange(): Promise<boolean>  [private]
+  onCancelNavigation(): void  [private]
+  onChangeLanguage(languageId: EntitySchema.EntityKey<'language'>): void  [private]
+  onCreateCategory(placement?: { parentId: string | null; afterCategoryId: string | null }): void  [private]
+  onDelete(): void  [private]
+  onDiscardNavigation(): Promise<void>  [private]
+  onEntriesPageChange(arg0: { page: number }): void  [private]
+  onOpenDeleteModal(): void  [private]
+  onRemoveEntry(entry: EntitySchema.Entity<'blog'>): Promise<void>  [private]
+  onSave(): Promise<boolean>  [private]
+  onSaveNavigation(): Promise<void>  [private]
+  onSelectCategory(id: string): void  [private]
+  onStructureChanged(): Promise<void>  [private]
+  requestNavigation(navigate: () => void): void  [private]
+  resetEditor(): void  [private]
+  saveOnLanguageChange(): Promise<void>  [private]
+  saveRemovedAssignments(category: BlogCategory, requestId: number): Promise<boolean>  [private]
+  selectCategory(id: string | null): void  [private]
+  validateCategory(): boolean  [private]
+
 blocks
   sw_blog_category_list  [private]
     sw_blog_category_list_content  [private]
@@ -41,4 +96,10 @@ blocks
 crossings
   v-if  sw_blog_category_list_content_entries_empty -> sw_blog_category_list_content_entries_grid  [private]
   v-if  sw_blog_category_list_content_loading -> sw_blog_category_list_content_card_view  [private]
+
+refs
+  categoryNavigation  -> sw-blog-category-navigation  block=sw_blog_category_list  [private]
+
+notes
+  unresolved data data() { return createCategoryWorkspaceState( this.categoryId, typeof this.$rout...  [private]
 ```

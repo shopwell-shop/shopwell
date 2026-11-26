@@ -10,6 +10,9 @@ component sw-product-detail-layout  public  js
   source src/module/sw-product/view/sw-product-detail-layout/index.js
   template src/module/sw-product/view/sw-product-detail-layout/sw-product-detail-layout.html.twig
 
+computed
+  isLoading: any
+
 blocks
   sw_product_detail_layout
 ```

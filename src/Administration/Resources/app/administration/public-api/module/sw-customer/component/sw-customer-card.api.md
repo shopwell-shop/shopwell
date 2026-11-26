@@ -10,6 +10,55 @@ component sw-customer-card  public  js
   source src/module/sw-customer/component/sw-customer-card/index.js
   template src/module/sw-customer/component/sw-customer-card/sw-customer-card.html.twig
 
+mixins
+  notification
+
+inject
+  acl
+  contextStoreService
+  dictionaryService
+  repositoryFactory
+
+props
+  customer: object
+  editMode?: boolean  default=false
+  isLoading?: boolean  default=false
+  title: string
+
+slots
+  actions  {}  block=sw_customer_card_actions
+  default  {}  block=sw_customer_card_row_secondary
+  metadata-additional  {}  block=sw_customer_card_metadata_additional
+
+data
+  genders: any
+  showConvertCustomerModal: any
+  showImitateCustomerModal: any
+
+computed
+  accountTypeOptions: any
+  canUseConvertCustomer: any
+  canUseCustomerImitation: any
+  currentUser: any
+  customerImitationWarning: any
+  emailIdnFilter: any
+  fullName: any
+  genderOptions: any
+  hasActionSlot: any
+  hasAdditionalDataSlot: any
+  hasSingleBoundSalesChannelUrl: any
+  hasSummarySlot: any
+  isBusinessAccountType: any
+  moduleColor: any
+
+methods
+  createdComponent(): any
+  getMailTo(mail: any): any
+  onCloseConvertCustomerModal(): any
+  onCloseImitateCustomerModal(): any
+  onImitateCustomer(): Promise<any>
+  onOpenConvertCustomerModal(): any
+
 blocks
   sw_customer_card
     sw_customer_card_header_right
@@ -46,4 +95,7 @@ blocks
 
 crossings
   <div>  sw_customer_card_metadata -> sw_customer_card_metadata_customer_email
+
+notes
+  unresolved computed ...mapPropertyErrors('customer', [...errorConfig['sw.customer.detail.base'].cust...
 ```

@@ -11,6 +11,12 @@ component sw-workflow-approval-reminder-status  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-approval-reminder-status/sw-workflow-approval-reminder-status.html.twig  [private]
   visibility-source export  [private]
 
+props
+  reminder?: RuntimeApprovalReminder | null  default=null  [private]
+
+methods
+  absoluteTime(...args: any[]): any  [private]
+
 blocks
   sw_workflow_approval_reminder_status  [private]
 ```

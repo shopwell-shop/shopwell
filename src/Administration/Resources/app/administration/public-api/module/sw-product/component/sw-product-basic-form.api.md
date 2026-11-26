@@ -10,6 +10,40 @@ component sw-product-basic-form  public  js
   source src/module/sw-product/component/sw-product-basic-form/index.js
   template src/module/sw-product/component/sw-product-basic-form/sw-product-basic-form.html.twig
 
+mixins
+  placeholder
+
+inject
+  feature
+
+props
+  allowEdit?: boolean  default=true
+  showSettingsInformation?: boolean  default=true
+
+data
+  productNumberRangeId: any
+
+computed
+  highlightHelpText: any
+  isLoading: any
+  isTitleRequired: any
+  parentProduct: any
+  product: any
+  productActiveError: any
+  productDescriptionError: any
+  productManufacturerIdError: any
+  productMarkAsTopsellerError: any
+  productNameError: any
+  productNumberHelpText: any
+  productNumberRangeLink: any
+  productProductNumberError: any
+
+methods
+  createdComponent(): any
+  getInheritValue(firstKey: any, secondKey: any): any
+  loadProductNumberRangeId(): Promise<any>
+  updateIsTitleRequired(): any
+
 blocks
   sw_product_basic_form
     sw_product_basic_form_description_field

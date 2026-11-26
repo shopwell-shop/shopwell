@@ -11,6 +11,35 @@ component sw-finance-transfer-reject-modal  private  ts  [private]
   template src/module/sw-finance/component/sw-finance-transfer-reject-modal/sw-finance-transfer-reject-modal.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  paymentTransferApiService  [private]
+
+props
+  approval?: boolean  default=false  [private]
+  transfer: TransferLike  [private]
+
+emits
+  modal-close(...args: any[])  [private]
+  transfer-decided(...args: any[])  [private]
+
+data
+  reason: any  [private]
+  rejectInProgress: any  [private]
+
+computed
+  isConfirmDisabled: boolean  [private]
+  isReasonTooLong: boolean  [private]
+  reasonLength: number  [private]
+  reasonLimit: number  [private]
+  snippetPrefix: string  [private]
+
+methods
+  onClose(): void  [private]
+  onConfirm(): void  [private]
+
 blocks
   sw_finance_transfer_reject_modal  [private]
     sw_finance_transfer_reject_modal_counter  [private]

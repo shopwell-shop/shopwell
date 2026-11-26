@@ -11,6 +11,22 @@ component sw-payment-order-summary  private  ts  [private]
   template src/module/sw-payment/component/sw-payment-order-summary/sw-payment-order-summary.html.twig  [private]
   visibility-source export  [private]
 
+props
+  order: PaymentOrder  [private]
+
+computed
+  dateFilter: (value: string | Date) => string  [private]
+  hasRefund: boolean  [private]
+  headlineAmount: number  [private]
+  headlineLabel: string  [private]
+  paymentAppLabel: string  [private]
+  refundedAmount: number  [private]
+  refundedText: string  [private]
+
+methods
+  formatAmount(amount: number, currency: string): string  [private]
+  formatDateOrDash(value: string | null | undefined): string  [private]
+
 blocks
   sw_payment_order_summary  [private]
     sw_payment_order_summary_amount  [private]

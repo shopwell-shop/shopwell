@@ -11,6 +11,38 @@ component sw-payment-refund-detail  private  ts  [private]
   template src/module/sw-payment/page/sw-payment-refund-detail/sw-payment-refund-detail.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+props
+  paymentRefundId: string  [private]
+
+data
+  isLoading: any  [private]
+  refund: any  [private]
+  refundStates: any  [private]
+
+computed
+  dateFilter: (value: string | Date) => string  [private]
+  hasPayload: boolean  [private]
+  order: PaymentOrder | null  [private]
+  orderLink: { name: string; params: { id: string } } | null  [private]
+  refundRepository: RepositoryType<'payment_refund'>  [private]
+  requestPayloadJson: string  [private]
+  responsePayloadJson: string  [private]
+  stateRepository: RepositoryType<'state_machine_state'>  [private]
+
+methods
+  createdComponent(): Promise<void>  [private]
+  formatAmount(amount: number, currency: string): string  [private]
+  formatDateOrDash(value: string | null | undefined): string  [private]
+  loadRefund(): Promise<void>  [private]
+  onRefresh(): Promise<void>  [private]
+  paymentAppLabel(): string  [private]
+  refundStateLabel(stateId: string): string  [private]
+  refundStateVariant(stateId: string): string  [private]
+
 blocks
   sw_payment_refund_detail  [private]
     sw_payment_refund_detail_content  [private]

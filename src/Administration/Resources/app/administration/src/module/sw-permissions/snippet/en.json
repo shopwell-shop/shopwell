@@ -370,10 +370,7 @@
             "payment_gateway": {
                 "label": "Payments"
             },
-            "experience_studio": {
-                "label": "Experience Studio",
-                "translator": "Translate layouts"
-            }
+            "experience_studio": {}
         }
     }
 }

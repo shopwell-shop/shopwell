@@ -11,6 +11,25 @@ component sw-permissions-detailed-grid  private  js  [private]
   template src/module/sw-permissions/components/sw-permissions-detailed-grid/sw-permissions-detailed-grid.html.twig  [private]
   visibility-source registration  [private]
 
+inject
+  privileges  [private]
+
+props
+  detailedPrivileges: any[]  [private]
+  disabled?: boolean  default=false  [private]
+  isLoading?: boolean  default=false  [private]
+  role?: object  default=null  [private]
+
+computed
+  allEntities: any  [private]
+  allGeneralSelectedPrivileges: any  [private]
+  permissionTypes: any  [private]
+
+methods
+  changePermissionForEntity(entity: any, role: any): any  [private]
+  isEntityDisabled(entity: any, role: any): any  [private]
+  isEntitySelected(entity: any, role: any): any  [private]
+
 blocks
   sw_permissions_detailed_grid  [private]
     sw_permissions_detailed_grid_header  [private]

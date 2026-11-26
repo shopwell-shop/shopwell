@@ -11,6 +11,36 @@ component sw-permissions-role-view-general  private  js  [private]
   template src/module/sw-permissions/view/sw-permissions-role-view-general/sw-permissions-role-view-general.html.twig  [private]
   visibility-source registration  [private]
 
+inject
+  acl  [private]
+  feature  [private]
+  repositoryFactory  [private]
+
+props
+  compact?: boolean  default=false  [private]
+  editable?: boolean  default=null  [private]
+  isLoading?: boolean  default=false  [private]
+  mcpOnly?: boolean  default=false  [private]
+  role?: object  default=null  [private]
+  showMcpReferences?: boolean  default=true  [private]
+
+data
+  mcpIntegrations: any  [private]
+  showMcpModal: any  [private]
+
+computed
+  integrationRepository: any  [private]
+  isReadOnly: any  [private]
+  roleDescriptionError: any  [private]
+  roleId: any  [private]
+  roleNameError: any  [private]
+  shouldShowMcpHint: any  [private]
+
+methods
+  loadMcpIntegrations(): Promise<any>  [private]
+  onCloseMcpModal(): any  [private]
+  onOpenMcpModal(): any  [private]
+
 blocks
   sw_permissions_role_role_view_general_card_view_basic_information  [private]
     sw_permissions_role_role_view_general_card_view_basic_information_description  [private]

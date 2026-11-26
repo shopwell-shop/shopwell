@@ -11,6 +11,29 @@ component sw-permissions-detailed-additional  private  js  [private]
   template src/module/sw-permissions/components/sw-permissions-detailed-additional/sw-permissions-detailed-additional.html.twig  [private]
   visibility-source registration  [private]
 
+inject
+  aclApiService  [private]
+  privileges  [private]
+
+props
+  detailedPrivileges: any[]  [private]
+  disabled?: boolean  default=false  [private]
+  isLoading?: boolean  default=false  [private]
+  role?: object  default=null  [private]
+
+data
+  detailedAdditionalPermissions: any  [private]
+
+computed
+  allGeneralSelectedPrivileges: any  [private]
+
+methods
+  changePermissionForEntity(identifier: any): any  [private]
+  createdComponent(): any  [private]
+  isEntityDisabled(identifier: any): any  [private]
+  isEntitySelected(identifier: any): any  [private]
+  setDetailedAdditionalPermissions(): any  [private]
+
 blocks
   sw_permissions_detailed_additional  [private]
     sw_permissions_detailed_additional_additional_privileges  [private]

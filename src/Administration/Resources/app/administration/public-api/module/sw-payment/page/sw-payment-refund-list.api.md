@@ -11,6 +11,45 @@ component sw-payment-refund-list  private  ts  [private]
   template src/module/sw-payment/page/sw-payment-refund-list/sw-payment-refund-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  activeFilters: any  [private]
+  defaultFilters: any  [private]
+  isLoading: any  [private]
+  refunds: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  states: any  [private]
+  storeKey: any  [private]
+
+computed
+  criteria: CriteriaType  [private]
+  hasActiveSearchOrFilter: boolean  [private]
+  listFilterOptions: Record<string, FilterDefinition>  [private]
+  listFilters: FilterDefinition[]  [private]
+  refundColumns: Array<Record<string, unknown>>  [private]
+  refundRepository: RepositoryType<'payment_refund'>  [private]
+  stateFilterOptions: FilterOption[]  [private]
+  stateRepository: RepositoryType<'state_machine_state'>  [private]
+
+methods
+  createdComponent(): Promise<void>  [private]
+  formatAmount(amount: number, currency: string): string  [private]
+  getList(): Promise<void>  [private]
+  onRefresh(): void  [private]
+  paymentOrderLabel(item: PaymentRefund): string  [private]
+  refundStateLabel(stateId: string): string  [private]
+  refundStateVariant(stateId: string): string  [private]
+  updateCriteria(filters: CriteriaType['filters']): void  [private]
+
 blocks
   sw_payment_refund_list  [private]
     sw_payment_refund_list_content  [private]
@@ -33,4 +72,7 @@ blocks
 
 crossings
   v-if  sw_payment_refund_list_empty_state -> sw_payment_refund_list_grid  [private]
+
+refs
+  listing  -> sw-entity-listing  block=sw_payment_refund_list_grid  [private]
 ```

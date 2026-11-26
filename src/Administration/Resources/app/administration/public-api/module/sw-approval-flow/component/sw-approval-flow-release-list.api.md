@@ -11,6 +11,37 @@ component sw-approval-flow-release-list  private  ts  [private]
   template src/module/sw-approval-flow/component/sw-approval-flow-release-list/sw-approval-flow-release-list.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  repositoryFactory  [private]
+
+props
+  allowActivation?: boolean  default=false  [private]
+  businessTypes?: ApprovalBusinessDescriptor[]  default=factory  [private]
+  definitionId: string  [private]
+
+data
+  activatedReleaseId: any  [private]
+  hasError: any  [private]
+  isLoading: any  [private]
+  limit: any  [private]
+  loadRevision: any  [private]
+  page: any  [private]
+  releases: any  [private]
+  selectedRelease: any  [private]
+  total: any  [private]
+
+computed
+  activationBusinessTypes: ApprovalBusinessDescriptor[]  [private]
+  columns: any  [private]
+  releaseRepository: Repository<'approval_flow_release'>  [private]
+
+methods
+  date(value: string | null): string  [private]
+  loadReleases(): Promise<void>  [private]
+  onActivate(release: Entity<'approval_flow_release'>): void  [private]
+  onActivated(releaseId: string): void  [private]
+  onPageChange(arg0: { page: number; limit: number }): void  [private]
+
 blocks
   sw_approval_flow_release_list  [private]
     sw_approval_flow_release_list_columns  [private]

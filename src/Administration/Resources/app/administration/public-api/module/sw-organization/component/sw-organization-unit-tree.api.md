@@ -11,8 +11,52 @@ component sw-organization-unit-tree  private  ts  [private]
   template src/module/sw-organization/component/sw-organization-unit-tree/sw-organization-unit-tree.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
+props
+  disabled?: boolean  default=false  [private]
+  isLoading?: boolean  default=false  [private]
+  loadedOrganizationIds?: string[]  default=factory  [private]
+  organizations: Organization[]  [private]
+  searchTerm?: string  default=''  [private]
+  selectedOrganizationId?: string | null  default=null  [private]
+  selectedUnitId?: string | null  default=null  [private]
+  unitCounts?: Record<string, number>  default=factory  [private]
+  units: Unit[]  [private]
+
+emits
+  add-child(...args: any[])  [private]
+  add-root(...args: any[])  [private]
+  delete-organization(...args: any[])  [private]
+  delete-unit(...args: any[])  [private]
+  load-organization(...args: any[])  [private]
+  select-organization(...args: any[])  [private]
+  select-unit(...args: any[])  [private]
+
+computed
+  activeNodeId: string  [private]
+  canManage: boolean  [private]
+  filteredNodes: any  [private]
+  nodes: any  [private]
+
+methods
+  getItemUrl(node: TreeNode): string  [private]
+  getName(entity: Organization | Unit, fallback: string): string  [private]
+  getOrganizationId(node: NodeData): string  [private]
+  isNew(node: TreeNode): boolean  [private]
+  isSelected(node: TreeNode): boolean  [private]
+  onAdd(node: TreeNode): void  [private]
+  onDelete(node: TreeNode): void  [private]
+  onLoadNode(id: string): void  [private]
+  onSelectNode(node: TreeNode): void  [private]
+  openSelection(): Promise<void>  [private]
+
 blocks
   sw_organization_unit_tree  [private]
     sw_organization_unit_tree_content  [private]
       sw_organization_unit_tree_empty  [after v-if] [private]
+
+refs
+  tree  -> sw-tree  block=sw_organization_unit_tree_content  [private]
 ```

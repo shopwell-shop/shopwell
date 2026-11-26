@@ -11,6 +11,40 @@ component sw-organization-list  private  ts  [private]
   template src/module/sw-organization/page/sw-organization-list/sw-organization-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing, placeholder  [private]
+
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+data
+  entityName: any  [private]
+  isDeleting: any  [private]
+  isLoading: any  [private]
+  organizations: any  [private]
+  savingIds: any  [private]
+  showDeleteModal: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+
+computed
+  organizationColumns: Array<Record<string, unknown>>  [private]
+  organizationRepository: RepositoryType<'organization'>  [private]
+  organizationToDelete: OrganizationEntity | null  [private]
+
+methods
+  createdComponent(): void  [private]
+  getList(): Promise<void>  [private]
+  getUnitCount(item: OrganizationEntity): number  [private]
+  onActiveChange(item: OrganizationEntity, value: boolean): Promise<void>  [private]
+  onAddOrganization(): void  [private]
+  onChangeLanguage(): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(id: string): Promise<void>  [private]
+  onDelete(id: string): void  [private]
+  onInlineEditSave(promise: Promise<void>, item: OrganizationEntity): Promise<void>  [private]
+
 blocks
   sw_organization_list  [private]
     sw_organization_index  [private]
@@ -36,4 +70,7 @@ blocks
         sw_organization_list_smart_bar_header_title  [private]
           sw_organization_list_smart_bar_header_amount  [private]
           sw_organization_list_smart_bar_header_title_text  [private]
+
+refs
+  swSettingsOrganizationGrid  -> sw-entity-listing  block=sw_organization_list_grid_inner  [private]
 ```

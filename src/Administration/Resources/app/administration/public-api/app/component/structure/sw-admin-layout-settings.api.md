@@ -11,6 +11,15 @@ component sw-admin-layout-settings  private  ts  [private]
   template src/app/component/structure/sw-admin-layout-settings/sw-admin-layout-settings.html.twig  [private]
   visibility-source export  [private]
 
+props
+  value?: NavigationLayout  default=DEFAULT_NAVIGATION_LAYOUT  [private]
+
+emits
+  update:value(...args: any[])  [private]
+
+data
+  layouts: any  [private]
+
 blocks
   sw_admin_layout_settings  [private]
 ```

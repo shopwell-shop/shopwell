@@ -167,6 +167,7 @@ use Shopwell\Core\Framework\App\Validation\HookableValidator;
 use Shopwell\Core\Framework\App\Validation\Requirements\PublicAccess;
 use Shopwell\Core\Framework\App\Validation\Requirements\SecureUrlValidator;
 use Shopwell\Core\Framework\App\Validation\TranslationValidator;
+use Shopwell\Core\Framework\App\Validation\UnsupportedSectionValidator;
 use Shopwell\Core\Framework\ContentSystem\Binding\Loader\YamlBindingSpecificationLoader;
 use Shopwell\Core\Framework\ContentSystem\Binding\Registry\ContentSystemBindingSpecificationRegistry;
 use Shopwell\Core\Framework\ContentSystem\Binding\Serialization\BindingSpecificationSerializer;
@@ -257,6 +258,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(TranslationValidator::class)
+        ->tag('shopwell.app_manifest.validator');
+
+    $services->set(UnsupportedSectionValidator::class)
         ->tag('shopwell.app_manifest.validator');
 
     $services->set(AppNameValidator::class)

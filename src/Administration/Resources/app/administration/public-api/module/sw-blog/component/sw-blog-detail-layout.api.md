@@ -11,6 +11,53 @@ component sw-blog-detail-layout  private  ts  [private]
   template src/module/sw-blog/component/sw-blog-detail-layout/sw-blog-detail-layout.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+  systemConfigApiService  [private]
+
+props
+  blog?: EntitySchema.Entity<'blog'>  default=null  [private]
+  category?: EntitySchema.Entity<'blog_category'>  default=null  [private]
+  isDisabled?: boolean  default=false  [private]
+
+data
+  configValues: any  [private]
+  copyFailed: any  [private]
+  currentLayout: any  [private]
+  defaultsLoadFailed: any  [private]
+  hasCopied: any  [private]
+  isCopying: any  [private]
+  isLoading: any  [private]
+  isLoadingDefaults: any  [private]
+  layoutLoadFailed: any  [private]
+
+computed
+  assignmentLabel: string  [private]
+  canCopyLayout: boolean  [private]
+  canEditLayout: boolean  [private]
+  defaultAssignment: EntitySchema.Entity<'blog_content_layout'> | null  [private]
+  defaultLayoutId: EntitySchema.EntityKey<'content_layout'> | null  [private]
+  effectiveLayoutId: EntitySchema.EntityKey<'content_layout'> | null  [private]
+  isLegacyLayout: boolean  [private]
+  isUsingDefault: boolean  [private]
+  layoutCriteria: any  [private]
+  layoutName: string  [private]
+  layoutRepository: Repository<'content_layout'>  [private]
+  legacyLayoutCriteria: any  [private]
+  loadFailed: boolean  [private]
+  selectedLayoutId: EntitySchema.EntityKey<'content_layout'> | null  [private]
+  sourceLabel: string  [private]
+
+methods
+  getLayoutName(layout: { id: string; name: string }): string  [private]
+  loadCurrentLayout(): Promise<void>  [private]
+  loadDefaults(): Promise<void>  [private]
+  onCopyLayout(): Promise<void>  [private]
+  onEditLayout(): void  [private]
+  onLayoutChange(layoutId: EntitySchema.EntityKey<'content_layout'> | null): void  [private]
+  onRestoreDefault(): void  [private]
+
 blocks
   sw_blog_detail_layout  [private]
     sw_blog_detail_layout_assignment  [after v-if] [private]

@@ -11,6 +11,33 @@ component sw-workflow-condition-settings  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-condition-settings/sw-workflow-condition-settings.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowFieldService  [private]
+
+props
+  allowEdit?: boolean  default=true  [private]
+  document: WorkflowDocument  [private]
+  node: WorkflowNode  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+data
+  activeId: any  [private]
+  branches: any  [private]
+
+computed
+  fields: any  [private]
+
+methods
+  add(): void  [private]
+  branchRule(branch: WorkflowConditionBranch): WorkflowCondition  [private]
+  canRemove(id: string): boolean  [private]
+  commit(): void  [private]
+  move(index: number, direction: number): void  [private]
+  remove(id: string): void  [private]
+  updateRule(index: number, rule: WorkflowCondition): void  [private]
+
 blocks
   sw_workflow_condition_settings  [private]
 ```

@@ -30,7 +30,7 @@ class NavigationPageLoader implements NavigationPageLoaderInterface
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AbstractCategoryRoute $categoryRoute,
         private readonly SeoUrlPlaceholderHandlerInterface $seoUrlReplacer,
-        private readonly CategoryBreadcrumbBuilder $breadcrumbBuilder
+        private readonly CategoryBreadcrumbBuilder $breadcrumbBuilder,
     ) {
     }
 
@@ -57,16 +57,13 @@ class NavigationPageLoader implements NavigationPageLoaderInterface
             $page->setBreadcrumb($this->breadcrumbBuilder->getCategoryBreadcrumbUrls($category, $context->getContext(), $context->getSalesChannel()));
         }
 
-        if ($page->getMetaInformation()) {
+        $metaInformation = $page->getMetaInformation();
+        if ($metaInformation) {
             $canonical = ($navigationId === $context->getSalesChannel()->getNavigationCategoryId())
                 ? $this->seoUrlReplacer->generate('frontend.home.page')
                 : $this->seoUrlReplacer->generate(NavigationPageSeoUrlRoute::ROUTE_NAME, ['navigationId' => $navigationId]);
 
-            if ($request->query->has('p') && $request->query->getInt('p') > 1) {
-                $canonical .= '?p=' . $request->query->get('p');
-            }
-
-            $page->getMetaInformation()->setCanonical($canonical);
+            $metaInformation->setCanonical($canonical);
         }
 
         $this->eventDispatcher->dispatch(

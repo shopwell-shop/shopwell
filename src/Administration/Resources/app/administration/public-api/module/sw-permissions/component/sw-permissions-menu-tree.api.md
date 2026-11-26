@@ -11,6 +11,73 @@ component sw-permissions-menu-tree  private  ts  [private]
   template src/module/sw-permissions/component/sw-permissions-menu-tree/sw-permissions-menu-tree.html.twig  [private]
   visibility-source export  [private]
 
+props
+  creatable?: boolean  default=false  [private]
+  deletable?: boolean  default=false  [private]
+  editable?: boolean  default=false  [private]
+  expandedIds?: string[]  default=factory  [private]
+  items: RenderNode[]  [private]
+  routeLabels?: Record<string, string>  default=factory  [private]
+  selectedId?: string  default=null  [private]
+  sortable?: boolean  default=false  [private]
+
+emits
+  add-child(...args: any[])  [private]
+  create-above(...args: any[])  [private]
+  create-below(...args: any[])  [private]
+  edit(...args: any[])  [private]
+  move(...args: any[])  [private]
+  remove(...args: any[])  [private]
+  select(...args: any[])  [private]
+  toggle(...args: any[])  [private]
+
+slots
+  meta  { item }  block=sw_permissions_menu_tree_row_meta  [private]
+  selection  { item }  block=sw_permissions_menu_tree_rows  [private]
+
+data
+  draggedId: any  [private]
+  dropTargetId: any  [private]
+  dropZone: any  [private]
+  focusedId: any  [private]
+
+computed
+  draggedItem: any  [private]
+  flatItems: any  [private]
+  focusableId: any  [private]
+  rows: TreeRow[]  [private]
+
+methods
+  canDropOn(item: RenderNode): any  [private]
+  canHaveChildren(item: RenderNode): any  [private]
+  createMove(item: RenderNode, zone: DropZone): any  [private]
+  descendantIds(itemId: string): any  [private]
+  focusRow(id: string | null | undefined): any  [private]
+  hasChildren(item: RenderNode): any  [private]
+  iconOf(item: RenderNode): any  [private]
+  isExpanded(item: RenderNode): any  [private]
+  isSortableItem(item: RenderNode): any  [private]
+  onAddChild(item: RenderNode): any  [private]
+  onCreateAbove(item: RenderNode): any  [private]
+  onCreateBelow(item: RenderNode): any  [private]
+  onDragEnd(): any  [private]
+  onDragLeave(item: RenderNode): any  [private]
+  onDragOver(event: DragEvent, item: RenderNode): any  [private]
+  onDragStart(event: DragEvent, item: RenderNode): any  [private]
+  onDrop(event: DragEvent, item: RenderNode): any  [private]
+  onEdit(item: RenderNode): any  [private]
+  onHorizontalKey(key: string, arg1: TreeRow): any  [private]
+  onRemove(item: RenderNode): any  [private]
+  onRowKeydown(event: KeyboardEvent, row: TreeRow): any  [private]
+  onSelect(item: RenderNode): any  [private]
+  resetDrag(): any  [private]
+  resolveZone(event: DragEvent, item: RenderNode): DropZone  [private]
+  rowClasses(item: RenderNode): any  [private]
+  rowTooltip(item: RenderNode): any  [private]
+  targetLabel(item: RenderNode): string  [private]
+  toggle(item: RenderNode): any  [private]
+  typeLabel(item: RenderNode): any  [private]
+
 blocks
   sw_permissions_menu_tree  [private]
     sw_permissions_menu_tree_rows  [private]
@@ -24,4 +91,7 @@ blocks
       sw_permissions_menu_tree_row_label  [scope: row] [private]
       sw_permissions_menu_tree_row_meta  [scope: row] [private]
       sw_permissions_menu_tree_row_toggle  [scope: row] [private]
+
+refs
+  rows  -> tr  list  block=sw_permissions_menu_tree_rows  [private]
 ```

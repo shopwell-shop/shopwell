@@ -5,6 +5,7 @@ namespace Shopwell\Storefront\Controller;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\CategoryException;
 use Shopwell\Core\Content\Category\Service\AbstractCategoryUrlGenerator;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
@@ -222,6 +223,22 @@ class NavigationController extends StorefrontController
         $categoryId = $category->getId();
         $path = '/category/' . $categoryId;
 
-        return $this->loadContentPage('/' . ltrim($path, '/'), $request, $context);
+        $contentPage = $this->loadContentPage('/' . ltrim($path, '/'), $request, $context);
+        $listing = $contentPage?->findFirstElement('Sw:Product:Listing')?->properties['listing'] ?? null;
+        $metaInformation = $page->getMetaInformation();
+
+        if ($listing instanceof ProductListingResult && $listing->getPage() > 1 && $metaInformation !== null) {
+            $metaInformation->setCanonical($metaInformation->getCanonical() . '?p=' . $listing->getPage());
+
+            $title = $metaInformation->getMetaTitle();
+            if (trim($title) !== '') {
+                $metaInformation->setMetaTitle($this->trans('general.pagination.metaPageSuffix', [
+                    '%content%' => $title,
+                    '%page%' => $listing->getPage(),
+                ]));
+            }
+        }
+
+        return $contentPage;
     }
 }

@@ -11,6 +11,40 @@ component sw-permissions-additional  private  ts  [private]
   template src/module/sw-permissions/components/sw-permissions-additional/sw-permissions-additional.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  privileges  [private]
+
+props
+  disabled?: boolean  default=false  [private]
+  isLoading?: boolean  default=false  [private]
+  privilegeIds?: string[] | null  default=null  [private]
+  relatedPages?: Record<string, string[]>  default=factory  [private]
+  role?: { privileges: string[] } | null  default=null  [private]
+
+data
+  expandedScopes: any  [private]
+  term: any  [private]
+
+computed
+  additionalPermissions: any  [private]
+  appPermissions: any  [private]
+  selectedPrivileges: any  [private]
+  usedDependencies: any  [private]
+
+methods
+  addPrivilegeWithDependencies(privilegeKey: string, visited?: any = new Set<string>()): any  [private]
+  changeAllAppPermissionsForKey(permissionKey: string, isSelected: boolean): any  [private]
+  dependenciesOf(identifier: string): any  [private]
+  filterPermissions(entries: Mapping[]): any  [private]
+  isPrivilegeLocked(privilegeKey: string): any  [private]
+  isPrivilegeSelected(privilegeKey: string): any  [private]
+  isRequiredBySelection(identifier: string): any  [private]
+  lockedPrivilegeTooltip(privilegeKey: string): any  [private]
+  onSelectPrivilege(privilegeKey: string, isSelected: boolean): any  [private]
+  privilegeLabel(identifier: string): any  [private]
+  reconcileSelection(): any  [private]
+  toggleScope(identifier: string): any  [private]
+
 blocks
   sw_permissions_additional  [private]
     sw_permissions_additional_additional_privileges  [after v-if] [private]

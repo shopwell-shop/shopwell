@@ -11,6 +11,39 @@ component sw-approval-flow-list  private  ts  [private]
   template src/module/sw-approval-flow/page/sw-approval-flow-list/sw-approval-flow-list.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  approvalFlowApiService  [private]
+
+props
+  view: ApprovalView  [private]
+
+data
+  hasError: any  [private]
+  isLoading: any  [private]
+  loadRevision: any  [private]
+  requests: any  [private]
+  total: any  [private]
+
+computed
+  columns: any  [private]
+  limit: number  [private]
+  page: number  [private]
+  requestParameters: ApprovalSearch  [private]
+  status: ApprovalStatus | ''  [private]
+  statusOptions: any  [private]
+  tabs: any  [private]
+  term: string  [private]
+
+methods
+  date(value: string | null): string  [private]
+  detailRoute(id: string): any  [private]
+  loadRequests(): Promise<void>  [private]
+  onPageChange(arg0: { page: number; limit: number }): void  [private]
+  onSearch(value: string): void  [private]
+  onStatusChange(status: ApprovalStatus | '', close: () => void): void  [private]
+  onViewChange(view: ApprovalView): void  [private]
+
 blocks
   sw_approval_flow_list  [private]
     sw_approval_flow_list_content  [private]

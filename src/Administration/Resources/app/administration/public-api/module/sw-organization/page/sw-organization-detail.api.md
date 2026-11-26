@@ -11,6 +11,78 @@ component sw-organization-detail  private  ts  [private]
   template src/module/sw-organization/page/sw-organization-detail/sw-organization-detail.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+props
+  createOrganization?: boolean  default=false  [private]
+  organizationId?: string  default=null  [private]
+  parentId?: string  default=null  [private]
+  unitId?: string  default=null  [private]
+
+data
+  cancelPendingAction: any  [private]
+  deleteTarget: any  [private]
+  isDeleting: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  loadFailed: any  [private]
+  loadRequest: any  [private]
+  nameInvalid: any  [private]
+  newUnit: any  [private]
+  organization: any  [private]
+  pendingAction: any  [private]
+  searchTerm: any  [private]
+  selectedUnitId: any  [private]
+
+computed
+  allowSave: boolean  [private]
+  canCreate: boolean  [private]
+  canDelete: boolean  [private]
+  deleteConfirmation: string  [private]
+  descendantIdsOfSelected: Set<string>  [private]
+  editableEntity: Organization | Unit | null  [private]
+  editableEntityNameError: any  [private]
+  editableEntityParentIdError: any  [private]
+  hasChanges: boolean  [private]
+  identifier: string  [private]
+  isBusy: boolean  [private]
+  organizationRepository: RepositoryType<'organization'>  [private]
+  organizationUnits: Unit[]  [private]
+  parentOptions: Array<{ value: string; label: string }>  [private]
+  selectedUnit: Unit | null  [private]
+  selectionKey: string  [private]
+  treeOrganizations: Organization[]  [private]
+  treeUnits: Unit[]  [private]
+  unitRepository: RepositoryType<'organization_unit'>  [private]
+
+methods
+  abortOnLanguageChange(): boolean  [private]
+  canSaveEntity(): boolean  [private]
+  confirmRouteNavigation(next: NavigationGuardNext): void  [private]
+  createdComponent(): Promise<void>  [private]
+  discardChanges(): void  [private]
+  keepEditing(): void  [private]
+  onAddChild(parent: Unit): void  [private]
+  onAddOrganization(): void  [private]
+  onAddRootUnit(organization?: Organization): void  [private]
+  onAddUnit(organizationId: string, parentId: string | null): void  [private]
+  onCancel(): void  [private]
+  onChangeLanguage(): Promise<void>  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(): Promise<void>  [private]
+  onDeleteOrganization(organization: Organization): void  [private]
+  onDeleteUnit(unit: Unit): void  [private]
+  onLoadOrganization(id: string): Promise<void>  [private]
+  onParentChange(parentId: string | null): void  [private]
+  onSave(): Promise<boolean>  [private]
+  onSearch(term: string): Promise<void>  [private]
+  onSelectOrganization(organization: Organization): void  [private]
+  onSelectUnit(unit: Unit): void  [private]
+  resetEntityChanges(): void  [private]
+  saveOnLanguageChange(): Promise<void>  [private]
+
 blocks
   sw_organization_detail  [private]
     sw_organization_detail_actions  [private]
@@ -33,4 +105,7 @@ blocks
 
 crossings
   v-if  sw_organization_detail_loading -> sw_organization_detail_content  [private]
+
+notes
+  unresolved options setup  [private]
 ```

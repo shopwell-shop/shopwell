@@ -11,6 +11,30 @@ component sw-workflow-copy-settings  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-copy-settings/sw-workflow-copy-settings.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowRequestFormService  [private]
+
+props
+  allowEdit?: boolean  default=true  [private]
+  document?: WorkflowDocument | null  default=null  [private]
+  node: WorkflowNode  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+data
+  activeTab: any  [private]
+
+computed
+  configuration: Record<string, unknown>  [private]
+  formFields: any  [private]
+  formPermissions: Record<string, WorkflowFormPermission>  [private]
+  tabs: any  [private]
+
+methods
+  updateFormPermissions(formPermissions: Record<string, WorkflowFormPermission>): void  [private]
+  updateRecipients(config: Record<string, unknown>): void  [private]
+
 blocks
   sw_workflow_copy_settings  [private]
 ```

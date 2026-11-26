@@ -11,6 +11,43 @@ component sw-settings-sms-template-submission-modal  private  ts  [private]
   template src/module/sw-settings-sms/component/sw-settings-sms-template-submission-modal/sw-settings-sms-template-submission-modal.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  smsTemplateAuditService  [private]
+
+props
+  mapping: object  [private]
+  submissionFields: any[]  [private]
+  template: object  [private]
+
+emits
+  modal-close(...args: any[])  [private]
+  submitted(...args: any[])  [private]
+
+data
+  fieldValues: any  [private]
+  isSubmitting: any  [private]
+
+computed
+  defaultLanguageContent: string  [private]
+  fields: SmsSubmissionField[]  [private]
+  mappingEntity: EntitySchema.Entity<'sms_template_mapping'>  [private]
+  templateEntity: EntitySchema.Entity<'sms_template'>  [private]
+
+methods
+  fieldLabel(field: SmsSubmissionField): string  [private]
+  helpTextOf(field: SmsSubmissionField): string | null  [private]
+  initialFieldValues(): Record<string, SubmissionFieldValue>  [private]
+  initialValueOf(field: SmsSubmissionField): SubmissionFieldValue  [private]
+  isEmpty(value: SubmissionFieldValue | undefined): boolean  [private]
+  missingFields(): SmsSubmissionField[]  [private]
+  onClose(): void  [private]
+  onModalChange(isOpen: boolean): void  [private]
+  onSubmit(): Promise<void>  [private]
+  optionsOf(field: SmsSubmissionField): Array<{ value: string | number; label: string }>  [private]
+
 blocks
   sw_settings_sms_template_submission_modal  [private]
     sw_settings_sms_template_submission_modal_fields  [private]

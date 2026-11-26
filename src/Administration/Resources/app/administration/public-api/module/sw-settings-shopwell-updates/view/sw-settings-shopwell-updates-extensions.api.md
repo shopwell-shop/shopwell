@@ -11,6 +11,20 @@ component sw-settings-shopwell-updates-extensions  private  ts  [private]
   template src/module/sw-settings-shopwell-updates/view/sw-settings-shopwell-updates-extensions/sw-shopwell-updates-extensions.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  feature  [private]
+
+props
+  extensions?: any[]  default=factory  [private]
+  isLoading?: boolean  [private]
+
+computed
+  columns: any  [private]
+  hasExtensions: boolean  [private]
+
+methods
+  openMyExtensions(): any  [private]
+
 blocks
   sw_shopwell_updates_extensions  [private]
     sw_shopwell_updates_extensions_column_action  [private]

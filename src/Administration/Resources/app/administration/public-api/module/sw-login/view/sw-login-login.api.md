@@ -11,6 +11,55 @@ component sw-login-login  private  ts  [private]
   template src/module/sw-login/view/sw-login-login/sw-login-login.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  licenseViolationService  [private]
+  loginService  [private]
+  oauth2LoginService  [private]
+  userService  [private]
+
+emits
+  config-loaded(...args: any[])  [private]
+  is-loading(...args: any[])  [private]
+  is-not-loading(...args: any[])  [private]
+  login-error(...args: any[])  [private]
+  login-success(...args: any[])  [private]
+
+slots
+  password-recovery  {}  block=sw_login_login_submit  [private]
+
+data
+  loginAlertMessage: any  [private]
+  loginConfig: any  [private]
+  loginConfigLoaded: any  [private]
+  loginErrorMessage: any  [private]
+  oauth2Channels: any  [private]
+  oauth2ErrorMessage: any  [private]
+  password: any  [private]
+  rememberMe: any  [private]
+  ssoLoading: any  [private]
+  username: any  [private]
+
+computed
+  showLoginAlert: any  [private]
+
+methods
+  _navigateTo(url: string): any  [private]
+  _reloadPage(): any  [private]
+  channelLabel(channel: OAuth2LoginChannel): any  [private]
+  clearOAuth2LoginErrorCookie(): any  [private]
+  createdComponent(): Promise<any>  [private]
+  doSsoForwarding(): any  [private]
+  forwardLogin(): Promise<any>  [private]
+  handleLoginError(response: unknown): any  [private]
+  handleLoginSuccess(): Promise<any>  [private]
+  loadOAuth2LoginChannels(): Promise<any>  [private]
+  loginUserWithPassword(): Promise<any>  [private]
+  loginWithOAuth2(channel: OAuth2LoginChannel): any  [private]
+  readOAuth2LoginErrorCookie(): any  [private]
+  resolveOAuth2ErrorMessageKey(errorCode: string): any  [private]
+  showLoginErrorFromResponse(response: unknown): any  [private]
+  showOAuth2LoginError(): any  [private]
+
 blocks
   sw_login_login  [private]
     sw_login_login_alert  [private]

@@ -11,6 +11,15 @@ component sw-blog-status-badge  private  ts  [private]
   template src/module/sw-blog/component/sw-blog-status-badge/sw-blog-status-badge.html.twig  [private]
   visibility-source export  [private]
 
+props
+  active?: boolean  default=undefined  [private]
+  publishedAt?: Date | string  default=null  [private]
+
+computed
+  labelKey: string  [private]
+  status: BlogStatus  [private]
+  variant: string  [private]
+
 blocks
   sw_blog_status_badge  [private]
 ```

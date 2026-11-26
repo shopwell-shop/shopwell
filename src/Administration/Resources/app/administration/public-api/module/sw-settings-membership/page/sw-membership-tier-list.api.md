@@ -10,6 +10,36 @@ component sw-membership-tier-list  public  ts
   source src/module/sw-settings-membership/page/sw-membership-tier-list/index.ts
   template src/module/sw-settings-membership/page/sw-membership-tier-list/sw-membership-tier-list.html.twig
 
+mixins
+  listing, placeholder, notification
+
+inject
+  acl
+  repositoryFactory
+
+data
+  isLoading: any
+  limit: any
+  loyaltyTiers: any
+  searchConfigEntity: any
+  sortBy: any
+  sortDirection: any
+
+computed
+  allLoyaltyTiersCriteria: CriteriaType
+  columns: LoyaltyTierColumn[]
+  loyaltyTierRepository: RepositoryType<'loyalty_tier'>
+  showEmptyState: boolean
+
+methods
+  createdComponent(): void
+  deleteLoyaltyTier(loyaltyTier: LoyaltyTier): void
+  deleteLoyaltyTiers(): void
+  earnMultiplier(loyaltyTier: TierGrants): number
+  getColumns(): LoyaltyTierColumn[]
+  getList(): Promise<void>
+  onContextMenuDelete(loyaltyTier: LoyaltyTier): void
+
 blocks
   sw_loyalty_tier_list
     sw_loyalty_tier_list_actions
@@ -26,4 +56,7 @@ blocks
       sw_loyalty_tier_list_smart_bar_header_title
         sw_loyalty_tier_list_smart_bar_header_amount
         sw_loyalty_tier_list_smart_bar_header_title_text
+
+refs
+  listing  -> sw-entity-listing  block=sw_loyalty_tier_list_grid
 ```

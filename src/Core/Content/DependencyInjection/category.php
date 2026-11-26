@@ -36,6 +36,7 @@ use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutContextFactory;
 use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\NavigationAliasResolver;
 use Shopwell\Core\Framework\ContentSystem\Helper\ContentLayoutMetadataDeriver;
+use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
@@ -91,6 +92,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(CachedDefaultCategoryLevelLoader::class . '.inner'),
             service(Connection::class),
+            service(EntityCacheKeyGenerator::class),
         ])
         ->tag('kernel.event_subscriber');
 

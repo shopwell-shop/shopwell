@@ -11,6 +11,26 @@ component sw-workflow-release-list  private  ts  [private]
   template src/module/sw-workflow/view/sw-workflow-release-list/sw-workflow-release-list.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowService  [private]
+
+data
+  hasError: any  [private]
+  isLoading: any  [private]
+  limit: any  [private]
+  page: any  [private]
+  releases: any  [private]
+  requestRevision: any  [private]
+  total: any  [private]
+
+computed
+  columns: any  [private]
+
+methods
+  changePage(arg0: { page: number; limit: number }): void  [private]
+  formatDate(value: string): string  [private]
+  load(): Promise<void>  [private]
+
 blocks
   sw_workflow_releases  [private]
 ```

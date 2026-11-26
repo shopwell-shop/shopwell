@@ -11,6 +11,37 @@ component sw-profile-index-search-preferences  private  js  [private]
   template src/module/sw-profile/view/sw-profile-index-search-preferences/sw-profile-index-search-preferences.html.twig  [private]
   visibility-source registration  [private]
 
+mixins
+  notification  [private]
+
+inject
+  searchPreferencesService  [private]
+  searchRankingService  [private]
+
+data
+  isLoading: any  [private]
+
+computed
+  adminEsEnable: any  [private]
+  defaultSearchPreferences: any  [private]
+  minSearchTermLength: any  [private]
+  searchPreferences: any  [private]
+  userSearchPreferences: any  [private]
+
+methods
+  addEventListeners(): any  [private]
+  beforeDestroyComponent(): any  [private]
+  createdComponent(): Promise<any>  [private]
+  getDataSource(): Promise<any>  [private]
+  getMinSearchTermLength(): Promise<any>  [private]
+  getModuleTitle(entityName: any): any  [private]
+  onChangeSearchPreference(searchPreference: any): any  [private]
+  onReset(): any  [private]
+  onSelect(event: any): any  [private]
+  removeEventListeners(): any  [private]
+  resetSearchPreference(toReset: any, searchPreference: any): any  [private]
+  updateDataSource(): any  [private]
+
 blocks
   sw_profile_index_search_preferences  [private]
     sw_profile_index_search_preferences_search_behavior  [after v-if] [private]

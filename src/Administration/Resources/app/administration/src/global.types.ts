@@ -31,6 +31,7 @@ import type CustomSnippetApiService from 'src/core/service/api/custom-snippet.ap
 import type MediaService from 'src/core/service/api/media.api.service';
 import type WorkflowRuntimeApiService from 'src/core/service/api/workflow-runtime.api.service';
 import type WorkflowApiService from 'src/core/service/api/workflow.api.service';
+import type createMediaDefaultFolderService from 'src/app/service/media-default-folder.service';
 import type ContentSystemElementTypeApiService from 'src/core/service/api/content-system-element-type.api.service';
 import type ContentSystemLayoutDraftMutationApiService from 'src/core/service/api/content-system-layout-draft-mutation.api.service';
 import type ContentSystemEntityTypeApiService from 'src/core/service/api/content-system-entity-type.api.service';
@@ -38,7 +39,6 @@ import type ContentSystemStyleOptionApiService from 'src/core/service/api/conten
 import type ContentSystemPreviewApiService from 'src/core/service/api/content-system-preview.api.service';
 import type ContentSystemLayoutPresetApiService from 'src/core/service/api/content-system-layout-preset.api.service';
 import type ContentSystemMappingCandidateApiService from 'src/core/service/api/content-system-mapping-candidate.api.service';
-import type createMediaDefaultFolderService from 'src/app/service/media-default-folder.service';
 import type LocaleFactory from 'src/core/factory/locale.factory';
 import type UserActivityService from 'src/app/service/user-activity.service';
 import type { FullState } from 'src/core/factory/state.factory';

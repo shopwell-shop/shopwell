@@ -10,6 +10,52 @@ component sw-customer-address-form  public  js
   source src/module/sw-customer/component/sw-customer-address-form/index.js
   template src/module/sw-customer/component/sw-customer-address-form/sw-customer-address-form.html.twig
 
+inject
+  dictionaryService
+  repositoryFactory
+
+props
+  address: object  default=factory
+  customer: object
+  disabled?: boolean  default=false
+
+slots
+  default  { ...{ disabled } }  block=sw_customer_address_form_container
+
+data
+  country: any
+  genders: any
+  states: any
+
+computed
+  addressAdditionalAddressLine1Error: any
+  addressAdditionalAddressLine2Error: any
+  addressCityError: any
+  addressCompanyError: any
+  addressCountryIdError: any
+  addressCountryStateIdError: any
+  addressDepartmentError: any
+  addressGenderError: any
+  addressNameError: any
+  addressPhoneNumberError: any
+  addressRepository: any
+  addressStreetError: any
+  addressZipcodeError: any
+  countryCriteria: any
+  countryId: any
+  countryRepository: any
+  countryStateRepository: any
+  genderOptions: any
+  hasStates: any
+  isBusinessAccountType: any
+  stateCriteria: any
+
+methods
+  createdComponent(): any
+  getCountryStates(): Promise<any>
+  removeRequiredFieldError(field: any): any
+  setFieldRequired(field: any, isRequired: any): any
+
 blocks
   sw_customer_address_form
     sw_customer_address_form_container

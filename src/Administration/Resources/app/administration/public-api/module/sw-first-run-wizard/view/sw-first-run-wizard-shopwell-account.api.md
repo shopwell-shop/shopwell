@@ -10,6 +10,28 @@ component sw-first-run-wizard-shopwell-account  public  js
   source src/module/sw-first-run-wizard/view/sw-first-run-wizard-shopwell-account/index.js
   template src/module/sw-first-run-wizard/view/sw-first-run-wizard-shopwell-account/sw-first-run-wizard-shopwell-account.html.twig
 
+inject
+  firstRunWizardService
+
+emits
+  buttons-update(...args: any[])
+  frw-redirect(...args: any[])
+  frw-set-title(...args: any[])
+
+data
+  accountError: any
+  password: any
+  shopwellId: any
+
+computed
+  assetFilter: any
+
+methods
+  createdComponent(): any
+  setTitle(): any
+  testCredentials(): Promise<any>
+  updateButtons(): any
+
 blocks
   sw_first_run_wizard_shopwell_account
 ```

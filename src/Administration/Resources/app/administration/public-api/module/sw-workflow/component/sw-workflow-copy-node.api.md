@@ -11,6 +11,12 @@ component sw-workflow-copy-node  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-copy-node/sw-workflow-copy-node.html.twig  [private]
   visibility-source export  [private]
 
+props
+  data: WorkflowCanvasNodeData  [private]
+
+computed
+  hasRecipients: boolean  [private]
+
 blocks
   sw_workflow_copy_node  [private]
 ```

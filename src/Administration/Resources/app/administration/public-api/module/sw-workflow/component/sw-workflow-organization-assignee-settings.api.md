@@ -11,6 +11,22 @@ component sw-workflow-organization-assignee-settings  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-organization-assignee-settings/sw-workflow-organization-assignee-settings.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  config?: Record<string, unknown>  default=factory  [private]
+  node: WorkflowNode  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+computed
+  isInitiator: boolean  [private]
+  level: number | null  [private]
+
+methods
+  changeContinuous(continuous: boolean): void  [private]
+  changeLevel(level: number | null): void  [private]
+
 blocks
   sw_workflow_organization_assignee_settings  [private]
 ```

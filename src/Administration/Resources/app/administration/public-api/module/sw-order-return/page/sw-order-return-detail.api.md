@@ -11,6 +11,65 @@ component sw-order-return-detail  private  ts  [private]
   template src/module/sw-order-return/page/sw-order-return-detail/sw-order-return-detail.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  orderReturnApiService  [private]
+  repositoryFactory  [private]
+
+props
+  orderReturnId: string  [private]
+
+data
+  draftRefundDestination: any  [private]
+  isLoading: any  [private]
+  isSubmitting: any  [private]
+  messageDraft: any  [private]
+  orderReturn: any  [private]
+  pendingRefundAction: any  [private]
+  showDeclineModal: any  [private]
+
+computed
+  availableActions: string[]  [private]
+  canDecide: boolean  [private]
+  customerLabel: string  [private]
+  dateFilter: (value: string | Date) => string  [private]
+  generalFacts: Array<{ label: string; value: string; to?: { name: string; params: { id: string } } }>  [private]
+  isRefundOnly: boolean  [private]
+  lineItemColumns: Array<Record<string, unknown>>  [private]
+  orderReturnRepository: RepositoryType<'order_return'>  [private]
+  reasonLabel: string  [private]
+  refundDestinationOptions: Array<{ value: string; label: string }>  [private]
+  stateLabel: string  [private]
+  stateName: string | null  [private]
+  stateVariant: string  [private]
+  trackingLabel: string  [private]
+  typeLabel: string  [private]
+
+methods
+  criteria(): CriteriaType  [private]
+  errorMessage(error: unknown): string  [private]
+  formatAmount(amount: number | null, currency: string | null): string  [private]
+  formatDateOrDash(value: unknown): string  [private]
+  lineItemLabel(lineItem: OrderReturnLineItem): string  [private]
+  loadOrderReturn(): Promise<void>  [private]
+  messageAuthor(message: OrderReturnMessage): string  [private]
+  onApprove(): void  [private]
+  onCancel(): void  [private]
+  onCloseDeclineModal(): void  [private]
+  onCloseRefundModal(): void  [private]
+  onConfirmRefund(): Promise<void>  [private]
+  onDecline(reason: string): void  [private]
+  onOpenDeclineModal(): void  [private]
+  onOpenRefundModal(action: RefundAction): void  [private]
+  onReceive(): void  [private]
+  onRefund(): void  [private]
+  onSendMessage(): void  [private]
+  runAction(request: () => Promise<unknown>, successSnippet: string): Promise<boolean>  [private]
+  stateLabelOf(technicalName: string | null | undefined, fallback: string): string  [private]
+
 blocks
   sw_order_return_detail  [private]
     sw_order_return_detail_content  [private]

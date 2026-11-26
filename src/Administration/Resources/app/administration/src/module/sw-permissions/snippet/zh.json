@@ -370,10 +370,7 @@
             "payment_gateway": {
                 "label": "支付"
             },
-            "experience_studio": {
-                "label": "体验工作室",
-                "translator": "翻译布局"
-            }
+            "experience_studio": {}
         }
     }
 }

@@ -11,6 +11,14 @@ component sw-permissions-role-view-detailed  private  js  [private]
   template src/module/sw-permissions/view/sw-permissions-role-view-detailed/sw-permissions-role-view-detailed.html.twig  [private]
   visibility-source registration  [private]
 
+inject
+  acl  [private]
+
+props
+  detailedPrivileges: any[]  [private]
+  isLoading?: boolean  default=false  [private]
+  role?: object  default=null  [private]
+
 blocks
   sw_permissions_role_role_view_general_card_view_additional_permissions  [after v-if] [private]
 ```

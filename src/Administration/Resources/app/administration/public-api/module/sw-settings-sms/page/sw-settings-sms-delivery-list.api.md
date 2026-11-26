@@ -11,6 +11,39 @@ component sw-settings-sms-delivery-list  private  ts  [private]
   template src/module/sw-settings-sms/page/sw-settings-sms-delivery-list/sw-settings-sms-delivery-list.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  deliveries: any  [private]
+  filterCriteria: any  [private]
+  isLoading: any  [private]
+  limit: any  [private]
+  page: any  [private]
+  storeKey: any  [private]
+  term: any  [private]
+  total: any  [private]
+
+computed
+  columns: Array<{ property: string; label: string; primary?: boolean }>  [private]
+  dateFilter: (value: string, options?: Intl.DateTimeFormatOptions) => string  [private]
+  defaultFilters: string[]  [private]
+  deliveryRepository: RepositoryType<'sms_delivery'>  [private]
+  listCriteria: any  [private]
+  listFilters: FilterDefinition[]  [private]
+  statusFilterOptions: Array<{ value: string; label: string }>  [private]
+
+methods
+  getList(): Promise<void>  [private]
+  onPageChange(arg0: { page: number; limit: number }): void  [private]
+  onSearch(term: string): void  [private]
+  statusLabel(status: string): string  [private]
+  statusVariant(status: string): string  [private]
+  updateCriteria(filters: CriteriaType['filters']): void  [private]
+
 blocks
   sw_settings_sms_delivery_list  [private]
     sw_settings_sms_delivery_list_content  [private]

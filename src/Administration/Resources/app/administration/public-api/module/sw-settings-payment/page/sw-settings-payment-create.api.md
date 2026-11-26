@@ -11,6 +11,10 @@ component sw-settings-payment-create  public  js
   source src/module/sw-settings-payment/page/sw-settings-payment-create/index.js
   template src/module/sw-settings-payment/page/sw-settings-payment-create/sw-settings-payment-create.html.twig
 
+methods
+  createdComponent(): any
+  onSave(): any
+
 blocks
   sw_settings_payment_detail  [inherited]
     sw_settings_payment_detail_actions  [inherited]
@@ -54,4 +58,7 @@ blocks
 
 crossings
   v-if  sw_settings_payment_detail_gateway_channel_new -> sw_settings_payment_detail_gateway_channel
+
+refs
+  mediaSidebarItem  -> sw-sidebar-media-item  block=sw_settings_payment_detail
 ```

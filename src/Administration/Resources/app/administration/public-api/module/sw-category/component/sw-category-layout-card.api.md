@@ -10,6 +10,12 @@ component sw-category-layout-card  public  js
   source src/module/sw-category/component/sw-category-layout-card/index.js
   template src/module/sw-category/component/sw-category-layout-card/sw-category-layout-card.html.twig
 
+inject
+  acl
+
+props
+  isLoading?: boolean  default=false
+
 blocks
   sw_category_layout_card
 ```

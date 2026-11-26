@@ -11,6 +11,42 @@ component sw-workflow-resubmit  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-resubmit/sw-workflow-resubmit.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowRuntimeApiService  [private]
+  workflowService  [private]
+
+props
+  disabled?: boolean  default=false  [private]
+  instance: RuntimeInstance  [private]
+
+emits
+  busy(...args: any[])  [private]
+  resubmitted(...args: any[])  [private]
+
+data
+  comment: any  [private]
+  error: any  [private]
+  fields: any  [private]
+  initialValues: any  [private]
+  isLoading: any  [private]
+  isReady: any  [private]
+  isSubmitting: any  [private]
+  revision: any  [private]
+  showModal: any  [private]
+  showValidation: any  [private]
+  values: any  [private]
+
+computed
+  fieldErrors: Record<string, string>  [private]
+
+methods
+  close(): void  [private]
+  errorMessage(error: unknown): string  [private]
+  isReadOnly(key: string): boolean  [private]
+  open(): Promise<void>  [private]
+  prepareField(field: WorkflowFormField): Promise<WorkflowFormField>  [private]
+  submit(): Promise<void>  [private]
+
 blocks
   sw_workflow_resubmit  [private]
     sw_workflow_resubmit_fields  [private]

@@ -11,6 +11,45 @@ component sw-blog-author-list  private  ts  [private]
   template src/module/sw-blog/page/sw-blog-author-list/sw-blog-author-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  blogApiService  [private]
+  repositoryFactory  [private]
+
+data
+  authors: any  [private]
+  deleteTarget: any  [private]
+  isLoading: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+
+computed
+  authorRepository: RepositoryType<'blog_author'>  [private]
+  canCreate: boolean  [private]
+  canDelete: boolean  [private]
+  canEdit: boolean  [private]
+  columns: Array<Record<string, unknown>>  [private]
+  criteria: CriteriaType  [private]
+  deleteMessage: string  [private]
+  isDeleteBlocked: boolean  [private]
+
+methods
+  entryCountOf(author: AuthorRow): number  [private]
+  getList(): Promise<void>  [private]
+  initialOf(author: AuthorRow): string  [private]
+  onChangeActive(author: EntitySchema.Entity<'blog_author'>): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(): void  [private]
+  onCreateAuthor(): void  [private]
+  onDeactivateInstead(): void  [private]
+  onDelete(author: AuthorRow): void  [private]
+  onInlineEditSave(author: EntitySchema.Entity<'blog_author'>): void  [private]
+  onOpenAuthorEntries(author: AuthorRow): void  [private]
+  onRefresh(): void  [private]
+
 blocks
   sw_blog_author_list  [private]
     sw_blog_author_list_content  [private]
@@ -37,4 +76,7 @@ blocks
 
 crossings
   v-if  sw_blog_author_list_empty_state -> sw_blog_author_list_grid  [private]
+
+refs
+  listing  -> sw-entity-listing  block=sw_blog_author_list_grid  [private]
 ```

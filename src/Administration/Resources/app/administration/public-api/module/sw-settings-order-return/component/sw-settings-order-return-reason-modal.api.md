@@ -11,6 +11,31 @@ component sw-settings-order-return-reason-modal  private  ts  [private]
   template src/module/sw-settings-order-return/component/sw-settings-order-return-reason-modal/sw-settings-order-return-reason-modal.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  repositoryFactory  [private]
+
+props
+  reason?: OrderReturnReason | null  default=null  [private]
+
+emits
+  modal-close(...args: any[])  [private]
+  saved(...args: any[])  [private]
+
+data
+  active: any  [private]
+  isSaving: any  [private]
+  label: any  [private]
+  position: any  [private]
+
+computed
+  isEdit: boolean  [private]
+  isSaveDisabled: boolean  [private]
+  title: string  [private]
+
+methods
+  onClose(): void  [private]
+  onSave(): void  [private]
+
 blocks
   sw_settings_order_return_reason_modal  [private]
     sw_settings_order_return_reason_modal_active  [private]
@@ -18,4 +43,7 @@ blocks
     sw_settings_order_return_reason_modal_footer_save  [private]
     sw_settings_order_return_reason_modal_label  [private]
     sw_settings_order_return_reason_modal_position  [private]
+
+notes
+  unresolved options setup  [private]
 ```

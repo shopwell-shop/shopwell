@@ -15,15 +15,26 @@ use Shopwell\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopwell\Core\Content\Category\Service\AbstractCategoryUrlGenerator;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Category\Tree\Tree;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver;
+use Shopwell\Core\Framework\ContentSystem\LayoutReference;
+use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
+use Shopwell\Core\Framework\ContentSystem\Rendering\RenderedElement;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Currency\CurrencyCollection;
 use Shopwell\Core\System\Language\LanguageCollection;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Storefront\Controller\NavigationController;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
+use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
+use Shopwell\Storefront\Page\MetaInformation;
 use Shopwell\Storefront\Page\Navigation\NavigationPage;
 use Shopwell\Storefront\Page\Navigation\NavigationPageLoaderInterface;
 use Shopwell\Storefront\Pagelet\Footer\FooterPagelet;
@@ -36,6 +47,7 @@ use Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPageletLoaderInterfa
 use Shopwell\Tests\Unit\Storefront\Controller\Stub\NavigationControllerStub;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * @internal
@@ -81,14 +93,64 @@ class NavigationControllerTest extends TestCase
             });
         $this->categoryUrlGenerator = new CategoryUrlGenerator($entityRouteResolver);
 
-        $this->controller = new NavigationControllerStub(
-            $this->pageLoader,
-            $this->offCanvasLoader,
-            $this->headerLoader,
-            $this->footerLoader,
-            $this->categoryUrlGenerator,
-            $this->seoUrlReplacer,
-        );
+        $this->controller = new #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StorefrontRouteScope::ID]])] class($this->pageLoader, $this->offCanvasLoader, $this->headerLoader, $this->footerLoader, $this->categoryUrlGenerator, $this->seoUrlReplacer) extends NavigationControllerStub {
+            protected function trans(string $snippet, array $parameters = []): string
+            {
+                TestCase::assertSame('general.pagination.metaPageSuffix', $snippet);
+
+                return strtr('%content% – Page %page%', $parameters);
+            }
+        };
+    }
+
+    #[DataProvider('contentListingMetadataProvider')]
+    public function testRenderedListingDefinesPaginationMetadata(bool $home, ?int $listingPage, int $queryPage, string $title, string $expectedCanonical, string $expectedTitle): void
+    {
+        $category = new CategoryEntity();
+        $category->setId(Uuid::randomHex());
+        $category->setType(CategoryDefinition::TYPE_PAGE);
+        $metaInformation = new MetaInformation();
+        $metaInformation->setCanonical('/category/');
+        $metaInformation->setMetaTitle($title);
+        $navigationPage = new NavigationPage();
+        $navigationPage->setCategory($category);
+        $navigationPage->setMetaInformation($metaInformation);
+        $this->pageLoader->method('load')->willReturn($navigationPage);
+
+        $element = new RenderedElement('text', 'Sw:Text', ['text' => 'Category content']);
+        if ($listingPage !== null) {
+            $criteria = (new Criteria())->setLimit(24)->setOffset(($listingPage - 1) * 24);
+            $listing = new ProductListingResult('product', 100, new ProductCollection(), null, $criteria, Context::createDefaultContext());
+            $element = new RenderedElement('listing', 'Sw:Product:Listing', ['listing' => $listing]);
+        }
+        $this->controller->recorder()->contentPage = ContentPage::fromRenderResult(new RenderResult(
+            [new RenderedElement('container', 'Sw:Container', slots: ['content' => [$element]])],
+            LayoutReference::create(Uuid::randomHex(), 'Category layout', null),
+            null,
+        ));
+
+        $request = new Request(['p' => (string) $queryPage]);
+        $context = Generator::generateSalesChannelContext();
+        if ($home) {
+            $this->controller->home($request, $context);
+        } else {
+            $this->controller->index($context, $request);
+        }
+
+        static::assertSame($expectedCanonical, $metaInformation->getCanonical());
+        static::assertSame($expectedTitle, $metaInformation->getMetaTitle());
+        static::assertSame($this->controller->recorder()->contentPage, $this->controller->recorder()->renderStorefrontParameters['contentPage']);
+    }
+
+    public static function contentListingMetadataProvider(): \Generator
+    {
+        yield 'category second listing page' => [false, 2, 2, 'Category', '/category/?p=2', 'Category – Page 2'];
+        yield 'home second listing page' => [true, 2, 2, 'Home', '/category/?p=2', 'Home – Page 2'];
+        yield 'first listing page' => [false, 1, 1, 'Category', '/category/', 'Category'];
+        yield 'pure content ignores query page' => [false, null, 2, 'Content', '/category/', 'Content'];
+        yield 'resolved listing page overrides query page' => [false, 2, 7, 'Category', '/category/?p=2', 'Category – Page 2'];
+        yield 'empty title remains empty' => [false, 2, 2, '', '/category/?p=2', ''];
+        yield 'blank title remains blank' => [false, 2, 2, ' ', '/category/?p=2', ' '];
     }
 
     public function testHomeRendersStorefront(): void

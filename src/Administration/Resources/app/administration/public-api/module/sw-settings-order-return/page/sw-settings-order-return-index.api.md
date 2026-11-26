@@ -11,6 +11,22 @@ component sw-settings-order-return-index  private  ts  [private]
   template src/module/sw-settings-order-return/page/sw-settings-order-return-index/sw-settings-order-return-index.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
+data
+  isLoading: any  [private]
+  isSaveSuccessful: any  [private]
+
+computed
+  canEdit: boolean  [private]
+
+methods
+  onLoadingChanged(loading: boolean): void  [private]
+  onOpenReasons(): void  [private]
+  onSave(): void  [private]
+  onSaveFinish(): void  [private]
+
 blocks
   sw_settings_order_return_index  [private]
     sw_settings_order_return_index_content  [private]
@@ -21,4 +37,10 @@ blocks
     sw_settings_order_return_index_smart_bar_header  [private]
       sw_settings_order_return_index_smart_bar_header_title  [private]
         sw_settings_order_return_index_smart_bar_header_title_text  [private]
+
+refs
+  systemConfig  -> sw-system-config  block=sw_settings_order_return_index_content  [private]
+
+notes
+  unresolved options setup  [private]
 ```

@@ -11,6 +11,26 @@ component sw-permissions-menu-detail  private  ts  [private]
   template src/module/sw-permissions/component/sw-permissions-menu-detail/sw-permissions-menu-detail.html.twig  [private]
   visibility-source export  [private]
 
+props
+  disabled?: boolean  default=false  [private]
+  draft: MenuDraft  [private]
+  fieldErrors: Record<string, { code: string; detail: string }>  [private]
+  languageLabel: string  [private]
+  locked?: boolean  default=false  [private]
+  parentOptions: TreeSelectOption[]  [private]
+  provenance?: string  default=''  [private]
+  routeOptions: TreeSelectOption[]  [private]
+  targetPrivilege?: string  default=''  [private]
+  typeOptions?: any  [private]
+
+emits
+  parent-change(...args: any[])  [private]
+  type-change(...args: any[])  [private]
+  update-draft(...args: any[])  [private]
+
+methods
+  updateField(field: keyof MenuDraft, value: MenuDraft[keyof MenuDraft]): any  [private]
+
 blocks
   sw_permissions_menu_list_detail_form  [private]
     sw_permissions_menu_list_detail_form_basics  [after v-if] [private]

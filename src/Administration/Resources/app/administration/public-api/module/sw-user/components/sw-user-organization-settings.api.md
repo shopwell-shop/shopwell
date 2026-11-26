@@ -11,6 +11,42 @@ component sw-user-organization-settings  private  ts  [private]
   template src/module/sw-user/components/sw-user-organization-settings/sw-user-organization-settings.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  repositoryFactory  [private]
+
+props
+  disabled?: boolean  default=false  [private]
+  value: OrganizationAssignments  [private]
+
+emits
+  update:value(...args: any[])  [private]
+
+data
+  loadFailed: any  [private]
+  positions: any  [private]
+  requestId: any  [private]
+  units: any  [private]
+
+computed
+  positionOptions: any  [private]
+  positionRepository: any  [private]
+  primaryDepartment: string | null  [private]
+  primaryPosition: string | null  [private]
+  selectionKey: string  [private]
+  unitIds: string[]  [private]
+  unitOptions: any  [private]
+  unitRepository: any  [private]
+
+methods
+  changePrimaryDepartment(id: string): void  [private]
+  changePrimaryPosition(primaryPosition: string): void  [private]
+  changeUnits(unitIds: string[]): void  [private]
+  emitAssignments(departments: DepartmentAssignment[]): void  [private]
+  loadSelection(): Promise<void>  [private]
+  positionName(positionId: string): string  [private]
+  unitName(unitId: string): string  [private]
+  updateDepartment(id: string, changes: Partial<DepartmentAssignment>): void  [private]
+
 blocks
   sw_user_organization_settings  [private]
     sw_user_organization_settings_department  [private]

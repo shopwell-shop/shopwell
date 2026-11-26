@@ -11,6 +11,31 @@ component sw-workflow-studio-node-settings  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-studio-node-settings/sw-workflow-studio-node-settings.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowNodePresentationService  [private]
+
+props
+  allowEdit?: boolean  default=true  [private]
+  canRemove?: boolean  default=false  [private]
+  document: WorkflowDocument  [private]
+  node?: WorkflowNode | null  default=null  [private]
+  typeLabel?: string  default=''  [private]
+
+emits
+  remove(...args: any[])  [private]
+  update-config(...args: any[])  [private]
+
+data
+  description: any  [private]
+  label: any  [private]
+
+computed
+  presentation: any  [private]
+
+methods
+  commit(): void  [private]
+  updateConfig(patch: Record<string, unknown>): void  [private]
+
 blocks
   sw_workflow_studio_node_settings  [private]
     sw_workflow_studio_node_settings_fields  [private]

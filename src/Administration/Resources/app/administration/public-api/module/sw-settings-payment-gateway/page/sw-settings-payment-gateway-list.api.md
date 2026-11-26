@@ -11,6 +11,38 @@ component sw-settings-payment-gateway-list  private  ts  [private]
   template src/module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-list/sw-settings-payment-gateway-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  paymentGatewayService  [private]
+
+data
+  apps: any  [private]
+  deleteTarget: any  [private]
+  isDeleting: any  [private]
+  isLoading: any  [private]
+  term: any  [private]
+
+computed
+  appColumns: any  [private]
+  createButtonTooltip: any  [private]
+  filteredApps: any  [private]
+
+methods
+  createdComponent(): Promise<any>  [private]
+  enabledChannelCount(app: PaymentAppView | null): any  [private]
+  enabledProviderCount(app: PaymentAppView | null): any  [private]
+  isPlatformApp(app: PaymentAppView | null): any  [private]
+  loadApps(): Promise<any>  [private]
+  onCloseDeleteModal(): any  [private]
+  onConfirmDelete(): Promise<any>  [private]
+  onCreate(): any  [private]
+  onDeleteModalChange(isOpen: boolean): any  [private]
+  onOpenDeleteModal(app: PaymentAppView): any  [private]
+  onSearch(term: string): any  [private]
+
 blocks
   sw_settings_payment_gateway_list  [private]
     sw_settings_payment_gateway_list_content  [private]

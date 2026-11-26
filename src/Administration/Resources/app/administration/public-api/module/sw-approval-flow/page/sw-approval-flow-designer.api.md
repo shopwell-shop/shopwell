@@ -11,9 +11,77 @@ component sw-approval-flow-designer  private  ts  [private]
   template src/module/sw-approval-flow/page/sw-approval-flow-designer/sw-approval-flow-designer.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  approvalDesignerService  [private]
+  approvalFlowDesignApiService  [private]
+  repositoryFactory  [private]
+
+props
+  definitionId?: string  default=null  [private]
+
+data
+  catalog: any  [private]
+  diagnostics: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  loadError: any  [private]
+  loadSequence: any  [private]
+  revision: any  [private]
+  saveError: any  [private]
+  selectedType: any  [private]
+  showDiagnostics: any  [private]
+  showDraftSettings: any  [private]
+
+computed
+  canEdit: boolean  [private]
+  canInsertNode: boolean  [private]
+  nodeOptions: any  [private]
+  nodeSelectionOptions: any  [private]
+  nodeViews: Record<string, ApprovalNodeView>  [private]
+  panels: any  [private]
+  readOnly: boolean  [private]
+  selectedConnection: string | null  [private]
+  selectedNode: any  [private]
+  selectedNodeId: string | null  [private]
+  selectedSettings: string | undefined  [private]
+  selectedTypeDescriptor: any  [private]
+  settingsTitle: string  [private]
+  showSettings: boolean  [private]
+  toolbarActions: any  [private]
+
+methods
+  addNode(): void  [private]
+  canLeave(): boolean  [private]
+  closeSettings(): void  [private]
+  connect(endpoints: ApprovalConnectionEndpoints): void  [private]
+  createGraph(catalog: ApprovalDesignCatalog): ApprovalDesignGraph  [private]
+  fit(): void  [private]
+  insertNode(connectionId: string): void  [private]
+  loadDesigner(): Promise<void>  [private]
+  loadDraft(definitionId: string): Promise<any>  [private]
+  moveNode(id: string, position: { x: number; y: number }): void  [private]
+  onSaved(saved: ApprovalDesignDraft, graphJson: string): void  [private]
+  redo(): void  [private]
+  removeSelection(): void  [private]
+  saveDraft(): Promise<void>  [private]
+  selectBusiness(type: string): void  [private]
+  selectConnection(id: string): void  [private]
+  selectNode(id: string | null): void  [private]
+  setName(name: string): void  [private]
+  undo(): void  [private]
+  updateConfiguration(config: Record<string, ApprovalJsonValue>): void  [private]
+  zoom(delta: number): void  [private]
+
 blocks
   sw_approval_flow_designer  [private]
     sw_approval_flow_designer_canvas  [private]
     sw_approval_flow_designer_settings  [private]
     sw_approval_flow_designer_toolbar  [private]
+
+refs
+  canvas  -> sw-approval-flow-canvas  block=sw_approval_flow_designer_canvas  [private]
+
+notes
+  unresolved options setup  [private]
 ```

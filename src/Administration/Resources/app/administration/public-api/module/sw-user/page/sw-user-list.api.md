@@ -11,6 +11,57 @@ component sw-user-list  private  ts  [private]
   template src/module/sw-user/page/sw-user-list/sw-user-list.html.twig  [private]
   visibility-source registration  [private]
 
+mixins
+  listing, notification  [private]
+
+inject
+  acl  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+  ssoSettingsService  [private]
+
+data
+  activeFilterNumber: any  [private]
+  defaultFilters: any  [private]
+  filterCriteria: any  [private]
+  isConfirmDeleteModalOpen: any  [private]
+  isConfirmingPasswordModalOpen: any  [private]
+  isLoading: any  [private]
+  isSso: any  [private]
+  itemToDelete: any  [private]
+  roles: any  [private]
+  showInvitationModal: any  [private]
+  sortBy: any  [private]
+  storeKey: any  [private]
+  users: any  [private]
+
+computed
+  currentUser: User | null  [private]
+  defaultCriteria: CriteriaType  [private]
+  hasActiveSearchOrFilter: boolean  [private]
+  listFilterOptions: Record<string, FilterDefinition>  [private]
+  listFilters: FilterDefinition[]  [private]
+  roleRepository: RepositoryType<'acl_role'>  [private]
+  userColumns: Array<Record<string, unknown>>  [private]
+  userDetailRoute: string  [private]
+  userDetailRouterLink: string  [private]
+  userRepository: RepositoryType<'user'>  [private]
+
+methods
+  closeInvitationModal(): void  [private]
+  createdComponent(): void  [private]
+  deleteUser(context: DeleteContext): void  [private]
+  getList(): Promise<void>  [private]
+  invitationFailed(): void  [private]
+  loadRoles(): void  [private]
+  onCloseConfirmPasswordModal(): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(user: User): void  [private]
+  onDelete(user: User): void  [private]
+  onToggleActive(user: User): void  [private]
+  onUserInvited(): void  [private]
+  openInvitationModal(): void  [private]
+
 blocks
   sw_user_list  [private]
     sw_user_list_content  [private]
@@ -42,4 +93,7 @@ blocks
 crossings
   v-if  sw_user_list_empty_state -> sw_user_list_grid  [private]
   v-if  sw_user_list_smart_bar_actions_invite -> sw_user_list_smart_bar_actions_create  [private]
+
+refs
+  swUserGrid  -> sw-entity-listing  block=sw_user_list_grid  [private]
 ```

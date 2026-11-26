@@ -11,6 +11,71 @@ component sw-admin-menu-topbar  private  ts  [private]
   template src/app/component/structure/sw-admin-menu-topbar/sw-admin-menu-topbar.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+
+props
+  enabled?: boolean  default=false  [private]
+  entries?: LayoutNavigationEntry[]  default=factory  [private]
+  hasSidebar?: boolean  default=false  [private]
+  mode?: string  default='sidebar'  [private]
+
+emits
+  toolbar-target-change(...args: any[])  [private]
+
+slots
+  brand  {}  block=sw_admin_menu_topbar  [private]
+  entry-panel  { close, entry }  block=sw_admin_menu_topbar  [private]
+  sidebar  {}  block=sw_admin_menu_topbar  [private]
+  user  {}  block=sw_admin_menu_topbar  [private]
+
+data
+  anchor: any  [private]
+  dropdownObserver: any  [private]
+  dropdownTrigger: any  [private]
+  focusTrap: any  [private]
+  lastVisited: any  [private]
+  moreAnchor: any  [private]
+  observer: any  [private]
+  openKey: any  [private]
+  panelKey: any  [private]
+  visibleCount: any  [private]
+
+computed
+  activeEntry: LayoutNavigationEntry | undefined  [private]
+  activePanelEntry: LayoutNavigationEntry | undefined  [private]
+  customPanelEntries: LayoutNavigationEntry[]  [private]
+  hasActiveOverflow: boolean  [private]
+  overflowEntries: LayoutNavigationEntry[]  [private]
+  panelModuleColor: string | undefined  [private]
+  panelModuleColorStyle: Record<string, string> | undefined  [private]
+  userId: string | undefined  [private]
+  visibleEntries: LayoutNavigationEntry[]  [private]
+
+methods
+  closePanel(returnFocus?: any = true): void  [private]
+  isActive(entry: LayoutNavigationEntry): boolean  [private]
+  key(entry: LayoutNavigationEntry): string  [private]
+  measureEntries(): void  [private]
+  observeNavigation(): void  [private]
+  onNavigationKeydown(event: KeyboardEvent): void  [private]
+  onOutsideClose(): void  [private]
+  onPanelKeydown(event: KeyboardEvent): void  [private]
+  onSubmenuToggle(arg0: { entry: LayoutNavigationEntry; target: HTMLElement }): void  [private]
+  opensPanel(entry: LayoutNavigationEntry): boolean  [private]
+  rememberRoute(): void  [private]
+  syncDropdownFocus(): void  [private]
+  target(entry: LayoutNavigationEntry): RouteLocationRaw  [private]
+  togglePanel(key: string, target: HTMLElement): void  [private]
+
 blocks
   sw_admin_menu_topbar  [private]
+
+refs
+  measurements  -> ul  block=sw_admin_menu_topbar  [private]
+  more  -> button  block=sw_admin_menu_topbar  [private]
+  morePanel  -> nav  block=sw_admin_menu_topbar  [private]
+  navigation  -> nav  block=sw_admin_menu_topbar  [private]
+  panel  -> nav  block=sw_admin_menu_topbar  [private]
+  toolbar  -> div  block=sw_admin_menu_topbar  [private]
 ```

@@ -11,6 +11,39 @@ component sw-finance-transfer-approve-modal  private  ts  [private]
   template src/module/sw-finance/component/sw-finance-transfer-approve-modal/sw-finance-transfer-approve-modal.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  paymentTransferApiService  [private]
+
+props
+  approvalLabels?: Pick<TransferApproval, 'recipientLabel' | 'paymentAccountLabel'> | null  default=null  [private]
+  transfer: TransferLike  [private]
+
+emits
+  modal-close(...args: any[])  [private]
+  transfer-decided(...args: any[])  [private]
+
+data
+  confirmed: any  [private]
+  submitInProgress: any  [private]
+
+computed
+  amountLabel: string  [private]
+  appLabel: string  [private]
+  channelLabel: string  [private]
+  isConfirmDisabled: boolean  [private]
+  providerLabel: string  [private]
+  providerName: string  [private]
+  recipientLabel: string  [private]
+  warningText: string  [private]
+
+methods
+  handleOutcome(result: PaymentTransferSubmitResult): void  [private]
+  onClose(): void  [private]
+  onConfirm(): void  [private]
+
 blocks
   sw_finance_transfer_approve_modal  [private]
     sw_finance_transfer_approve_modal_checkbox  [private]

@@ -11,6 +11,9 @@ component sw-landing-page-detail-layout  private  ts  [private]
   template src/module/sw-category/view/sw-landing-page-detail-layout/sw-landing-page-detail-layout.html.twig  [private]
   visibility-source export  [private]
 
+props
+  isLoading: boolean  [private]
+
 blocks
   sw_landing_page_detail_layout  [private]
 ```

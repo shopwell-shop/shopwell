@@ -11,6 +11,40 @@ component sw-settings-payment-provider-list  private  ts  [private]
   template src/module/sw-settings-payment-provider/page/sw-settings-payment-provider-list/sw-settings-payment-provider-list.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  paymentGatewayService  [private]
+
+data
+  accounts: any  [private]
+  deleteTarget: any  [private]
+  error: any  [private]
+  isDeleting: any  [private]
+  isLoading: any  [private]
+  limit: any  [private]
+  page: any  [private]
+  providers: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  term: any  [private]
+
+computed
+  columns: any  [private]
+  filteredAccounts: PaymentAccountView[]  [private]
+  visibleAccounts: PaymentAccountView[]  [private]
+
+methods
+  accountLabel(account: PaymentAccountView): string  [private]
+  closeDelete(): void  [private]
+  confirmDelete(): Promise<void>  [private]
+  load(): Promise<void>  [private]
+  onDeleteModalChange(isOpen: boolean): void  [private]
+  onPageChange(arg0: { page: number; limit: number }): void  [private]
+  onSort(column: { dataIndex: string }): void  [private]
+  openDelete(account: PaymentAccountView): void  [private]
+  providerLabel(technicalName: string): string  [private]
+  sortValue(account: PaymentAccountView): string  [private]
+
 blocks
   sw_settings_payment_provider_list  [private]
 ```

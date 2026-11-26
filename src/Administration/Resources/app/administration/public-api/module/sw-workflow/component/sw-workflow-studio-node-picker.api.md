@@ -11,6 +11,31 @@ component sw-workflow-studio-node-picker  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-studio-node-picker/sw-workflow-studio-node-picker.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowNodeEditingService  [private]
+  workflowNodePresentationService  [private]
+
+props
+  allowEdit?: boolean  default=true  [private]
+  document: WorkflowDocument  [private]
+  labels: Record<string, string>  [private]
+  nodeTypes: WorkflowNodeTypeSpecification[]  [private]
+  selectedConnectionId?: string  default=null  [private]
+
+emits
+  insert(...args: any[])  [private]
+
+data
+  search: any  [private]
+
+computed
+  activities: WorkflowNodeTypeSpecification[]  [private]
+  insertionLabel: string  [private]
+
+methods
+  icon(name: string, version: number): string  [private]
+  nodeLabel(node: WorkflowNode): string  [private]
+
 blocks
   sw_workflow_studio_node_picker  [private]
     sw_workflow_studio_node_picker_header  [private]

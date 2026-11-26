@@ -11,6 +11,21 @@ component sw-blog-detail-content  private  ts  [private]
   template src/module/sw-blog/component/sw-blog-detail-content/sw-blog-detail-content.html.twig  [private]
   visibility-source export  [private]
 
+props
+  blog: object  [private]
+  isDisabled?: boolean  default=false  [private]
+
+data
+  contentType: any  [private]
+  isUnknownType: any  [private]
+  loadRequest: any  [private]
+
+computed
+  type: string  [private]
+
+methods
+  loadTypeComponent(): Promise<void>  [private]
+
 blocks
   sw_blog_detail_content  [private]
     sw_blog_detail_content_loading  [after v-if] [private]

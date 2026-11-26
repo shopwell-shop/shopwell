@@ -12,6 +12,15 @@ component sw-user-create  private  js  [private]
   template src/module/sw-user/page/sw-user-create/sw-user-create.html.twig  [private]
   visibility-source registration  [private]
 
+computed
+  isCreationMode: any  [private]
+  userPasswordError: any  [private]
+
+methods
+  loadUser(): Promise<any>  [private]
+  onSave(): any  [private]
+  saveFinish(): any  [private]
+
 blocks
   sw_user_detail  [inherited] [private]
     sw_user_detail_actions  [inherited] [private]

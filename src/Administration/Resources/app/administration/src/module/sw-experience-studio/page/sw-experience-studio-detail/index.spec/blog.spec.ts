@@ -4,6 +4,32 @@ const methods = (detailComponent as unknown as { methods: Record<string, (...arg
 const computed = (detailComponent as unknown as { computed: Record<string, () => unknown> }).computed;
 
 describe('Experience Studio blog layouts', () => {
+    it('localizes built-in names in real preview frames and preserves merchant names', () => {
+        const layout = { id: '91ddf2e3fd20050a47409eb9ebbdfff5', name: 'Default blog article' };
+        const frame = { id: 'frame-1', layoutId: layout.id, viewport: 'desktop' };
+        const vm = {
+            $t: (key: string, params?: { name?: string }) => params?.name ?? key,
+            frames: [frame],
+            openLayouts: [{ id: layout.id, layout }],
+            activeFrameId: frame.id,
+            currentViewport: 'desktop',
+            selectedElementId: null,
+            previewEntityId: null,
+            previewLanguageContext: null,
+            layoutFrames: () => [frame],
+            previewFrameAriaLabel: methods.previewFrameAriaLabel,
+        };
+
+        const frames = computed.canvasFrames.call(vm) as Array<{ label: string; ariaLabel: string }>;
+        expect(frames[0].label).toBe('sw-experience-studio.builtinLayouts.defaultBlogPost');
+        expect(frames[0].ariaLabel).toBe('sw-experience-studio.builtinLayouts.defaultBlogPost');
+
+        layout.name = 'My article design';
+        const renamed = computed.canvasFrames.call(vm) as Array<{ label: string; ariaLabel: string }>;
+        expect(renamed[0].label).toBe('My article design');
+        expect(renamed[0].ariaLabel).toBe('My article design');
+    });
+
     it('loads blog assignments with a layout', () => {
         const criteria = computed.layoutLoadCriteria.call({}) as { associations: Array<{ association: string }> };
 

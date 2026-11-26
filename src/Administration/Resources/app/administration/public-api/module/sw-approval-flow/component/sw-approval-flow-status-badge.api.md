@@ -11,6 +11,14 @@ component sw-approval-flow-status-badge  private  ts  [private]
   template src/module/sw-approval-flow/component/sw-approval-flow-status-badge/sw-approval-flow-status-badge.html.twig  [private]
   visibility-source export  [private]
 
+props
+  outcome?: ApprovalOutcome | null  default=null  [private]
+  status: ApprovalStatus  [private]
+
+computed
+  label: string  [private]
+  variant: string  [private]
+
 blocks
   sw_approval_flow_status_badge  [private]
 ```

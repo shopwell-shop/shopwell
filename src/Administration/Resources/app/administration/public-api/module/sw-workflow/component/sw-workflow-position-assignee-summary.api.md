@@ -11,6 +11,15 @@ component sw-workflow-position-assignee-summary  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-position-assignee-summary/sw-workflow-position-assignee-summary.html.twig  [private]
   visibility-source export  [private]
 
+props
+  config: Record<string, unknown>  [private]
+
+computed
+  summary: string  [private]
+
 blocks
   sw_workflow_position_assignee_summary  [private]
+
+notes
+  unresolved options setup  [private]
 ```

@@ -11,6 +11,26 @@ component sw-workflow-studio-template-picker  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-studio-template-picker/sw-workflow-studio-template-picker.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowTemplateService  [private]
+
+props
+  allowEdit?: boolean  default=true  [private]
+  labels: Record<string, string>  [private]
+  nodeTypes: WorkflowNodeTypeSpecification[]  [private]
+
+emits
+  apply(...args: any[])  [private]
+  close(...args: any[])  [private]
+
+data
+  selectedName: any  [private]
+
+computed
+  preview: any  [private]
+  selected: any  [private]
+  templates: any  [private]
+
 blocks
   sw_workflow_studio_template_picker  [private]
 ```

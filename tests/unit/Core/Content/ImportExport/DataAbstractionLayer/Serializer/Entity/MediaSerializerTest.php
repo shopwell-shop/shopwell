@@ -22,6 +22,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -66,7 +67,12 @@ class MediaSerializerTest extends TestCase
 
         $mediaRepository->expects($this->once())
             ->method('searchIds')
-            ->willReturn(IdSearchResult::fromIds([$existingMediaId], new Criteria(), $context));
+            ->willReturnCallback(static function (Criteria $criteria) use ($hash, $existingMediaId, $context): IdSearchResult {
+                static::assertEquals([new EqualsFilter('fileHash', $hash)], $criteria->getFilters());
+                static::assertSame(1, $criteria->getLimit());
+
+                return IdSearchResult::fromIds([$existingMediaId], $criteria, $context);
+            });
 
         $fileSaver->expects($this->never())
             ->method('persistFileToMedia');

@@ -11,6 +11,41 @@ component sw-approval-flow-definition-detail  private  ts  [private]
   template src/module/sw-approval-flow/page/sw-approval-flow-definition-detail/sw-approval-flow-definition-detail.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  approvalFlowDesignApiService  [private]
+  repositoryFactory  [private]
+
+props
+  definitionId: string  [private]
+
+data
+  catalog: any  [private]
+  catalogError: any  [private]
+  detail: any  [private]
+  isLoading: any  [private]
+  isPublishing: any  [private]
+  loadError: any  [private]
+  loadRevision: any  [private]
+  publicationError: any  [private]
+  publicationPreview: any  [private]
+  releaseListVersion: any  [private]
+
+computed
+  backRoute: any  [private]
+  definitionRepository: Repository<'approval_flow_definition'>  [private]
+  graph: ApprovalDesignGraph | null  [private]
+  nodes: any  [private]
+
+methods
+  closePublication(): void  [private]
+  date(value: string | null): string  [private]
+  loadDefinition(): Promise<void>  [private]
+  loadDocument(): Promise<ApprovalDefinitionDetail | null>  [private]
+  preparePublication(): Promise<void>  [private]
+  publish(): Promise<void>  [private]
+  showPublicationError(error: unknown, loadRevision: number): void  [private]
+
 blocks
   sw_approval_flow_definition_detail  [private]
     sw_approval_flow_definition_detail_diagnostics  [private]

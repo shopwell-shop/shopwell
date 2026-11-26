@@ -11,6 +11,35 @@ component sw-workflow-publish  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-publish/sw-workflow-publish.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  workflowService  [private]
+
+props
+  disabled?: boolean  default=false  [private]
+  draftId: string  [private]
+  hasChanges: boolean  [private]
+  revision: number  [private]
+
+data
+  error: any  [private]
+  isLoading: any  [private]
+  isSubmitting: any  [private]
+  publisher: any  [private]
+  publishers: any  [private]
+  release: any  [private]
+  requestRevision: any  [private]
+  showModal: any  [private]
+
+computed
+  canConfirm: boolean  [private]
+  canPublish: boolean  [private]
+  publisherOptions: { value: string; label: string }[]  [private]
+
+methods
+  open(): Promise<void>  [private]
+  publish(): Promise<void>  [private]
+
 blocks
   sw_workflow_publish  [private]
 ```

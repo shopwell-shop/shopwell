@@ -10,6 +10,46 @@ component sw-membership-tier-detail  public  ts
   source src/module/sw-settings-membership/page/sw-membership-tier-detail/index.ts
   template src/module/sw-settings-membership/page/sw-membership-tier-detail/sw-membership-tier-detail.html.twig
 
+mixins
+  notification, placeholder, discard-detail-page-changes
+
+inject
+  acl
+  repositoryFactory
+
+props
+  loyaltyTierId?: string  default=null
+
+data
+  benefitRows: any
+  benefits: any
+  isLoading: any
+  isSaveSuccessful: any
+  loyaltyTier: any
+
+computed
+  allowSave: boolean
+  benefitRepository: RepositoryType<'loyalty_tier_benefit'>
+  entityDescription: string
+  identifier: string
+  loyaltyTierCriteria: CriteriaType
+  loyaltyTierLevelError: any
+  loyaltyTierNameError: any
+  loyaltyTierRepository: RepositoryType<'loyalty_tier'>
+  loyaltyTierTechnicalNameError: any
+  tooltipCancel: any
+  tooltipSave: any
+
+methods
+  createdComponent(): void
+  loadBenefits(tierId: LoyaltyTier['id']): Promise<void>
+  loadLoyaltyTier(): Promise<void>
+  onCancel(): void
+  onChangeLanguage(): void
+  onSave(): Promise<void>
+  persistLoyaltyTier(): Promise<void>
+  syncBenefits(tierId: LoyaltyTier['id']): Promise<void>
+
 blocks
   sw_loyalty_tier_detail
     sw_loyalty_tier_detail_actions

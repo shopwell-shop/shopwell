@@ -10,6 +10,35 @@ component sw-category-entry-point-modal  public  js
   source src/module/sw-category/component/sw-category-entry-point-modal/index.js
   template src/module/sw-category/component/sw-category-entry-point-modal/sw-category-entry-point-modal.html.twig
 
+inject
+  acl
+
+props
+  salesChannelCollection: any[]
+
+emits
+  modal-close(...args: any[])
+
+data
+  isDisplayingLeavePageWarning: any
+  nextRoute: any
+  salesChannelOptions: any
+  selectedSalesChannelId: any
+  temporaryCollection: any
+
+computed
+  selectedSalesChannel: any
+
+methods
+  applyChanges(): any
+  closeModal(): any
+  createdComponent(): any
+  hasNotAppliedChanges(): any
+  isAttributeEqual(copy: any, original: any): any
+  onLeaveModalClose(): any
+  onLeaveModalConfirm(destination: any): any
+  openInPagebuilder(): any
+
 blocks
   sw_category_entry_point_modal
     sw_category_entry_point_modal_discard_changes_modal

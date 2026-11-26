@@ -11,6 +11,42 @@ component sw-settings-dictionary-list  private  ts  [private]
   template src/module/sw-settings-dictionary/page/sw-settings-dictionary-list/sw-settings-dictionary-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification, listing, placeholder  [private]
+
+inject
+  acl  [private]
+  dictionaryService  [private]
+  repositoryFactory  [private]
+
+data
+  dictionaryTypes: any  [private]
+  entityName: any  [private]
+  isLoading: any  [private]
+  newType: any  [private]
+  showCreateModal: any  [private]
+  showDeleteModal: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+
+computed
+  dictionaryTypeColumns: Array<Record<string, unknown>>  [private]
+  dictionaryTypeRepository: RepositoryType<'dictionary_type'>  [private]
+
+methods
+  createdComponent(): void  [private]
+  getCriteria(): CriteriaType  [private]
+  getEntryCount(item: DictionaryTypeEntity): number  [private]
+  getList(): Promise<void>  [private]
+  onAddType(): void  [private]
+  onChangeLanguage(): void  [private]
+  onCloseCreateModal(): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(id: string): Promise<void>  [private]
+  onCreateSave(): Promise<void>  [private]
+  onDelete(id: string): void  [private]
+  onInlineEditSave(promise: Promise<void>, item: DictionaryTypeEntity): Promise<void>  [private]
+
 blocks
   sw_settings_dictionary_list  [private]
     sw_settings_dictionary_index  [private]
@@ -42,4 +78,7 @@ blocks
         sw_settings_dictionary_list_smart_bar_header_title  [private]
           sw_settings_dictionary_list_smart_bar_header_amount  [private]
           sw_settings_dictionary_list_smart_bar_header_title_text  [private]
+
+refs
+  swSettingsDictionaryGrid  -> sw-entity-listing  block=sw_settings_dictionary_list_grid_inner  [private]
 ```

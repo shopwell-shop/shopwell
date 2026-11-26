@@ -11,6 +11,56 @@ component sw-blog-list  private  ts  [private]
   template src/module/sw-blog/page/sw-blog-list/sw-blog-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  blogApiService  [private]
+  filterFactory  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  blogs: any  [private]
+  defaultFilters: any  [private]
+  deleteTarget: any  [private]
+  isLoading: any  [private]
+  presetAuthorId: any  [private]
+  presetCategoryId: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  storeKey: any  [private]
+
+computed
+  blogRepository: RepositoryType<'blog'>  [private]
+  canCreate: boolean  [private]
+  canDelete: boolean  [private]
+  canView: boolean  [private]
+  columns: Array<Record<string, unknown>>  [private]
+  deleteMessage: string  [private]
+  deleteName: string  [private]
+  hasActiveSearchOrFilter: boolean  [private]
+  listFilterOptions: Record<string, FilterDefinition>  [private]
+  listFilters: FilterDefinition[]  [private]
+  presetChips: Array<{ type: string; label: string }>  [private]
+  typeFilterOptions: FilterOption[]  [private]
+
+methods
+  applyRouteQuery(): void  [private]
+  buildCriteria(): CriteriaType  [private]
+  categoryNamesOf(blog: Blog): string[]  [private]
+  getList(): Promise<void>  [private]
+  onCloseDeleteModal(): void  [private]
+  onConfirmDelete(): void  [private]
+  onCreate(type: string, closeMenu?: () => void): void  [private]
+  onDelete(blog: Blog): void  [private]
+  onRefresh(): void  [private]
+  onResetFilters(): void  [private]
+  queryValue(value: unknown): string | null  [private]
+  typeLabel(type: string | null | undefined): string  [private]
+  updateCriteria(filters: unknown[]): void  [private]
+
 blocks
   sw_blog_list  [private]
     sw_blog_list_content  [private]
@@ -39,4 +89,8 @@ blocks
 crossings
   v-if  sw_blog_list_empty_state -> sw_blog_list_empty_state_filtered  [private]
   v-if  sw_blog_list_empty_state_filtered -> sw_blog_list_grid  [private]
+
+refs
+  filterPanel  -> sw-sidebar-filter-panel  block=sw_blog_list_sidebar_filter  [private]
+  listing  -> sw-entity-listing  block=sw_blog_list_grid  [private]
 ```

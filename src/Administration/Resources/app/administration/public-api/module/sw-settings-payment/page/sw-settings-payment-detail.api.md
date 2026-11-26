@@ -10,6 +10,88 @@ component sw-settings-payment-detail  public  js
   source src/module/sw-settings-payment/page/sw-settings-payment-detail/index.js
   template src/module/sw-settings-payment/page/sw-settings-payment-detail/sw-settings-payment-detail.html.twig
 
+mixins
+  notification, placeholder
+
+inject
+  acl
+  customFieldDataProviderService
+  paymentGatewayService
+  repositoryFactory
+
+data
+  customFieldSets: any
+  deletionInProcess: any
+  gatewayApp: any
+  gatewayApps: any
+  gatewayBinding: any
+  gatewayCollectThroughGateway: any
+  gatewayMethod: any
+  gatewayRoutingPolicy: any
+  gatewayTaken: any
+  isGatewayLoading: any
+  isGatewaySaving: any
+  isLoading: any
+  isSaveSuccessful: any
+  mediaItem: any
+  paymentMethod: any
+  showDeleteModal: any
+  showGatewayRebindModal: any
+  uploadTag: any
+
+computed
+  forbidDelete: any
+  gatewayAppOptions: any
+  gatewayBindingAppLabel: any
+  gatewayBindingMethodLabel: any
+  gatewayHasApps: any
+  gatewayHasChannels: any
+  gatewayMethodOptions: any
+  gatewaySaveDisabled: any
+  gatewaySelectedApp: any
+  gatewaySelectedAppLabel: any
+  gatewayShowCollectHint: any
+  gatewaySingleApp: any
+  identifier: any
+  isNewPaymentMethod: any
+  mediaRepository: any
+  paymentMethodCriteria: any
+  paymentMethodNameError: any
+  paymentMethodRepository: any
+  paymentMethodTechnicalNameError: any
+  ruleFilter: any
+  ruleRepository: any
+  showCustomFields: any
+  technicalNameIsProvided: any
+  tooltipCancel: any
+  tooltipSave: any
+
+methods
+  abortOnLanguageChange(): any
+  appLabel(app: any): any
+  applyGatewayChannel(channel: any): any
+  createdComponent(): any
+  deletePaymentMethod(): Promise<any>
+  displayLabel(label: any): any
+  loadCustomFieldSets(): any
+  loadEntityData(): any
+  loadGatewayChannel(): Promise<any>
+  onCancel(): any
+  onChangeLanguage(): any
+  onDismissRule(): any
+  onDropMedia(mediaItem: any): any
+  onError(error: any): any
+  onSave(): Promise<any>
+  onSaveGatewayChannel(): any
+  onSaveRule(ruleId: any): any
+  onUnlinkLogo(): any
+  openMediaSidebar(): any
+  saveFinish(): any
+  saveGatewayChannel(): Promise<any>
+  saveOnLanguageChange(): any
+  setMediaFromSidebar(mediaEntity: any): any
+  setMediaItem(arg0: any): any
+
 blocks
   sw_settings_payment_detail
     sw_settings_payment_detail_actions
@@ -53,4 +135,7 @@ blocks
 
 crossings
   v-if  sw_settings_payment_detail_gateway_channel_new -> sw_settings_payment_detail_gateway_channel
+
+refs
+  mediaSidebarItem  -> sw-sidebar-media-item  block=sw_settings_payment_detail
 ```

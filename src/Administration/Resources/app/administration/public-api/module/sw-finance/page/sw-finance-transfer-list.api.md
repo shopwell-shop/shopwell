@@ -11,6 +11,74 @@ component sw-finance-transfer-list  private  ts  [private]
   template src/module/sw-finance/page/sw-finance-transfer-list/sw-finance-transfer-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  listing  [private]
+
+inject
+  acl  [private]
+  filterFactory  [private]
+  paymentTransferApiService  [private]
+  repositoryFactory  [private]
+
+data
+  activeFilterNumber: any  [private]
+  approvalSummaries: any  [private]
+  defaultFilters: any  [private]
+  isLoading: any  [private]
+  isLoadingApprovals: any  [private]
+  listRevision: any  [private]
+  showCreateModal: any  [private]
+  showWorkflowModal: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+  states: any  [private]
+  storeKey: any  [private]
+  transferToApprove: any  [private]
+  transferToReject: any  [private]
+  transfers: any  [private]
+
+computed
+  canApprove: boolean  [private]
+  canConfigureWorkflow: boolean  [private]
+  canCreate: boolean  [private]
+  criteria: CriteriaType  [private]
+  dateFilter: (value: string | Date) => string  [private]
+  hasActiveSearchOrFilter: boolean  [private]
+  listFilterOptions: Record<string, FilterDefinition>  [private]
+  listFilters: FilterDefinition[]  [private]
+  stateFilterOptions: Array<{ id: string; name: string }>  [private]
+  stateRepository: RepositoryType<'state_machine_state'>  [private]
+  transferColumns: Array<Record<string, unknown>>  [private]
+  transferRepository: RepositoryType<'payment_transfer'>  [private]
+
+methods
+  approvalLabel(id: string): string  [private]
+  canDecide(item: PaymentTransfer): boolean  [private]
+  createdComponent(): Promise<void>  [private]
+  failureLabel(item: PaymentTransfer): string  [private]
+  formatAmount(amount: number, currency: string): string  [private]
+  formatDateOrDash(value: string | null): string  [private]
+  getList(): Promise<void>  [private]
+  isDecidable(item: PaymentTransfer): boolean  [private]
+  loadApprovalSummaries(ids: string[], revision: number): Promise<void>  [private]
+  onApprove(item: PaymentTransfer): void  [private]
+  onCloseApproveModal(): void  [private]
+  onCloseCreateModal(): void  [private]
+  onCloseRejectModal(): void  [private]
+  onOpenCreateModal(): void  [private]
+  onRefresh(): void  [private]
+  onReject(item: PaymentTransfer): void  [private]
+  onTransferCreated(): void  [private]
+  onTransferDecided(): void  [private]
+  openApproval(id: string): void  [private]
+  providerLabel(provider: string | null): string  [private]
+  recipientLabel(item: PaymentTransfer): string  [private]
+  reviewerLabel(id: string): string  [private]
+  stateLabelOf(technicalName: string | null | undefined, fallback: string): string  [private]
+  transferStateLabel(stateId: string): string  [private]
+  transferStateVariant(stateId: string): string  [private]
+  updateCriteria(filters: unknown[]): void  [private]
+
 blocks
   sw_finance_transfer_list  [private]
     sw_finance_transfer_list_content  [private]
@@ -42,4 +110,7 @@ blocks
 crossings
   v-if  sw_finance_transfer_list_empty_state -> sw_finance_transfer_list_empty_state_no_result  [private]
   v-if  sw_finance_transfer_list_empty_state_no_result -> sw_finance_transfer_list_grid  [private]
+
+refs
+  listing  -> sw-entity-listing  block=sw_finance_transfer_list_grid  [private]
 ```

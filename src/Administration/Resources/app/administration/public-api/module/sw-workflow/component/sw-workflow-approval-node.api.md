@@ -11,6 +11,17 @@ component sw-workflow-approval-node  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-approval-node/sw-workflow-approval-node.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  workflowApprovalService  [private]
+
+props
+  data: WorkflowCanvasNodeData  [private]
+
+computed
+  mode: any  [private]
+  settings: any  [private]
+  source: any  [private]
+
 blocks
   sw_workflow_approval_node  [private]
 ```

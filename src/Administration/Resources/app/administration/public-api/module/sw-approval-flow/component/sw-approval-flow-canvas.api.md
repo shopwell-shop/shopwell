@@ -11,6 +11,27 @@ component sw-approval-flow-canvas  private  ts  [private]
   template src/module/sw-approval-flow/component/sw-approval-flow-canvas/sw-approval-flow-canvas.html.twig  [private]
   visibility-source export  [private]
 
+props
+  canInsert?: boolean  default=false  [private]
+  document: ApprovalDesignGraph  [private]
+  readOnly?: boolean  default=false  [private]
+  selectedConnection?: string  default=null  [private]
+  selectedId?: string  default=null  [private]
+  views: Record<string, ApprovalNodeView>  [private]
+
+emits
+  connect(...args: any[])  [private]
+  insert-node(...args: any[])  [private]
+  move-node(...args: any[])  [private]
+  select-connection(...args: any[])  [private]
+  select-node(...args: any[])  [private]
+
 blocks
   sw_approval_flow_canvas  [private]
+
+refs
+  viewport  -> div  block=sw_approval_flow_canvas  [private]
+
+notes
+  unresolved options setup  [private]
 ```

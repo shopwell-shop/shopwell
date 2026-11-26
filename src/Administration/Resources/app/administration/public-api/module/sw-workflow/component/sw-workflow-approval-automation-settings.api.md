@@ -11,6 +11,22 @@ component sw-workflow-approval-automation-settings  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-approval-automation-settings/sw-workflow-approval-automation-settings.html.twig  [private]
   visibility-source export  [private]
 
+props
+  allowEdit?: boolean  default=true  [private]
+  config?: WorkflowApprovalAutomation  default=factory  [private]
+
+emits
+  update-config(...args: any[])  [private]
+
+computed
+  decisions: any  [private]
+  deduplicationOptions: any  [private]
+
+methods
+  changeDecision(decision: WorkflowApprovalAutomation['decision']): void  [private]
+  changeDeduplication(deduplication: WorkflowApprovalAutomation['deduplication']): void  [private]
+  changeInitiator(approveInitiator: boolean): void  [private]
+
 blocks
   sw_workflow_approval_automation_settings  [private]
 ```

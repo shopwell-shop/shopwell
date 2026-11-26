@@ -11,6 +11,50 @@ component sw-settings-oauth2-login  private  ts  [private]
   template src/module/sw-settings-oauth2-login/page/sw-settings-oauth2-login/sw-settings-oauth2-login.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  oauth2ChannelService  [private]
+  repositoryFactory  [private]
+
+data
+  activeChannel: any  [private]
+  channels: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  removeTarget: any  [private]
+
+computed
+  activeChannelState: ChannelState | undefined  [private]
+  channelTabs: any  [private]
+  clientRepository: any  [private]
+
+methods
+  channelCriteria(): any  [private]
+  collectColumns(channel: ChannelState): Record<string, unknown>  [private]
+  collectSettings(channel: ChannelState): Record<string, unknown> | null  [private]
+  createChannelState(channel: OAuth2Channel, client: OAuth2Client | null): ChannelState  [private]
+  createdComponent(): Promise<void>  [private]
+  defaultValue(field: OAuth2ChannelField): unknown  [private]
+  isChannelConfigured(channel: ChannelState): boolean  [private]
+  isChannelInvalid(channel: ChannelState): boolean  [private]
+  isEmptyValue(value: unknown): boolean  [private]
+  isSameValue(left: unknown, right: unknown): boolean  [private]
+  loadChannels(): Promise<void>  [private]
+  nullIfEmpty(value: unknown): unknown  [private]
+  onCloseRemoveModal(): void  [private]
+  onConfirmRemove(): Promise<void>  [private]
+  onOpenRemoveModal(channel: ChannelState): void  [private]
+  onRemoveModalChange(isOpen: boolean): void  [private]
+  onSave(): Promise<void>  [private]
+  resolveLabel(label?: OAuth2ChannelFieldConfig['label']): OAuth2ChannelFieldConfig['label']  [private]
+  saveChannel(channel: ChannelState): Promise<void>  [private]
+  setFieldValue(channel: ChannelState, field: OAuth2ChannelField, value: unknown): void  [private]
+  storedValue(field: OAuth2ChannelField, client: OAuth2Client | null): unknown  [private]
+  translatedConfig(config?: OAuth2ChannelFieldConfig): OAuth2ChannelFieldConfig  [private]
+
 blocks
   sw_settings_oauth2_login_index  [private]
     sw_settings_oauth2_login_content  [private]

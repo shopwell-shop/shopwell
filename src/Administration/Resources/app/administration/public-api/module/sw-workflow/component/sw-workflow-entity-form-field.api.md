@@ -11,6 +11,18 @@ component sw-workflow-entity-form-field  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-entity-form-field/sw-workflow-entity-form-field.html.twig  [private]
   visibility-source export  [private]
 
+props
+  disabled?: boolean  default=false  [private]
+  field: WorkflowFormField  [private]
+  modelValue?: WorkflowFormValue  default=''  [private]
+  readOnly?: boolean  default=false  [private]
+
+emits
+  update:model-value(...args: any[])  [private]
+
+methods
+  mediaUploaded(media: { id?: string; mediaId?: string }): void  [private]
+
 blocks
   sw_workflow_entity_form_field  [private]
 ```

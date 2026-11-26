@@ -11,6 +11,31 @@ component sw-finance-transfer-approval-preview  private  ts  [private]
   template src/module/sw-finance/component/sw-finance-transfer-approval-preview/sw-finance-transfer-approval-preview.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  paymentTransferApiService  [private]
+
+props
+  payload?: PaymentTransferPayload | null  default=null  [private]
+
+emits
+  update:blocked(...args: any[])  [private]
+
+data
+  isLoading: any  [private]
+  loadFailed: any  [private]
+  preview: any  [private]
+  requestRevision: any  [private]
+  requestTimer: any  [private]
+
+computed
+  unavailableMessage: string  [private]
+
+methods
+  loadPreview(payload: PaymentTransferPayload, revision: number): Promise<void>  [private]
+  participantNames(step: TransferApprovalPreviewStep): string  [private]
+  schedulePreview(): void  [private]
+  stepIcon(type: string): string  [private]
+
 blocks
   sw_finance_transfer_approval_preview  [private]
     sw_finance_transfer_approval_preview_path  [private]

@@ -11,6 +11,38 @@ component sw-approval-flow-release-activation  private  ts  [private]
   template src/module/sw-approval-flow/component/sw-approval-flow-release-activation/sw-approval-flow-release-activation.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  approvalFlowDesignApiService  [private]
+  repositoryFactory  [private]
+
+props
+  businessTypes: ApprovalBusinessDescriptor[]  [private]
+  release: Entity<'approval_flow_release'>  [private]
+
+emits
+  activated(...args: any[])  [private]
+  close(...args: any[])  [private]
+
+data
+  activationError: any  [private]
+  activeBinding: any  [private]
+  businessKey: any  [private]
+  conflict: any  [private]
+  head: any  [private]
+  isActivating: any  [private]
+  isLoading: any  [private]
+  loadError: any  [private]
+
+computed
+  business: any  [private]
+  businessOptions: any  [private]
+  isActive: boolean  [private]
+
+methods
+  activate(): Promise<void>  [private]
+  close(): void  [private]
+  loadBinding(): Promise<void>  [private]
+
 blocks
   sw_approval_flow_release_activation  [private]
 ```

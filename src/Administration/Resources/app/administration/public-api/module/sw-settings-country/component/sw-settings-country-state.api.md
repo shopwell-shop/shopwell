@@ -10,6 +10,87 @@ component sw-settings-country-state  public  js
   source src/module/sw-settings-country/component/sw-settings-country-state/index.js
   template src/module/sw-settings-country/component/sw-settings-country-state/sw-settings-country-state.html.twig
 
+mixins
+  notification
+
+inject
+  acl
+  repositoryFactory
+
+props
+  country: object
+  countryStateRepository?: object  default=null
+  isLoading?: boolean  default=false
+
+data
+  childCounts: object
+    city: any
+    district: any
+  currentRegion: any
+  currentRegionLevel: any
+  deleteTarget: any
+  isDeletingRegion: any
+  isLoadingChildCounts: any
+  levels: any
+  loading: object
+    city: any
+    district: any
+    state: any
+  regions: object
+    city: any
+    district: any
+    state: any
+  selected: object
+    city: any
+    state: any
+  terms: object
+    city: any
+    district: any
+    state: any
+  totals: object
+    city: any
+    district: any
+    state: any
+
+computed
+  canEdit: any
+  isNewCountry: any
+  regionTexts: any
+  selectedPath: any
+
+methods
+  clearSelectionForLevel(level: any, deletedId: any): any
+  countChildren(level: any, filterName: any, id: any): Promise<any>
+  countRegions(level: any): Promise<any>
+  createdComponent(): any
+  getAddButtonTooltip(level: any): any
+  getChildCountQueries(level: any, region: any): any
+  getCriteria(level: any, parentId: any): any
+  getDeleteConfirmMessage(): any
+  getEmptyHint(level: any): any
+  getItems(level: any): any
+  getParentId(level: any): any
+  getRegionCode(level: any, region: any): any
+  getRegionName(region: any): any
+  getRepository(level: any): any
+  getSelectedRegion(level: any): any
+  isLevelDisabled(level: any): any
+  isLoadingLevel(level: any): any
+  isSelected(level: any, region: any): any
+  loadAll(): Promise<any>
+  loadRegions(level: any): Promise<any>
+  onAddRegion(level: any): any
+  onCancelRegion(): any
+  onClickRegion(level: any, region: any): any
+  onCloseDeleteModal(): any
+  onConfirmDelete(): Promise<any>
+  onEditRegion(level: any, region: any): any
+  onSaveRegion(region: any): Promise<any>
+  openDeleteModal(level: any, region: any): any
+  refreshTotals(): Promise<any>
+  resetRegions(): any
+  scrollLevelIntoView(level: any): any
+
 blocks
   sw_settings_country_state_list_card
     sw_settings_country_state_delete_modal  [after v-if]

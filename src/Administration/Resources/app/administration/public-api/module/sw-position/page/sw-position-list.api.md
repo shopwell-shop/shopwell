@@ -11,6 +11,43 @@ component sw-position-list  private  ts  [private]
   template src/module/sw-position/page/sw-position-list/sw-position-list.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification, listing, placeholder  [private]
+
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+data
+  editedPosition: any  [private]
+  entityName: any  [private]
+  isLoading: any  [private]
+  isNewPosition: any  [private]
+  positions: any  [private]
+  showDeleteModal: any  [private]
+  showEditModal: any  [private]
+  sortBy: any  [private]
+  sortDirection: any  [private]
+
+computed
+  modalTitle: string  [private]
+  positionColumns: Array<Record<string, unknown>>  [private]
+  positionRepository: RepositoryType<'position'>  [private]
+
+methods
+  createdComponent(): void  [private]
+  getList(): Promise<void>  [private]
+  nextFreePosition(): number  [private]
+  onActiveChange(item: PositionEntity, value: boolean): Promise<void>  [private]
+  onAddPosition(): void  [private]
+  onChangeLanguage(): void  [private]
+  onCloseDeleteModal(): void  [private]
+  onCloseEditModal(): void  [private]
+  onConfirmDelete(id: string): Promise<void>  [private]
+  onDelete(id: string): void  [private]
+  onEditModalSave(): Promise<void>  [private]
+  onEditPosition(item: PositionEntity): void  [private]
+
 blocks
   sw_position_list  [private]
     sw_position_index  [private]
@@ -38,4 +75,7 @@ blocks
         sw_position_list_smart_bar_header_title  [private]
           sw_position_list_smart_bar_header_amount  [private]
           sw_position_list_smart_bar_header_title_text  [private]
+
+refs
+  swSettingsPositionGrid  -> sw-entity-listing  block=sw_position_list_grid_inner  [private]
 ```

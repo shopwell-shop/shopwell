@@ -11,6 +11,70 @@ component sw-settings-payment-gateway-detail  private  ts  [private]
   template src/module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-detail/sw-settings-payment-gateway-detail.html.twig  [private]
   visibility-source export  [private]
 
+mixins
+  notification  [private]
+
+inject
+  acl  [private]
+  paymentGatewayService  [private]
+
+props
+  appId?: string  default=null  [private]
+  section?: string  default='collection'  [private]
+
+data
+  allowedIpsInput: any  [private]
+  app: any  [private]
+  appSecretInput: any  [private]
+  apps: any  [private]
+  availableAccounts: any  [private]
+  generatedSecret: any  [private]
+  isDeleteModalOpen: any  [private]
+  isDeleting: any  [private]
+  isLoading: any  [private]
+  isSaving: any  [private]
+  isSecretModalOpen: any  [private]
+  products: any  [private]
+  providers: any  [private]
+  registryProviders: any  [private]
+
+computed
+  activeSection: any  [private]
+  canAddAccount: any  [private]
+  canCreate: any  [private]
+  canDelete: any  [private]
+  canEdit: any  [private]
+  isNew: any  [private]
+  isPlatformTenant: any  [private]
+  isReadOnly: any  [private]
+  methodOptions: any  [private]
+  pageTitle: any  [private]
+  viewTabs: any  [private]
+
+methods
+  accountLabel(account: PaymentAccountChoice): any  [private]
+  accountOptions(grant: AccountGrant): any  [private]
+  addAccount(): any  [private]
+  buildPayload(): any  [private]
+  createAccountStates(): any  [private]
+  createChannelState(channel: PaymentProductDefinition): any  [private]
+  createEmptyApp(): PaymentAppView  [private]
+  createProductStates(registry: PaymentProviderView[]): ProductState[]  [private]
+  createdComponent(): Promise<any>  [private]
+  displayLabel(label: string | undefined): any  [private]
+  hasGrantedAccount(product: ProductState): any  [private]
+  onCloseSecretModal(): any  [private]
+  onConfirmDelete(): Promise<any>  [private]
+  onDeleteModalChange(isOpen: boolean): any  [private]
+  onGenerateSecret(): any  [private]
+  onOpenDeleteModal(): any  [private]
+  onSave(): Promise<any>  [private]
+  onSecretModalChange(isOpen: boolean): any  [private]
+  parseAllowedIps(): any  [private]
+  providerLabel(technicalName: string): any  [private]
+  removeAccount(grant: AccountGrant): any  [private]
+  selectedAccount(grant: AccountGrant): any  [private]
+
 blocks
   sw_settings_payment_gateway_detail  [private]
     sw_settings_payment_gateway_detail_content  [private]

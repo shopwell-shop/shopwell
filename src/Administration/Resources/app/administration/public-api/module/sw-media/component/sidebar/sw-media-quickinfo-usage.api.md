@@ -10,6 +10,57 @@ component sw-media-quickinfo-usage  public  js
   source src/module/sw-media/component/sidebar/sw-media-quickinfo-usage/index.js
   template src/module/sw-media/component/sidebar/sw-media-quickinfo-usage/sw-media-quickinfo-usage.html.twig
 
+inject
+  repositoryFactory
+
+props
+  item: object
+  routerLinkTarget?: string  default=''
+
+data
+  avatarUsers: any
+  categories: any
+  documentBaseConfigs: any
+  isLoading: any
+  landingPages: any
+  mailTemplates: any
+  manufacturers: any
+  paymentMethods: any
+  products: any
+  shippingMethods: any
+  usageRequestId: any
+
+computed
+  categoryRepository: any
+  getUsages: any
+  isNotUsed: any
+  landingPageRepository: any
+  moduleFactory: any
+  productRepository: any
+  productUsageCriteria: any
+
+methods
+  createdComponent(): Promise<any>
+  getAvatarUserUsage(user: any): any
+  getCategoryUsage(category: any): any
+  getDocumentBaseConfigUsage(document: any): any
+  getIconForModule(name: any): any
+  getLandingPageUsage(landingPage: any): any
+  getMailTemplateUsage(mailTemplate: any): any
+  getManufacturerUsage(manufacturer: any): any
+  getPaymentMethodUsage(paymentMethod: any): any
+  getProductUsage(product: any): any
+  getShippingMethodUsage(shippingMethod: any): any
+  loadAvatarUserAssociations(): any
+  loadCategoryAssociations(): any
+  loadDocumentBaseConfigAssociations(): any
+  loadMailTemplateAssociations(): any
+  loadManufacturerAssociations(): any
+  loadPaymentMethodAssociations(): any
+  loadProductAssociations(): any
+  loadProductDocumentAssociations(): Promise<any>
+  loadShippingMethodAssociations(): any
+
 blocks
   sw_media_quickinfo_usage
     sw_media_quickinfo_usage_empty_state  [after v-if]

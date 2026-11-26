@@ -10,6 +10,18 @@ component sw-settings-user-permission  public  js
   source src/module/sw-settings-user-permission/page/sw-settings-user-permission/index.js
   template src/module/sw-settings-user-permission/page/sw-settings-user-permission/sw-settings-user-permission.html.twig
 
+inject
+  acl
+
+data
+  isLoading: any
+  isSaveSuccessful: any
+
+methods
+  onChangeLoading(loading: any): any
+  onSave(): any
+  onSaveFinish(): any
+
 blocks
   sw_settings_user_permission
     sw_settings_user_permission_content
@@ -18,4 +30,7 @@ blocks
     sw_settings_user_permission_smart_bar_actions
     sw_settings_user_permission_smart_bar_header
       sw_settings_user_permission_smart_bar_header_title
+
+refs
+  systemConfig  -> sw-system-config  block=sw_settings_user_permission_content_config
 ```

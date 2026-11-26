@@ -11,6 +11,24 @@ component sw-dashboard-index  private  ts  [private]
   template src/module/sw-dashboard/page/sw-dashboard-index/sw-dashboard-index.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+data
+  isLoading: any  [private]
+  requestId: any  [private]
+  salesError: any  [private]
+  summary: any  [private]
+
+computed
+  canViewOrders: boolean  [private]
+  orderRepository: Repository<'order'>  [private]
+  period: DashboardPeriod  [private]
+
+methods
+  loadSales(): Promise<void>  [private]
+
 blocks
   sw_dashboard_index  [private]
     sw_dashboard_index_content  [private]

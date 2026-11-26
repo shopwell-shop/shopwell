@@ -10,6 +10,34 @@ component sw-membership-plan-list  public  ts
   source src/module/sw-settings-membership/page/sw-membership-plan-list/index.ts
   template src/module/sw-settings-membership/page/sw-membership-plan-list/sw-membership-plan-list.html.twig
 
+mixins
+  listing, notification
+
+inject
+  acl
+  repositoryFactory
+
+data
+  isLoading: any
+  limit: any
+  plans: any
+  sortBy: any
+  sortDirection: any
+
+computed
+  columns: MembershipPlanColumn[]
+  currencyFilter: any
+  planCriteria: CriteriaType
+  planRepository: RepositoryType<'membership_plan'>
+  showEmptyState: boolean
+
+methods
+  formatPrice(plan: MembershipPlan): string
+  getList(): Promise<void>
+  onContextMenuDelete(plan: MembershipPlan): void
+  onDeletePlan(plan: MembershipPlan): void
+  onDeletePlans(): void
+
 blocks
   sw_loyalty_plan_list
     sw_loyalty_plan_list_actions
@@ -20,4 +48,7 @@ blocks
     sw_loyalty_plan_list_language_switch
     sw_loyalty_plan_list_search_bar
     sw_loyalty_plan_list_smart_bar_header
+
+refs
+  listing  -> sw-entity-listing  block=sw_loyalty_plan_list_grid
 ```

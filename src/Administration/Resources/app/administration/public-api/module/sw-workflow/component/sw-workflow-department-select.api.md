@@ -11,6 +11,43 @@ component sw-workflow-department-select  private  ts  [private]
   template src/module/sw-workflow/component/sw-workflow-department-select/sw-workflow-department-select.html.twig  [private]
   visibility-source export  [private]
 
+inject
+  acl  [private]
+  repositoryFactory  [private]
+
+props
+  candidateIds?: string[]  default=null  [private]
+  disabled?: boolean  default=false  [private]
+  displayOnly?: boolean  default=false  [private]
+  label: string  [private]
+  modelValue?: string | string[]  default=''  [private]
+  multiple?: boolean  default=false  [private]
+
+emits
+  update:model-value(...args: any[])  [private]
+
+data
+  failed: any  [private]
+  loading: any  [private]
+  revision: any  [private]
+  units: any  [private]
+
+computed
+  canRead: boolean  [private]
+  collection: EntityCollection<'organization_unit'>  [private]
+  criteria: any  [private]
+  ids: string[]  [private]
+  repository: any  [private]
+  unavailable: boolean  [private]
+
+methods
+  change(units: Entity<'organization_unit'>[]): void  [private]
+  clear(): void  [private]
+  eligible(unit: Entity<'organization_unit'>): boolean  [private]
+  load(): Promise<void>  [private]
+  placeholder(id: string): Entity<'organization_unit'>  [private]
+  select(id: string | null, unit?: Entity<'organization_unit'>): void  [private]
+
 blocks
   sw_workflow_department_select  [private]
 ```
