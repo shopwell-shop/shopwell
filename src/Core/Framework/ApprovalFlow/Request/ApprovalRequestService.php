@@ -73,11 +73,29 @@ class ApprovalRequestService
             if ($request->getInitiatorId() !== $initiatorId) {
                 throw ApprovalFlowException::requestInitiatorRequired($requestId);
             }
-            $actorJson = json_encode(['source' => 'admin-api', 'userId' => $initiatorId, 'integrationId' => null], \JSON_THROW_ON_ERROR);
+            $actorJson = $this->actorJson($initiatorId);
 
             // The immutable request identity also identifies its single draft-to-running command.
             return $this->instances->start($request->getInstanceId(), $requestId, expectedVersion: 1, actorJson: $actorJson, context: $context);
         });
+    }
+
+    public function withdraw(string $requestId, string $reason, Context $context): void
+    {
+        $initiatorId = $this->initiatorId($context);
+        $this->store->transactional(function () use ($requestId, $reason, $context, $initiatorId): void {
+            $request = $this->store->read($requestId);
+            if ($request->getInitiatorId() !== $initiatorId) {
+                throw ApprovalFlowException::requestInitiatorRequired($requestId);
+            }
+
+            $this->instances->withdraw($request->getInstanceId(), $reason, $this->actorJson($initiatorId), $context);
+        });
+    }
+
+    private function actorJson(string $initiatorId): string
+    {
+        return json_encode(['source' => 'admin-api', 'userId' => $initiatorId, 'integrationId' => null], \JSON_THROW_ON_ERROR);
     }
 
     private function initiatorId(Context $context): string

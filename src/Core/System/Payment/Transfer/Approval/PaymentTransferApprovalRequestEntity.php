@@ -26,7 +26,7 @@ class PaymentTransferApprovalRequestEntity extends EntityStruct
     public string $requestId;
 
     /**
-     * @var array<string, mixed>
+     * @var array{previousTransfer?: array{id: string, transferNo: string}, ...<string, mixed>}
      */
     #[Required]
     #[Field(type: FieldType::JSON, api: false)]

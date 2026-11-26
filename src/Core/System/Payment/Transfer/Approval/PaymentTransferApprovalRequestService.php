@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 
@@ -31,9 +32,9 @@ class PaymentTransferApprovalRequestService
     ) {
     }
 
-    public function submit(string $transferId, Context $context): ApprovalRequestEntity
+    public function submit(string $transferId, Context $context, ?PaymentTransferEntity $previous = null): ApprovalRequestEntity
     {
-        return $this->store->transactional($transferId, function () use ($transferId, $context): ApprovalRequestEntity {
+        return $this->store->transactional($transferId, function () use ($transferId, $context, $previous): ApprovalRequestEntity {
             $existing = $this->requests->find(self::BUSINESS_TYPE, $transferId, 1, $context);
             if ($existing !== null) {
                 $this->requests->start($existing->getId(), $context);
@@ -60,6 +61,9 @@ class PaymentTransferApprovalRequestService
             ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
             $revision = Hasher::hash(json_encode($snapshot, \JSON_THROW_ON_ERROR), 'sha256');
             $request = $this->requests->create(self::BUSINESS_TYPE, $transferId, 1, $revision, $formJson, $context);
+            if ($previous !== null) {
+                $snapshot['previousTransfer'] = ['id' => $previous->id, 'transferNo' => $previous->transferNo];
+            }
             $this->store->freeze($transferId, $request->getId(), $snapshot);
             $this->requests->start($request->getId(), $context);
 

@@ -86,6 +86,7 @@ export default defineComponent({
     props: {
         initialDraft: { type: Object as PropType<TransferReapplicationDraft | null>, default: null },
         sourceTransferId: { type: String, default: null },
+        sourceUsesApprovalFlow: { type: Boolean, default: false },
         fixedAmount: { type: String, default: null },
         fixedCurrency: { type: String, default: null },
         purpose: { type: String, default: '' },
@@ -400,8 +401,12 @@ export default defineComponent({
             try {
                 const options = await this.paymentTransferApiService.getOptions();
 
-                this.workflowAvailable = options.workflowAvailable;
-                this.approvalFlowActive = options.approvalFlowActive === true && !this.sourceTransferId;
+                this.workflowAvailable = this.sourceUsesApprovalFlow
+                    ? options.approvalFlowActive === true
+                    : options.workflowAvailable;
+                this.approvalFlowActive = this.sourceTransferId
+                    ? this.sourceUsesApprovalFlow
+                    : options.approvalFlowActive === true;
                 this.apps = options.apps;
                 if (this.initialDraft) {
                     await this.applyInitialDraft(this.initialDraft);

@@ -383,6 +383,8 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
             $container->get(PaymentTransferPresenter::class),
             $container->get('event_dispatcher'),
             $container->get(PaymentTransferApprovalResultVerifier::class),
+            $container->get(PaymentTransferApprovalRequestStore::class),
+            $container->get(ApprovalRequestService::class),
         );
     }
 }

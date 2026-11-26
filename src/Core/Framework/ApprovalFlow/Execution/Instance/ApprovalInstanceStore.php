@@ -43,6 +43,8 @@ class ApprovalInstanceStore
 
     public const SUSPEND = 'suspend';
 
+    public const WITHDRAW = 'withdraw';
+
     public const ENTER_START = 'enter-start';
 
     public const ENTER_APPROVAL = 'enter-approval';
@@ -126,6 +128,27 @@ class ApprovalInstanceStore
             $actorJson,
             $context,
             static fn (): ApprovalInstanceStatus => ApprovalInstanceStatus::Suspended,
+        );
+    }
+
+    public function withdraw(string $instanceId, string $reason, string $actorJson, Context $context): ApprovalInstanceCommandResult
+    {
+        // Withdrawal applies to the current running instance and has one receipt per instance.
+        $commandId = Uuid::fromStringToHex(self::WITHDRAW . ':' . $instanceId);
+        $requestHash = Hasher::hash(['operation' => self::WITHDRAW, 'reason' => $reason, 'actorJson' => $actorJson], 'sha256');
+
+        return $this->runCommand(
+            $instanceId,
+            $commandId,
+            null,
+            self::WITHDRAW,
+            $requestHash,
+            $reason,
+            $actorJson,
+            $context,
+            fn (string $releaseId): ApprovalInstanceStatus|ApprovalOutcome => $this->executionCommands[self::WITHDRAW]->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context),
+            ),
         );
     }
 
@@ -301,7 +324,7 @@ class ApprovalInstanceStore
     private function runCommand(
         string $instanceId,
         string $commandId,
-        int $expectedVersion,
+        ?int $expectedVersion,
         string $operation,
         string $requestHash,
         string $reason,
@@ -330,7 +353,7 @@ class ApprovalInstanceStore
                 $transition = $apply($instance['releaseId']);
                 $outcome = $transition instanceof ApprovalOutcome ? $transition : null;
                 $status = $transition instanceof ApprovalInstanceStatus ? $transition : ApprovalInstanceStatus::Completed;
-                $result = new ApprovalInstanceCommandResult($instanceId, $commandId, $status, $expectedVersion + 1, $outcome);
+                $result = new ApprovalInstanceCommandResult($instanceId, $commandId, $status, $instance['version'] + 1, $outcome);
                 $this->saveCommand($result, $operation, $requestHash, $reason, $actorJson, $instance['status'], $context);
                 if ($outcome !== null) {
                     $this->results->record($instanceId, $instance['releaseId'], $commandId, $result->aggregateVersion, $outcome, $context);
@@ -394,9 +417,9 @@ class ApprovalInstanceStore
         return new ApprovalInstanceCommandResult($instanceId, $commandId, ApprovalInstanceStatus::from($receipt['status']), (int) $receipt['aggregate_version'], $outcome);
     }
 
-    private function requireState(string $instanceId, ApprovalInstanceStatus $status, int $version, int $expectedVersion, string $operation, ApprovalInstanceStatus $from): void
+    private function requireState(string $instanceId, ApprovalInstanceStatus $status, int $version, ?int $expectedVersion, string $operation, ApprovalInstanceStatus $from): void
     {
-        if ($version !== $expectedVersion) {
+        if ($expectedVersion !== null && $version !== $expectedVersion) {
             throw ApprovalFlowException::instanceVersionConflict($instanceId, $expectedVersion, $version);
         }
         if ($status !== $from) {

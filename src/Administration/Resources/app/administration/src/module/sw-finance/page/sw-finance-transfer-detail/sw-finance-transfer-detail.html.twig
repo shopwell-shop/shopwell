@@ -392,6 +392,7 @@
             v-if="showReapplyModal && canReapply && reapplicationDraft"
             :key="transferId"
             :source-transfer-id="transferId"
+            :source-uses-approval-flow="approval?.usesApprovalFlow === true"
             :initial-draft="reapplicationDraft"
             @transfer-created="onReapplied"
             @modal-close="showReapplyModal = false"

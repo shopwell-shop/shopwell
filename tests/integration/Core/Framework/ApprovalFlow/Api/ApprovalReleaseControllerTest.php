@@ -3,10 +3,12 @@
 namespace Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Api;
 
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ApprovalFlow\Draft\ApprovalDraftService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestStore;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResult;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultEntity;
@@ -119,19 +121,7 @@ class ApprovalReleaseControllerTest extends TestCase
         $draft = $drafts->create('Transfer approval', $graph, $context);
         $first = $this->publishAndActivate($publisher, $draft->definitionId, 1);
 
-        $credentials = $container->get(PaymentCredentialCipher::class)->encrypt(['app_id' => 'test-transfer-approval']);
-        $fixture = PaymentTransferApprovalFixture::create($container, $credentials);
-        $container->get('payment_app_account.repository')->create([[
-            'paymentAppId' => $fixture->paymentAppId, 'accountId' => $fixture->accountId, 'enabled' => true, 'position' => 0,
-        ]], $context);
-        $container->get('payment_app_channel.repository')->create([[
-            'paymentAppId' => $fixture->paymentAppId, 'channelTechnicalName' => $fixture->channel, 'enabled' => true,
-        ]], $context);
-        $payload = [
-            'paymentAppId' => $fixture->paymentAppId, 'accountId' => $fixture->accountId, 'recipientId' => $fixture->recipientId,
-            'provider' => $fixture->provider, 'channel' => $fixture->channel, 'amount' => 1200, 'currency' => 'CNY',
-            'outNo' => substr(Uuid::randomHex(), 0, 30),
-        ];
+        $payload = $this->transferPayload();
         $firstTransfer = $this->bookTransfer($publisher, $payload);
         static::assertSame($first, $firstTransfer['releaseId']);
         static::assertSame('pending', $firstTransfer['status']);
@@ -158,26 +148,157 @@ class ApprovalReleaseControllerTest extends TestCase
         static::assertSame(200, $review->getResponse()->getStatusCode());
         $inbox = json_decode((string) $review->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
         static::assertContains($firstTransfer['instanceId'], array_column($inbox['data'], 'instanceId'));
-        $review->jsonRequest('POST', '/api/_action/approval-flow/instances/' . $firstTransfer['instanceId'] . '/tasks/' . Uuid::fromBytesToHex($task['id']) . '/decide', [
-            'commandId' => Uuid::randomHex(), 'expectedVersion' => 2, 'outcome' => 'approved',
-        ]);
-        static::assertSame(200, $review->getResponse()->getStatusCode(), (string) $review->getResponse()->getContent());
-        $container->get(ApprovalInstanceService::class)->progress($firstTransfer['instanceId'], Uuid::fromBytesToHex($task['execution_id']), Uuid::randomHex(), 3, $context);
-
-        $result = $container->get('approval_flow_result.repository')->search((new Criteria())->addFilter(new EqualsFilter('instanceId', $firstTransfer['instanceId'])), $context)->first();
-        static::assertInstanceOf(ApprovalResultEntity::class, $result);
-        static::assertSame($first, $result->getReleaseId());
-        $request = $container->get(ApprovalRequestStore::class)->read($firstTransfer['detailRoute']['params']['id']);
-        $container->get(PaymentTransferApprovalResultHandler::class)->handle(
-            new ApprovalResult($result->getId(), $result->getInstanceId(), $result->getReleaseId(), $result->getCommandId(), $result->getAggregateVersion(), $result->getOutcome(), $result->getFinishedAt()),
-            $request,
-            $context,
-        );
+        $request = $this->decideAndDeliver($review, $firstTransfer, $task, 'approved');
         $publisher->request('GET', '/api/_action/payment/transfers/' . $request->getBusinessId() . '/approval');
         $approved = json_decode((string) $publisher->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
         static::assertSame('approved', $approved['status']);
         static::assertSame($first, $approved['releaseId']);
         static::assertSame(0, $container->get(PaymentTransferService::class)->getById($request->getBusinessId())->submitAttempts);
+    }
+
+    #[DataProvider('reapplicationReasons')]
+    public function testAnInitiatorCanReapplyWithTheActiveRelease(bool $withdraw): void
+    {
+        $container = static::getContainer();
+        $connection = $container->get(Connection::class);
+        $reviewer = TestUser::createNewTestUser($connection, [
+            ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access', 'payment_transfer:create', 'payment_transfer:read',
+        ]);
+        $initiator = $this->getBrowser(permissions: [
+            'approval_flow_release:create', 'approval_flow_binding:activate', 'approval_flow_binding:create',
+            'payment_transfer:create', 'payment_transfer:read', 'approval_flow:access',
+        ]);
+        $context = Context::createDefaultContext();
+        $drafts = $container->get(ApprovalDraftService::class);
+        $graph = str_replace('finance-user', $reviewer->getUserId(), GraphFixture::json());
+        $draft = $drafts->create('Transfer approval', $graph, $context);
+        $firstRelease = $this->publishAndActivate($initiator, $draft->definitionId, 1);
+        $payload = $this->transferPayload();
+        $original = $this->bookTransfer($initiator, $payload);
+        $path = '/api/_action/payment/transfers/' . $original['transferId'];
+        $instanceId = Uuid::fromHexToBytes($original['instanceId']);
+        $task = $connection->fetchAssociative(
+            'SELECT t.id, t.execution_id FROM approval_flow_task t
+             INNER JOIN approval_flow_execution e ON e.id = t.execution_id WHERE e.instance_id = :id',
+            ['id' => $instanceId],
+        );
+        static::assertNotFalse($task);
+
+        $this->resetBrowser();
+        $review = $this->getBrowser(authorized: false);
+        $reviewer->authorizeBrowser($review);
+        if ($withdraw) {
+            $review->jsonRequest('POST', $path . '/approval/cancel', ['reason' => 'Wrong amount']);
+            static::assertSame(403, $review->getResponse()->getStatusCode());
+            $initiator->jsonRequest('POST', $path . '/approval/cancel', ['reason' => 'Wrong amount']);
+            static::assertSame(200, $initiator->getResponse()->getStatusCode(), (string) $initiator->getResponse()->getContent());
+            static::assertSame('withdrawn', $connection->fetchOne('SELECT status FROM approval_flow_instance WHERE id = :id', ['id' => $instanceId]));
+            static::assertSame('cancelled', $connection->fetchOne('SELECT status FROM approval_flow_task WHERE id = :id', ['id' => $task['id']]));
+            static::assertSame('Wrong amount', $connection->fetchOne('SELECT reason FROM approval_flow_operation WHERE instance_id = :id AND operation = :operation', ['id' => $instanceId, 'operation' => 'withdraw']));
+            static::assertFalse($connection->fetchOne('SELECT id FROM approval_flow_result WHERE instance_id = :id', ['id' => $instanceId]));
+            $initiator->jsonRequest('POST', $path . '/cancel', ['reason' => 'Wrong amount']);
+            static::assertSame(200, $initiator->getResponse()->getStatusCode());
+            $review->request('GET', '/api/_action/approval-flow/requests?view=todo');
+            $inbox = json_decode((string) $review->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+            static::assertNotContains($original['instanceId'], array_column($inbox['data'], 'instanceId'));
+        } else {
+            $this->decideAndDeliver($review, $original, $task, 'rejected');
+        }
+
+        $edited = GraphFixture::codec()->decodeWritable(new DraftGraph($graph));
+        $edited->meta->name = 'Transfer approval v2';
+        $drafts->save($draft->definitionId, 1, json_encode($edited, \JSON_THROW_ON_ERROR), $context);
+        $activeRelease = $this->publishAndActivate($initiator, $draft->definitionId, 2);
+        $initiator->request('GET', $path . '/approval');
+        $approval = json_decode((string) $initiator->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame($withdraw ? 'canceled' : 'rejected', $approval['status']);
+        static::assertSame($firstRelease, $approval['releaseId']);
+        static::assertTrue($approval['canReapply']);
+
+        $payload['outNo'] = substr(Uuid::randomHex(), 0, 30);
+        $unrelated = $this->bookTransfer($initiator, $payload);
+        $initiator->jsonRequest('POST', $path . '/reapply', $payload);
+        static::assertSame(409, $initiator->getResponse()->getStatusCode());
+
+        $payload['outNo'] = substr(Uuid::randomHex(), 0, 30);
+        $payload['amount'] = 1000;
+        $review->jsonRequest('POST', $path . '/reapply', $payload);
+        static::assertSame(409, $review->getResponse()->getStatusCode());
+
+        $initiator->jsonRequest('POST', $path . '/reapply', $payload);
+        static::assertSame(201, $initiator->getResponse()->getStatusCode(), (string) $initiator->getResponse()->getContent());
+        $replacement = json_decode((string) $initiator->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR)['transfer'];
+        static::assertNotContains($replacement['id'], [$original['transferId'], $unrelated['transferId']]);
+
+        $initiator->jsonRequest('POST', $path . '/reapply', $payload);
+        static::assertSame(200, $initiator->getResponse()->getStatusCode(), (string) $initiator->getResponse()->getContent());
+        $replayed = json_decode((string) $initiator->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame($replacement['id'], $replayed['transfer']['id']);
+
+        $initiator->request('GET', '/api/_action/payment/transfers/' . $replacement['id'] . '/approval');
+        $approval = json_decode((string) $initiator->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame($activeRelease, $approval['releaseId']);
+        static::assertSame('pending', $approval['status']);
+        static::assertTrue($approval['canCancel']);
+        static::assertSame(['id' => $original['transferId'], 'transferNo' => $original['transferNo']], $approval['previousTransfer']);
+        static::assertSame(0, $container->get(PaymentTransferService::class)->getById($original['transferId'])->submitAttempts);
+    }
+
+    public static function reapplicationReasons(): iterable
+    {
+        yield 'withdrawn by the owner' => [true];
+        yield 'rejected by the reviewer' => [false];
+    }
+
+    /**
+     * @param array<string, mixed> $transfer
+     * @param array<string, mixed> $task
+     */
+    private function decideAndDeliver(TestBrowser $reviewer, array $transfer, array $task, string $outcome): ApprovalRequestEntity
+    {
+        $container = static::getContainer();
+        $context = Context::createDefaultContext();
+        $instanceId = $transfer['instanceId'];
+        $reviewer->jsonRequest('POST', '/api/_action/approval-flow/instances/' . $instanceId . '/tasks/' . Uuid::fromBytesToHex($task['id']) . '/decide', [
+            'commandId' => Uuid::randomHex(), 'expectedVersion' => 2, 'outcome' => $outcome,
+        ]);
+        static::assertSame(200, $reviewer->getResponse()->getStatusCode(), (string) $reviewer->getResponse()->getContent());
+        $container->get(ApprovalInstanceService::class)->progress($instanceId, Uuid::fromBytesToHex($task['execution_id']), Uuid::randomHex(), 3, $context);
+
+        $result = $container->get('approval_flow_result.repository')->search((new Criteria())->addFilter(new EqualsFilter('instanceId', $instanceId)), $context)->first();
+        static::assertInstanceOf(ApprovalResultEntity::class, $result);
+        static::assertSame($transfer['releaseId'], $result->getReleaseId());
+        $request = $container->get(ApprovalRequestStore::class)->read($transfer['detailRoute']['params']['id']);
+        $container->get(PaymentTransferApprovalResultHandler::class)->handle(
+            new ApprovalResult($result->getId(), $instanceId, $result->getReleaseId(), $result->getCommandId(), $result->getAggregateVersion(), $result->getOutcome(), $result->getFinishedAt()),
+            $request,
+            $context,
+        );
+
+        return $request;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function transferPayload(): array
+    {
+        $container = static::getContainer();
+        $context = Context::createDefaultContext();
+        $credentials = $container->get(PaymentCredentialCipher::class)->encrypt(['app_id' => 'test-transfer-approval']);
+        $fixture = PaymentTransferApprovalFixture::create($container, $credentials);
+        $container->get('payment_app_account.repository')->create([[
+            'paymentAppId' => $fixture->paymentAppId, 'accountId' => $fixture->accountId, 'enabled' => true, 'position' => 0,
+        ]], $context);
+        $container->get('payment_app_channel.repository')->create([[
+            'paymentAppId' => $fixture->paymentAppId, 'channelTechnicalName' => $fixture->channel, 'enabled' => true,
+        ]], $context);
+
+        return [
+            'paymentAppId' => $fixture->paymentAppId, 'accountId' => $fixture->accountId, 'recipientId' => $fixture->recipientId,
+            'provider' => $fixture->provider, 'channel' => $fixture->channel, 'amount' => 1200, 'currency' => 'CNY',
+            'outNo' => substr(Uuid::randomHex(), 0, 30),
+        ];
     }
 
     private function publishAndActivate(TestBrowser $browser, string $definitionId, int $revision): string
@@ -211,6 +332,9 @@ class ApprovalReleaseControllerTest extends TestCase
         $browser->request('GET', '/api/_action/payment/transfers/' . $transfer['transfer']['id'] . '/approval');
         static::assertSame(200, $browser->getResponse()->getStatusCode(), (string) $browser->getResponse()->getContent());
 
-        return json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        return json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR) + [
+            'transferId' => $transfer['transfer']['id'],
+            'transferNo' => $transfer['transfer']['transferNo'],
+        ];
     }
 }

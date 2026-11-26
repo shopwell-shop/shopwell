@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Transfer\Approval;
 
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestEntity;
@@ -12,6 +13,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 
 /**
  * @internal
@@ -26,6 +29,7 @@ class PaymentTransferApprovalView
     public function __construct(
         private readonly EntityRepository $requests,
         private readonly EntityRepository $results,
+        private readonly PaymentTransferApprovalRequestStore $evidence,
     ) {
     }
 
@@ -53,8 +57,9 @@ class PaymentTransferApprovalView
     /**
      * @return array<string, mixed>
      */
-    public function detail(string $transferId, Context $context): array
+    public function detail(PaymentTransferEntity $transfer, Context $context): array
     {
+        $transferId = $transfer->id;
         $criteria = $this->criteria([$transferId])->addAssociation('instance.release.definition');
         $request = $this->requests->search($criteria, $context)->first();
         if ($request === null) {
@@ -62,13 +67,30 @@ class PaymentTransferApprovalView
         }
 
         $result = $this->results->search(new Criteria([$transferId]), $context)->first();
-        $release = $request->getInstance()?->getRelease();
+        $instance = $request->getInstance();
+        $release = $instance?->getRelease();
+        $source = $context->getSource();
+        $canAct = $source instanceof AdminApiSource
+            && $source->getIntegrationId() === null
+            && $source->getUserId() === $request->getInitiatorId()
+            && $context->isAllowed('payment_transfer:create')
+            && $transfer->submitAttempts === 0;
+        $state = $transfer->statusMachineState?->getTechnicalName();
 
         return $this->summary($request, $result, $context) + [
             'instanceId' => $request->getInstanceId(),
             'releaseId' => $release?->getId(),
             'releaseName' => $release?->getDefinition()?->getName(),
             'revision' => $release?->getDraftRevision(),
+            'usesApprovalFlow' => true,
+            'canCancel' => $canAct && $state === PaymentTransferStates::STATE_CREATED && $instance?->getStatus() === ApprovalInstanceStatus::Running,
+            'canReapply' => $canAct && (
+                ($state === PaymentTransferStates::STATE_CREATED && $result?->outcome === ApprovalOutcome::Rejected)
+                || ($state === PaymentTransferStates::STATE_CANCELED && $instance?->getStatus() === ApprovalInstanceStatus::Withdrawn)
+            ),
+            'previousTransfer' => $this->evidence->previousTransfer($transferId, $context),
+            'recipientLabel' => null,
+            'paymentAccountLabel' => null,
         ];
     }
 

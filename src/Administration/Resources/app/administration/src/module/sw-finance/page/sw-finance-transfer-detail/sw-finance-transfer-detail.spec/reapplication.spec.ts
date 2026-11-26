@@ -31,6 +31,20 @@ describe('transfer reapplication', () => {
         });
     });
 
+    it('opens the shared form in Approval Flow mode for a withdrawn request', async () => {
+        const { wrapper } = await createWrapper(
+            transfer,
+            () => true,
+            {},
+            { status: 'canceled', canReapply: true, usesApprovalFlow: true },
+        );
+
+        await wrapper.get('.sw-finance-transfer-detail__button-reapply').trigger('click');
+
+        const modal = wrapper.getComponent({ name: 'sw-finance-transfer-create-modal' });
+        expect(modal.attributes('source-uses-approval-flow')).toBe('true');
+    });
+
     it('does not offer reapplication without server eligibility or creator privilege', async () => {
         const { wrapper } = await createWrapper(transfer, () => false, {}, { status: 'rejected', canReapply: true });
         expect(wrapper.find('.sw-finance-transfer-detail__button-reapply').exists()).toBe(false);

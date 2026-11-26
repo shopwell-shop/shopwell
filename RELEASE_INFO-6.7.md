@@ -1115,6 +1115,11 @@ The product detail page has a new "Documents" tab that lists the documents of th
 
 ## API
 
+### Withdraw and reapply transfer approvals
+
+The transfer approval endpoints now accept withdrawal by the initiator while an Approval Flow transfer is pending.
+Reapplying after withdrawal or rejection creates a linked transfer under the currently active release and preserves the original approval history.
+
 ### Installed extensions tell whether they can be removed
 
 Extensions returned by `GET /api/_action/extension/installed` have a new `allowRemove` flag, also available as `ExtensionStruct::isAllowRemove()`.

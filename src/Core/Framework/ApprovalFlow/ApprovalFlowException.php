@@ -152,7 +152,7 @@ class ApprovalFlowException extends HttpException
 
     public static function requestInitiatorRequired(string $requestId): self
     {
-        return new self(Response::HTTP_FORBIDDEN, self::REQUEST_INITIATOR_REQUIRED, 'Only the initiator may retry approval request "{{ requestId }}".', ['requestId' => $requestId]);
+        return new self(Response::HTTP_FORBIDDEN, self::REQUEST_INITIATOR_REQUIRED, 'Only the initiator may act on approval request "{{ requestId }}".', ['requestId' => $requestId]);
     }
 
     public static function invalidRequestForm(string $path, string $reason, ?\Throwable $previous = null): self

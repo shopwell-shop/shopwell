@@ -267,6 +267,11 @@ class ApprovalExecutionStore
         );
     }
 
+    public function withdraw(string $instanceId, string $commandId, Context $context): void
+    {
+        $this->cancelWork($instanceId, null, $commandId, ApprovalTaskCompletionReason::REQUEST_WITHDRAWN, $context);
+    }
+
     private function reject(string $instanceId, string $commandId, Context $context): void
     {
         $this->cancelWork($instanceId, null, $commandId, ApprovalTaskCompletionReason::PROCESS_REJECTED, $context);

@@ -271,7 +271,7 @@
           "Payment transfer"
         ],
         "summary": "Abandon a payout that was never handed to a channel",
-        "description": "The reject of the approval flow. The reason is mandatory: a dead row without one can not be told apart from a mistake, and it is the only audit trail a rejection has. Only a payout in the state created can be abandoned - anything else has been submitted, and cancelling it would mean calling the channel.",
+        "description": "Withdraw a pending payout approval and cancel the transfer before its first payment attempt. For Approval Flow requests an identical withdrawal by the initiator can be retried safely.",
         "operationId": "cancelPaymentTransfer",
         "parameters": [
           {
@@ -632,6 +632,10 @@
                         "null"
                       ]
                     },
+                    "usesApprovalFlow": {
+                      "type": "boolean",
+                      "description": "Present and true for transfers using Approval Flow."
+                    },
                     "canReapply": {
                       "type": "boolean",
                       "description": "Original initiator may create a fresh request after rejection or cancellation, before any payment attempt."
@@ -681,7 +685,8 @@
         "tags": [
           "Payment transfer"
         ],
-        "summary": "Cancel a pending approval as its initiator",
+        "summary": "Withdraw a pending approval as its initiator",
+        "description": "Closes the outstanding approval tasks and cancels the transfer without contacting the payout provider.",
         "operationId": "cancelPaymentTransferApproval",
         "responses": {
           "200": {
@@ -772,6 +777,10 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "usesApprovalFlow": {
+                      "type": "boolean",
+                      "description": "Present and true for transfers using Approval Flow."
                     },
                     "canReapply": {
                       "type": "boolean",
@@ -1178,7 +1187,7 @@
           "Payment transfer"
         ],
         "summary": "Edit and reapply a refused or withdrawn payout",
-        "description": "Only the original initiator with payment_transfer:create may reapply a rejected or canceled approval before any payment attempt. Uses the currently configured release and a new outNo, preserving the original request. The new approval snapshot records the authoritative original transfer reference. Retries with the same outNo return the same new transfer.",
+        "description": "Only the original initiator with payment_transfer:create may reapply a rejected or withdrawn approval before any payment attempt. Approval Flow uses the currently active release and a new outNo. The original request is preserved and linked from the new one. Retries with the same outNo and original transfer return the same new transfer.",
         "operationId": "reapplyPaymentTransfer",
         "requestBody": {
           "required": true,

@@ -1,5 +1,5 @@
 /** @sw-package framework */
-import { createWrapper, field, input, select, saveButton, cleanupWrapper } from './create-wrapper';
+import { apps, createWrapper, field, input, select, saveButton, cleanupWrapper } from './create-wrapper';
 
 describe('reapplying a transfer', () => {
     afterEach(() => {
@@ -34,6 +34,26 @@ describe('reapplying a transfer', () => {
         expect(payload.amount).toBe(12501);
         expect(payload.outNo).toMatch(/^[a-zA-Z0-9]{1,30}$/);
         expect(wrapper.emitted('transfer-created')?.[0]).toEqual([{ id: 'new-transfer' }]);
+    });
+
+    it('submits an Approval Flow reapplication without loading the legacy preview', async () => {
+        const { wrapper, reapplyTransfer } = await createWrapper(
+            {
+                getOptions: jest.fn().mockResolvedValue({
+                    apps,
+                    defaultAppId: 'app-1',
+                    workflowAvailable: true,
+                    approvalFlowActive: true,
+                }),
+            },
+            { initialDraft, sourceTransferId: 'old-transfer', sourceUsesApprovalFlow: true },
+        );
+
+        expect(wrapper.find('.preview-probe').exists()).toBe(false);
+        await saveButton(wrapper).trigger('click');
+        await flushPromises();
+
+        expect(reapplyTransfer).toHaveBeenCalledWith('old-transfer', expect.objectContaining({ amount: 12345 }));
     });
 
     it('requires reselecting an unavailable account instead of silently using another account', async () => {

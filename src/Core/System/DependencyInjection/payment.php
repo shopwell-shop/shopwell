@@ -737,6 +737,8 @@ return static function (ContainerConfigurator $container): void {
         service(PaymentTransferPresenter::class),
         service('event_dispatcher'),
         service(PaymentTransferApprovalResultVerifier::class),
+        service(PaymentTransferApprovalRequestStore::class),
+        service(ApprovalRequestService::class),
     ])->tag('kernel.event_listener', ['event' => WorkflowRequestCatalogueEvent::class, 'method' => 'restrictRequestCatalogue']);
     $services->set(PaymentTransferApprovalBooking::class)->args([
         service(Connection::class),
@@ -746,10 +748,12 @@ return static function (ContainerConfigurator $container): void {
         service(PaymentTransferApprovalRequestStore::class),
         service(PaymentTransferApprovalService::class),
         service(PaymentTransferApprovalRequestService::class),
+        service(PaymentTransferService::class),
     ]);
     $services->set(PaymentTransferApprovalView::class)->args([
         service('approval_flow_request.repository'),
         service('payment_transfer_approval_result.repository'),
+        service(PaymentTransferApprovalRequestStore::class),
     ]);
     $services->set(PaymentTransferWriteProtection::class)->tag('kernel.event_subscriber');
 

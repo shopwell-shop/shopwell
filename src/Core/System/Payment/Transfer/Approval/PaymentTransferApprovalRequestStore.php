@@ -4,9 +4,11 @@ namespace Shopwell\Core\System\Payment\Transfer\Approval;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
@@ -58,15 +60,16 @@ class PaymentTransferApprovalRequestStore
     }
 
     /**
-     * A missing outcome means the new approval has not delivered its business decision yet.
+     * Read the approval under the transfer lock. An outcome is present only after delivery.
      *
-     * @return array{revision: string, outcome: ApprovalOutcome|null}|null
+     * @return array{requestId: string, initiatorId: string, revision: string, status: ApprovalInstanceStatus, outcome: ApprovalOutcome|null}|null
      */
     public function getApproval(string $transferId): ?array
     {
         $row = $this->connection->fetchAssociative(
-            'SELECT request.business_revision, result.outcome FROM payment_transfer_approval_request evidence
+            'SELECT evidence.request_id, request.initiator_id, request.business_revision, instance.status, result.outcome FROM payment_transfer_approval_request evidence
              INNER JOIN approval_flow_request request ON request.id = evidence.request_id
+             INNER JOIN approval_flow_instance instance ON instance.id = request.instance_id
              LEFT JOIN payment_transfer_approval_result result ON result.id = evidence.id AND result.request_id = evidence.request_id
              WHERE evidence.id = :id LOCK IN SHARE MODE',
             ['id' => Uuid::fromHexToBytes($transferId)],
@@ -75,7 +78,21 @@ class PaymentTransferApprovalRequestStore
             return null;
         }
 
-        return ['revision' => $row['business_revision'], 'outcome' => $row['outcome'] === null ? null : ApprovalOutcome::from($row['outcome'])];
+        return [
+            'requestId' => Uuid::fromBytesToHex($row['request_id']),
+            'initiatorId' => Uuid::fromBytesToHex($row['initiator_id']),
+            'revision' => $row['business_revision'],
+            'status' => ApprovalInstanceStatus::from($row['status']),
+            'outcome' => $row['outcome'] === null ? null : ApprovalOutcome::from($row['outcome']),
+        ];
+    }
+
+    /**
+     * @return array{id: string, transferNo: string}|null
+     */
+    public function previousTransfer(string $transferId, Context $context): ?array
+    {
+        return $this->requests->search(new Criteria([$transferId]), $context)->first()?->snapshot['previousTransfer'] ?? null;
     }
 
     /**

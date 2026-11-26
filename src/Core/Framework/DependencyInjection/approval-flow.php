@@ -35,6 +35,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterApprovalNodeHand
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterEndNodeHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterStartNodeHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\StartInstanceHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\WithdrawInstanceHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffectValidator;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\ApprovalExecutor;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Executor\EndExecutor;
@@ -196,6 +197,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(StartInstanceHandler::class)->args([
         service(ApprovalExecutionStore::class), service(ApprovalFlowExecutor::class), service(ApprovalReleaseLoader::class),
     ]);
+    $services->set(WithdrawInstanceHandler::class)->args([service(ApprovalExecutionStore::class)]);
     foreach ([EnterStartNodeHandler::class, EnterApprovalNodeHandler::class, EnterEndNodeHandler::class] as $handler) {
         $services->set($handler)->args([
             service(ApprovalExecutionStore::class), service(ApprovalFlowExecutor::class),
@@ -218,6 +220,7 @@ return static function (ContainerConfigurator $container): void {
             service(ApprovalInstanceWriteGuard::class),
             [
                 ApprovalInstanceStore::START => service(StartInstanceHandler::class),
+                ApprovalInstanceStore::WITHDRAW => service(WithdrawInstanceHandler::class),
                 ApprovalInstanceStore::ENTER_START => service(EnterStartNodeHandler::class),
                 ApprovalInstanceStore::ENTER_APPROVAL => service(EnterApprovalNodeHandler::class),
                 ApprovalInstanceStore::ADVANCE_APPROVAL => service(AdvanceApprovalHandler::class),

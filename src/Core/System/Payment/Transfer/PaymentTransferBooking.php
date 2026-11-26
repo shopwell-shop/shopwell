@@ -77,7 +77,7 @@ final class PaymentTransferBooking
      *
      * @throws PaymentException
      */
-    public function book(PaymentTransferDraft $draft): PaymentTransferEntity
+    public function book(PaymentTransferDraft $draft, ?string $newTransferId = null): PaymentTransferEntity
     {
         $app = $this->resolveApp($draft->paymentAppId);
 
@@ -105,7 +105,8 @@ final class PaymentTransferBooking
                 currency: $currency,
                 metadata: $draft->note === null ? null : ['note' => $draft->note],
                 accountId: $draft->accountId,
-            )
+            ),
+            $newTransferId,
         );
     }
 

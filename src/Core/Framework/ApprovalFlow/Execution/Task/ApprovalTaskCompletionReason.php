@@ -14,4 +14,5 @@ final class ApprovalTaskCompletionReason
     public const GROUP_RESOLVED = 'core:group-resolved';
     public const SCOPE_RESOLVED = 'core:scope-resolved';
     public const PROCESS_REJECTED = 'core:process-rejected';
+    public const REQUEST_WITHDRAWN = 'core:request-withdrawn';
 }

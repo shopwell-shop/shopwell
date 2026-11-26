@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
+use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
@@ -36,6 +37,7 @@ use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalException;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
+use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultVerifier;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
@@ -242,6 +244,8 @@ class PaymentTransferApprovalServiceTest extends TestCase
             $container->get(PaymentTransferPresenter::class),
             $container->get('event_dispatcher'),
             $container->get(PaymentTransferApprovalResultVerifier::class),
+            $container->get(PaymentTransferApprovalRequestStore::class),
+            $container->get(ApprovalRequestService::class),
         );
     }
 

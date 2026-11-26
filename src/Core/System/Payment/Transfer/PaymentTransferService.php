@@ -89,7 +89,7 @@ final class PaymentTransferService
      *
      * @throws PaymentException
      */
-    public function create(PaymentAppEntity $app, PaymentTransferRequest $request): PaymentTransferEntity
+    public function create(PaymentAppEntity $app, PaymentTransferRequest $request, ?string $newTransferId = null): PaymentTransferEntity
     {
         if ($request->amount <= 0) {
             throw PaymentTransferException::transferAmountInvalid();
@@ -107,7 +107,7 @@ final class PaymentTransferService
             return $this->replay($existing, $request);
         }
 
-        return $this->accountLock->transaction(function () use ($app, $request): PaymentTransferEntity {
+        return $this->accountLock->transaction(function () use ($app, $request, $newTransferId): PaymentTransferEntity {
             $resolved = $this->configResolver->resolve($app, $request->channel, $request->currency, runtimeParams: $request->channelParams, accountId: $request->accountId);
             $this->accountLock->validateConfiguration($resolved);
             if ($resolved->provider->technicalName !== $request->provider) {
@@ -130,7 +130,7 @@ final class PaymentTransferService
             $this->cipher->decryptValue($recipient->identityValue);
 
             $now = $this->clock->now();
-            $id = Uuid::randomHex();
+            $id = $newTransferId ?? Uuid::randomHex();
 
             $row = [
                 'id' => $id,

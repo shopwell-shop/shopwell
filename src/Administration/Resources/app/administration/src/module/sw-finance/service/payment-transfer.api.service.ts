@@ -378,6 +378,7 @@ export type TransferApproval = {
     detailRoute: { name: string; params: { id: string } } | null;
     canCancel: boolean;
     canReapply: boolean;
+    usesApprovalFlow?: boolean;
     previousTransfer: { id: string; transferNo: string } | null;
     recipientLabel: string | null;
     paymentAccountLabel: string | null;

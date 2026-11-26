@@ -14,7 +14,6 @@ use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
-use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
@@ -268,8 +267,7 @@ class PaymentTransferController
     public function reapply(string $id, #[MapRequestPayload] PaymentTransferDraft $draft, Context $context): JsonResponse
     {
         $app = $this->booking->resolveApp($draft->paymentAppId);
-        $replayed = $draft->outNo !== null && $this->transferService->getByOutNo($app, $draft->outNo) !== null;
-        $transfer = $this->approvals->reapply($id, $draft, $context);
+        ['transfer' => $transfer, 'replayed' => $replayed] = $this->approvalBooking->reapply($id, $draft, $context);
 
         return new JsonResponse(['transfer' => $this->presenter->transfer($transfer, $app), 'replayed' => $replayed], $replayed ? JsonResponse::HTTP_OK : JsonResponse::HTTP_CREATED);
     }
@@ -364,13 +362,6 @@ class PaymentTransferController
     {
         $reason = $this->rejectReason($request);
 
-        $transfer = $this->transferService->getById($id);
-        $state = $transfer->statusMachineState?->getTechnicalName();
-
-        if ($state !== PaymentTransferStates::STATE_CREATED) {
-            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
-        }
-
         $this->approvals->cancel($id, $reason, $context);
 
         $after = $this->transferService->getById($id);
@@ -431,7 +422,10 @@ class PaymentTransferController
     #[Route(path: '/api/_action/payment/transfers/{id}/approval', name: 'api.action.payment.transfer.approval', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read']], methods: [Request::METHOD_GET])]
     public function approval(string $id, Context $context): JsonResponse
     {
-        return new JsonResponse($this->approvalView->detail($id, $context) + $this->approvals->status($id, $context));
+        $transfer = $this->transferService->getById($id);
+        $approval = $this->approvalView->detail($transfer, $context);
+
+        return new JsonResponse($approval === [] ? $this->approvals->status($id, $context) : $approval);
     }
 
     #[Route(path: '/api/_action/payment/transfers/{id}/approval/cancel', name: 'api.action.payment.transfer.approval.cancel', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create']], methods: [Request::METHOD_POST])]
@@ -439,7 +433,7 @@ class PaymentTransferController
     {
         $this->approvals->cancel($id, $this->rejectReason($request), $context);
 
-        return new JsonResponse($this->approvals->status($id, $context));
+        return $this->approval($id, $context);
     }
 
     /**
