@@ -45,7 +45,7 @@ final class ParallelApprovalFixture
     /**
      * @param list<string> $outputs
      */
-    public static function graph(string $reviewerId, array $outputs = ['left', 'right'], int $minimum = 0, bool $nested = false, bool $reuseBoundary = false, bool $escapeBoundary = false): string
+    public static function graph(string $reviewerId, array $outputs = ['left', 'right'], int $minimum = 0, bool $nested = false, bool $reuseBoundary = false, bool $escapeBoundary = false, bool $secondReviews = false): string
     {
         $approval = ['assignees' => [['kind' => 'core:users', 'userIds' => [$reviewerId]]], 'policy' => ['kind' => 'core:all', 'reject' => 'veto'], 'fields' => [], 'emptyAssignees' => 'incident'];
         $nodes = [
@@ -60,6 +60,15 @@ final class ParallelApprovalFixture
             self::edge('start', 'fork'), self::edge('fork', 'finance', 'left'), self::edge('fork', 'manager', 'right'),
             self::edge('finance', 'join'), self::edge('manager', 'join'), self::edge('join', 'end'),
         ];
+
+        if ($secondReviews) {
+            foreach (['finance' => 3, 'manager' => 4] as $branch => $edgeIndex) {
+                $review = $branch . '-second';
+                $nodes[] = self::node($review, 'core:approval', $approval, ['in' => 'input', 'out' => 'output']);
+                $connections[$edgeIndex] = self::edge($branch, $review);
+                $connections[] = self::edge($review, 'join');
+            }
+        }
 
         if ($escapeBoundary) {
             $connections[3] = self::edge('finance', 'end');

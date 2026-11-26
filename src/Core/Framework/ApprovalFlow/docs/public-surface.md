@@ -376,6 +376,7 @@ Implementations must accept the context argument; the development baseline does 
 
 `ApprovalOutcome` currently represents the approved/rejected verdict used by personal decisions, group evaluation and the final approval result.
 Transfer, return, add-sign, withdrawal and timeout recovery require their own command, task-plan and lifecycle semantics; they are not additional verdicts.
+
 Group policy aggregation and task activation order are separate responsibilities; the current policy seam does not implement sequential activation.
 
 The current runtime implements serial progression, conditional selection and scoped branch/join coordination.
@@ -383,6 +384,18 @@ Child-process waiting, external/timer signals, dynamic task-plan revisions and g
 `Withdrawn` and `Terminated` are currently enum values without corresponding runtime commands.
 Result recording currently follows a verdict, so a future withdrawal or termination command must also define its closing fact, pending-work cancellation and business delivery contract.
 Previously delivered verdicts remain immutable; later business reversal requires an explicitly related process or compensation fact.
+
+### Returning an approval task
+
+Use `GET /api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/return-targets` to find the previously approved reviews that the task can reopen.
+Submit the selected `targetExecutionId` with `commandId`, `expectedVersion` and a return reason to the task's `POST .../return` action.
+The active assignee can reopen an earlier review on the active path in the same branch and scope generation.
+The operation preserves recorded opinions, cancels remaining tasks in the current review and opens fresh tasks using the instance's published release.
+Request detail exposes the committed return in `returns`.
+
+A Symfony event subscriber can handle `ApprovalReturnTargetsEvent` and call `restrictTo()` with the allowed execution IDs.
+The event runs for target listing and for the locked command, so listeners must apply the same rules without writing business state.
+Each listener can remove candidates from the current list.
 
 ## Scope execution intents and snapshots
 

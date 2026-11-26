@@ -10,6 +10,8 @@ export type ApprovalStatus = 'draft' | 'running' | 'suspended' | 'completed' | '
 /** @private */
 export type ApprovalOutcome = 'approved' | 'rejected';
 /** @private */
+export type ApprovalTaskAction = ApprovalOutcome | 'return';
+/** @private */
 export type FormValue = string | number | boolean | null | FormValue[] | { [key: string]: FormValue };
 
 /** @private */
@@ -38,7 +40,7 @@ export interface ApprovalDetail {
         id: string;
         nodeId: string;
         sequence: number;
-        status: 'waiting' | 'awaiting_approval' | 'completed';
+        status: 'waiting' | 'awaiting_approval' | 'awaiting_signal' | 'completed' | 'cancelled';
         outcome: ApprovalOutcome | null;
     }[];
     tasks: {
@@ -46,6 +48,13 @@ export interface ApprovalDetail {
         executionId: string;
         assigneeId: string;
         status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+    }[];
+    returns: {
+        taskId: string;
+        targetExecutionId: string;
+        reason: string;
+        returnedAt: string | null;
+        aggregateVersion: number;
     }[];
     decisions: {
         taskId: string;
@@ -63,6 +72,21 @@ export interface ApprovalDecision {
     commandId: string;
     expectedVersion: number;
     outcome: ApprovalOutcome;
+    reason: string;
+}
+
+/** @private */
+export interface ApprovalReturnTarget {
+    executionId: string;
+    nodeId: string;
+    sequence: number;
+}
+
+/** @private */
+export interface ApprovalReturn {
+    commandId: string;
+    expectedVersion: number;
+    targetExecutionId: string;
     reason: string;
 }
 
@@ -106,6 +130,26 @@ export default class ApprovalFlowApiService extends ApiService {
         return this.httpClient
             .post<ApprovalDecisionReceipt>(
                 `/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/decide`,
+                command,
+                { headers: this.getBasicHeaders() },
+            )
+            .then((response) => response.data);
+    }
+
+    returnTargets(instanceId: string, taskId: string): Promise<ApprovalReturnTarget[]> {
+        return this.httpClient
+            .get<{
+                data: ApprovalReturnTarget[];
+            }>(`/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/return-targets`, {
+                headers: this.getBasicHeaders(),
+            })
+            .then((response) => response.data.data);
+    }
+
+    returnTask(instanceId: string, taskId: string, command: ApprovalReturn): Promise<ApprovalDecisionReceipt> {
+        return this.httpClient
+            .post<ApprovalDecisionReceipt>(
+                `/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/return`,
                 command,
                 { headers: this.getBasicHeaders() },
             )

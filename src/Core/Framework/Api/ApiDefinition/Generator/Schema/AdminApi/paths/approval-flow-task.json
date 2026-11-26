@@ -66,6 +66,161 @@
                     }
                 }
             }
+        },
+        "/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/return-targets": {
+            "get": {
+                "summary": "List available return targets for a pending approval task",
+                "description": "Only the active assignee may list targets. A target is an approved execution on the active review path in the same branch and scope generation.",
+                "operationId": "listApprovalReturnTargets",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    },
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Available return targets.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "executionId",
+                                                    "nodeId",
+                                                    "sequence"
+                                                ],
+                                                "properties": {
+                                                    "executionId": {
+                                                        "type": "string",
+                                                        "pattern": "^[0-9a-fA-F]{32}$"
+                                                    },
+                                                    "nodeId": {
+                                                        "type": "string"
+                                                    },
+                                                    "sequence": {
+                                                        "type": "integer",
+                                                        "minimum": 1
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed input"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Decision privilege or active personal task assignment required"
+                    },
+                    "404": {
+                        "description": "Instance or task not found"
+                    },
+                    "409": {
+                        "description": "Version, task state or command identity conflict"
+                    }
+                }
+            }
+        },
+        "/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/return": {
+            "post": {
+                "summary": "Return a pending approval task to an earlier review",
+                "description": "Closes the current approval group and opens a fresh review at the selected historical target. Retry an uncertain response with the identical command ID, expected version, target and reason.",
+                "operationId": "returnApprovalTask",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    },
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApprovalReturnRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Committed return receipt.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalDecisionReceipt"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed input"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Decision privilege or active personal task assignment required"
+                    },
+                    "404": {
+                        "description": "Instance or task not found"
+                    },
+                    "409": {
+                        "description": "Version, task state, return target or command identity conflict"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -131,6 +286,35 @@
                     },
                     "outcome": {
                         "type": "null"
+                    }
+                }
+            },
+            "ApprovalReturnRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "commandId",
+                    "expectedVersion",
+                    "targetExecutionId",
+                    "reason"
+                ],
+                "properties": {
+                    "commandId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "expectedVersion": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "targetExecutionId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
                     }
                 }
             }

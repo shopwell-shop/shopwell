@@ -34,6 +34,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\AdvanceApprovalHandle
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterApprovalNodeHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterEndNodeHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\EnterStartNodeHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\ReturnApprovalHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\StartInstanceHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\WithdrawInstanceHandler;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffectValidator;
@@ -212,6 +213,14 @@ return static function (ContainerConfigurator $container): void {
     ];
     $services->set(AdvanceApprovalHandler::class)->args([...$advanceApprovalArgs, false]);
     $services->set('approval_flow.progress_handler', AdvanceApprovalHandler::class)->args([...$advanceApprovalArgs, true]);
+    $services->set(ReturnApprovalHandler::class)->args([
+        service(ApprovalTaskDecisionStore::class),
+        service(ApprovalExecutionStore::class),
+        service(ApprovalReleaseLoader::class),
+        service(ApprovalExecutionPreparation::class),
+        service(ApprovalFlowExecutor::class),
+        service('event_dispatcher'),
+    ]);
     $services->set(ApprovalInstanceStore::class)
         ->args([
             service(Connection::class),
@@ -229,6 +238,7 @@ return static function (ContainerConfigurator $container): void {
             ],
             service(ApprovalTaskDecisionStore::class),
             service(ApprovalResultStore::class),
+            service(ReturnApprovalHandler::class),
         ]);
     $services->set(ApprovalInstanceService::class)
         ->args([service(ApprovalInstanceStore::class)]);

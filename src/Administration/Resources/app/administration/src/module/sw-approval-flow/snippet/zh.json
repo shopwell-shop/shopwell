@@ -41,6 +41,8 @@
             "cancelled": "无需处理"
         },
         "executionStatus": {
+            "awaiting_signal": "等待分支完成",
+            "cancelled": "已取消",
             "waiting": "待进入",
             "awaiting_approval": "待审批",
             "completed": "已完成"
@@ -52,6 +54,7 @@
             "filtered": "没有符合筛选条件的申请"
         },
         "detail": {
+            "returnedTo": "退回至{step}",
             "title": "审批详情",
             "back": "返回审批列表",
             "summary": "申请信息",
@@ -68,16 +71,20 @@
             "notFilled": "未填写"
         },
         "decision": {
+            "return": "退回",
+            "returnTarget": "退回节点",
+            "returnReason": "退回原因",
+            "noReturnTargets": "暂无可退回的节点。",
             "approved": "同意",
             "rejected": "驳回",
             "confirmation": "确认提交本次审批意见，后续流程将由系统继续处理。",
             "reason": "审批意见（选填）",
-            "retryError": "暂时无法确认提交结果，请重试以确认并提交同一条意见。",
+            "retryError": "暂时无法确认提交结果，请重试。",
             "conflict": "审批状态已变化，请刷新申请后再处理。",
             "forbidden": "你已无法处理此任务，请刷新查看最新申请。",
             "unavailable": "任务或提交内容已不可用，请刷新申请。",
-            "saved": "审批意见已保存，后续流程将自动继续。",
-            "reloadError": "审批意见已保存，但详情刷新失败，请重试加载详情。",
+            "saved": "审批操作已提交。",
+            "reloadError": "审批操作已提交，但详情加载失败。",
             "actions": "待你审批"
         },
         "design": {

@@ -30,6 +30,7 @@ computed
   actionableTasks: any  [private]
   backRoute: any  [private]
   formRows: any  [private]
+  history: any  [private]
   steps: any  [private]
 
 methods
@@ -37,8 +38,8 @@ methods
   formValue(value: FormValue): string  [private]
   loadDetail(): Promise<void>  [private]
   onDecisionCompleted(): void  [private]
-  openDecision(taskId: string, outcome: ApprovalOutcome): void  [private]
-  personName(id: string): string  [private]
+  openDecision(taskId: string, action: ApprovalTaskAction): void  [private]
+  personName(id?: string): string  [private]
   refreshAfterDecision(): void  [private]
 
 blocks

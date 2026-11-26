@@ -1,8 +1,25 @@
 /** @sw-package framework */
 import type { PropType } from 'vue';
 import type { HttpError } from 'src/core/factory/http-client.types';
-import type { ApprovalDecision, ApprovalOutcome } from '../../service/approval-flow.api.service';
+import type {
+    ApprovalDecision,
+    ApprovalReturn,
+    ApprovalReturnTarget,
+    ApprovalTaskAction,
+} from '../../service/approval-flow.api.service';
 import template from './sw-approval-flow-decision-modal.html.twig';
+
+type TaskActionInput = Pick<ApprovalDecision, 'outcome' | 'reason'> | Pick<ApprovalReturn, 'targetExecutionId' | 'reason'>;
+type SubmissionFailure = 'conflict' | 'forbidden' | 'unavailable' | 'retryError';
+
+const submissionFailures: Partial<Record<number, SubmissionFailure>> = {
+    400: 'unavailable',
+    401: 'forbidden',
+    403: 'forbidden',
+    404: 'unavailable',
+    409: 'conflict',
+    422: 'unavailable',
+};
 
 /** @private */
 export default Shopwell.Component.wrapComponentConfig({
@@ -14,41 +31,99 @@ export default Shopwell.Component.wrapComponentConfig({
         instanceId: { type: String, required: true },
         taskId: { type: String, required: true },
         expectedVersion: { type: Number, required: true },
-        outcome: { type: String as PropType<ApprovalOutcome>, required: true },
+        action: { type: String as PropType<ApprovalTaskAction>, required: true },
     },
     data(): {
         reason: string;
-        command: ApprovalDecision | null;
+        command: ApprovalDecision | ApprovalReturn | null;
+        targetExecutionId: string | null;
+        targets: ApprovalReturnTarget[];
+        isLoadingTargets: boolean;
         isSubmitting: boolean;
         isActive: boolean;
-        failure: 'conflict' | 'forbidden' | 'unavailable' | 'retryError' | null;
+        failure: SubmissionFailure | null;
     } {
-        return { reason: '', command: null, isSubmitting: false, isActive: true, failure: null };
+        return {
+            reason: '',
+            command: null,
+            targetExecutionId: null,
+            targets: [],
+            isLoadingTargets: false,
+            isSubmitting: false,
+            isActive: true,
+            failure: null,
+        };
     },
     computed: {
+        isReturn(): boolean {
+            return this.action === 'return';
+        },
+        returnOptions() {
+            return this.targets.map((target) => ({
+                value: target.executionId,
+                label: this.$t('sw-approval-flow.detail.step', { number: target.sequence }),
+            }));
+        },
+        actionInput(): TaskActionInput | null {
+            if (this.action !== 'return') {
+                return { outcome: this.action, reason: this.reason };
+            }
+
+            const reason = this.reason.trim();
+            return this.targetExecutionId && reason ? { targetExecutionId: this.targetExecutionId, reason } : null;
+        },
+        canSubmit(): boolean {
+            return !this.isSubmitting && this.actionInput !== null;
+        },
         canRetry(): boolean {
             return this.failure === 'retryError';
         },
+    },
+    mounted() {
+        if (this.isReturn) {
+            void this.loadReturnTargets();
+        }
     },
     beforeUnmount() {
         this.isActive = false;
     },
     methods: {
+        async loadReturnTargets(): Promise<void> {
+            this.isLoadingTargets = true;
+            try {
+                const targets = await this.approvalFlowApiService.returnTargets(this.instanceId, this.taskId);
+                if (this.isActive) {
+                    this.targets = targets;
+                }
+            } catch {
+                if (this.isActive) {
+                    this.failure = 'unavailable';
+                }
+            } finally {
+                if (this.isActive) {
+                    this.isLoadingTargets = false;
+                }
+            }
+        },
         async submit(): Promise<void> {
-            if (this.isSubmitting) {
+            const input = this.actionInput;
+            if (this.isSubmitting || input === null) {
                 return;
             }
-            // A lost response must replay the original command, including its version and opinion.
+            // A lost response must replay the original command, including its version and inputs.
             this.command ??= {
                 commandId: Shopwell.Utils.createId(),
                 expectedVersion: this.expectedVersion,
-                outcome: this.outcome,
-                reason: this.reason,
+                ...input,
             };
             this.isSubmitting = true;
             this.failure = null;
             try {
-                await this.approvalFlowApiService.decide(this.instanceId, this.taskId, this.command);
+                if ('targetExecutionId' in this.command) {
+                    await this.approvalFlowApiService.returnTask(this.instanceId, this.taskId, this.command);
+                } else {
+                    await this.approvalFlowApiService.decide(this.instanceId, this.taskId, this.command);
+                }
                 if (this.isActive) {
                     this.$emit('completed');
                 }
@@ -57,15 +132,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     return;
                 }
                 const status = (error as HttpError | null)?.response?.status;
-                if (status === 409) {
-                    this.failure = 'conflict';
-                } else if (status === 403 || status === 401) {
-                    this.failure = 'forbidden';
-                } else if (status === 400 || status === 404) {
-                    this.failure = 'unavailable';
-                } else {
-                    this.failure = 'retryError';
-                }
+                this.failure = submissionFailures[status ?? 0] ?? 'retryError';
             } finally {
                 if (this.isActive) {
                     this.isSubmitting = false;

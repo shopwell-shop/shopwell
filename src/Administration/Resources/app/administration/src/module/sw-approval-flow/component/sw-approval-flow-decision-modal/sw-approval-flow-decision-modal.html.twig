@@ -1,17 +1,33 @@
 {% block sw_approval_flow_decision_modal %}
 <sw-modal
     variant="small"
-    :title="$t(`sw-approval-flow.decision.${outcome}`)"
+    :title="$t(`sw-approval-flow.decision.${action}`)"
     :closable="!isSubmitting"
     @modal-close="close"
 >
     {% block sw_approval_flow_decision_modal_content %}
-    <p>{{ $t('sw-approval-flow.decision.confirmation') }}</p>
+    <sw-loader v-if="isLoadingTargets" />
+    <p v-else-if="!isReturn">
+        {{ $t('sw-approval-flow.decision.confirmation') }}
+    </p>
+    <mt-select
+        v-else-if="returnOptions.length"
+        v-model="targetExecutionId"
+        :label="$t('sw-approval-flow.decision.returnTarget')"
+        :options="returnOptions"
+        :disabled="command !== null"
+        required
+    />
+    <p v-else-if="!failure">
+        {{ $t('sw-approval-flow.decision.noReturnTargets') }}
+    </p>
     <mt-textarea
+        v-if="!isReturn || returnOptions.length"
         v-model="reason"
-        :label="$t('sw-approval-flow.decision.reason')"
+        :label="$t(isReturn ? 'sw-approval-flow.decision.returnReason' : 'sw-approval-flow.decision.reason')"
         :disabled="command !== null"
         :max-length="1000"
+        :required="isReturn"
     />
     <mt-banner
         v-if="failure"
@@ -32,18 +48,18 @@
             {{ $t('global.default.cancel') }}
         </mt-button>
         <mt-button
-            v-if="!failure || canRetry"
+            v-if="(!failure || canRetry) && (!isReturn || returnOptions.length)"
             data-testid="decision-submit"
-            :variant="outcome === 'rejected' ? 'critical' : 'primary'"
+            :variant="action === 'rejected' ? 'critical' : 'primary'"
             size="small"
             :is-loading="isSubmitting"
-            :disabled="isSubmitting"
+            :disabled="!canSubmit"
             @click="submit"
         >
-            {{ canRetry ? $t('sw-approval-flow.general.retry') : $t(`sw-approval-flow.decision.${outcome}`) }}
+            {{ canRetry ? $t('sw-approval-flow.general.retry') : $t(`sw-approval-flow.decision.${action}`) }}
         </mt-button>
         <mt-button
-            v-else
+            v-else-if="failure"
             data-testid="decision-refresh"
             variant="primary"
             size="small"

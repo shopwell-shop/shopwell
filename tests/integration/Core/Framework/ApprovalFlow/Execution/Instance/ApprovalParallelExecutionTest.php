@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalProgressionRunner;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Event\ApprovalReturnTargetsEvent;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStore;
@@ -104,6 +105,61 @@ class ApprovalParallelExecutionTest extends TestCase
         static::assertSame(0, $this->pendingTasks());
         static::assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
         static::assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_execution WHERE node_id = :node', ['node' => 'join']));
+    }
+
+    public function testReturningAnApprovalReopensOnlyItsBranch(): void
+    {
+        $events = EventHookDispatcher::fromContainer(static::getContainer());
+        $this->startGraph(ParallelApprovalFixture::graph($this->reviewerId, secondReviews: true));
+        $system = Context::createDefaultContext();
+        $finance = $this->vote('finance', 2, ApprovalOutcome::Approved);
+        $this->instances->progress($this->instanceId, $finance, Uuid::randomHex(), 3, $system);
+        $manager = $this->vote('manager', 4, ApprovalOutcome::Approved);
+        $this->instances->progress($this->instanceId, $manager, Uuid::randomHex(), 5, $system);
+
+        $taskId = $this->pendingTask('finance-second')['id'];
+        $sibling = $this->pendingTask('manager-second');
+        $listener = static function (ApprovalReturnTargetsEvent $event) use ($manager): void {
+            $event->restrictTo([$manager]);
+        };
+        $events->on(ApprovalReturnTargetsEvent::class, $listener);
+        static::assertSame([], $this->instances->returnTargets($this->instanceId, $taskId, $this->reviewer));
+        try {
+            $this->instances->returnApproval($this->instanceId, $taskId, Uuid::randomHex(), 6, $finance, 'Check again.', $this->reviewer);
+            static::fail('The listener excluded the finance target.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertSame(ApprovalFlowException::RETURN_TARGET_UNAVAILABLE, $exception->getErrorCode());
+        }
+        $events->off(ApprovalReturnTargetsEvent::class, $listener);
+        static::assertSame([$finance], array_column($this->instances->returnTargets($this->instanceId, $taskId, $this->reviewer), 'executionId'));
+        try {
+            $this->instances->returnApproval($this->instanceId, $taskId, Uuid::randomHex(), 6, $manager, 'Check again.', $this->reviewer);
+            static::fail('A task cannot return to a sibling branch.');
+        } catch (ApprovalFlowException $exception) {
+            static::assertSame(ApprovalFlowException::RETURN_TARGET_UNAVAILABLE, $exception->getErrorCode());
+        }
+
+        $receipt = $this->instances->returnApproval($this->instanceId, $taskId, Uuid::randomHex(), 6, $finance, 'Check again.', $this->reviewer);
+
+        static::assertSame(ApprovalInstanceStatus::Running, $receipt->status);
+        static::assertSame(7, $receipt->aggregateVersion);
+        static::assertSame($sibling, $this->pendingTask('manager-second'));
+        static::assertSame(2, $this->pendingTasks());
+        static::assertSame(ApprovalTaskCompletionReason::RETURNED, $this->connection->fetchOne('SELECT completion_reason FROM approval_flow_task WHERE id = :id', ['id' => Uuid::fromHexToBytes($taskId)]));
+        static::assertSame(2, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_task WHERE status = \'approved\''));
+        static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
+
+        $reopened = $this->vote('finance', 7, ApprovalOutcome::Approved);
+        static::assertNotSame($finance, $reopened);
+        $this->instances->progress($this->instanceId, $reopened, Uuid::randomHex(), 8, $system);
+        $financeSecond = $this->vote('finance-second', 9, ApprovalOutcome::Approved);
+        $waiting = $this->instances->progress($this->instanceId, $financeSecond, Uuid::randomHex(), 10, $system);
+        static::assertSame(ApprovalInstanceStatus::Running, $waiting->status);
+        static::assertSame($sibling, $this->pendingTask('manager-second'));
+        $managerSecond = $this->vote('manager-second', 11, ApprovalOutcome::Approved);
+        $completed = $this->instances->progress($this->instanceId, $managerSecond, Uuid::randomHex(), 12, $system);
+        static::assertSame(ApprovalOutcome::Approved, $completed->outcome);
+        static::assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
     }
 
     public function testOnlyActuallySelectedBranchesBelongToTheJoin(): void
@@ -353,10 +409,23 @@ class ApprovalParallelExecutionTest extends TestCase
 
     private function vote(string $nodeId, int $version, ApprovalOutcome $opinion): string
     {
-        $task = $this->connection->fetchAssociative('SELECT task.id, task.execution_id FROM approval_flow_task task INNER JOIN approval_flow_execution execution ON execution.id = task.execution_id WHERE execution.instance_id = :instance AND execution.node_id = :node', ['instance' => Uuid::fromHexToBytes($this->instanceId), 'node' => $nodeId]);
-        static::assertNotFalse($task);
-        $this->instances->decide($this->instanceId, Uuid::fromBytesToHex($task['id']), Uuid::randomHex(), $version, $opinion, '', $this->reviewer);
+        $task = $this->pendingTask($nodeId);
+        $this->instances->decide($this->instanceId, $task['id'], Uuid::randomHex(), $version, $opinion, '', $this->reviewer);
 
-        return Uuid::fromBytesToHex($task['execution_id']);
+        return $task['executionId'];
+    }
+
+    /**
+     * @return array{id: string, executionId: string}
+     */
+    private function pendingTask(string $nodeId): array
+    {
+        $task = $this->connection->fetchAssociative(
+            'SELECT task.id, task.execution_id FROM approval_flow_task task INNER JOIN approval_flow_execution execution ON execution.id = task.execution_id WHERE execution.instance_id = :instance AND execution.node_id = :node AND task.status = :pending',
+            ['instance' => Uuid::fromHexToBytes($this->instanceId), 'node' => $nodeId, 'pending' => 'pending'],
+        );
+        static::assertNotFalse($task);
+
+        return ['id' => Uuid::fromBytesToHex($task['id']), 'executionId' => Uuid::fromBytesToHex($task['execution_id'])];
     }
 }

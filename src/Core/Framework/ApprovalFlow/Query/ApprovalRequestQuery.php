@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStat
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationCollection;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskCompletionReason;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestEntity;
@@ -38,6 +39,7 @@ use Shopwell\Core\System\User\UserCollection;
  * @phpstan-type RequestSummary array{id: string, title: string, businessType: string, businessId: string, submissionRound: int, instanceId: string, initiatorId: string, initiatorName: string|null, createdAt: string|null, status: string, outcome: string|null, aggregateVersion: int}
  * @phpstan-type ExecutionSummary array{id: string, nodeId: string, sequence: int, status: string, outcome: string|null}
  * @phpstan-type TaskSummary array{id: string, executionId: string, assigneeId: string, status: string}
+ * @phpstan-type ReturnSummary array{taskId: string, targetExecutionId: string, reason: string, returnedAt: string|null, aggregateVersion: int}
  * @phpstan-type DecisionSummary array{taskId: string, nodeId: string, assigneeId: string, decision: string, reason: string, decidedAt: string|null, aggregateVersion: int}
  */
 #[Package('framework')]
@@ -74,12 +76,15 @@ class ApprovalRequestQuery
         if ($view === ApprovalRequestView::Started) {
             $criteria->addFilter(new EqualsFilter('initiatorId', $userId));
         } else {
-            $statuses = $view === ApprovalRequestView::Todo
-                ? [ApprovalTaskStatus::Pending->value]
-                : [ApprovalTaskStatus::Approved->value, ApprovalTaskStatus::Rejected->value];
+            $taskFilter = $view === ApprovalRequestView::Todo
+                ? new EqualsFilter('instance.executions.tasks.status', ApprovalTaskStatus::Pending->value)
+                : new EqualsAnyFilter('instance.executions.tasks.completionReason', [
+                    ApprovalTaskCompletionReason::DECISION,
+                    ApprovalTaskCompletionReason::RETURNED,
+                ]);
             $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_AND, [
                 new EqualsFilter('instance.executions.tasks.assigneeId', $userId),
-                new EqualsAnyFilter('instance.executions.tasks.status', $statuses),
+                $taskFilter,
             ]));
             if ($view === ApprovalRequestView::Todo) {
                 $criteria->addFilter(new EqualsFilter('instance.status', ApprovalInstanceStatus::Running->value));
@@ -102,7 +107,7 @@ class ApprovalRequestQuery
     }
 
     /**
-     * @return array{request: RequestSummary, form: \stdClass, formLabels: \stdClass, participantNames: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>}
+     * @return array{request: RequestSummary, form: \stdClass, formLabels: \stdClass, participantNames: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>, returns: list<ReturnSummary>}
      */
     public function detail(string $requestId, Context $context): array
     {
@@ -125,7 +130,7 @@ class ApprovalRequestQuery
         $executions = $this->executions->search($executionCriteria, $context)->getEntities();
         $operationCriteria = (new Criteria())->addFilter(
             new EqualsFilter('instanceId', $request->getInstanceId()),
-            new EqualsFilter('operation', ApprovalInstanceStore::DECIDE),
+            new EqualsAnyFilter('operation', [ApprovalInstanceStore::DECIDE, ApprovalInstanceStore::RETURN_APPROVAL]),
         );
         $operations = $this->operations->search($operationCriteria, $context)->getEntities();
         $receipts = [];
@@ -136,6 +141,7 @@ class ApprovalRequestQuery
         $executionSummaries = [];
         $tasks = [];
         $decisions = [];
+        $returns = [];
         $assignedNodeIds = [];
         foreach ($executions as $execution) {
             $executionSummaries[] = [
@@ -149,6 +155,21 @@ class ApprovalRequestQuery
                 if ($task->getAssigneeId() === $userId) {
                     $assignedNodeIds[] = $execution->getNodeId();
                 }
+                if ($task->getCompletionReason() === ApprovalTaskCompletionReason::RETURNED) {
+                    $commandId = $task->getCompletionCommandId();
+                    $target = $execution->getReturnTargetId();
+                    \assert($commandId !== null && $target !== null);
+                    $receipt = $receipts[$commandId];
+                    $returns[] = [
+                        'taskId' => $task->getId(),
+                        'targetExecutionId' => $target,
+                        'reason' => $receipt->getReason(),
+                        'returnedAt' => $receipt->getCreatedAt()?->format(\DATE_ATOM),
+                        'aggregateVersion' => $receipt->getAggregateVersion(),
+                    ];
+                    continue;
+                }
+
                 if (!\in_array($task->getStatus(), [ApprovalTaskStatus::Approved, ApprovalTaskStatus::Rejected], true)) {
                     continue;
                 }
@@ -163,6 +184,7 @@ class ApprovalRequestQuery
             }
         }
         usort($decisions, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
+        usort($returns, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
         $instance = $request->getInstance();
         \assert($instance !== null);
         $release = $instance->getRelease();
@@ -183,6 +205,7 @@ class ApprovalRequestQuery
             'executions' => $executionSummaries,
             'tasks' => $tasks,
             'decisions' => $decisions,
+            'returns' => $returns,
         ];
     }
 

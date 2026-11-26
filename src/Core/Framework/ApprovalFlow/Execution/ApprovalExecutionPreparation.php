@@ -2,12 +2,15 @@
 
 namespace Shopwell\Core\Framework\ApprovalFlow\Execution;
 
+use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\ApprovalExecutionCommandContext;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\NodeEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\OpenScopeEffect;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Effect\RequestApprovalEffect;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Event\ApprovalReturnTargetsEvent;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\ApprovalExecutionPlan;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\CreateApprovalTasks;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\ReturnToApproval;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -15,6 +18,8 @@ use Shopwell\Core\Framework\Log\Package;
  * Prepares current facts and verified entry output before invoking the pure planner.
  *
  * @internal
+ *
+ * @phpstan-import-type Target from ApprovalReturnTargetsEvent
  *
  * @codeCoverageIgnore
  *
@@ -42,20 +47,36 @@ class ApprovalExecutionPreparation
     }
 
     /**
+     * @param Target $target
+     */
+    public function returnToApproval(ApprovalExecutionCommandContext $command, ExecutableApprovalRelease $release, ApprovalExecutionState $source, string $taskId, array $target): ApprovalExecutionPlan
+    {
+        $effect = $this->nodes->enter($release, $target['nodeId'], $this->store->nodeContext($command->instanceId, $source));
+        if (!$effect instanceof RequestApprovalEffect) {
+            throw ApprovalFlowException::invalidNodeProgression($source->id, 'The return target must open an approval group.');
+        }
+
+        return new ApprovalExecutionPlan($source, new ReturnToApproval($taskId, $target['executionId'], $target['nodeId'], $this->approvalTasks($effect)));
+    }
+
+    /**
      * The caller has already admitted this execution and evaluated the exact node entry.
      */
     public function fromEffect(ApprovalExecutionCommandContext $command, ExecutableApprovalRelease $release, ApprovalExecutionState $execution, NodeEffect $effect): ApprovalExecutionPlan
     {
-        $intent = $effect;
-        if ($effect instanceof RequestApprovalEffect) {
-            $configuration = $effect->configuration;
-            $members = $this->assignees->resolveAssignees($configuration);
-            $intent = new CreateApprovalTasks($members, $configuration->policy, $configuration->policyVersion);
-        }
+        $intent = $effect instanceof RequestApprovalEffect ? $this->approvalTasks($effect) : $effect;
         $boundaries = $effect instanceof OpenScopeEffect
             ? $this->store->enclosingScopeBoundaries($command->instanceId, $execution->scopeId)
             : [];
 
         return $this->planner->enter($release->graph, $execution, $intent, $boundaries);
+    }
+
+    private function approvalTasks(RequestApprovalEffect $effect): CreateApprovalTasks
+    {
+        $configuration = $effect->configuration;
+        $assignees = $this->assignees->resolveAssignees($configuration);
+
+        return new CreateApprovalTasks($assignees, $configuration->policy, $configuration->policyVersion);
     }
 }

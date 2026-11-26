@@ -41,6 +41,8 @@
             "cancelled": "No longer required"
         },
         "executionStatus": {
+            "awaiting_signal": "Waiting for branches",
+            "cancelled": "Cancelled",
             "waiting": "Waiting to start",
             "awaiting_approval": "Awaiting review",
             "completed": "Completed"
@@ -52,6 +54,7 @@
             "filtered": "No requests match these filters"
         },
         "detail": {
+            "returnedTo": "Returned to {step}",
             "title": "Approval details",
             "back": "Back to approvals",
             "summary": "Request information",
@@ -68,16 +71,20 @@
             "notFilled": "Not provided"
         },
         "decision": {
+            "return": "Return",
+            "returnTarget": "Return to",
+            "returnReason": "Reason for return",
+            "noReturnTargets": "There are no earlier steps available for return.",
             "approved": "Approve",
             "rejected": "Reject",
             "confirmation": "Confirm your opinion for this task. The remaining approval steps continue separately.",
             "reason": "Comment (optional)",
-            "retryError": "The result could not be confirmed. Retry to check and submit the same opinion.",
+            "retryError": "The result could not be confirmed. Please retry.",
             "conflict": "This approval has changed. Refresh the request before deciding again.",
             "forbidden": "You can no longer decide this task. Refresh to view the current request.",
             "unavailable": "This task or opinion is unavailable. Refresh the request.",
-            "saved": "Your opinion has been saved. The remaining steps will continue automatically.",
-            "reloadError": "Your opinion was saved, but the request could not be reloaded. Retry loading the details.",
+            "saved": "Approval action saved.",
+            "reloadError": "Approval action saved. The details could not be reloaded.",
             "actions": "Your approval tasks"
         },
         "design": {

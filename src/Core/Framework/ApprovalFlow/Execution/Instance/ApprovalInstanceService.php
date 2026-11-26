@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Api\Context\SystemSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Event\ApprovalReturnTargetsEvent;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -13,6 +14,8 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
  * Authorizes personal decisions and delegates internal progression with the caller's Context.
+ *
+ * @phpstan-import-type Target from ApprovalReturnTargetsEvent
  *
  * @internal
  *
@@ -77,15 +80,47 @@ class ApprovalInstanceService
 
     public function decide(string $instanceId, string $taskId, string $commandId, int $expectedVersion, ApprovalOutcome $outcome, string $reason, Context $context): ApprovalInstanceCommandResult
     {
+        $userId = $this->taskActor($context);
+        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($taskId) || !Uuid::isValid($commandId) || mb_strlen($reason) > 1000) {
+            throw ApprovalFlowException::invalidInstanceCommand('Valid instance, task and command IDs, a positive version and a reason of at most 1000 characters are required.');
+        }
+        $actorJson = json_encode(['source' => 'admin-api', 'userId' => $userId, 'integrationId' => null], \JSON_THROW_ON_ERROR);
+
+        return $this->store->decide($instanceId, $taskId, $commandId, $expectedVersion, $outcome, $reason, $userId, $actorJson, $context);
+    }
+
+    /**
+     * @return list<Target>
+     */
+    public function returnTargets(string $instanceId, string $taskId, Context $context): array
+    {
+        $userId = $this->taskActor($context);
+        if (!Uuid::isValid($instanceId) || !Uuid::isValid($taskId)) {
+            throw ApprovalFlowException::invalidInstanceCommand('Valid instance and task IDs are required.');
+        }
+
+        return $this->store->returnTargets($instanceId, $taskId, $userId, $context);
+    }
+
+    public function returnApproval(string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $targetExecutionId, string $reason, Context $context): ApprovalInstanceCommandResult
+    {
+        $userId = $this->taskActor($context);
+        $reason = trim($reason);
+        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($taskId) || !Uuid::isValid($commandId)
+            || !Uuid::isValid($targetExecutionId) || $reason === '' || mb_strlen($reason) > 1000) {
+            throw ApprovalFlowException::invalidInstanceCommand('Valid instance, task, command and target IDs, a positive version and a non-blank reason of at most 1000 characters are required.');
+        }
+
+        return $this->store->returnApproval($instanceId, $taskId, $commandId, $expectedVersion, $targetExecutionId, $reason, $userId, $context);
+    }
+
+    private function taskActor(Context $context): string
+    {
         $source = $context->getSource();
         if (!$source instanceof AdminApiSource || !$source->isAllowed(self::DECIDE_PRIVILEGE) || $source->getUserId() === null || $source->getIntegrationId() !== null) {
             throw ApprovalFlowException::missingPrivileges([self::DECIDE_PRIVILEGE]);
         }
-        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($taskId) || !Uuid::isValid($commandId) || mb_strlen($reason) > 1000) {
-            throw ApprovalFlowException::invalidInstanceCommand('Valid instance, task and command IDs, a positive version and a reason of at most 1000 characters are required.');
-        }
-        $actorJson = json_encode(['source' => 'admin-api', 'userId' => $source->getUserId(), 'integrationId' => null], \JSON_THROW_ON_ERROR);
 
-        return $this->store->decide($instanceId, $taskId, $commandId, $expectedVersion, $outcome, $reason, $source->getUserId(), $actorJson, $context);
+        return $source->getUserId();
     }
 }

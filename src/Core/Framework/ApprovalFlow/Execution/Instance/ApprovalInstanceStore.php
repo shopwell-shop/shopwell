@@ -10,6 +10,8 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\ApprovalExecutionCommandContext;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\ApprovalExecutionCommandHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Command\ReturnApprovalHandler;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Event\ApprovalReturnTargetsEvent;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationCollection;
@@ -23,6 +25,8 @@ use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
+ * @phpstan-import-type Target from ApprovalReturnTargetsEvent
+ *
  * @internal
  *
  * @codeCoverageIgnore
@@ -49,6 +53,8 @@ class ApprovalInstanceStore
 
     public const ENTER_APPROVAL = 'enter-approval';
 
+    public const RETURN_APPROVAL = 'return-approval';
+
     public const DECIDE = 'decide';
 
     public const ADVANCE_APPROVAL = 'advance-approval';
@@ -73,6 +79,7 @@ class ApprovalInstanceStore
         private readonly array $executionCommands,
         private readonly ApprovalTaskDecisionStore $decisions,
         private readonly ApprovalResultStore $results,
+        private readonly ReturnApprovalHandler $returns,
     ) {
     }
 
@@ -217,6 +224,52 @@ class ApprovalInstanceStore
 
                 return ApprovalInstanceStatus::Running;
             },
+            fn () => $this->decisions->requireAssignee($instanceId, $taskId, $userId),
+        );
+    }
+
+    /**
+     * @return list<Target>
+     */
+    public function returnTargets(string $instanceId, string $taskId, string $userId, Context $context): array
+    {
+        return RetryableTransaction::transactional($this->connection, function () use ($instanceId, $taskId, $userId, $context): array {
+            $instance = $this->lockInstance($instanceId);
+            $this->decisions->requireAssignee($instanceId, $taskId, $userId);
+            if ($instance['status'] !== ApprovalInstanceStatus::Running) {
+                return [];
+            }
+
+            return $this->returns->targets($instanceId, $instance['releaseId'], $taskId, $context);
+        });
+    }
+
+    public function returnApproval(string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $targetExecutionId, string $reason, string $userId, Context $context): ApprovalInstanceCommandResult
+    {
+        $actorJson = $this->actorJson($context);
+        $requestHash = Hasher::hash([
+            'operation' => self::RETURN_APPROVAL,
+            'taskId' => $taskId,
+            'targetExecutionId' => $targetExecutionId,
+            'expectedVersion' => $expectedVersion,
+            'reason' => $reason,
+            'actorJson' => $actorJson,
+        ], 'sha256');
+
+        return $this->runCommand(
+            $instanceId,
+            $commandId,
+            $expectedVersion,
+            self::RETURN_APPROVAL,
+            $requestHash,
+            $reason,
+            $actorJson,
+            $context,
+            fn (string $releaseId): ApprovalInstanceStatus => $this->returns->execute(
+                new ApprovalExecutionCommandContext($instanceId, $releaseId, $commandId, $context),
+                $taskId,
+                $targetExecutionId,
+            ),
             fn () => $this->decisions->requireAssignee($instanceId, $taskId, $userId),
         );
     }

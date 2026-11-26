@@ -1,10 +1,10 @@
 /** @sw-package framework */
 import type { HttpError } from 'src/core/factory/http-client.types';
-import type { ApprovalDetail, ApprovalOutcome, FormValue } from '../../service/approval-flow.api.service';
+import type { ApprovalDetail, ApprovalTaskAction, FormValue } from '../../service/approval-flow.api.service';
 import template from './sw-approval-flow-detail.html.twig';
 import './sw-approval-flow-detail.scss';
 
-type DecisionTarget = { instanceId: string; taskId: string; expectedVersion: number; outcome: ApprovalOutcome };
+type TaskActionTarget = { instanceId: string; taskId: string; expectedVersion: number; action: ApprovalTaskAction };
 
 type FormRow = { path: string; value: FormValue };
 
@@ -29,7 +29,7 @@ export default Shopwell.Component.wrapComponentConfig({
         isLoading: boolean;
         loadError: string | null;
         loadRevision: number;
-        decisionTarget: DecisionTarget | null;
+        decisionTarget: TaskActionTarget | null;
         decisionSaved: boolean;
     } {
         return {
@@ -76,6 +76,32 @@ export default Shopwell.Component.wrapComponentConfig({
                 };
             });
         },
+        history() {
+            if (!this.detail) {
+                return [];
+            }
+            const assignees = new Map(this.detail.tasks.map((task) => [task.id, task.assigneeId]));
+            const sequences = new Map(this.detail.executions.map((execution) => [execution.id, execution.sequence]));
+            const opinions = this.detail.decisions.map((decision) => ({
+                taskId: decision.taskId,
+                assigneeId: decision.assigneeId,
+                label: this.$t(`sw-approval-flow.taskStatus.${decision.decision}`),
+                reason: decision.reason,
+                recordedAt: decision.decidedAt,
+                aggregateVersion: decision.aggregateVersion,
+            }));
+            const returns = this.detail.returns.map((returned) => ({
+                taskId: returned.taskId,
+                assigneeId: assignees.get(returned.taskId),
+                label: this.$t('sw-approval-flow.detail.returnedTo', {
+                    step: this.$t('sw-approval-flow.detail.step', { number: sequences.get(returned.targetExecutionId) }),
+                }),
+                reason: returned.reason,
+                recordedAt: returned.returnedAt,
+                aggregateVersion: returned.aggregateVersion,
+            }));
+            return [...opinions, ...returns].sort((first, second) => first.aggregateVersion - second.aggregateVersion);
+        },
         steps() {
             if (!this.detail) {
                 return [];
@@ -100,7 +126,7 @@ export default Shopwell.Component.wrapComponentConfig({
         this.loadRevision += 1;
     },
     methods: {
-        openDecision(taskId: string, outcome: ApprovalOutcome): void {
+        openDecision(taskId: string, action: ApprovalTaskAction): void {
             if (!this.detail) {
                 return;
             }
@@ -109,7 +135,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 instanceId: this.detail.request.instanceId,
                 taskId,
                 expectedVersion: this.detail.request.aggregateVersion,
-                outcome,
+                action,
             };
         },
         onDecisionCompleted(): void {
@@ -143,8 +169,8 @@ export default Shopwell.Component.wrapComponentConfig({
                 }
             }
         },
-        personName(id: string): string {
-            return this.detail?.participantNames[id] ?? this.$t('sw-approval-flow.general.deletedUser');
+        personName(id?: string): string {
+            return (id ? this.detail?.participantNames[id] : null) ?? this.$t('sw-approval-flow.general.deletedUser');
         },
         date(value: string | null): string {
             return value

@@ -26,6 +26,7 @@ const detail: ApprovalDetail = {
     participantNames: { author: 'Alice', reviewer: 'Li' },
     executions: [{ id: 'execution', nodeId: 'review', sequence: 2, status: 'awaiting_approval', outcome: null }],
     tasks: [{ id: 'task', executionId: 'execution', assigneeId: 'reviewer', status: 'approved' }],
+    returns: [],
     decisions: [
         {
             taskId: 'task',
@@ -62,8 +63,8 @@ async function createWrapper(load = jest.fn().mockResolvedValue(detail), canDeci
                 'sw-loader': true,
                 'sw-approval-flow-status-badge': true,
                 'sw-approval-flow-decision-modal': {
-                    props: ['taskId', 'outcome'],
-                    template: `<div class="decision-dialog"><span>{{ taskId }}:{{ outcome }}</span><button class="commit-decision" @click="$emit('completed')">Confirm</button></div>`,
+                    props: ['taskId', 'action'],
+                    template: `<div class="decision-dialog"><span>{{ taskId }}:{{ action }}</span><button class="commit-decision" @click="$emit('completed')">Confirm</button></div>`,
                 },
             },
         },
@@ -138,6 +139,43 @@ describe('approval detail', () => {
         const { wrapper } = await createWrapper(jest.fn().mockResolvedValue(pending));
         await wrapper.find('[data-testid="decision-approve"]').trigger('click');
         expect(wrapper.find('.decision-dialog').text()).toContain('task:approved');
+    });
+
+    it('refreshes pending tasks after a return and displays it alongside the past opinion', async () => {
+        const pending: ApprovalDetail = {
+            ...detail,
+            tasks: [
+                ...detail.tasks,
+                { id: 'later', executionId: 'execution', assigneeId: 'reviewer', status: 'pending' },
+            ],
+        };
+        const returned: ApprovalDetail = {
+            ...detail,
+            tasks: [{ ...pending.tasks[0] }, { ...pending.tasks[1], status: 'cancelled' }],
+            returns: [
+                {
+                    taskId: 'later',
+                    targetExecutionId: 'execution',
+                    reason: 'Check the payee.',
+                    returnedAt: null,
+                    aggregateVersion: 4,
+                },
+            ],
+        };
+        const { wrapper, load } = await createWrapper(
+            jest.fn().mockResolvedValueOnce(pending).mockResolvedValueOnce(returned),
+        );
+        await wrapper.find('[data-testid="decision-return"]').trigger('click');
+        expect(wrapper.find('.decision-dialog').text()).toContain('later:return');
+        await wrapper.find('.commit-decision').trigger('click');
+        await flushPromises();
+
+        expect(load).toHaveBeenCalledTimes(2);
+        expect(wrapper.find('[data-testid="decision-return"]').exists()).toBe(false);
+        expect(wrapper.findAll('.sw-approval-flow-detail__decisions li').map((row) => row.find('p').text())).toEqual([
+            'Reviewed the amount.',
+            'Check the payee.',
+        ]);
     });
 
     it.each([

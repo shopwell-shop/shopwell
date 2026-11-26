@@ -46,4 +46,29 @@ class ApprovalTaskController
             $context,
         ));
     }
+
+    #[Route(path: '/api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/return-targets', name: 'api.action.approval_flow.task.return_targets', defaults: [PlatformRequest::ATTRIBUTE_ACL => [ApprovalInstanceService::DECIDE_PRIVILEGE]], methods: [Request::METHOD_GET])]
+    public function returnTargets(string $instanceId, string $taskId, Context $context): JsonResponse
+    {
+        return new JsonResponse(['data' => $this->instances->returnTargets($instanceId, $taskId, $context)]);
+    }
+
+    #[Route(path: '/api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/return', name: 'api.action.approval_flow.task.return', defaults: [PlatformRequest::ATTRIBUTE_ACL => [ApprovalInstanceService::DECIDE_PRIVILEGE]], methods: [Request::METHOD_POST])]
+    public function returnApproval(
+        string $instanceId,
+        string $taskId,
+        #[MapRequestPayload(validationFailedStatusCode: Response::HTTP_BAD_REQUEST)]
+        ApprovalTaskReturnRequest $payload,
+        Context $context,
+    ): JsonResponse {
+        return new JsonResponse($this->instances->returnApproval(
+            $instanceId,
+            $taskId,
+            $payload->commandId,
+            $payload->expectedVersion,
+            $payload->targetExecutionId,
+            $payload->reason,
+            $context,
+        ));
+    }
 }

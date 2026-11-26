@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\ApprovalFlow\Execution\Task;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalExecutionState;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\ApprovalExecutionStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
@@ -18,6 +19,8 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * Commits one personal decision and its group result under the caller's instance lock and transaction.
  *
  * @internal
+ *
+ * @phpstan-type TaskRow array{assignee_id: string, execution_id: string, status: string, release_id: string}
  *
  * @codeCoverageIgnore
  *
@@ -55,18 +58,22 @@ class ApprovalTaskDecisionStore
         }
     }
 
+    public function pendingExecution(string $instanceId, string $taskId): ApprovalExecutionState
+    {
+        return $this->requirePendingExecution($instanceId, $taskId, $this->readTask($instanceId, $taskId));
+    }
+
     public function decide(string $instanceId, string $taskId, string $commandId, ApprovalOutcome $decision, Context $context): void
     {
         $task = $this->readTask($instanceId, $taskId);
-        if (ApprovalTaskStatus::from($task['status']) !== ApprovalTaskStatus::Pending) {
-            throw ApprovalFlowException::taskNotPending($taskId);
+        $execution = $this->requirePendingExecution($instanceId, $taskId, $task);
+        $executionId = $execution->id;
+        $policy = $execution->approvalPolicy;
+        $version = $execution->approvalPolicyVersion;
+        if ($policy === null || $version === null) {
+            throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The execution is missing its approval policy.');
         }
-        $executionId = Uuid::fromBytesToHex($task['execution_id']);
-        $this->executionStore->requireActiveExecution($instanceId, $executionId);
-        if (ApprovalNodeExecutionStatus::from($task['execution_status']) !== ApprovalNodeExecutionStatus::AwaitingApproval || ($task['approval_policy'] === null || $task['approval_policy_version'] === null)) {
-            throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The execution is not awaiting an approval group.');
-        }
-        $this->requireVisibleTask($taskId);
+
         $group = $this->connection->fetchAllAssociative(
             'SELECT id, status FROM approval_flow_task WHERE execution_id = :execution ORDER BY id FOR UPDATE',
             ['execution' => $task['execution_id']],
@@ -81,7 +88,7 @@ class ApprovalTaskDecisionStore
                 $statuses[] = ApprovalTaskStatus::from($member['status']);
             }
         }
-        $outcome = $this->evaluator->evaluate(Uuid::fromBytesToHex($task['release_id']), $task['approval_policy'], $task['approval_policy_version'], $statuses);
+        $outcome = $this->evaluator->evaluate(Uuid::fromBytesToHex($task['release_id']), $policy, $version, $statuses);
         $updates = [['id' => $taskId, 'status' => $decisionStatus->value, 'completionCommandId' => $commandId, 'completionReason' => ApprovalTaskCompletionReason::DECISION]];
         if ($outcome !== null) {
             foreach ($group as $member) {
@@ -105,12 +112,31 @@ class ApprovalTaskDecisionStore
     }
 
     /**
-     * @return array{assignee_id: string, execution_id: string, status: string, execution_status: string, approval_policy: ?string, approval_policy_version: ?string, release_id: string}
+     * @param TaskRow $task
+     */
+    private function requirePendingExecution(string $instanceId, string $taskId, array $task): ApprovalExecutionState
+    {
+        if (ApprovalTaskStatus::from($task['status']) !== ApprovalTaskStatus::Pending) {
+            throw ApprovalFlowException::taskNotPending($taskId);
+        }
+        $executionId = Uuid::fromBytesToHex($task['execution_id']);
+        $execution = $this->executionStore->execution($instanceId, $executionId);
+        $this->executionStore->requireActive($instanceId, $execution);
+        if ($execution->status !== ApprovalNodeExecutionStatus::AwaitingApproval) {
+            throw ApprovalFlowException::invalidApprovalEntry($executionId, 'The execution is not awaiting an approval group.');
+        }
+        $this->requireVisibleTask($taskId);
+
+        return $execution;
+    }
+
+    /**
+     * @return TaskRow
      */
     private function readTask(string $instanceId, string $taskId): array
     {
         $task = $this->connection->fetchAssociative(
-            'SELECT task.assignee_id, task.execution_id, task.status, execution.status AS execution_status, execution.approval_policy, execution.approval_policy_version, instance.release_id
+            'SELECT task.assignee_id, task.execution_id, task.status, instance.release_id
              FROM approval_flow_task task INNER JOIN approval_flow_execution execution ON execution.id = task.execution_id
              INNER JOIN approval_flow_instance instance ON instance.id = execution.instance_id
              WHERE task.id = :task AND execution.instance_id = :instance FOR UPDATE',
@@ -125,9 +151,6 @@ class ApprovalTaskDecisionStore
             'assignee_id' => $task['assignee_id'],
             'execution_id' => $task['execution_id'],
             'status' => $task['status'],
-            'execution_status' => $task['execution_status'],
-            'approval_policy' => $task['approval_policy'],
-            'approval_policy_version' => $task['approval_policy_version'],
             'release_id' => $task['release_id'],
         ];
     }

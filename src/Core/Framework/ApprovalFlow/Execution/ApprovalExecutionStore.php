@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Branch\ApprovalExecutionBranchCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Branch\ApprovalExecutionBranchStatus;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Event\ApprovalReturnTargetsEvent;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceWriteGuard;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
@@ -20,6 +21,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\CreateApprovalTasks;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\MarkExecutionAdvanced;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\OpenScope;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\RejectInstance;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\ReturnToApproval;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Plan\WaitForArrival;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Scope\ApprovalExecutionScopeCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Scope\ApprovalExecutionScopeStatus;
@@ -36,6 +38,8 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 /**
  * Owns locked execution, scope, branch and task facts under the instance command transaction.
  * It does not read the flow graph, invoke node executors or schedule ready work.
+ *
+ * @phpstan-import-type Target from ApprovalReturnTargetsEvent
  *
  * @phpstan-type Scope array{id: string, parentId: ?string, generation: int, joinNodeId: string, status: ApprovalExecutionScopeStatus}
  *
@@ -91,6 +95,8 @@ class ApprovalExecutionStore
                 $this->requestApproval($execution->id, $step, $context);
             } elseif ($step instanceof WaitForArrival) {
                 $this->waitForArrival($execution->id, $context);
+            } elseif ($step instanceof ReturnToApproval) {
+                $this->returnToApproval($instanceId, $execution, $step, $commandId, $context);
             } elseif ($step instanceof RejectInstance) {
                 $this->reject($instanceId, $commandId, $context);
 
@@ -162,11 +168,6 @@ class ApprovalExecutionStore
         }
 
         return $boundaries;
-    }
-
-    public function requireActiveExecution(string $instanceId, string $executionId): void
-    {
-        $this->requireActive($instanceId, $this->execution($instanceId, $executionId));
     }
 
     public function requireActive(string $instanceId, ApprovalExecutionState $execution): void
@@ -267,9 +268,78 @@ class ApprovalExecutionStore
         );
     }
 
+    /**
+     * @return list<Target>
+     */
+    public function returnTargets(string $instanceId, ApprovalExecutionState $source): array
+    {
+        // A return supersedes this lane's history from the selected target through the issuing execution.
+        $rows = $this->connection->fetchAllAssociative(
+            <<<'SQL'
+                SELECT candidate.id, candidate.node_id, candidate.sequence
+                FROM approval_flow_execution candidate
+                WHERE candidate.instance_id = :instance AND candidate.scope_id <=> :scope AND candidate.branch_id <=> :branch
+                  AND candidate.generation = :generation AND candidate.sequence < :sequence AND candidate.advanced = 1
+                  AND candidate.status = :completed AND candidate.outcome = :approved AND candidate.approval_policy IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM approval_flow_execution returned
+                      INNER JOIN approval_flow_execution target ON target.id = returned.return_target_id
+                      WHERE returned.instance_id = candidate.instance_id AND returned.scope_id <=> candidate.scope_id
+                        AND returned.branch_id <=> candidate.branch_id AND returned.generation = candidate.generation
+                        AND candidate.sequence BETWEEN target.sequence AND returned.sequence
+                      FOR UPDATE
+                  )
+                ORDER BY candidate.sequence DESC FOR UPDATE
+                SQL,
+            [
+                'instance' => Uuid::fromHexToBytes($instanceId),
+                'scope' => $source->scopeId === null ? null : Uuid::fromHexToBytes($source->scopeId),
+                'branch' => $source->branchId === null ? null : Uuid::fromHexToBytes($source->branchId),
+                'generation' => $source->generation,
+                'sequence' => $source->sequence,
+                'completed' => ApprovalNodeExecutionStatus::Completed->value,
+                'approved' => ApprovalOutcome::Approved->value,
+            ],
+        );
+
+        $targets = [];
+        foreach ($rows as $row) {
+            if ($row['node_id'] === $source->nodeId) {
+                continue;
+            }
+
+            $targets[$row['node_id']] ??= [
+                'executionId' => Uuid::fromBytesToHex($row['id']),
+                'nodeId' => $row['node_id'],
+                'sequence' => (int) $row['sequence'],
+            ];
+        }
+
+        return array_values($targets);
+    }
+
     public function withdraw(string $instanceId, string $commandId, Context $context): void
     {
         $this->cancelWork($instanceId, null, $commandId, ApprovalTaskCompletionReason::REQUEST_WITHDRAWN, $context);
+    }
+
+    private function returnToApproval(string $instanceId, ApprovalExecutionState $source, ReturnToApproval $return, string $commandId, Context $context): void
+    {
+        $this->cancelPendingTasks(
+            [Uuid::fromHexToBytes($source->id)],
+            $commandId,
+            ApprovalTaskCompletionReason::GROUP_RETURNED,
+            $context,
+            [$return->taskId => ApprovalTaskCompletionReason::RETURNED],
+        );
+        $this->updateExecution($source->id, [
+            'status' => ApprovalNodeExecutionStatus::Cancelled->value,
+            'advanced' => true,
+            'returnTargetId' => $return->targetExecutionId,
+        ], $context);
+        $executionId = $this->createExecution($instanceId, $return->nodeId, null, $source->scopeId, $source->branchId, $source->generation, $context);
+        $this->requestApproval($executionId, $return->tasks, $context);
     }
 
     private function reject(string $instanceId, string $commandId, Context $context): void
@@ -458,17 +528,7 @@ class ApprovalExecutionStore
         );
         $ids = array_column($executions, 'id');
         if ($ids !== []) {
-            $taskRows = $this->connection->fetchFirstColumn(
-                'SELECT id FROM approval_flow_task WHERE execution_id IN (:executions) AND status = :pending FOR UPDATE',
-                ['executions' => $ids, 'pending' => ApprovalTaskStatus::Pending->value],
-                ['executions' => ArrayParameterType::BINARY],
-            );
-            if ($taskRows !== []) {
-                $updates = array_map(static fn (string $id): array => ['id' => Uuid::fromBytesToHex($id), 'status' => ApprovalTaskStatus::Cancelled->value, 'completionCommandId' => $commandId, 'completionReason' => $reason], $taskRows);
-                $this->writeGuard->write($context, function (Context $writeContext) use ($updates): void {
-                    $this->tasks->update($updates, $writeContext);
-                });
-            }
+            $this->cancelPendingTasks($ids, $commandId, $reason, $context);
             foreach ($executions as $execution) {
                 $updates = ['advanced' => true];
                 if ($execution['status'] !== ApprovalNodeExecutionStatus::Completed->value) {
@@ -502,6 +562,36 @@ class ApprovalExecutionStore
                 });
             }
         }
+    }
+
+    /**
+     * @param list<string> $executionIds Binary execution UUIDs
+     * @param array<string, string> $taskReasons
+     */
+    private function cancelPendingTasks(array $executionIds, string $commandId, string $reason, Context $context, array $taskReasons = []): void
+    {
+        $taskRows = $this->connection->fetchFirstColumn(
+            'SELECT id FROM approval_flow_task WHERE execution_id IN (:executions) AND status = :pending FOR UPDATE',
+            ['executions' => $executionIds, 'pending' => ApprovalTaskStatus::Pending->value],
+            ['executions' => ArrayParameterType::BINARY],
+        );
+        if ($taskRows === []) {
+            return;
+        }
+
+        $updates = [];
+        foreach ($taskRows as $row) {
+            $id = Uuid::fromBytesToHex($row);
+            $updates[] = [
+                'id' => $id,
+                'status' => ApprovalTaskStatus::Cancelled->value,
+                'completionCommandId' => $commandId,
+                'completionReason' => $taskReasons[$id] ?? $reason,
+            ];
+        }
+        $this->writeGuard->write($context, function (Context $writeContext) use ($updates): void {
+            $this->tasks->update($updates, $writeContext);
+        });
     }
 
     /**

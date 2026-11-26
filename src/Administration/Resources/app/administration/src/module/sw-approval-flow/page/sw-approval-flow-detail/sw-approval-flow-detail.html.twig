@@ -112,6 +112,14 @@
                         >
                             {{ $t('sw-approval-flow.decision.rejected') }}
                         </mt-button>
+                        <mt-button
+                            data-testid="decision-return"
+                            variant="secondary"
+                            size="small"
+                            @click="openDecision(task.id, 'return')"
+                        >
+                            {{ $t('sw-approval-flow.decision.return') }}
+                        </mt-button>
                     </div>
                 </mt-card>
                 {% endblock %}
@@ -146,15 +154,15 @@
                     position-identifier="sw-approval-flow-detail-decisions"
                 >
                     <ol
-                        v-if="detail.decisions.length"
+                        v-if="history.length"
                         class="sw-approval-flow-detail__decisions"
                     >
                         <li
-                            v-for="decision in detail.decisions"
-                            :key="decision.taskId"
+                            v-for="entry in history"
+                            :key="entry.taskId"
                         >
-                            <div><strong>{{ personName(decision.assigneeId) }}</strong> · {{ $t(`sw-approval-flow.taskStatus.${decision.decision}`) }}<time :datetime="decision.decidedAt">{{ date(decision.decidedAt) }}</time></div>
-                            <p>{{ decision.reason || $t('sw-approval-flow.detail.noComment') }}</p>
+                            <div><strong>{{ personName(entry.assigneeId) }}</strong> · {{ entry.label }}<time :datetime="entry.recordedAt">{{ date(entry.recordedAt) }}</time></div>
+                            <p>{{ entry.reason || $t('sw-approval-flow.detail.noComment') }}</p>
                         </li>
                     </ol>
                     <p v-else>
@@ -170,7 +178,7 @@
             :instance-id="decisionTarget.instanceId"
             :task-id="decisionTarget.taskId"
             :expected-version="decisionTarget.expectedVersion"
-            :outcome="decisionTarget.outcome"
+            :action="decisionTarget.action"
             @close="decisionTarget = null"
             @completed="onDecisionCompleted"
             @refresh="refreshAfterDecision"

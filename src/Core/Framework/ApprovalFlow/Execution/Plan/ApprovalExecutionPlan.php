@@ -32,7 +32,7 @@ final readonly class ApprovalExecutionPlan
         foreach ($steps as $step) {
             if (!$step instanceof ActivateRoutes && !$step instanceof CloseScope && !$step instanceof CompleteExecution
                 && !$step instanceof CompleteInstance && !$step instanceof CreateApprovalTasks && !$step instanceof MarkExecutionAdvanced
-                && !$step instanceof OpenScope && !$step instanceof RejectInstance && !$step instanceof WaitForArrival) {
+                && !$step instanceof OpenScope && !$step instanceof RejectInstance && !$step instanceof ReturnToApproval && !$step instanceof WaitForArrival) {
                 throw ApprovalFlowException::invalidExecutionPlan('Unsupported execution change ' . $step::class . '.');
             }
             if ($finished) {

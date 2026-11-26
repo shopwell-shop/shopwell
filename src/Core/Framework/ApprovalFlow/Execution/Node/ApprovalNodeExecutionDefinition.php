@@ -66,6 +66,7 @@ class ApprovalNodeExecutionDefinition extends EntityDefinition
             new FkField('branch_id', 'branchId', ApprovalExecutionBranchDefinition::class),
             new FkField('opened_scope_id', 'openedScopeId', ApprovalExecutionScopeDefinition::class),
             new FkField('waiting_scope_id', 'waitingScopeId', ApprovalExecutionScopeDefinition::class),
+            new FkField('return_target_id', 'returnTargetId', self::class),
             (new IntField('generation', 'generation', 1))->addFlags(new Required()),
             (new BoolField('advanced', 'advanced'))->addFlags(new Required()),
             new ManyToOneAssociationField('scope', 'scope_id', ApprovalExecutionScopeDefinition::class, 'id', false),

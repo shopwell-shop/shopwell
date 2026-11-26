@@ -43,6 +43,8 @@ class ApprovalFlowException extends HttpException
     public const ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__ASSIGNEE_UNAVAILABLE';
     public const EMPTY_APPROVAL_ASSIGNEES = 'APPROVAL_FLOW__EMPTY_APPROVAL_ASSIGNEES';
     public const TASK_NOT_FOUND = 'APPROVAL_FLOW__TASK_NOT_FOUND';
+    public const RETURN_TARGET_UNAVAILABLE = 'APPROVAL_FLOW__RETURN_TARGET_UNAVAILABLE';
+
     public const TASK_NOT_PENDING = 'APPROVAL_FLOW__TASK_NOT_PENDING';
     public const TASK_ASSIGNEE_REQUIRED = 'APPROVAL_FLOW__TASK_ASSIGNEE_REQUIRED';
     public const TASK_OUTSIDE_SNAPSHOT = 'APPROVAL_FLOW__TASK_OUTSIDE_SNAPSHOT';
@@ -419,6 +421,11 @@ class ApprovalFlowException extends HttpException
             self::SINGLE_APPROVAL_ASSIGNEE_REQUIRED,
             'Single approval configuration requires exactly one candidate.'
         );
+    }
+
+    public static function returnTargetUnavailable(string $executionId): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::RETURN_TARGET_UNAVAILABLE, 'Approval execution "{{ executionId }}" is unavailable as a return target.', ['executionId' => $executionId]);
     }
 
     public static function taskNotPending(string $taskId): self

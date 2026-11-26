@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalOutcome;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResult;
@@ -90,19 +91,7 @@ class PaymentTransferApprovalExecutionTest extends TestCase
             'email' => $this->reviewerId . '@example.test', 'password' => 'shopwell', 'active' => true,
             'localeId' => Uuid::fromBytesToHex($locale),
         ]], Context::createDefaultContext());
-        $releaseId = ApprovalRuntimeFixture::publish($kernel, $this->runtime, str_replace('finance-user', $this->reviewerId, GraphFixture::json()));
-        $bindings = $this->runtime->get(ApprovalBindingService::class);
-        $bindings->save('payment:transfer', '1.0.0', $releaseId, 0, Context::createDefaultContext());
-        $bindings->activate('payment:transfer', 1, 0, Context::createDefaultContext());
-        $this->transfer = PaymentTransferApprovalFixture::create($kernel);
-        $source = new AdminApiSource($this->reviewerId);
-        $source->setPermissions(['approval_flow_request:create', 'approval_flow_instance:create']);
-        $service = new PaymentTransferApprovalRequestService(
-            $kernel->get(PaymentTransferApprovalRequestStore::class),
-            $this->runtime->get(ApprovalRequestService::class),
-            $kernel->get(PaymentTransferPresenter::class),
-        );
-        $this->request = $service->submit($this->transfer->id, Context::createDefaultContext($source));
+        $this->submitTransfer(GraphFixture::json());
     }
 
     protected function tearDown(): void
@@ -152,6 +141,46 @@ class PaymentTransferApprovalExecutionTest extends TestCase
     public function testPendingApprovalDoesNotClaimAnAttempt(): void
     {
         $this->assertClaimBlocked('pending');
+    }
+
+    public function testReturnedTransferCannotClaimAPayoutUntilTheReopenedReviewsPass(): void
+    {
+        $graph = GraphFixture::codec()->decodeWritable(new DraftGraph(GraphFixture::json()));
+        $second = clone $graph->nodes[1];
+        $second->id = 'final-review';
+        $graph->nodes[] = $second;
+        $toEnd = clone $graph->connections[1];
+        $toEnd->id = 'final-review-end';
+        $toEnd->source = $second->id;
+        $graph->connections[1]->target = $second->id;
+        $graph->connections[] = $toEnd;
+        $this->submitTransfer(json_encode($graph, \JSON_THROW_ON_ERROR), 1);
+
+        $instanceId = $this->request->getInstanceId();
+        $instances = $this->runtime->get(ApprovalInstanceService::class);
+        $reviewer = $this->reviewerContext();
+        $system = Context::createDefaultContext();
+        $first = $this->pendingReview();
+        $instances->decide($instanceId, $first['taskId'], Uuid::randomHex(), 2, ApprovalOutcome::Approved, '', $reviewer);
+        $instances->progress($instanceId, $first['executionId'], Uuid::randomHex(), 3, $system);
+        $final = $this->pendingReview();
+        $instances->returnApproval($instanceId, $final['taskId'], Uuid::randomHex(), 4, $first['executionId'], 'Check the recipient again.', $reviewer);
+
+        $this->assertClaimBlocked('pending');
+
+        $reopened = $this->pendingReview();
+        $instances->decide($instanceId, $reopened['taskId'], Uuid::randomHex(), 5, ApprovalOutcome::Approved, '', $reviewer);
+        $instances->progress($instanceId, $reopened['executionId'], Uuid::randomHex(), 6, $system);
+        $this->assertClaimBlocked('pending');
+        $final = $this->pendingReview();
+        $instances->decide($instanceId, $final['taskId'], Uuid::randomHex(), 7, ApprovalOutcome::Approved, '', $reviewer);
+        $instances->progress($instanceId, $final['executionId'], Uuid::randomHex(), 8, $system);
+        $this->assertClaimBlocked('pending');
+
+        static::getContainer()->get(PaymentTransferApprovalResultHandler::class)->handle($this->approvalResult(), $this->request, $system);
+        static::getContainer()->get(PaymentTransferResultBooker::class)->claim($this->transfer);
+
+        static::assertSame(1, static::getContainer()->get(PaymentTransferService::class)->getById($this->transfer->id)->submitAttempts);
     }
 
     public function testACompletedApprovalWaitsForBusinessDelivery(): void
@@ -246,15 +275,58 @@ class PaymentTransferApprovalExecutionTest extends TestCase
         return new PaymentTransferSubmitter($resolver, static::getContainer()->get(PaymentTransferService::class), static::getContainer()->get(PaymentTransferResultBooker::class), static::getContainer()->get(PaymentTransferApprovalService::class));
     }
 
-    private function complete(ApprovalOutcome $outcome): ApprovalResult
+    private function submitTransfer(string $graph, int $bindingVersion = 0): void
     {
-        $task = $this->connection->fetchAssociative('SELECT t.id, t.execution_id FROM approval_flow_task t INNER JOIN approval_flow_execution e ON e.id = t.execution_id WHERE e.instance_id = :id', ['id' => Uuid::fromHexToBytes($this->request->getInstanceId())]);
-        static::assertNotFalse($task);
+        $kernel = static::getContainer();
+        $system = Context::createDefaultContext();
+        $releaseId = ApprovalRuntimeFixture::publish($kernel, $this->runtime, str_replace('finance-user', $this->reviewerId, $graph));
+        $this->runtime->get(ApprovalBindingService::class)->activateRelease('payment:transfer', '1.0.0', $releaseId, $bindingVersion, $bindingVersion, $system);
+        $this->transfer = PaymentTransferApprovalFixture::create($kernel);
+        $source = new AdminApiSource($this->reviewerId);
+        $source->setPermissions(['approval_flow_request:create', 'approval_flow_instance:create']);
+        $service = new PaymentTransferApprovalRequestService(
+            $kernel->get(PaymentTransferApprovalRequestStore::class),
+            $this->runtime->get(ApprovalRequestService::class),
+            $kernel->get(PaymentTransferPresenter::class),
+        );
+        $this->request = $service->submit($this->transfer->id, Context::createDefaultContext($source));
+    }
+
+    private function reviewerContext(): Context
+    {
         $source = new AdminApiSource($this->reviewerId);
         $source->setPermissions([ApprovalInstanceService::DECIDE_PRIVILEGE]);
+
+        return Context::createDefaultContext($source);
+    }
+
+    /**
+     * @return array{taskId: string, executionId: string}
+     */
+    private function pendingReview(): array
+    {
+        $task = $this->connection->fetchAssociative(
+            'SELECT t.id, t.execution_id FROM approval_flow_task t INNER JOIN approval_flow_execution e ON e.id = t.execution_id WHERE e.instance_id = :id AND t.status = \'pending\'',
+            ['id' => Uuid::fromHexToBytes($this->request->getInstanceId())],
+        );
+        static::assertNotFalse($task);
+
+        return ['taskId' => Uuid::fromBytesToHex($task['id']), 'executionId' => Uuid::fromBytesToHex($task['execution_id'])];
+    }
+
+    private function complete(ApprovalOutcome $outcome): ApprovalResult
+    {
+        $task = $this->pendingReview();
+        $instanceId = $this->request->getInstanceId();
         $instances = $this->runtime->get(ApprovalInstanceService::class);
-        $instances->decide($this->request->getInstanceId(), Uuid::fromBytesToHex($task['id']), Uuid::randomHex(), 2, $outcome, '', Context::createDefaultContext($source));
-        $instances->progress($this->request->getInstanceId(), Uuid::fromBytesToHex($task['execution_id']), Uuid::randomHex(), 3, Context::createDefaultContext());
+        $instances->decide($instanceId, $task['taskId'], Uuid::randomHex(), 2, $outcome, '', $this->reviewerContext());
+        $instances->progress($instanceId, $task['executionId'], Uuid::randomHex(), 3, Context::createDefaultContext());
+
+        return $this->approvalResult();
+    }
+
+    private function approvalResult(): ApprovalResult
+    {
         $criteria = (new Criteria())->addFilter(new EqualsFilter('instanceId', $this->request->getInstanceId()));
         $entity = static::getContainer()->get('approval_flow_result.repository')->search($criteria, Context::createDefaultContext())->first();
         static::assertInstanceOf(ApprovalResultEntity::class, $entity);

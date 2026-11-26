@@ -15,9 +15,9 @@ inject
   approvalFlowApiService  [private]
 
 props
+  action: ApprovalTaskAction  [private]
   expectedVersion: number  [private]
   instanceId: string  [private]
-  outcome: ApprovalOutcome  [private]
   taskId: string  [private]
 
 emits
@@ -29,14 +29,22 @@ data
   command: any  [private]
   failure: any  [private]
   isActive: any  [private]
+  isLoadingTargets: any  [private]
   isSubmitting: any  [private]
   reason: any  [private]
+  targetExecutionId: any  [private]
+  targets: any  [private]
 
 computed
+  actionInput: TaskActionInput | null  [private]
   canRetry: boolean  [private]
+  canSubmit: boolean  [private]
+  isReturn: boolean  [private]
+  returnOptions: any  [private]
 
 methods
   close(): void  [private]
+  loadReturnTargets(): Promise<void>  [private]
   submit(): Promise<void>  [private]
 
 blocks

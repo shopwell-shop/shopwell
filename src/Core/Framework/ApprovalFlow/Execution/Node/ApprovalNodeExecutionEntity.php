@@ -47,6 +47,8 @@ class ApprovalNodeExecutionEntity extends Entity
 
     protected ?string $waitingScopeId = null;
 
+    protected ?string $returnTargetId = null;
+
     protected int $generation = 1;
 
     protected bool $advanced = false;
@@ -77,6 +79,16 @@ class ApprovalNodeExecutionEntity extends Entity
     public function setNodeId(string $nodeId): void
     {
         $this->nodeId = $nodeId;
+    }
+
+    public function getReturnTargetId(): ?string
+    {
+        return $this->returnTargetId;
+    }
+
+    public function setReturnTargetId(?string $returnTargetId): void
+    {
+        $this->returnTargetId = $returnTargetId;
     }
 
     public function getIncomingConnectionId(): ?string

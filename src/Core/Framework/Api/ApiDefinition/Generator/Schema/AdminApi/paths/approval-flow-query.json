@@ -12,7 +12,7 @@
                 ],
                 "operationId": "searchPersonalApprovalRequests",
                 "summary": "List my approvals",
-                "description": "Requires approval_flow:access and an Administration user. Ownership is applied before counting and pagination. Todo includes pending personal tasks on running instances; done includes approved or rejected personal tasks and excludes cancelled tasks; started includes requests initiated by this user. Lists do not contain forms.",
+                "description": "Requires approval_flow:access and an Administration user. Ownership is applied before counting and pagination. Todo includes pending personal tasks on running instances; done includes personal approvals, rejections and returns; started includes requests initiated by this user. Lists do not contain forms.",
                 "parameters": [
                     {
                         "name": "view",
@@ -239,7 +239,9 @@
                         "enum": [
                             "waiting",
                             "awaiting_approval",
-                            "completed"
+                            "completed",
+                            "awaiting_signal",
+                            "cancelled"
                         ]
                     },
                     "outcome": {
@@ -367,7 +369,8 @@
                     "tasks",
                     "decisions",
                     "formLabels",
-                    "participantNames"
+                    "participantNames",
+                    "returns"
                 ],
                 "properties": {
                     "request": {
@@ -422,6 +425,45 @@
                         "additionalProperties": {
                             "type": "string"
                         }
+                    },
+                    "returns": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalReturnSummary"
+                        }
+                    }
+                }
+            },
+            "ApprovalReturnSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "taskId",
+                    "targetExecutionId",
+                    "reason",
+                    "returnedAt",
+                    "aggregateVersion"
+                ],
+                "properties": {
+                    "taskId": {
+                        "type": "string"
+                    },
+                    "targetExecutionId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{32}$"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "returnedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "aggregateVersion": {
+                        "type": "integer"
                     }
                 }
             }

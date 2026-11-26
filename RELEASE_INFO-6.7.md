@@ -23,6 +23,12 @@ While a stored file is kept, the document also keeps its order version and confi
 The missing file is rendered from the current order.
 To get fresh files for an existing document, generate a new document instead of regenerating it.
 
+### Return an approval task to an earlier review
+
+An assigned approver can use the task's `return-targets` and `return` Admin API actions to reopen a previously approved step on the current branch.
+The approval detail includes return reasons and preserves the decisions from earlier reviews.
+Extensions can narrow the eligible targets using `ApprovalReturnTargetsEvent`.
+
 ### Approval Flow skeleton
 
 The independent Approval Flow module provides exact-version node declarations through `NodeTypeLoader` and the `approval_flow.node_type_loader` service tag.

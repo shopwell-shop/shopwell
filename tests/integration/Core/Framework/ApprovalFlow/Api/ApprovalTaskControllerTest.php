@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\ApprovalFlow\ApprovalFlowException;
 use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBindingService;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Instance\ApprovalInstanceService;
+use Shopwell\Core\Framework\ApprovalFlow\Graph\DraftGraph;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestEntity;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
 use Shopwell\Core\Framework\Context;
@@ -87,6 +88,111 @@ class ApprovalTaskControllerTest extends TestCase
 
         $browser->jsonRequest('POST', $path, array_replace($payload, ['reason' => 'Changed opinion.']));
         $this->assertError($browser, 409, ApprovalFlowException::INSTANCE_COMMAND_CONFLICT);
+    }
+
+    public function testTheAssigneeCanReturnToAnEarlierExecutionAndReviewAgain(): void
+    {
+        $container = static::getContainer();
+        $connection = $container->get(Connection::class);
+        $permissions = [ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access'];
+        $reviewer = TestUser::createNewTestUser($connection, $permissions);
+        $returner = TestUser::createNewTestUser($connection, $permissions);
+        $colleague = TestUser::createNewTestUser($connection, $permissions);
+        $graph = GraphFixture::codec()->decodeWritable(new DraftGraph(GraphFixture::json()));
+        $previous = 'review';
+        foreach (['second-review', 'final-review'] as $nodeId) {
+            $node = clone $graph->nodes[1];
+            $node->id = $nodeId;
+            if ($nodeId === 'final-review') {
+                $node->config = clone $node->config;
+                $node->config->assignees = [['kind' => 'core:users', 'userIds' => [$returner->getUserId(), $colleague->getUserId()]]];
+            }
+            $graph->nodes[] = $node;
+            $connectionToReview = clone $graph->connections[1];
+            $connectionToReview->id = $previous . '-' . $nodeId;
+            $connectionToReview->source = $previous;
+            $connectionToReview->target = $nodeId;
+            $graph->connections[] = $connectionToReview;
+            $previous = $nodeId;
+        }
+        $graph->connections[1]->source = $previous;
+        [$request, $firstTask, $firstExecution] = $this->createRequest($reviewer->getUserId(), json_encode($graph, \JSON_THROW_ON_ERROR));
+
+        $browser = $this->getBrowser(authorized: false);
+        $reviewer->authorizeBrowser($browser);
+        $instanceId = $request->getInstanceId();
+        $browser->jsonRequest('POST', $this->path($instanceId, $firstTask), $this->payload());
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $instances = $this->runtime->get(ApprovalInstanceService::class);
+        $system = Context::createDefaultContext();
+        $instances->progress($instanceId, $firstExecution, Uuid::randomHex(), 3, $system);
+        $detailPath = '/api/_action/approval-flow/requests/' . $request->getId();
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $second = $detail['tasks'][1];
+        $browser->jsonRequest('POST', $this->path($instanceId, $second['id']), array_replace($this->payload(), ['expectedVersion' => 4]));
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $instances->progress($instanceId, $second['executionId'], Uuid::randomHex(), 5, $system);
+
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $tasks = array_column($detail['tasks'], 'id', 'assigneeId');
+        $path = '/api/_action/approval-flow/instances/' . $instanceId . '/tasks/' . $tasks[$returner->getUserId()];
+        $payload = ['commandId' => Uuid::randomHex(), 'expectedVersion' => 6, 'targetExecutionId' => $firstExecution, 'reason' => 'Recheck the transfer.'];
+        $browser->jsonRequest('POST', $path . '/return', $payload);
+        $this->assertError($browser, 403, ApprovalFlowException::TASK_ASSIGNEE_REQUIRED);
+
+        $returner->authorizeBrowser($browser);
+        $browser->request('GET', $path . '/return-targets');
+        static::assertSame(200, $browser->getResponse()->getStatusCode(), (string) $browser->getResponse()->getContent());
+        $targets = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame([$second['executionId'], $firstExecution], array_column($targets['data'], 'executionId'));
+
+        $browser->jsonRequest('POST', $path . '/return', array_replace($payload, ['expectedVersion' => 5]));
+        $this->assertError($browser, 409, ApprovalFlowException::INSTANCE_VERSION_CONFLICT);
+        $browser->jsonRequest('POST', $path . '/return', $payload);
+        static::assertSame(200, $browser->getResponse()->getStatusCode(), (string) $browser->getResponse()->getContent());
+        $receipt = $browser->getResponse()->getContent();
+        $browser->jsonRequest('POST', $path . '/return', $payload);
+        static::assertSame($receipt, $browser->getResponse()->getContent());
+
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame('running', $detail['request']['status']);
+        static::assertNull($detail['request']['outcome']);
+        static::assertSame(['approved', 'approved', 'cancelled', 'cancelled', 'pending'], array_column($detail['tasks'], 'status'));
+        static::assertSame([$firstTask, $second['id']], array_column($detail['decisions'], 'taskId'));
+        static::assertSame([$firstExecution], array_column($detail['returns'], 'targetExecutionId'));
+        static::assertSame(['Recheck the transfer.'], array_column($detail['returns'], 'reason'));
+        static::assertSame('review', $detail['executions'][4]['nodeId']);
+        static::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
+
+        $browser->request('GET', '/api/_action/approval-flow/requests?view=done');
+        $done = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame([$request->getId()], array_column($done['data'], 'id'));
+        $colleague->authorizeBrowser($browser);
+        $browser->request('GET', '/api/_action/approval-flow/requests?view=done');
+        $done = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame([], $done['data']);
+
+        $reviewer->authorizeBrowser($browser);
+        $reopened = $detail['tasks'][4];
+        $reopenedPath = '/api/_action/approval-flow/instances/' . $instanceId . '/tasks/' . $reopened['id'];
+        $browser->request('GET', $reopenedPath . '/return-targets');
+        $targets = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame([], $targets['data']);
+        $browser->jsonRequest('POST', $reopenedPath . '/return', [
+            'commandId' => Uuid::randomHex(), 'expectedVersion' => 7, 'targetExecutionId' => $second['executionId'], 'reason' => 'Use an old review.',
+        ]);
+        $this->assertError($browser, 409, ApprovalFlowException::RETURN_TARGET_UNAVAILABLE);
+
+        $browser->jsonRequest('POST', $this->path($instanceId, $reopened['id']), array_replace($this->payload(), ['expectedVersion' => 7]));
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $instances->progress($instanceId, $reopened['executionId'], Uuid::randomHex(), 8, $system);
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame(['approved', 'approved', 'cancelled', 'cancelled', 'approved', 'pending'], array_column($detail['tasks'], 'status'));
+        static::assertSame('second-review', $detail['executions'][5]['nodeId']);
     }
 
     public static function outcomes(): iterable
@@ -188,11 +294,11 @@ class ApprovalTaskControllerTest extends TestCase
     /**
      * @return array{ApprovalRequestEntity, string, string}
      */
-    private function createRequest(string $reviewerId): array
+    private function createRequest(string $reviewerId, ?string $graph = null): array
     {
         $kernel = static::getContainer();
         $this->runtime = ApprovalRuntimeFixture::container($kernel, PublicationFixture::writeManifest($this->filesystem, $this->directory));
-        $releaseId = ApprovalRuntimeFixture::publish($kernel, $this->runtime, str_replace('finance-user', $reviewerId, GraphFixture::json()));
+        $releaseId = ApprovalRuntimeFixture::publish($kernel, $this->runtime, str_replace('finance-user', $reviewerId, $graph ?? GraphFixture::json()));
         $bindings = $this->runtime->get(ApprovalBindingService::class);
         $bindings->save('payment:transfer', '1.0.0', $releaseId, 0, Context::createDefaultContext());
         $bindings->activate('payment:transfer', 1, 0, Context::createDefaultContext());
