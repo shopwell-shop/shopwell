@@ -53,7 +53,7 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.steps.flatMap((step) =>
                 step.tasks
                     .filter((task) => task.status === 'pending' && task.assigneeId === userId)
-                    .map((task) => ({ id: task.id, sequence: step.sequence })),
+                    .map((task) => ({ id: task.id, sequence: step.sequence, isPreApproval: task.blockedTaskId !== null })),
             );
         },
         backRoute() {
@@ -110,9 +110,22 @@ export default Shopwell.Component.wrapComponentConfig({
                 recordedAt: transfer.transferredAt,
                 aggregateVersion: transfer.aggregateVersion,
             }));
-            return [...opinions, ...returns, ...transfers].sort(
-                (first, second) => first.aggregateVersion - second.aggregateVersion,
-            );
+            const addSigns = this.detail.addSigns.map((entry) => ({
+                taskId: entry.taskId,
+                assigneeId: assignees.get(entry.taskId),
+                label: this.$t('sw-approval-flow.detail.addedSigner', {
+                    name: this.personName(assignees.get(entry.addedTaskId)),
+                }),
+                reason: entry.reason,
+                recordedAt: entry.addedAt,
+                aggregateVersion: entry.aggregateVersion,
+            }));
+            return [
+                ...opinions,
+                ...returns,
+                ...transfers,
+                ...addSigns,
+            ].sort((first, second) => first.aggregateVersion - second.aggregateVersion);
         },
         steps() {
             if (!this.detail) {

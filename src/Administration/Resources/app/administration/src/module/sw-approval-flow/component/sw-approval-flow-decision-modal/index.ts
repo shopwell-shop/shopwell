@@ -5,15 +5,15 @@ import type {
     ApprovalDecision,
     ApprovalReturn,
     ApprovalTaskAction,
-    ApprovalTransfer,
+    ApprovalTaskAssignment,
 } from '../../service/approval-flow.api.service';
 import template from './sw-approval-flow-decision-modal.html.twig';
 
-type TaskCommand = ApprovalDecision | ApprovalReturn | ApprovalTransfer;
+type TaskCommand = ApprovalDecision | ApprovalReturn | ApprovalTaskAssignment;
 type TaskActionInput =
     | Pick<ApprovalDecision, 'outcome' | 'reason'>
     | Pick<ApprovalReturn, 'targetExecutionId' | 'reason'>
-    | Pick<ApprovalTransfer, 'assigneeId' | 'reason'>;
+    | Pick<ApprovalTaskAssignment, 'assigneeId' | 'reason'>;
 type TargetOption = { value: string; label: string };
 type SubmissionFailure = 'conflict' | 'forbidden' | 'unavailable' | 'retryError';
 
@@ -65,11 +65,11 @@ export default Shopwell.Component.wrapComponentConfig({
         isReturn(): boolean {
             return this.action === 'return';
         },
-        isTransfer(): boolean {
-            return this.action === 'transfer';
+        needsReviewer(): boolean {
+            return this.action === 'transfer' || this.action === 'addSign';
         },
         needsTarget(): boolean {
-            return this.isReturn || this.isTransfer;
+            return this.isReturn || this.needsReviewer;
         },
         actionInput(): TaskActionInput | null {
             if (this.action === 'approved' || this.action === 'rejected') {
@@ -102,7 +102,7 @@ export default Shopwell.Component.wrapComponentConfig({
         async loadTargets(): Promise<void> {
             this.isLoadingTargets = true;
             try {
-                const options = this.isTransfer
+                const options = this.needsReviewer
                     ? await this.findTransferTargets('')
                     : (await this.approvalFlowApiService.returnTargets(this.instanceId, this.taskId)).map((target) => ({
                           value: target.executionId,
@@ -147,7 +147,9 @@ export default Shopwell.Component.wrapComponentConfig({
         },
         submitCommand(command: TaskCommand): Promise<unknown> {
             if ('assigneeId' in command) {
-                return this.approvalFlowApiService.transferTask(this.instanceId, this.taskId, command);
+                return this.action === 'addSign'
+                    ? this.approvalFlowApiService.addSign(this.instanceId, this.taskId, command)
+                    : this.approvalFlowApiService.transferTask(this.instanceId, this.taskId, command);
             }
             if ('targetExecutionId' in command) {
                 return this.approvalFlowApiService.returnTask(this.instanceId, this.taskId, command);

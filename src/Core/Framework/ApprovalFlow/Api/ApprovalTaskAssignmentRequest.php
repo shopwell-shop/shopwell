@@ -11,7 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @codeCoverageIgnore
  */
 #[Package('framework')]
-final class ApprovalTaskTransferRequest
+final class ApprovalTaskAssignmentRequest
 {
     #[Assert\NotNull]
     public string $commandId;

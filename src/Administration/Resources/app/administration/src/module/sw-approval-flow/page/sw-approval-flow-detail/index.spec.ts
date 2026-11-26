@@ -25,9 +25,10 @@ const detail: ApprovalDetail = {
     },
     participantNames: { author: 'Alice', reviewer: 'Li' },
     executions: [{ id: 'execution', nodeId: 'review', sequence: 2, status: 'awaiting_approval', outcome: null }],
-    tasks: [{ id: 'task', executionId: 'execution', assigneeId: 'reviewer', status: 'approved' }],
+    tasks: [{ id: 'task', executionId: 'execution', assigneeId: 'reviewer', status: 'approved', blockedTaskId: null }],
     returns: [],
     transfers: [],
+    addSigns: [],
     decisions: [
         {
             taskId: 'task',
@@ -147,7 +148,7 @@ describe('approval detail', () => {
             ...detail,
             tasks: [
                 ...detail.tasks,
-                { id: 'later', executionId: 'execution', assigneeId: 'reviewer', status: 'pending' },
+                { id: 'later', executionId: 'execution', assigneeId: 'reviewer', status: 'pending', blockedTaskId: null },
             ],
         };
         const returned: ApprovalDetail = {
@@ -177,6 +178,27 @@ describe('approval detail', () => {
             'Reviewed the amount.',
             'Check the payee.',
         ]);
+    });
+
+    it.each(['holder', 'signer'])('shows the right actions for a preliminary review %s', async (role) => {
+        const blocked = {
+            ...detail.tasks[0],
+            assigneeId: role === 'holder' ? 'reviewer' : 'origin',
+            status: 'blocked' as const,
+        };
+        const added = {
+            ...detail.tasks[0],
+            id: 'added',
+            assigneeId: role === 'signer' ? 'reviewer' : 'assignee',
+            status: 'pending' as const,
+            blockedTaskId: blocked.id,
+        };
+        const { wrapper } = await createWrapper(jest.fn().mockResolvedValue({ ...detail, tasks: [blocked, added] }));
+
+        expect(wrapper.find('[data-testid="decision-approve"]').exists()).toBe(role === 'signer');
+        expect(wrapper.find('[data-testid="decision-transfer"]').exists()).toBe(role === 'signer');
+        expect(wrapper.find('[data-testid="decision-add-sign"]').exists()).toBe(false);
+        expect(wrapper.find('[data-testid="decision-return"]').exists()).toBe(false);
     });
 
     it.each([

@@ -35,6 +35,7 @@
             "rejected": "已驳回"
         },
         "taskStatus": {
+            "blocked": "等待前加签",
             "pending": "待审批",
             "approved": "已同意",
             "rejected": "已驳回",
@@ -54,6 +55,7 @@
             "filtered": "没有符合筛选条件的申请"
         },
         "detail": {
+            "addedSigner": "请{name}先审批",
             "transferredTo": "转交给{name}",
             "returnedTo": "退回至{step}",
             "title": "审批详情",
@@ -72,6 +74,9 @@
             "notFilled": "未填写"
         },
         "decision": {
+            "addSign": "前加签",
+            "addSignTarget": "加签人",
+            "addSignReason": "加签原因",
             "transfer": "转交",
             "transferTarget": "接手人",
             "transferReason": "转交原因",

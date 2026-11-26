@@ -274,6 +274,96 @@ class ApprovalTaskControllerTest extends TestCase
         static::assertSame('approved', $receipt->outcome?->value);
     }
 
+    #[DataProvider('preApprovalOutcomes')]
+    public function testPreApprovalHoldsOnlyTheOriginalTaskAndHandlesTheSignersDecision(string $outcome, string $policy): void
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        $permissions = [ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access'];
+        $owner = TestUser::createNewTestUser($connection, $permissions);
+        $peer = TestUser::createNewTestUser($connection, $permissions);
+        $signer = TestUser::createNewTestUser($connection, $permissions);
+        $graph = GraphFixture::codec()->decodeWritable(new DraftGraph(GraphFixture::json()));
+        $graph->nodes[1]->config->assignees = [[
+            'kind' => 'core:users',
+            'userIds' => [$owner->getUserId(), $peer->getUserId()],
+        ]];
+        $graph->nodes[1]->config->policy = ['kind' => $policy, 'reject' => 'veto'];
+        [$request, , $executionId] = $this->createRequest($owner->getUserId(), json_encode($graph, \JSON_THROW_ON_ERROR));
+        $instanceId = $request->getInstanceId();
+        $detailPath = '/api/_action/approval-flow/requests/' . $request->getId();
+
+        $browser = $this->getBrowser(authorized: false);
+        $owner->authorizeBrowser($browser);
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $tasks = array_column($detail['tasks'], 'id', 'assigneeId');
+        $ownerTask = $tasks[$owner->getUserId()];
+        $peerTask = $tasks[$peer->getUserId()];
+        $path = '/api/_action/approval-flow/instances/' . $instanceId . '/tasks/' . $ownerTask . '/add-sign';
+        $payload = ['commandId' => Uuid::randomHex(), 'expectedVersion' => 2, 'assigneeId' => $signer->getUserId(), 'reason' => 'Verify the transfer first.'];
+        $browser->jsonRequest('POST', $path, $payload);
+        static::assertSame(200, $browser->getResponse()->getStatusCode(), (string) $browser->getResponse()->getContent());
+        $receipt = $browser->getResponse()->getContent();
+        $browser->jsonRequest('POST', $path, $payload);
+        static::assertSame($receipt, $browser->getResponse()->getContent());
+
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $held = array_column($detail['tasks'], null, 'assigneeId');
+        $signerTask = $held[$signer->getUserId()]['id'];
+        static::assertSame('blocked', $held[$owner->getUserId()]['status']);
+        static::assertSame('pending', $held[$peer->getUserId()]['status']);
+        static::assertSame('pending', $held[$signer->getUserId()]['status']);
+        static::assertSame($executionId, $held[$signer->getUserId()]['executionId']);
+        static::assertSame([$signerTask], array_column($detail['addSigns'], 'addedTaskId'));
+
+        $browser->request('GET', '/api/_action/approval-flow/requests?view=todo');
+        $todo = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertContains($request->getId(), array_column($todo['data'], 'id'));
+
+        $browser->jsonRequest('POST', $this->path($instanceId, $ownerTask), array_replace($this->payload(), ['expectedVersion' => 3]));
+        $this->assertError($browser, 409, ApprovalFlowException::TASK_NOT_PENDING);
+        $peer->authorizeBrowser($browser);
+        $browser->jsonRequest('POST', $this->path($instanceId, $peerTask), array_replace($this->payload(), ['expectedVersion' => 3]));
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        static::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
+        $signer->authorizeBrowser($browser);
+        $browser->jsonRequest('POST', '/api/_action/approval-flow/instances/' . $instanceId . '/tasks/' . $signerTask . '/add-sign', [
+            'commandId' => Uuid::randomHex(), 'expectedVersion' => 4, 'assigneeId' => $peer->getUserId(), 'reason' => 'Another review.',
+        ]);
+        $this->assertError($browser, 409, ApprovalFlowException::PRIMARY_TASK_REQUIRED);
+        $browser->jsonRequest('POST', $this->path($instanceId, $signerTask), array_replace($this->payload(), ['expectedVersion' => 4, 'outcome' => $outcome]));
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        $owner->authorizeBrowser($browser);
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $decided = array_column($detail['tasks'], null, 'assigneeId');
+        static::assertSame([$peerTask, $signerTask], array_column($detail['decisions'], 'taskId'));
+        static::assertSame($outcome, $decided[$signer->getUserId()]['status']);
+
+        $version = 5;
+        if ($outcome === 'approved') {
+            static::assertSame('pending', $decided[$owner->getUserId()]['status']);
+            static::assertSame('awaiting_approval', array_column($detail['executions'], 'status', 'id')[$executionId]);
+            $browser->jsonRequest('POST', $this->path($instanceId, $ownerTask), array_replace($this->payload(), ['expectedVersion' => $version]));
+            static::assertSame(200, $browser->getResponse()->getStatusCode());
+            ++$version;
+        } else {
+            static::assertSame('cancelled', $decided[$owner->getUserId()]['status']);
+        }
+
+        $receipt = $this->runtime->get(ApprovalInstanceService::class)->progress($instanceId, $executionId, Uuid::randomHex(), $version, Context::createDefaultContext());
+        static::assertSame($outcome, $receipt->outcome?->value);
+    }
+
+    public static function preApprovalOutcomes(): iterable
+    {
+        yield 'approval in a unanimous review' => ['approved', 'core:all'];
+        yield 'veto in a unanimous review' => ['rejected', 'core:all'];
+        yield 'one existing opinion cannot skip the additional review' => ['approved', 'core:any'];
+    }
+
     public static function outcomes(): iterable
     {
         yield 'approved' => ['approved'];

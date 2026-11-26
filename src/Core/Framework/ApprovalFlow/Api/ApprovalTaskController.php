@@ -84,10 +84,29 @@ class ApprovalTaskController
         string $instanceId,
         string $taskId,
         #[MapRequestPayload(validationFailedStatusCode: Response::HTTP_BAD_REQUEST)]
-        ApprovalTaskTransferRequest $payload,
+        ApprovalTaskAssignmentRequest $payload,
         Context $context,
     ): JsonResponse {
         return new JsonResponse($this->instances->transferTask(
+            $instanceId,
+            $taskId,
+            $payload->commandId,
+            $payload->expectedVersion,
+            $payload->assigneeId,
+            $payload->reason,
+            $context,
+        ));
+    }
+
+    #[Route(path: '/api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/add-sign', name: 'api.action.approval_flow.task.add_sign', defaults: [PlatformRequest::ATTRIBUTE_ACL => [ApprovalInstanceService::DECIDE_PRIVILEGE]], methods: [Request::METHOD_POST])]
+    public function addSign(
+        string $instanceId,
+        string $taskId,
+        #[MapRequestPayload(validationFailedStatusCode: Response::HTTP_BAD_REQUEST)]
+        ApprovalTaskAssignmentRequest $payload,
+        Context $context,
+    ): JsonResponse {
+        return new JsonResponse($this->instances->addSign(
             $instanceId,
             $taskId,
             $payload->commandId,

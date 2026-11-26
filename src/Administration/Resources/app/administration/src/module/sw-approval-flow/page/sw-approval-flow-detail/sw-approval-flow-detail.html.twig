@@ -113,6 +113,7 @@
                             {{ $t('sw-approval-flow.decision.rejected') }}
                         </mt-button>
                         <mt-button
+                            v-if="!task.isPreApproval"
                             data-testid="decision-return"
                             variant="secondary"
                             size="small"
@@ -127,6 +128,15 @@
                             @click="openDecision(task.id, 'transfer')"
                         >
                             {{ $t('sw-approval-flow.decision.transfer') }}
+                        </mt-button>
+                        <mt-button
+                            v-if="!task.isPreApproval"
+                            data-testid="decision-add-sign"
+                            variant="secondary"
+                            size="small"
+                            @click="openDecision(task.id, 'addSign')"
+                        >
+                            {{ $t('sw-approval-flow.decision.addSign') }}
                         </mt-button>
                     </div>
                 </mt-card>
@@ -167,7 +177,7 @@
                     >
                         <li
                             v-for="entry in history"
-                            :key="entry.taskId"
+                            :key="entry.aggregateVersion"
                         >
                             <div><strong>{{ personName(entry.assigneeId) }}</strong> · {{ entry.label }}<time :datetime="entry.recordedAt">{{ date(entry.recordedAt) }}</time></div>
                             <p>{{ entry.reason || $t('sw-approval-flow.detail.noComment') }}</p>

@@ -406,6 +406,22 @@ An active participant or someone who already voted in the same execution is excl
 The replacement stays in the same approval group and counts as the original pending vote.
 Request detail exposes the relationship between the old and replacement task in `transfers`.
 
+### Adding a preliminary reviewer
+
+Use the task's `transfer-candidates` action to find eligible reviewers for preliminary approval.
+Submit `assigneeId`, `commandId`, `expectedVersion` and a reason to `POST /api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/add-sign`.
+The current assignee can add a reviewer to an original pending task.
+The request remains in the original approver’s to-do list while the additional reviewer decides.
+The original task has status `blocked` in the request detail.
+An approval restores the original task to `pending`.
+A rejection enters the existing veto progression.
+Other group members can still submit opinions while a preliminary review is open.
+An open preliminary review holds successful group progression.
+After approval, the original approver resumes the held task.
+The added review is a prerequisite outside the original vote count.
+Request detail exposes the added review and its reason in `addSigns`.
+The added reviewer can decide or transfer their own task.
+
 ## Scope execution intents and snapshots
 
 `OpenScopeEffect` and `WaitEffect` are supported public node intents alongside advance, approval request and completion.

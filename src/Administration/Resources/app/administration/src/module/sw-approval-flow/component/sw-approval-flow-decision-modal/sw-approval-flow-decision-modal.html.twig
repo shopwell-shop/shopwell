@@ -11,11 +11,11 @@
         {{ $t('sw-approval-flow.decision.confirmation') }}
     </p>
     <mt-select
-        v-else-if="isTransfer || targetOptions.length"
+        v-else-if="needsReviewer || targetOptions.length"
         v-model="targetId"
-        :label="$t(isTransfer ? 'sw-approval-flow.decision.transferTarget' : 'sw-approval-flow.decision.returnTarget')"
+        :label="$t(`sw-approval-flow.decision.${action}Target`)"
         :options="targetOptions"
-        :search-function="isTransfer ? searchTransferTargets : undefined"
+        :search-function="needsReviewer ? searchTransferTargets : undefined"
         :disabled="command !== null"
         required
         @item-add="rememberTarget"

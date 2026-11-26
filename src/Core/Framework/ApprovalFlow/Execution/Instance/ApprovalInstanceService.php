@@ -129,6 +129,19 @@ class ApprovalInstanceService
 
     public function transferTask(string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $assigneeId, string $reason, Context $context): ApprovalInstanceCommandResult
     {
+        return $this->assignTask(ApprovalInstanceStore::TRANSFER_TASK, $instanceId, $taskId, $commandId, $expectedVersion, $assigneeId, $reason, $context);
+    }
+
+    public function addSign(string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $assigneeId, string $reason, Context $context): ApprovalInstanceCommandResult
+    {
+        return $this->assignTask(ApprovalInstanceStore::ADD_SIGN, $instanceId, $taskId, $commandId, $expectedVersion, $assigneeId, $reason, $context);
+    }
+
+    /**
+     * @param ApprovalInstanceStore::TRANSFER_TASK|ApprovalInstanceStore::ADD_SIGN $operation
+     */
+    private function assignTask(string $operation, string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $assigneeId, string $reason, Context $context): ApprovalInstanceCommandResult
+    {
         $userId = $this->taskActor($context);
         $reason = trim($reason);
         if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($taskId) || !Uuid::isValid($commandId)
@@ -136,7 +149,7 @@ class ApprovalInstanceService
             throw ApprovalFlowException::invalidInstanceCommand('Valid instance, task, command and assignee IDs, a positive version and a non-blank reason of at most 1000 characters are required.');
         }
 
-        return $this->store->transferTask($instanceId, $taskId, $commandId, $expectedVersion, $assigneeId, $reason, $userId, $context);
+        return $this->store->assignTask($operation, $instanceId, $taskId, $commandId, $expectedVersion, $assigneeId, $reason, $userId, $context);
     }
 
     private function taskActor(Context $context): string

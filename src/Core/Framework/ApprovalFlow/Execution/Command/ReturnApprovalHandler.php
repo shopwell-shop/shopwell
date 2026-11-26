@@ -42,14 +42,14 @@ class ReturnApprovalHandler
      */
     public function targets(string $instanceId, string $releaseId, string $taskId, Context $context): array
     {
-        $source = $this->tasks->pendingExecution($instanceId, $taskId);
+        $source = $this->tasks->pendingPrimaryExecution($instanceId, $taskId);
 
         return $this->eligibleTargets($instanceId, $releaseId, $taskId, $source, $context);
     }
 
     public function execute(ApprovalExecutionCommandContext $command, string $taskId, string $targetExecutionId): ApprovalInstanceStatus
     {
-        $source = $this->tasks->pendingExecution($command->instanceId, $taskId);
+        $source = $this->tasks->pendingPrimaryExecution($command->instanceId, $taskId);
         foreach ($this->eligibleTargets($command->instanceId, $command->releaseId, $taskId, $source, $command->context) as $target) {
             if ($target['executionId'] !== $targetExecutionId) {
                 continue;

@@ -4,15 +4,12 @@ import { flushPromises, shallowMount } from '@vue/test-utils';
 async function createWrapper(
     decide = jest.fn().mockResolvedValue({ aggregateVersion: 4 }),
     action = 'approved',
-    returnTask = jest.fn(),
-    returnTargets = jest.fn(),
-    transferTask = jest.fn(),
-    transferCandidates = jest.fn(),
+    actions: Record<string, jest.Mock> = {},
 ) {
     const wrapper = shallowMount(await wrapTestComponent('sw-approval-flow-decision-modal', { sync: true }), {
         props: { instanceId: 'instance', taskId: 'task', expectedVersion: 3, action },
         global: {
-            provide: { approvalFlowApiService: { decide, returnTask, returnTargets, transferTask, transferCandidates } },
+            provide: { approvalFlowApiService: { decide, ...actions } },
             stubs: {
                 'sw-modal': { template: '<section><slot/><slot name="modal-footer"/></section>' },
                 'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot/></button>' },
@@ -50,7 +47,7 @@ describe('personal approval decision confirmation', () => {
     it('requires a target and reason and retries the same return command', async () => {
         const returnTask = jest.fn().mockRejectedValueOnce(new Error('response lost')).mockResolvedValueOnce({});
         const returnTargets = jest.fn().mockResolvedValue([{ executionId: 'earlier', nodeId: 'finance', sequence: 2 }]);
-        const { wrapper, decide } = await createWrapper(undefined, 'return', returnTask, returnTargets);
+        const { wrapper, decide } = await createWrapper(undefined, 'return', { returnTask, returnTargets });
         await flushPromises();
         expect(returnTargets).toHaveBeenCalledWith('instance', 'task');
 
@@ -81,40 +78,39 @@ describe('personal approval decision confirmation', () => {
         expect(wrapper.emitted('completed')).toHaveLength(1);
     });
 
-    it('submits a transfer to the selected reviewer with the original version', async () => {
-        const transferTask = jest.fn().mockResolvedValue({});
+    it.each(['transfer', 'addSign'])('submits %s to the selected reviewer with the original version', async (action) => {
+        const assign = jest.fn().mockResolvedValue({});
         const transferCandidates = jest.fn().mockResolvedValue([{ id: 'reviewer', name: 'Lin' }]);
-        const { wrapper, decide } = await createWrapper(
-            undefined,
-            'transfer',
-            undefined,
-            undefined,
-            transferTask,
+        const { wrapper, decide } = await createWrapper(undefined, action, {
+            [action === 'transfer' ? 'transferTask' : 'addSign']: assign,
             transferCandidates,
-        );
+        });
         await flushPromises();
 
         expect(transferCandidates).toHaveBeenCalledWith('instance', 'task', '');
         await wrapper.find('select').setValue('reviewer');
         const submit = wrapper.find('[data-testid="decision-submit"]');
         expect(submit.attributes('disabled')).toBeDefined();
-        await wrapper.find('textarea').setValue('  Handover.  ');
+        await wrapper.find('textarea').setValue('  Please review.  ');
         await submit.trigger('click');
         await flushPromises();
 
         expect(decide).not.toHaveBeenCalled();
-        expect(transferTask).toHaveBeenCalledWith('instance', 'task', {
+        expect(assign).toHaveBeenCalledWith('instance', 'task', {
             commandId: expect.stringMatching(/^[a-f0-9]{32}$/) as string,
             expectedVersion: 3,
             assigneeId: 'reviewer',
-            reason: 'Handover.',
+            reason: 'Please review.',
         });
         expect(wrapper.emitted('completed')).toHaveLength(1);
     });
 
     it('shows an empty state when no earlier node can be reopened', async () => {
         const returnTask = jest.fn();
-        const { wrapper } = await createWrapper(undefined, 'return', returnTask, jest.fn().mockResolvedValue([]));
+        const { wrapper } = await createWrapper(undefined, 'return', {
+            returnTask,
+            returnTargets: jest.fn().mockResolvedValue([]),
+        });
         await flushPromises();
 
         expect(wrapper.text()).toContain('sw-approval-flow.decision.noReturnTargets');

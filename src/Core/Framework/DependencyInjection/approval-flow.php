@@ -55,9 +55,9 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Policy\SingleApprovalPolicy;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Scope\ApprovalExecutionScopeDefinition;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalAssigneeResolver;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalDecisionEvaluator;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskAssignments;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDefinition;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskTransfer;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphCodec;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphJsonDecoder;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Codec\GraphSchemaValidator;
@@ -222,7 +222,7 @@ return static function (ContainerConfigurator $container): void {
         service(ApprovalFlowExecutor::class),
         service('event_dispatcher'),
     ]);
-    $services->set(ApprovalTaskTransfer::class)->args([
+    $services->set(ApprovalTaskAssignments::class)->args([
         service(Connection::class),
         service(ApprovalTaskDecisionStore::class),
         service('approval_flow_task.repository'),
@@ -246,7 +246,7 @@ return static function (ContainerConfigurator $container): void {
             service(ApprovalTaskDecisionStore::class),
             service(ApprovalResultStore::class),
             service(ReturnApprovalHandler::class),
-            service(ApprovalTaskTransfer::class),
+            service(ApprovalTaskAssignments::class),
         ]);
     $services->set(ApprovalInstanceService::class)
         ->args([service(ApprovalInstanceStore::class)]);

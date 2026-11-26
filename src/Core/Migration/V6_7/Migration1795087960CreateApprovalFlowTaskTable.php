@@ -25,6 +25,8 @@ class Migration1795087960CreateApprovalFlowTaskTable extends MigrationStep
                 `execution_id` BINARY(16) NOT NULL,
                 `assignee_id` BINARY(16) NOT NULL,
                 `status` VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+                `blocked_task_id` BINARY(16) NULL,
+                `added_by_command_id` BINARY(16) NULL,
                 `replaces_task_id` BINARY(16) NULL,
                 `completion_command_id` BINARY(16) NULL,
                 `completion_reason` VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NULL,
@@ -33,9 +35,10 @@ class Migration1795087960CreateApprovalFlowTaskTable extends MigrationStep
                 PRIMARY KEY (`id`),
                 KEY `idx.approval_flow_task.assignee` (`execution_id`, `assignee_id`),
                 UNIQUE KEY `uniq.approval_flow_task.replaces` (`replaces_task_id`),
+                CONSTRAINT `fk.approval_flow_task.blocked` FOREIGN KEY (`blocked_task_id`) REFERENCES `approval_flow_task` (`id`) ON DELETE RESTRICT,
                 CONSTRAINT `fk.approval_flow_task.replaces` FOREIGN KEY (`replaces_task_id`) REFERENCES `approval_flow_task` (`id`) ON DELETE RESTRICT,
                 CONSTRAINT `fk.approval_flow_task.execution` FOREIGN KEY (`execution_id`) REFERENCES `approval_flow_execution` (`id`) ON DELETE RESTRICT,
-                CONSTRAINT `chk.approval_flow_task.status` CHECK (`status` IN ('pending', 'approved', 'rejected', 'cancelled'))
+                CONSTRAINT `chk.approval_flow_task.status` CHECK (`status` IN ('pending', 'blocked', 'approved', 'rejected', 'cancelled'))
             ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE utf8mb4_unicode_ci;
         SQL);
     }

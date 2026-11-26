@@ -137,8 +137,8 @@ class ApprovalExecutionStore
         }
         $this->requireActive($instanceId, $execution);
         $unsettledTask = $this->connection->fetchOne(
-            'SELECT id FROM approval_flow_task WHERE execution_id = :execution AND status = :pending LIMIT 1 FOR UPDATE',
-            ['execution' => Uuid::fromHexToBytes($executionId), 'pending' => ApprovalTaskStatus::Pending->value],
+            'SELECT id FROM approval_flow_task WHERE execution_id = :execution AND status IN (:pending, :blocked) LIMIT 1 FOR UPDATE',
+            ['execution' => Uuid::fromHexToBytes($executionId), 'pending' => ApprovalTaskStatus::Pending->value, 'blocked' => ApprovalTaskStatus::Blocked->value],
         );
         if ($unsettledTask !== false) {
             throw ApprovalFlowException::invalidNodeProgression($executionId, 'Approval tasks are still pending.');
@@ -326,7 +326,7 @@ class ApprovalExecutionStore
 
     private function returnToApproval(string $instanceId, ApprovalExecutionState $source, ReturnToApproval $return, string $commandId, Context $context): void
     {
-        $this->cancelPendingTasks(
+        $this->cancelOpenTasks(
             [Uuid::fromHexToBytes($source->id)],
             $commandId,
             ApprovalTaskCompletionReason::GROUP_RETURNED,
@@ -429,8 +429,8 @@ class ApprovalExecutionStore
             throw ApprovalFlowException::invalidNodeProgression($execution->id, 'Other node executions are still active.');
         }
         $pending = $this->connection->fetchOne(
-            'SELECT task.id FROM approval_flow_task task INNER JOIN approval_flow_execution e ON e.id = task.execution_id WHERE e.instance_id = :instance AND task.status = :pending LIMIT 1 FOR UPDATE',
-            ['instance' => Uuid::fromHexToBytes($instanceId), 'pending' => ApprovalTaskStatus::Pending->value],
+            'SELECT task.id FROM approval_flow_task task INNER JOIN approval_flow_execution e ON e.id = task.execution_id WHERE e.instance_id = :instance AND task.status IN (:pending, :blocked) LIMIT 1 FOR UPDATE',
+            ['instance' => Uuid::fromHexToBytes($instanceId), 'pending' => ApprovalTaskStatus::Pending->value, 'blocked' => ApprovalTaskStatus::Blocked->value],
         );
         if ($pending !== false) {
             throw ApprovalFlowException::invalidNodeProgression($execution->id, 'Approval tasks are still pending.');
@@ -528,7 +528,7 @@ class ApprovalExecutionStore
         );
         $ids = array_column($executions, 'id');
         if ($ids !== []) {
-            $this->cancelPendingTasks($ids, $commandId, $reason, $context);
+            $this->cancelOpenTasks($ids, $commandId, $reason, $context);
             foreach ($executions as $execution) {
                 $updates = ['advanced' => true];
                 if ($execution['status'] !== ApprovalNodeExecutionStatus::Completed->value) {
@@ -568,11 +568,11 @@ class ApprovalExecutionStore
      * @param list<string> $executionIds Binary execution UUIDs
      * @param array<string, string> $taskReasons
      */
-    private function cancelPendingTasks(array $executionIds, string $commandId, string $reason, Context $context, array $taskReasons = []): void
+    private function cancelOpenTasks(array $executionIds, string $commandId, string $reason, Context $context, array $taskReasons = []): void
     {
         $taskRows = $this->connection->fetchFirstColumn(
-            'SELECT id FROM approval_flow_task WHERE execution_id IN (:executions) AND status = :pending FOR UPDATE',
-            ['executions' => $executionIds, 'pending' => ApprovalTaskStatus::Pending->value],
+            'SELECT id FROM approval_flow_task WHERE execution_id IN (:executions) AND status IN (:pending, :blocked) FOR UPDATE',
+            ['executions' => $executionIds, 'pending' => ApprovalTaskStatus::Pending->value, 'blocked' => ApprovalTaskStatus::Blocked->value],
             ['executions' => ArrayParameterType::BINARY],
         );
         if ($taskRows === []) {

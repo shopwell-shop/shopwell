@@ -225,7 +225,7 @@
         "/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/transfer-candidates": {
             "get": {
                 "summary": "Find eligible reviewers for a pending approval task",
-                "description": "The active assignee can search for up to 20 other reviewers by name.",
+                "description": "The active assignee can search for up to 20 reviewers by name for transfer or preliminary approval.",
                 "operationId": "listApprovalTransferCandidates",
                 "tags": [
                     "Approval Flow"
@@ -354,6 +354,73 @@
                 "responses": {
                     "200": {
                         "description": "Committed task transfer receipt.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApprovalDecisionReceipt"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed input"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "403": {
+                        "description": "Decision privilege or active personal task assignment required"
+                    },
+                    "404": {
+                        "description": "Instance or task not found"
+                    },
+                    "409": {
+                        "description": "Version, task state, assignee eligibility or command identity conflict"
+                    }
+                }
+            }
+        },
+        "/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/add-sign": {
+            "post": {
+                "summary": "Add a preliminary reviewer for a pending approval task",
+                "description": "Holds the original task and opens a preliminary review within the same execution. An approval reopens the original task. A rejection vetoes the group.",
+                "operationId": "addApprovalTaskReviewer",
+                "tags": [
+                    "Approval Flow"
+                ],
+                "parameters": [
+                    {
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    },
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApprovalTransferRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Committed preliminary review receipt.",
                         "content": {
                             "application/json": {
                                 "schema": {

@@ -23,6 +23,12 @@ While a stored file is kept, the document also keeps its order version and confi
 The missing file is rendered from the current order.
 To get fresh files for an existing document, generate a new document instead of regenerating it.
 
+### Add a preliminary approval reviewer
+
+The approval task's `add-sign` Admin API action opens a preliminary review and holds the original task.
+Approval restores the original task, and rejection vetoes the group.
+Request detail exposes the additional reviewer and reason in `addSigns`.
+
 ### Transfer a pending approval task
 
 An assigned approver can search for eligible reviewers with the `transfer-candidates` Admin API action and hand over the task with `transfer`.

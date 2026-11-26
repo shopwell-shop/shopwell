@@ -21,6 +21,10 @@ class ApprovalTaskEntity extends Entity
 
     protected ApprovalTaskStatus $status;
 
+    protected ?string $blockedTaskId = null;
+
+    protected ?string $addedByCommandId = null;
+
     protected ?string $replacesTaskId = null;
 
     protected ?string $completionReason = null;
@@ -87,6 +91,26 @@ class ApprovalTaskEntity extends Entity
     public function setReplacesTaskId(?string $replacesTaskId): void
     {
         $this->replacesTaskId = $replacesTaskId;
+    }
+
+    public function getBlockedTaskId(): ?string
+    {
+        return $this->blockedTaskId;
+    }
+
+    public function setBlockedTaskId(?string $blockedTaskId): void
+    {
+        $this->blockedTaskId = $blockedTaskId;
+    }
+
+    public function getAddedByCommandId(): ?string
+    {
+        return $this->addedByCommandId;
+    }
+
+    public function setAddedByCommandId(?string $addedByCommandId): void
+    {
+        $this->addedByCommandId = $addedByCommandId;
     }
 
     public function getCompletionReason(): ?string

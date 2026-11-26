@@ -41,7 +41,7 @@ computed
   canRetry: boolean  [private]
   canSubmit: boolean  [private]
   isReturn: boolean  [private]
-  isTransfer: boolean  [private]
+  needsReviewer: boolean  [private]
   needsTarget: boolean  [private]
 
 methods

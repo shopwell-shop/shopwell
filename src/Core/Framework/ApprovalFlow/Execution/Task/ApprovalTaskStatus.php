@@ -8,7 +8,13 @@ use Shopwell\Core\Framework\Log\Package;
 enum ApprovalTaskStatus: string
 {
     case Pending = 'pending';
+    case Blocked = 'blocked';
     case Approved = 'approved';
     case Rejected = 'rejected';
     case Cancelled = 'cancelled';
+
+    public function isOpen(): bool
+    {
+        return $this === self::Pending || $this === self::Blocked;
+    }
 }

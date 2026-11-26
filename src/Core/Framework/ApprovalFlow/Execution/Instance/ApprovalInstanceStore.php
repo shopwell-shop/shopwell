@@ -15,8 +15,8 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Event\ApprovalReturnTargetsEv
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionStatus;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationCollection;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskAssignments;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
-use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskTransfer;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
@@ -60,6 +60,8 @@ class ApprovalInstanceStore
 
     public const TRANSFER_TASK = 'transfer-task';
 
+    public const ADD_SIGN = 'add-sign';
+
     public const ADVANCE_APPROVAL = 'advance-approval';
 
     public const ENTER_END = 'enter-end';
@@ -83,7 +85,7 @@ class ApprovalInstanceStore
         private readonly ApprovalTaskDecisionStore $decisions,
         private readonly ApprovalResultStore $results,
         private readonly ReturnApprovalHandler $returns,
-        private readonly ApprovalTaskTransfer $taskTransfer,
+        private readonly ApprovalTaskAssignments $assignments,
     ) {
     }
 
@@ -290,15 +292,18 @@ class ApprovalInstanceStore
                 return [];
             }
 
-            return $this->taskTransfer->candidates($instanceId, $taskId, $term);
+            return $this->assignments->candidates($instanceId, $taskId, $term);
         });
     }
 
-    public function transferTask(string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $assigneeId, string $reason, string $userId, Context $context): ApprovalInstanceCommandResult
+    /**
+     * @param self::TRANSFER_TASK|self::ADD_SIGN $operation
+     */
+    public function assignTask(string $operation, string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $assigneeId, string $reason, string $userId, Context $context): ApprovalInstanceCommandResult
     {
         $actorJson = $this->actorJson($context);
         $requestHash = Hasher::hash([
-            'operation' => self::TRANSFER_TASK,
+            'operation' => $operation,
             'taskId' => $taskId,
             'assigneeId' => $assigneeId,
             'expectedVersion' => $expectedVersion,
@@ -310,13 +315,17 @@ class ApprovalInstanceStore
             $instanceId,
             $commandId,
             $expectedVersion,
-            self::TRANSFER_TASK,
+            $operation,
             $requestHash,
             $reason,
             $actorJson,
             $context,
-            function () use ($instanceId, $taskId, $commandId, $assigneeId, $context): ApprovalInstanceStatus {
-                $this->taskTransfer->transfer($instanceId, $taskId, $commandId, $assigneeId, $context);
+            function () use ($operation, $instanceId, $taskId, $commandId, $assigneeId, $context): ApprovalInstanceStatus {
+                if ($operation === self::ADD_SIGN) {
+                    $this->assignments->addSign($instanceId, $taskId, $commandId, $assigneeId, $context);
+                } else {
+                    $this->assignments->transfer($instanceId, $taskId, $commandId, $assigneeId, $context);
+                }
 
                 return ApprovalInstanceStatus::Running;
             },

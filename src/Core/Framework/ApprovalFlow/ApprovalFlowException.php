@@ -43,6 +43,10 @@ class ApprovalFlowException extends HttpException
     public const ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__ASSIGNEE_UNAVAILABLE';
     public const EMPTY_APPROVAL_ASSIGNEES = 'APPROVAL_FLOW__EMPTY_APPROVAL_ASSIGNEES';
     public const TASK_NOT_FOUND = 'APPROVAL_FLOW__TASK_NOT_FOUND';
+    public const ADD_SIGN_ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__ADD_SIGN_ASSIGNEE_UNAVAILABLE';
+
+    public const PRIMARY_TASK_REQUIRED = 'APPROVAL_FLOW__PRIMARY_TASK_REQUIRED';
+
     public const TRANSFER_ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__TRANSFER_ASSIGNEE_UNAVAILABLE';
 
     public const RETURN_TARGET_UNAVAILABLE = 'APPROVAL_FLOW__RETURN_TARGET_UNAVAILABLE';
@@ -423,6 +427,16 @@ class ApprovalFlowException extends HttpException
             self::SINGLE_APPROVAL_ASSIGNEE_REQUIRED,
             'Single approval configuration requires exactly one candidate.'
         );
+    }
+
+    public static function addSignAssigneeUnavailable(string $assigneeId): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::ADD_SIGN_ASSIGNEE_UNAVAILABLE, 'User "{{ assigneeId }}" is unavailable as an additional approver.', ['assigneeId' => $assigneeId]);
+    }
+
+    public static function primaryTaskRequired(string $taskId): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::PRIMARY_TASK_REQUIRED, 'This action requires an original approval task. Task "{{ taskId }}" was added for preliminary approval.', ['taskId' => $taskId]);
     }
 
     public static function transferAssigneeUnavailable(string $assigneeId): self

@@ -144,6 +144,56 @@ class PaymentTransferApprovalExecutionTest extends TestCase
         $this->assertClaimBlocked('pending');
     }
 
+    public function testTransferredPreliminaryApprovalRestoresTheTaskBeforePayoutCanProceed(): void
+    {
+        $permissions = [ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access'];
+        $user = TestUser::createNewTestUser($this->connection, $permissions);
+        $source = new AdminApiSource($user->getUserId());
+        $source->setPermissions($permissions);
+        $signer = Context::createDefaultContext($source);
+        $recipient = TestUser::createNewTestUser($this->connection, $permissions);
+        $recipientSource = new AdminApiSource($recipient->getUserId());
+        $recipientSource->setPermissions($permissions);
+        $recipientContext = Context::createDefaultContext($recipientSource);
+        $system = Context::createDefaultContext();
+        $instanceId = $this->request->getInstanceId();
+        $instances = $this->runtime->get(ApprovalInstanceService::class);
+        $original = $this->pendingReview();
+        $instances->addSign($instanceId, $original['taskId'], Uuid::randomHex(), 2, $user->getUserId(), 'Check the recipient.', $this->reviewerContext());
+
+        $this->assertClaimBlocked('pending');
+        $preliminary = $this->pendingReview();
+        static::assertNotSame($original['taskId'], $preliminary['taskId']);
+        $instances->transferTask($instanceId, $preliminary['taskId'], Uuid::randomHex(), 3, $recipient->getUserId(), 'Handover.', $signer);
+        $replacement = $this->pendingReview();
+        static::assertNotSame($preliminary['taskId'], $replacement['taskId']);
+        $instances->decide($instanceId, $replacement['taskId'], Uuid::randomHex(), 4, ApprovalOutcome::Approved, '', $recipientContext);
+        static::assertSame($original, $this->pendingReview());
+        $this->assertClaimBlocked('pending');
+
+        $instances->decide($instanceId, $original['taskId'], Uuid::randomHex(), 5, ApprovalOutcome::Approved, '', $this->reviewerContext());
+        $instances->progress($instanceId, $original['executionId'], Uuid::randomHex(), 6, $system);
+        $this->assertClaimBlocked('pending');
+        static::getContainer()->get(PaymentTransferApprovalResultHandler::class)->handle($this->approvalResult(), $this->request, $system);
+        static::getContainer()->get(PaymentTransferResultBooker::class)->claim($this->transfer);
+
+        static::assertSame(1, static::getContainer()->get(PaymentTransferService::class)->getById($this->transfer->id)->submitAttempts);
+    }
+
+    public function testWithdrawalCancelsBothTasksDuringPreliminaryReview(): void
+    {
+        $signer = TestUser::createNewTestUser($this->connection, [ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access']);
+        $instanceId = $this->request->getInstanceId();
+        $instances = $this->runtime->get(ApprovalInstanceService::class);
+        $original = $this->pendingReview();
+        $instances->addSign($instanceId, $original['taskId'], Uuid::randomHex(), 2, $signer->getUserId(), 'Check the recipient.', $this->reviewerContext());
+
+        $this->runtime->get(ApprovalRequestService::class)->withdraw($this->request->getId(), 'Cancel the transfer.', $this->reviewerContext());
+
+        $statuses = $this->connection->fetchFirstColumn('SELECT status FROM approval_flow_task WHERE execution_id = :id', ['id' => Uuid::fromHexToBytes($original['executionId'])]);
+        static::assertSame(['cancelled', 'cancelled'], $statuses);
+    }
+
     public function testTransferringATaskKeepsPayoutBlockedUntilTheRecipientApproves(): void
     {
         $permissions = [ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access'];

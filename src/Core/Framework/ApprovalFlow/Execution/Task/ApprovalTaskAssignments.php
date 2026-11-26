@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * Replaces one assignment within the same execution under the instance command lock.
+ * Assigns or replaces tasks within the same execution under the instance command lock.
  *
  * @internal
  *
@@ -21,7 +21,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * @see \Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Api\ApprovalTaskControllerTest
  */
 #[Package('framework')]
-class ApprovalTaskTransfer
+class ApprovalTaskAssignments
 {
     private const ELIGIBLE_USERS = <<<'SQL'
         FROM `user` u
@@ -29,11 +29,11 @@ class ApprovalTaskTransfer
           AND (u.admin = 1 OR EXISTS (
               SELECT 1
               FROM acl_user_role membership
-              INNER JOIN acl_role role ON role.id = membership.acl_role_id
+              INNER JOIN acl_role acl ON acl.id = membership.acl_role_id
               WHERE membership.user_id = u.id
               GROUP BY membership.user_id
-              HAVING MAX(JSON_CONTAINS(role.privileges, JSON_QUOTE(:view))) = 1
-                 AND MAX(JSON_CONTAINS(role.privileges, JSON_QUOTE(:decide))) = 1
+              HAVING MAX(JSON_CONTAINS(acl.privileges, JSON_QUOTE(:view))) = 1
+                 AND MAX(JSON_CONTAINS(acl.privileges, JSON_QUOTE(:decide))) = 1
           ))
           AND NOT EXISTS (
               SELECT 1 FROM approval_flow_task task
@@ -58,7 +58,7 @@ class ApprovalTaskTransfer
      */
     public function candidates(string $instanceId, string $taskId, string $term): array
     {
-        $execution = $this->decisions->pendingExecution($instanceId, $taskId);
+        $execution = $this->decisions->pendingTask($instanceId, $taskId)['execution'];
         $rows = $this->connection->fetchAllAssociative(
             'SELECT u.id, u.name ' . self::ELIGIBLE_USERS . ' AND LOCATE(:term, u.name) > 0 ORDER BY u.name, u.id LIMIT 20',
             [...$this->parameters($execution->id), 'term' => $term],
@@ -69,12 +69,9 @@ class ApprovalTaskTransfer
 
     public function transfer(string $instanceId, string $taskId, string $commandId, string $assigneeId, Context $context): void
     {
-        $execution = $this->decisions->pendingExecution($instanceId, $taskId);
-        $eligible = $this->connection->fetchOne(
-            'SELECT u.id ' . self::ELIGIBLE_USERS . ' AND u.id = :assignee LOCK IN SHARE MODE',
-            [...$this->parameters($execution->id), 'assignee' => Uuid::fromHexToBytes($assigneeId)],
-        );
-        if ($eligible === false) {
+        $task = $this->decisions->pendingTask($instanceId, $taskId);
+        $executionId = $task['execution']->id;
+        if (!$this->isEligible($executionId, $assigneeId)) {
             throw ApprovalFlowException::transferAssigneeUnavailable($assigneeId);
         }
 
@@ -86,15 +83,46 @@ class ApprovalTaskTransfer
                 'completionReason' => ApprovalTaskCompletionReason::TRANSFERRED,
             ]], $writeContext);
         });
-        $this->writeGuard->write($context, function (Context $writeContext) use ($execution, $assigneeId, $taskId): void {
+        $this->writeGuard->write($context, function (Context $writeContext) use ($executionId, $assigneeId, $taskId, $task): void {
+            $this->tasks->create([[
+                'id' => Uuid::randomHex(),
+                'executionId' => $executionId,
+                'assigneeId' => $assigneeId,
+                'replacesTaskId' => $taskId,
+                'blockedTaskId' => $task['blockedTaskId'],
+                'status' => ApprovalTaskStatus::Pending->value,
+            ]], $writeContext);
+        });
+    }
+
+    public function addSign(string $instanceId, string $taskId, string $commandId, string $assigneeId, Context $context): void
+    {
+        $execution = $this->decisions->pendingPrimaryExecution($instanceId, $taskId);
+        if (!$this->isEligible($execution->id, $assigneeId)) {
+            throw ApprovalFlowException::addSignAssigneeUnavailable($assigneeId);
+        }
+
+        $this->writeGuard->write($context, function (Context $writeContext) use ($taskId): void {
+            $this->tasks->update([['id' => $taskId, 'status' => ApprovalTaskStatus::Blocked->value]], $writeContext);
+        });
+        $this->writeGuard->write($context, function (Context $writeContext) use ($execution, $assigneeId, $taskId, $commandId): void {
             $this->tasks->create([[
                 'id' => Uuid::randomHex(),
                 'executionId' => $execution->id,
                 'assigneeId' => $assigneeId,
-                'replacesTaskId' => $taskId,
+                'blockedTaskId' => $taskId,
+                'addedByCommandId' => $commandId,
                 'status' => ApprovalTaskStatus::Pending->value,
             ]], $writeContext);
         });
+    }
+
+    private function isEligible(string $executionId, string $assigneeId): bool
+    {
+        return $this->connection->fetchOne(
+            'SELECT u.id ' . self::ELIGIBLE_USERS . ' AND u.id = :assignee LOCK IN SHARE MODE',
+            [...$this->parameters($executionId), 'assignee' => Uuid::fromHexToBytes($assigneeId)],
+        ) !== false;
     }
 
     /**

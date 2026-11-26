@@ -10,7 +10,7 @@ export type ApprovalStatus = 'draft' | 'running' | 'suspended' | 'completed' | '
 /** @private */
 export type ApprovalOutcome = 'approved' | 'rejected';
 /** @private */
-export type ApprovalTaskAction = ApprovalOutcome | 'return' | 'transfer';
+export type ApprovalTaskAction = ApprovalOutcome | 'return' | 'transfer' | 'addSign';
 /** @private */
 export type FormValue = string | number | boolean | null | FormValue[] | { [key: string]: FormValue };
 
@@ -47,7 +47,15 @@ export interface ApprovalDetail {
         id: string;
         executionId: string;
         assigneeId: string;
-        status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+        status: 'pending' | 'blocked' | 'approved' | 'rejected' | 'cancelled';
+        blockedTaskId: string | null;
+    }[];
+    addSigns: {
+        taskId: string;
+        addedTaskId: string;
+        reason: string;
+        addedAt: string | null;
+        aggregateVersion: number;
     }[];
     transfers: {
         taskId: string;
@@ -98,7 +106,7 @@ export interface ApprovalReturn {
 }
 
 /** @private */
-export interface ApprovalTransfer {
+export interface ApprovalTaskAssignment {
     commandId: string;
     expectedVersion: number;
     assigneeId: string;
@@ -188,10 +196,20 @@ export default class ApprovalFlowApiService extends ApiService {
             .then((response) => response.data.data);
     }
 
-    transferTask(instanceId: string, taskId: string, command: ApprovalTransfer): Promise<ApprovalDecisionReceipt> {
+    transferTask(instanceId: string, taskId: string, command: ApprovalTaskAssignment): Promise<ApprovalDecisionReceipt> {
         return this.httpClient
             .post<ApprovalDecisionReceipt>(
                 `/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/transfer`,
+                command,
+                { headers: this.getBasicHeaders() },
+            )
+            .then((response) => response.data);
+    }
+
+    addSign(instanceId: string, taskId: string, command: ApprovalTaskAssignment): Promise<ApprovalDecisionReceipt> {
+        return this.httpClient
+            .post<ApprovalDecisionReceipt>(
+                `/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/add-sign`,
                 command,
                 { headers: this.getBasicHeaders() },
             )

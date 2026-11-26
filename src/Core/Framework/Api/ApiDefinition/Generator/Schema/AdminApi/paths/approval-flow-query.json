@@ -12,7 +12,7 @@
                 ],
                 "operationId": "searchPersonalApprovalRequests",
                 "summary": "List my approvals",
-                "description": "Requires approval_flow:access and an Administration user. Ownership is applied before counting and pagination. Todo includes pending personal tasks on running instances; done includes personal approvals, rejections, returns and transfers; started includes requests initiated by this user. Lists do not contain forms.",
+                "description": "Requires approval_flow:access and an Administration user. Ownership is applied before counting and pagination. Todo includes pending and blocked personal tasks on running instances; done includes personal approvals, rejections, returns and transfers; started includes requests initiated by this user. Lists do not contain forms.",
                 "parameters": [
                     {
                         "name": "view",
@@ -264,7 +264,8 @@
                     "id",
                     "executionId",
                     "assigneeId",
-                    "status"
+                    "status",
+                    "blockedTaskId"
                 ],
                 "properties": {
                     "id": {
@@ -282,8 +283,16 @@
                             "pending",
                             "approved",
                             "rejected",
-                            "cancelled"
+                            "cancelled",
+                            "blocked"
                         ]
+                    },
+                    "blockedTaskId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Original task held by this preliminary review."
                     }
                 }
             },
@@ -371,7 +380,8 @@
                     "formLabels",
                     "participantNames",
                     "returns",
-                    "transfers"
+                    "transfers",
+                    "addSigns"
                 ],
                 "properties": {
                     "request": {
@@ -438,6 +448,12 @@
                         "items": {
                             "$ref": "#/components/schemas/ApprovalTransferSummary"
                         }
+                    },
+                    "addSigns": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalAddSignSummary"
+                        }
                     }
                 }
             },
@@ -497,6 +513,40 @@
                         "type": "string"
                     },
                     "transferredAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "aggregateVersion": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "ApprovalAddSignSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "taskId",
+                    "addedTaskId",
+                    "reason",
+                    "addedAt",
+                    "aggregateVersion"
+                ],
+                "properties": {
+                    "taskId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "addedTaskId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "addedAt": {
                         "type": [
                             "string",
                             "null"

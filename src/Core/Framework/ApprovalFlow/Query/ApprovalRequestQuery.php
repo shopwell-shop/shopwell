@@ -38,7 +38,8 @@ use Shopwell\Core\System\User\UserCollection;
  *
  * @phpstan-type RequestSummary array{id: string, title: string, businessType: string, businessId: string, submissionRound: int, instanceId: string, initiatorId: string, initiatorName: string|null, createdAt: string|null, status: string, outcome: string|null, aggregateVersion: int}
  * @phpstan-type ExecutionSummary array{id: string, nodeId: string, sequence: int, status: string, outcome: string|null}
- * @phpstan-type TaskSummary array{id: string, executionId: string, assigneeId: string, status: string}
+ * @phpstan-type TaskSummary array{id: string, executionId: string, assigneeId: string, status: string, blockedTaskId: ?string}
+ * @phpstan-type AddSignSummary array{taskId: string, addedTaskId: string, reason: string, addedAt: string|null, aggregateVersion: int}
  * @phpstan-type TransferSummary array{taskId: string, replacementTaskId: string, reason: string, transferredAt: string|null, aggregateVersion: int}
  * @phpstan-type ReturnSummary array{taskId: string, targetExecutionId: string, reason: string, returnedAt: string|null, aggregateVersion: int}
  * @phpstan-type DecisionSummary array{taskId: string, nodeId: string, assigneeId: string, decision: string, reason: string, decidedAt: string|null, aggregateVersion: int}
@@ -78,7 +79,7 @@ class ApprovalRequestQuery
             $criteria->addFilter(new EqualsFilter('initiatorId', $userId));
         } else {
             $taskFilter = $view === ApprovalRequestView::Todo
-                ? new EqualsFilter('instance.executions.tasks.status', ApprovalTaskStatus::Pending->value)
+                ? new EqualsAnyFilter('instance.executions.tasks.status', [ApprovalTaskStatus::Pending->value, ApprovalTaskStatus::Blocked->value])
                 : new EqualsAnyFilter('instance.executions.tasks.completionReason', [
                     ApprovalTaskCompletionReason::DECISION,
                     ApprovalTaskCompletionReason::RETURNED,
@@ -109,7 +110,7 @@ class ApprovalRequestQuery
     }
 
     /**
-     * @return array{request: RequestSummary, form: \stdClass, formLabels: \stdClass, participantNames: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>, returns: list<ReturnSummary>, transfers: list<TransferSummary>}
+     * @return array{request: RequestSummary, form: \stdClass, formLabels: \stdClass, participantNames: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>, returns: list<ReturnSummary>, transfers: list<TransferSummary>, addSigns: list<AddSignSummary>}
      */
     public function detail(string $requestId, Context $context): array
     {
@@ -132,19 +133,17 @@ class ApprovalRequestQuery
         $executions = $this->executions->search($executionCriteria, $context)->getEntities();
         $operationCriteria = (new Criteria())->addFilter(
             new EqualsFilter('instanceId', $request->getInstanceId()),
-            new EqualsAnyFilter('operation', [ApprovalInstanceStore::DECIDE, ApprovalInstanceStore::RETURN_APPROVAL, ApprovalInstanceStore::TRANSFER_TASK]),
+            new EqualsAnyFilter('operation', [
+                ApprovalInstanceStore::DECIDE,
+                ApprovalInstanceStore::RETURN_APPROVAL,
+                ApprovalInstanceStore::TRANSFER_TASK,
+                ApprovalInstanceStore::ADD_SIGN,
+            ]),
         );
         $operations = $this->operations->search($operationCriteria, $context)->getEntities();
-        $receipts = [];
-        foreach ($operations as $operation) {
-            $receipts[$operation->getCommandId()] = $operation;
-        }
 
         $executionSummaries = [];
         $tasks = [];
-        $decisions = [];
-        $returns = [];
-        $transfers = [];
         $assignedNodeIds = [];
         foreach ($executions as $execution) {
             $executionSummaries[] = [
@@ -154,6 +153,78 @@ class ApprovalRequestQuery
             $executionTasks = $execution->getTasks();
             \assert($executionTasks !== null);
             foreach ($executionTasks as $task) {
+                $tasks[] = [
+                    'id' => $task->getId(),
+                    'executionId' => $execution->getId(),
+                    'assigneeId' => $task->getAssigneeId(),
+                    'status' => $task->getStatus()->value,
+                    'blockedTaskId' => $task->getBlockedTaskId(),
+                ];
+                if ($task->getAssigneeId() === $userId) {
+                    $assignedNodeIds[] = $execution->getNodeId();
+                }
+            }
+        }
+
+        $instance = $request->getInstance();
+        \assert($instance !== null);
+        $release = $instance->getRelease();
+        \assert($release !== null);
+        $form = $request->getInitiatorId() === $userId
+            ? json_decode($request->getFormJson(), flags: \JSON_THROW_ON_ERROR)
+            : $this->forms->read($request->getFormJson(), $release->getNodePlanJson(), $assignedNodeIds);
+        \assert($form instanceof \stdClass);
+        $binding = $request->getBinding();
+        \assert($binding !== null);
+        $names = $this->userNames([$request->getInitiatorId(), ...array_column($tasks, 'assigneeId')], $context);
+        $history = $this->taskHistory($executions, $operations);
+
+        return [
+            'request' => $this->summary($request, $names[$request->getInitiatorId()] ?? null),
+            'form' => $form,
+            'formLabels' => $this->forms->labels($form, $binding->getFormSchema()),
+            'participantNames' => (object) $names,
+            'executions' => $executionSummaries,
+            'tasks' => $tasks,
+            'decisions' => $history['decisions'],
+            'returns' => $history['returns'],
+            'transfers' => $history['transfers'],
+            'addSigns' => $history['addSigns'],
+        ];
+    }
+
+    /**
+     * @return array{decisions: list<DecisionSummary>, returns: list<ReturnSummary>, transfers: list<TransferSummary>, addSigns: list<AddSignSummary>}
+     */
+    private function taskHistory(ApprovalNodeExecutionCollection $executions, ApprovalOperationCollection $operations): array
+    {
+        $receipts = [];
+        foreach ($operations as $operation) {
+            $receipts[$operation->getCommandId()] = $operation;
+        }
+
+        $decisions = [];
+        $returns = [];
+        $transfers = [];
+        $addSigns = [];
+        foreach ($executions as $execution) {
+            $executionTasks = $execution->getTasks();
+            \assert($executionTasks !== null);
+            foreach ($executionTasks as $task) {
+                $blockedTaskId = $task->getBlockedTaskId();
+                $addition = $task->getAddedByCommandId();
+                if ($addition !== null) {
+                    \assert($blockedTaskId !== null);
+                    $receipt = $receipts[$addition];
+                    $addSigns[] = [
+                        'taskId' => $blockedTaskId,
+                        'addedTaskId' => $task->getId(),
+                        'reason' => $receipt->getReason(),
+                        'addedAt' => $receipt->getCreatedAt()?->format(\DATE_ATOM),
+                        'aggregateVersion' => $receipt->getAggregateVersion(),
+                    ];
+                }
+
                 $replacedId = $task->getReplacesTaskId();
                 if ($replacedId !== null) {
                     $replaced = $executionTasks->get($replacedId);
@@ -170,10 +241,6 @@ class ApprovalRequestQuery
                     ];
                 }
 
-                $tasks[] = ['id' => $task->getId(), 'executionId' => $execution->getId(), 'assigneeId' => $task->getAssigneeId(), 'status' => $task->getStatus()->value];
-                if ($task->getAssigneeId() === $userId) {
-                    $assignedNodeIds[] = $execution->getNodeId();
-                }
                 if ($task->getCompletionReason() === ApprovalTaskCompletionReason::RETURNED) {
                     $commandId = $task->getCompletionCommandId();
                     $target = $execution->getReturnTargetId();
@@ -205,28 +272,13 @@ class ApprovalRequestQuery
         usort($decisions, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
         usort($returns, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
         usort($transfers, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
-        $instance = $request->getInstance();
-        \assert($instance !== null);
-        $release = $instance->getRelease();
-        \assert($release !== null);
-        $form = $request->getInitiatorId() === $userId
-            ? json_decode($request->getFormJson(), flags: \JSON_THROW_ON_ERROR)
-            : $this->forms->read($request->getFormJson(), $release->getNodePlanJson(), $assignedNodeIds);
-        \assert($form instanceof \stdClass);
-        $binding = $request->getBinding();
-        \assert($binding !== null);
-        $names = $this->userNames([$request->getInitiatorId(), ...array_column($tasks, 'assigneeId')], $context);
+        usort($addSigns, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
 
         return [
-            'request' => $this->summary($request, $names[$request->getInitiatorId()] ?? null),
-            'form' => $form,
-            'formLabels' => $this->forms->labels($form, $binding->getFormSchema()),
-            'participantNames' => (object) $names,
-            'executions' => $executionSummaries,
-            'tasks' => $tasks,
             'decisions' => $decisions,
             'returns' => $returns,
             'transfers' => $transfers,
+            'addSigns' => $addSigns,
         ];
     }
 
