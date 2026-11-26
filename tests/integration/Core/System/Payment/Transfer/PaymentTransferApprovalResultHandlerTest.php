@@ -27,7 +27,6 @@ use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalExcept
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultHandler;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\ApprovalRuntimeFixture;
@@ -93,7 +92,6 @@ class PaymentTransferApprovalResultHandlerTest extends TestCase
         $service = new PaymentTransferApprovalRequestService(
             $kernel->get(PaymentTransferApprovalRequestStore::class),
             $this->runtime->get(ApprovalRequestService::class),
-            $kernel->get(PaymentTransferApprovalStore::class),
             $kernel->get(PaymentTransferPresenter::class),
         );
         $this->request = $service->submit($this->transfer->id, Context::createDefaultContext($source));

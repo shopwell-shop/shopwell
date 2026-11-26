@@ -25,12 +25,16 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 class PaymentTransferApprovalRequestStore
 {
     /**
+     * @var array<string, true>
+     */
+    private array $activeSubmissions = [];
+
+    /**
      * @param EntityRepository<PaymentTransferApprovalRequestCollection> $requests
      */
     public function __construct(
         private readonly Connection $connection,
         private readonly EntityRepository $requests,
-        private readonly PaymentTransferApprovalStore $approvals,
     ) {
     }
 
@@ -43,13 +47,19 @@ class PaymentTransferApprovalRequestStore
      */
     public function transactional(string $transferId, \Closure $submit): mixed
     {
-        return $this->approvals->submitting($transferId, function () use ($transferId, $submit): mixed {
+        if (isset($this->activeSubmissions[$transferId])) {
+            throw PaymentTransferApprovalException::blocked('submission_in_progress');
+        }
+        $this->activeSubmissions[$transferId] = true;
+        try {
             return RetryableTransaction::transactional($this->connection, function () use ($transferId, $submit): mixed {
                 $this->lockTransfer($transferId);
 
                 return $submit();
             });
-        });
+        } finally {
+            unset($this->activeSubmissions[$transferId]);
+        }
     }
 
     public function lockTransfer(string $transferId): void

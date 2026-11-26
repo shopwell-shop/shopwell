@@ -94,7 +94,6 @@ export default defineComponent({
         storeKey: string;
         activeFilterNumber: number;
         showCreateModal: boolean;
-        showWorkflowModal: boolean;
         transferToApprove: PaymentTransfer | null;
         transferToReject: PaymentTransfer | null;
     } {
@@ -111,7 +110,6 @@ export default defineComponent({
             storeKey: 'grid.filter.payment_transfer',
             activeFilterNumber: 0,
             showCreateModal: false,
-            showWorkflowModal: false,
             transferToApprove: null,
             transferToReject: null,
         };
@@ -124,10 +122,6 @@ export default defineComponent({
     },
 
     computed: {
-        canConfigureWorkflow(): boolean {
-            return this.acl.can('system_config:read') && this.acl.can('system_config:update');
-        },
-
         transferRepository(): RepositoryType<'payment_transfer'> {
             return this.repositoryFactory.create('payment_transfer');
         },
@@ -280,13 +274,13 @@ export default defineComponent({
                 },
                 {
                     property: 'approval',
-                    label: 'sw-finance.transfer.workflow.approvalStatus',
+                    label: 'sw-finance.transfer.approval.approvalStatus',
                     allowResize: true,
                     sortable: false,
                 },
                 {
                     property: 'statusId',
-                    label: 'sw-finance.transfer.workflow.paymentStatus',
+                    label: 'sw-finance.transfer.approval.paymentStatus',
                     allowResize: true,
                 },
                 {
@@ -303,14 +297,7 @@ export default defineComponent({
         },
     },
 
-    watch: {
-        '$route.query.create': {
-            immediate: true,
-            handler(value: unknown) {
-                if (value === '1' && this.canCreate) this.onOpenCreateModal();
-            },
-        },
-    },
+    watch: {},
 
     created() {
         void this.createdComponent();
@@ -372,8 +359,8 @@ export default defineComponent({
         },
 
         approvalLabel(id: string): string {
-            if (this.isLoadingApprovals) return this.$t('sw-finance.transfer.workflow.loading');
-            return this.$t(`sw-finance.transfer.workflow.status.${this.approvalSummaries[id]?.status ?? 'unavailable'}`);
+            if (this.isLoadingApprovals) return this.$t('sw-finance.transfer.approval.loading');
+            return this.$t(`sw-finance.transfer.approval.status.${this.approvalSummaries[id]?.status ?? 'unavailable'}`);
         },
 
         reviewerLabel(id: string): string {
@@ -498,11 +485,6 @@ export default defineComponent({
 
         onCloseCreateModal(): void {
             this.showCreateModal = false;
-            if (this.$route?.query.create === '1') {
-                const query = { ...this.$route.query };
-                delete query.create;
-                void this.$router.replace({ query });
-            }
         },
 
         /**

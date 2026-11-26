@@ -106,6 +106,30 @@ class ApprovalReleaseControllerTest extends TestCase
         static::assertSame(409, $browser->getResponse()->getStatusCode());
     }
 
+    public function testTransferOptionsUseTheApprovalFlowBinding(): void
+    {
+        $browser = $this->getBrowser(permissions: ['payment_transfer:create']);
+        $browser->request('GET', '/api/_action/payment/transfers/options');
+
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $options = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertFalse($options['approvalFlowActive']);
+        static::assertArrayNotHasKey('workflowAvailable', $options);
+    }
+
+    public function testTransferBookingRollsBackWithoutAnActiveBinding(): void
+    {
+        $browser = $this->getBrowser(permissions: ['payment_transfer:create']);
+        $payload = $this->transferPayload();
+        $browser->jsonRequest('POST', '/api/_action/payment/transfers', $payload);
+
+        static::assertSame(404, $browser->getResponse()->getStatusCode(), (string) $browser->getResponse()->getContent());
+        static::assertSame(0, (int) static::getContainer()->get(Connection::class)->fetchOne(
+            'SELECT COUNT(*) FROM payment_transfer WHERE out_no = :outNo',
+            ['outNo' => $payload['outNo']],
+        ));
+    }
+
     public function testTransferRequestsKeepTheirPublishedVersionAfterSwitching(): void
     {
         $container = static::getContainer();

@@ -16,22 +16,11 @@ use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseStore;
-use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntime;
-use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeRegistry;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalException;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultVerifier;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
-use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
-use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\ApprovalRuntimeFixture;
 use Shopwell\Tests\Integration\Core\System\Payment\Transfer\_fixtures\PaymentTransferApprovalFixture;
@@ -77,7 +66,6 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
         $this->service = new PaymentTransferApprovalRequestService(
             $container->get(PaymentTransferApprovalRequestStore::class),
             $runtime->get(ApprovalRequestService::class),
-            $container->get(PaymentTransferApprovalStore::class),
             $container->get(PaymentTransferPresenter::class),
         );
         $source = new AdminApiSource(Uuid::randomHex());
@@ -186,28 +174,6 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
         static::assertSame(1, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM approval_flow_operation'));
     }
 
-    public function testLegacySubmissionCannotBindATransferAlreadyInTheNewFlow(): void
-    {
-        $transfer = PaymentTransferApprovalFixture::create(static::getContainer());
-        $this->service->submit($transfer->id, $this->context);
-        $this->expectExceptionObject(PaymentTransferApprovalException::blocked('approval_already_started'));
-
-        static::getContainer()->get(PaymentTransferApprovalStore::class)->lock($transfer->id);
-    }
-
-    public function testNewSubmissionCannotBindATransferAlreadyInTheLegacyFlow(): void
-    {
-        $container = static::getContainer();
-        $transfer = PaymentTransferApprovalFixture::create($container);
-        $container->get('payment_transfer_approval.repository')->create([[
-            'id' => $transfer->id, 'releaseId' => Uuid::randomHex(), 'instanceId' => Uuid::randomHex(),
-            'initiatorId' => Uuid::randomHex(), 'snapshot' => ['amount' => 100],
-        ]], Context::createDefaultContext());
-        $this->expectExceptionObject(PaymentTransferApprovalException::blocked('approval_already_started'));
-
-        $this->service->submit($transfer->id, $this->context);
-    }
-
     public function testAnExecutedTransferCannotAcquireApproval(): void
     {
         $container = static::getContainer();
@@ -287,104 +253,5 @@ class PaymentTransferApprovalRequestServiceTest extends TestCase
         $this->expectExceptionObject(PaymentTransferApprovalException::blocked('immutable_transfer'));
 
         $container->get('payment_transfer_approval_request.repository')->update([['id' => $transfer->id, 'snapshot' => ['amount' => 1]]], Context::createDefaultContext());
-    }
-
-    public function testNewRequestListenerCannotStartTheLegacyApprovalBeforePrivateFreeze(): void
-    {
-        $container = static::getContainer();
-        $transfer = PaymentTransferApprovalFixture::create($container);
-        $runtime = static::createMock(WorkflowRuntime::class);
-        $runtime->method('name')->willReturn('test:approval');
-        $runtime->method('transactional')->willReturnCallback(static fn (\Closure $operation): mixed => $container->get(Connection::class)->transactional(static fn (): mixed => $operation()));
-        $runtime->expects($this->never())->method('start');
-        $legacy = $this->legacyService($transfer, $runtime);
-        $draft = $this->draft($transfer);
-        EventHookDispatcher::fromContainer($container)->on('approval_flow_request.written', function (EntityWrittenEvent $event) use ($legacy, $draft): void {
-            $legacy->book($draft, $event->getContext());
-        }, once: true);
-        try {
-            $this->service->submit($transfer->id, $this->context);
-            static::fail('A legacy start from the new request listener must be blocked.');
-        } catch (PaymentTransferApprovalException $exception) {
-            static::assertSame('submission_in_progress', $exception->getParameters()['reason']);
-        }
-        static::assertSame(0, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM approval_flow_request'));
-        static::assertSame(0, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM payment_transfer_approval WHERE id = :id', ['id' => Uuid::fromHexToBytes($transfer->id)]));
-    }
-
-    public function testLegacyRuntimeCannotSubmitANewRequestBeforeItsBindingIsSaved(): void
-    {
-        $container = static::getContainer();
-        $transfer = PaymentTransferApprovalFixture::create($container);
-        $runtime = static::createMock(WorkflowRuntime::class);
-        $runtime->method('name')->willReturn('test:approval');
-        $runtime->method('transactional')->willReturnCallback(static fn (\Closure $operation): mixed => $container->get(Connection::class)->transactional(static fn (): mixed => $operation()));
-        $runtime->expects($this->once())->method('start')->willReturnCallback(function () use ($transfer): string {
-            return $this->service->submit($transfer->id, $this->context)->getInstanceId();
-        });
-        $legacy = $this->legacyService($transfer, $runtime);
-        try {
-            $legacy->book($this->draft($transfer), $this->context);
-            static::fail('The old runtime callback must not enter the new approval.');
-        } catch (PaymentTransferApprovalException $exception) {
-            static::assertSame('submission_in_progress', $exception->getParameters()['reason']);
-        }
-        static::assertSame(0, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM approval_flow_request'));
-        static::assertSame(0, (int) $container->get(Connection::class)->fetchOne('SELECT COUNT(*) FROM payment_transfer_approval WHERE id = :id', ['id' => Uuid::fromHexToBytes($transfer->id)]));
-    }
-
-    private function draft(PaymentTransferEntity $transfer): PaymentTransferDraft
-    {
-        return new PaymentTransferDraft(
-            paymentAppId: $transfer->paymentAppId,
-            provider: $transfer->provider,
-            channel: $transfer->channel,
-            recipientId: $transfer->recipientId,
-            amount: $transfer->amount,
-            currency: $transfer->currency,
-            outNo: $transfer->outNo,
-            accountId: $transfer->accountId,
-        );
-    }
-
-    private function legacyService(PaymentTransferEntity $transfer, WorkflowRuntime $runtime): PaymentTransferApprovalService
-    {
-        $container = static::getContainer();
-        $system = Context::createDefaultContext();
-        $container->get('payment_app.repository')->update([[
-            'id' => $transfer->paymentAppId,
-            'accounts' => [['accountId' => $transfer->accountId, 'enabled' => true, 'position' => 1]],
-            'channels' => [['channelTechnicalName' => $transfer->channel, 'enabled' => true]],
-        ]], $system);
-        $document = json_decode((string) file_get_contents(\dirname(__DIR__, 5) . '/unit/Core/Framework/Workflow/Publication/Approval/_fixtures/default-approval-request.json'), associative: true, flags: \JSON_THROW_ON_ERROR);
-        $document['nodes'][0]['config']['formFields'] = [
-            ['key' => 'amount', 'type' => 'number', 'required' => true],
-            ['key' => 'currency', 'type' => 'text', 'required' => true],
-            ['key' => 'recipient', 'type' => 'text', 'required' => true],
-            ['key' => 'paymentAccount', 'type' => 'text', 'required' => true],
-            ['key' => 'reason', 'type' => 'text', 'required' => false],
-        ];
-        $releaseId = Uuid::randomHex();
-        $container->get('workflow_release.repository')->create([[
-            'id' => $releaseId, 'draftId' => Uuid::randomHex(), 'revision' => 1,
-            'name' => 'Legacy transfer approval', 'publisher' => 'test:approval', 'publishedBy' => Uuid::randomHex(),
-            'document' => json_encode($document, \JSON_THROW_ON_ERROR),
-        ]], $system);
-        $container->get(SystemConfigService::class)->set(PaymentTransferApprovalService::CONFIG_KEY, $releaseId);
-
-        return new PaymentTransferApprovalService(
-            $container->get(PaymentTransferApprovalStore::class),
-            $container->get(PaymentTransferApprovalPolicy::class),
-            $container->get(WorkflowReleaseStore::class),
-            new WorkflowRuntimeRegistry([$runtime]),
-            $container->get(SystemConfigService::class),
-            $container->get(PaymentTransferBooking::class),
-            $container->get(PaymentTransferService::class),
-            $container->get(PaymentTransferPresenter::class),
-            $container->get('event_dispatcher'),
-            $container->get(PaymentTransferApprovalResultVerifier::class),
-            $container->get(PaymentTransferApprovalRequestStore::class),
-            $container->get(ApprovalRequestService::class),
-        );
     }
 }

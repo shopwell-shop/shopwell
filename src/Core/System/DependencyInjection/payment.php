@@ -9,10 +9,6 @@ use Shopwell\Core\Framework\ApprovalFlow\Binding\ApprovalBusinessTypeSourceDirec
 use Shopwell\Core\Framework\ApprovalFlow\Binding\YamlApprovalBusinessTypeLoader;
 use Shopwell\Core\Framework\ApprovalFlow\Graph\Type\Registry\NodeTypeRegistry;
 use Shopwell\Core\Framework\ApprovalFlow\Request\ApprovalRequestService;
-use Shopwell\Core\Framework\Workflow\Definition\Codec\WorkflowDocumentCodec;
-use Shopwell\Core\Framework\Workflow\Publication\WorkflowReleaseStore;
-use Shopwell\Core\Framework\Workflow\Publication\WorkflowRequestCatalogueEvent;
-use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntimeRegistry;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Account\Api\PaymentAccountController;
 use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
@@ -117,8 +113,6 @@ use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBindingSubscriber;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalBooking;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalEntity;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalPolicy;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestEntity;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
@@ -126,9 +120,7 @@ use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResult
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultHandler;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalResultVerifier;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalView;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferResubmissionSubscriber;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferWriteProtection;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
@@ -148,7 +140,6 @@ use Shopwell\Core\System\Payment\Webhook\ScheduledTask\DeliverPaymentWebhookTask
 use Shopwell\Core\System\Payment\Webhook\ScheduledTask\DeliverPaymentWebhookTaskHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
@@ -702,20 +693,18 @@ return static function (ContainerConfigurator $container): void {
     // the two sides of a transfer that talk to the channel: submitting it, and asking what became of
     // it. They share the service as the only writer of the record and the resolver as the only way to
     // the credentials of the app
-    $services->set(PaymentTransferApprovalEntity::class)->tag('shopwell.entity');
     $services->set(PaymentTransferApprovalResultEntity::class)->tag('shopwell.entity');
     $services->set(PaymentTransferApprovalResultHandler::class)->args([
         service(Connection::class), service('payment_transfer_approval_result.repository'), service(PaymentTransferApprovalRequestStore::class),
     ])->tag('approval_flow.result_handler');
     $services->set(PaymentTransferApprovalRequestEntity::class)->tag('shopwell.entity');
     $services->set(PaymentTransferApprovalRequestStore::class)->args([
-        service(Connection::class), service('payment_transfer_approval_request.repository'), service(PaymentTransferApprovalStore::class),
+        service(Connection::class), service('payment_transfer_approval_request.repository'),
     ]);
     $services->set(PaymentTransferApprovalResultVerifier::class)->args([service(PaymentTransferApprovalRequestStore::class)]);
     $services->set(PaymentTransferApprovalRequestService::class)->args([
         service(PaymentTransferApprovalRequestStore::class),
         service(ApprovalRequestService::class),
-        service(PaymentTransferApprovalStore::class),
         service(PaymentTransferPresenter::class),
     ]);
     $services->set('payment.approval_flow.business_type_loader', YamlApprovalBusinessTypeLoader::class)->args([
@@ -723,30 +712,17 @@ return static function (ContainerConfigurator $container): void {
         [inline_service(ApprovalBusinessTypeSourceDirectory::class)->args(['payment', __DIR__ . '/../Payment/Resources/approval-flow'])],
     ])->tag('approval_flow.business_type_loader');
     $services->set(PaymentTransferApprovalBindingSubscriber::class)->args([service(NodeTypeRegistry::class)])->tag('kernel.event_subscriber');
-    $services->set(PaymentTransferResubmissionSubscriber::class)->args([service('payment_transfer_approval.repository')])->tag('kernel.event_subscriber');
-    $services->set(PaymentTransferApprovalPolicy::class)->args([service(WorkflowDocumentCodec::class)]);
-    $services->set(PaymentTransferApprovalStore::class)->args([service(Connection::class), service('payment_transfer_approval.repository')]);
     $services->set(PaymentTransferApprovalService::class)->args([
-        service(PaymentTransferApprovalStore::class),
-        service(PaymentTransferApprovalPolicy::class),
-        service(WorkflowReleaseStore::class),
-        service(WorkflowRuntimeRegistry::class),
-        service(SystemConfigService::class),
-        service(PaymentTransferBooking::class),
-        service(PaymentTransferService::class),
-        service(PaymentTransferPresenter::class),
-        service('event_dispatcher'),
         service(PaymentTransferApprovalResultVerifier::class),
         service(PaymentTransferApprovalRequestStore::class),
         service(ApprovalRequestService::class),
-    ])->tag('kernel.event_listener', ['event' => WorkflowRequestCatalogueEvent::class, 'method' => 'restrictRequestCatalogue']);
+        service(PaymentTransferService::class),
+    ]);
     $services->set(PaymentTransferApprovalBooking::class)->args([
         service(Connection::class),
         service(ApprovalBindingStore::class),
         service(PaymentTransferBooking::class),
-        service(PaymentTransferApprovalStore::class),
         service(PaymentTransferApprovalRequestStore::class),
-        service(PaymentTransferApprovalService::class),
         service(PaymentTransferApprovalRequestService::class),
         service(PaymentTransferService::class),
     ]);

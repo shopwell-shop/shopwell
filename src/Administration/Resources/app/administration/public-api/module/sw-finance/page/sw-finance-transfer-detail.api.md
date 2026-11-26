@@ -15,15 +15,12 @@ inject
   acl  [private]
   paymentTransferApiService  [private]
   repositoryFactory  [private]
-  workflowRuntimeApiService  [private]
 
 props
   transferId: string  [private]
 
 data
   approval: any  [private]
-  approvalHistoryUnavailable: any  [private]
-  approvalInstance: any  [private]
   isLoading: any  [private]
   isLoadingApproval: any  [private]
   requestGeneration: any  [private]
@@ -51,7 +48,6 @@ computed
   reapplicationDraft: TransferReapplicationDraft | null  [private]
   rejectReason: string  [private]
   stateRepository: RepositoryType<'state_machine_state'>  [private]
-  terminalDecision: { reason: string; actor: string } | null  [private]
   transferRepository: RepositoryType<'payment_transfer'>  [private]
 
 methods
@@ -60,7 +56,6 @@ methods
   formatDateOrDash(value: string | null | undefined): string  [private]
   isCurrentRequest(generation: number, transferId: string): boolean  [private]
   loadApproval(generation?: number): Promise<void>  [private]
-  loadApprovalHistory(approval: TransferApproval, generation: number, transferId: string): Promise<void>  [private]
   loadTransfer(generation?: number): Promise<void>  [private]
   onApprove(): void  [private]
   onCloseApproveModal(): void  [private]

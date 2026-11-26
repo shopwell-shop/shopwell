@@ -10,6 +10,7 @@ import PrivilegesService from './privileges.service';
 Shopwell.Application.addServiceProvider('privileges', () => new PrivilegesService());
 
 const modules = [
+    'sw-approval-flow',
     'sw-blog',
     'sw-category',
     'sw-customer',
@@ -83,10 +84,9 @@ const modules = [
     'sw-settings-usage-data',
     'sw-settings-user-permission',
     'sw-user',
-    'sw-workflow',
 ];
 
-describe('original navigation with workflow and content articles', () => {
+describe('business navigation with approval and content articles', () => {
     beforeAll(async () => {
         for (const name of modules) {
             await import(`src/module/${name}`);
@@ -129,7 +129,7 @@ describe('original navigation with workflow and content articles', () => {
         );
         for (const entry of entries().filter((item) => item.type === 'menu')) {
             const binding = bindings().find((item) => item.id === entry.id || item.path === entry.id);
-            expect(binding).toBeDefined();
+            expect(binding, entry.id).toBeDefined();
             expect(registeredRoutes.has(binding?.path ?? '')).toBe(true);
         }
         expect(
@@ -150,7 +150,7 @@ describe('original navigation with workflow and content articles', () => {
         }
     });
 
-    it('retains the original business roots and independent workflow', () => {
+    it('retains the business roots and independent approval', () => {
         expect(
             entries()
                 .filter((entry) => !entry.parent)
@@ -165,7 +165,7 @@ describe('original navigation with workflow and content articles', () => {
                 'sw-order-return',
                 'sw-content',
                 'sw-marketing',
-                'sw-workflow',
+                'sw-approval-flow',
                 'sw-finance',
                 'sw-extension',
                 'sw-settings',
@@ -192,7 +192,7 @@ describe('original navigation with workflow and content articles', () => {
         ]);
     });
 
-    it('keeps all article tools below Content and workflow tools in their own root', () => {
+    it('keeps all article tools below Content and approval tools in their own root', () => {
         const navigation = entries();
         expect(navigation.filter((entry) => entry.parent === 'sw-blog').map((entry) => entry.id)).toEqual([
             'sw-blog-content',
@@ -200,17 +200,7 @@ describe('original navigation with workflow and content articles', () => {
             'sw-blog-author',
             'sw-blog-comment',
         ]);
-        expect(navigation.find((entry) => entry.id === 'sw-workflow')?.parent).toBeUndefined();
-        expect(navigation.find((entry) => entry.id === 'sw-workflow-design')?.parent).toBe('sw-workflow');
-        expect(
-            navigation
-                .filter((entry) => entry.parent === 'sw-workflow')
-                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-                .map((entry) => entry.id),
-        ).toEqual([
-            'sw-workflow-design',
-            'sw-workflow-tasks',
-        ]);
+        expect(navigation.find((entry) => entry.id === 'sw-approval-flow')?.parent).toBeUndefined();
     });
 
     it('places organization and positions under System without settings cards', () => {

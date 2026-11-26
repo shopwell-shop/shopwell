@@ -71,15 +71,6 @@ use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\SystemCheck\BaseCheck;
 use Shopwell\Core\Framework\Telemetry\Metrics\Metric\PeriodicMetricCollectorInterface;
 use Shopwell\Core\Framework\Telemetry\Metrics\MetricTransportInterface;
-use Shopwell\Core\Framework\Workflow\Execution\Assignee\AssigneeResolverInterface;
-use Shopwell\Core\Framework\Workflow\Execution\Executor\NodeExecutorInterface;
-use Shopwell\Core\Framework\Workflow\Execution\Validator\Rule\GraphRuleInterface;
-use Shopwell\Core\Framework\Workflow\Node\Approval\Assignee\ApprovalAssigneeSource;
-use Shopwell\Core\Framework\Workflow\Node\Approval\Mode\ApprovalMode;
-use Shopwell\Core\Framework\Workflow\Publication\Approval\Node\ApprovalNodeCompiler;
-use Shopwell\Core\Framework\Workflow\Publication\WorkflowNodeCompiler;
-use Shopwell\Core\Framework\Workflow\Publication\WorkflowPublisher;
-use Shopwell\Core\Framework\Workflow\Runtime\WorkflowRuntime;
 use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionProviderInterface;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
@@ -101,15 +92,6 @@ return [
     'parameters' => [
         // Changing a mapped contract class is a backward compatibility break and must not be done in a minor release.
         'shopwellTaggedServiceContractTagContracts' => [
-            'shopwell.workflow.node_compiler' => WorkflowNodeCompiler::class,
-            'shopwell.workflow.publisher' => WorkflowPublisher::class,
-            'shopwell.workflow.approval.mode' => ApprovalMode::class,
-            'shopwell.workflow.approval.node_compiler' => ApprovalNodeCompiler::class,
-            'shopwell.workflow.approval.assignee_source' => ApprovalAssigneeSource::class,
-            'shopwell.workflow.runtime' => WorkflowRuntime::class,
-            'shopwell.workflow.execution.assignee_resolver' => AssigneeResolverInterface::class,
-            'shopwell.workflow.execution.node_executor' => NodeExecutorInterface::class,
-            'shopwell.workflow.execution.graph_rule' => GraphRuleInterface::class,
             'approval_flow.node_type_loader' => NodeTypeLoader::class,
             'approval_flow.business_type_loader' => ApprovalBusinessTypeLoader::class,
             'approval_flow.node_compiler' => NodeCompiler::class,

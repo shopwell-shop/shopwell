@@ -201,8 +201,7 @@
                 "submitted": "Submitted",
                 "succeeded": "Succeeded"
             },
-            "workflow": {
-                "settingsTitle": "Approval workflow",
+            "approval": {
                 "approvalTitle": "Transfer approval",
                 "approvalStatus": "Approval status",
                 "paymentStatus": "Payment status",
@@ -212,20 +211,14 @@
                 "openApproval": "View approval",
                 "openTransfer": "View approval and transfer",
                 "cancel": "Cancel approval",
-                "configurationHint": "New transfers automatically start this published revision. Changes only affect new requests. An approval workflow is required.",
-                "noReleases": "No compatible published workflow is available. Open Workflows, choose the Transfer approval template, assign reviewers and publish it.",
-                "openDesigner": "Open Workflows",
-                "saved": "Approval workflow saved.",
-                "saveFailed": "The approval workflow could not be saved.",
-                "unavailable": "Configure an available approval workflow before creating a transfer.",
+                "unavailable": "Activate a transfer process under Approval → Process definitions.",
                 "status": {
                     "pending": "Pending approval",
                     "approved": "Approved",
                     "rejected": "Rejected",
                     "canceled": "Canceled",
                     "unavailable": "Approval unavailable",
-                    "not_started": "Approval not started",
-                    "returned": "Awaiting changes"
+                    "not_started": "Approval not started"
                 },
                 "cancellation": {
                     "modalTitle": "Cancel transfer approval",
@@ -237,73 +230,15 @@
                 },
                 "reviewedRecipient": "Reviewed recipient",
                 "reviewedPaymentAccount": "Reviewed payment account",
-                "checks": {
-                    "workflow_not_configured": "Select an available approval release to enable transfer requests.",
-                    "approval_assignee_unavailable": "A reviewer is unavailable, a selected position is unstaffed, or a member lacks approval permissions. Check the initiator’s department, position assignments and reviewer roles.",
-                    "approval_assignee_forbidden": "A reviewer cannot view or decide approval tasks. Assign the Workflow participant role or equivalent permissions.",
-                    "workflow_definition_unavailable": "This execution definition is unavailable. Check its status or publish a new release.",
-                    "runtime_unavailable": "The workflow runtime is unavailable. Contact an administrator.",
-                    "workflow_unavailable": "The workflow is unavailable. Check the release and reviewers, then retry.",
-                    "preview_unavailable": "This workflow does not provide a preview. Submitting still validates and starts approval.",
-                    "payment_account_unavailable": "The payment account is unavailable. Select another account.",
-                    "recipient_unavailable": "The recipient is unavailable or does not match the selected provider. Select another recipient.",
-                    "invalid_transfer_input": "Check the transfer amount and currency.",
-                    "position_unavailable": "A selected approval position is inactive or missing. Update the position or choose another one and publish a new release.",
-                    "currency_not_supported": "The selected payment product does not support this currency. Choose a supported currency or another payment product."
-                },
                 "loading": "Loading approval…",
-                "currentAssignees": "Current reviewer: ",
-                "checkLabels": {
-                    "workflow_not_configured": "Not configured",
-                    "approval_assignee_unavailable": "Reviewer unavailable",
-                    "approval_assignee_forbidden": "Reviewer permissions missing",
-                    "workflow_definition_unavailable": "Definition unavailable",
-                    "runtime_unavailable": "Runtime unavailable",
-                    "workflow_unavailable": "Workflow unavailable",
-                    "position_unavailable": "Position unavailable"
-                }
-            },
-            "workflowTemplate": {
-                "title": "Transfer approval",
-                "description": "Department position approval, finance review for non-CNY transfers or CNY amounts over 5,000, then copy recipients. Select positions, reviewers and copy recipients before publishing.",
-                "finance": "Finance review",
-                "amount": "Transfer amount",
-                "currency": "Transfer currency",
-                "reason": "Transfer note",
-                "recipient": "Recipient",
-                "paymentAccount": "Payment account",
-                "department": "Department position approval",
-                "reviewRequired": "Non-CNY or CNY over 5,000",
-                "copy": "Copy recipients"
-            },
-            "approvalPreview": {
-                "title": "Expected approval path",
-                "incomplete": "Complete the account, recipient and amount to see this request’s approval path.",
-                "loading": "Calculating approval path…",
-                "loadFailed": "The preview could not be loaded. Retry; submitting still validates the workflow.",
-                "matchedBranch": "Matching branch: {name}",
-                "hint": "This path assumes every approval stage agrees. The submitted configuration and actual decisions determine the workflow.",
-                "rules": {
-                    "single": "Single reviewer",
-                    "countersign": "All must agree",
-                    "firstDecision": "First decision",
-                    "orSign": "Any reviewer agrees",
-                    "orderSign": "Sequential review"
-                },
-                "start": "Submit request",
-                "end": "Approval complete",
-                "pathLabel": "Expected approval path"
+                "currentAssignees": "Current reviewer: "
             },
             "reapply": {
                 "title": "Edit and reapply",
                 "button": "Edit and reapply",
                 "description": "A new transfer request will use the currently active approval workflow. The original request and its history are preserved.",
                 "selectionUnavailable": "The original app, account, channel, recipient or currency is unavailable. Select an available option before submitting.",
-                "previousTransfer": "Original request",
-                "history": "Approval history",
-                "historyUnavailable": "Approval history could not be loaded. Refresh to retry.",
-                "reason": "Decision reason",
-                "actor": "Handled by"
+                "previousTransfer": "Original request"
             },
             "approvalForm": {
                 "amount": "Transfer amount (minor units)",

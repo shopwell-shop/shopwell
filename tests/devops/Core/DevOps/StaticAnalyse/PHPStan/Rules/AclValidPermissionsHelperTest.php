@@ -39,10 +39,6 @@ class AclValidPermissionsHelperTest extends TestCase
         static::assertTrue($aclHelper->aclKeyValid('app'));
         static::assertTrue($aclHelper->aclKeyValid('content_layout:translate'));
         static::assertFalse($aclHelper->aclKeyValid('you-dont-know-me'));
-        foreach (['workflow:read', 'workflow:create', 'workflow:update', 'workflow:delete', 'workflow:publish', 'workflow_instance:access', 'workflow_instance:start', 'workflow_task:decide'] as $permission) {
-            static::assertTrue($aclHelper->aclKeyValid($permission), $permission);
-        }
-        static::assertFalse($aclHelper->aclKeyValid('workflow_task:force_approve'));
     }
 
     /**

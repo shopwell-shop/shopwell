@@ -14,19 +14,9 @@ import './acl';
 import PaymentTransferApiService from './service/payment-transfer.api.service';
 
 /** @private */
-Shopwell.Component.register(
-    'sw-finance-transfer-approval-preview',
-    () => import('./component/sw-finance-transfer-approval-preview'),
-);
-
 const { Module } = Shopwell;
 
 /** @private */
-Shopwell.Component.register(
-    'sw-finance-transfer-workflow-start',
-    () => import('./component/sw-finance-transfer-workflow-start'),
-);
-
 /** @private */
 Shopwell.Component.register('sw-finance-transfer-list', () => import('./page/sw-finance-transfer-list'));
 /** @private */
@@ -53,11 +43,6 @@ Shopwell.Component.register(
 );
 
 /** @private */
-Shopwell.Component.register(
-    'sw-finance-transfer-workflow-settings',
-    () => import('./component/sw-finance-transfer-workflow-settings'),
-);
-
 /** @private */
 Shopwell.Service().register('paymentTransferApiService', () => {
     return new PaymentTransferApiService(

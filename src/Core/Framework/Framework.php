@@ -81,7 +81,6 @@ class Framework extends Bundle
 
         $phpLoader->load('content-system.php');
         $phpLoader->load('approval-flow.php');
-        $phpLoader->load('workflow.php');
         $phpLoader->load('http_discovery.php');
         $phpLoader->load('acl.php');
         $phpLoader->load('api.php');

@@ -64,7 +64,7 @@ A definite rejection or state conflict asks the user to refresh rather than sile
 After success the detail reload is a separate operation; a failed reload does not present the saved opinion as failed.
 The request schema and response receipt are maintained in `AdminApi/paths/approval-flow-task.json`.
 `ApprovalTaskController` remains an internal PHP adapter.
-The legacy Workflow navigation remains hidden until its replacement is complete.
+Approval and Process definitions are available under the Approval menu.
 
 ## Node declarations
 
@@ -277,10 +277,10 @@ No matching request or exact handler means a retry, never an acknowledgement wit
 The dispatcher acknowledges only after the business handler returns; failed or expired confirmations do not count as delivered.
 Consumers must deduplicate by the result ID because the delivery contract is at least once.
 Payment supplies a real handler that saves an immutable decision for the original transfer request, with its revision check and deduplication under the transfer lock.
-That decision does not execute a payout or change the legacy Workflow integration.
+The decision authorizes a separate payout action.
 Payment's existing submission preflight and atomic attempt claim now require this applied approval for transfers with an Approval Flow submission.
 The internal `PaymentTransferApprovalResultVerifier` compares the current business snapshot with the original revision and the outgoing transfer inputs under the transfer lock.
-Missing, pending, rejected or changed evidence blocks execution and rolls back the claim; only transfers without a new submission use their existing Workflow approval binding.
+Missing, pending, rejected or changed approval evidence blocks execution and rolls back the claim.
 No public submission route, new extension interface or automatic payout trigger is introduced.
 
 ## Internal business binding management
@@ -336,7 +336,7 @@ The shared skeleton has no Payment dependency.
 Payment registers its private evidence entity and submission services in Payment DI.
 Private snapshot fields are not API-visible, and the existing Payment write protection rejects their mutation or deletion.
 `PaymentTransferApprovalRequestService` is an internal integration entry point that admits and starts an approval in one business transaction; it does not grant payment authority.
-Its per-transfer coordination with the legacy approval store is temporary until the replacement workflow is complete.
+The submission store locks the transfer through approval start and rejects same-connection reentry.
 
 ## Flow definition reads and design operations
 

@@ -8,8 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalService;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * @internal
@@ -26,41 +24,9 @@ class PaymentTransferApprovalApiTest extends TestCase
         static::assertSame(403, $browser->getResponse()->getStatusCode());
     }
 
-    public function testPreviewRequiresThePrivilegeToCreateATransfer(): void
-    {
-        $browser = $this->getBrowser(permissions: ['payment_transfer:read']);
-        $browser->jsonRequest('POST', '/api/_action/payment/transfers/approval/preview', []);
-        static::assertSame(403, $browser->getResponse()->getStatusCode());
-    }
-
-    public function testPreviewValidatesItsInputBeforeEvaluatingAPath(): void
-    {
-        $browser = $this->getBrowser(permissions: ['payment_transfer:create']);
-        $browser->jsonRequest('POST', '/api/_action/payment/transfers/approval/preview', ['paymentAppId' => Uuid::randomHex(), 'provider' => 'alipay', 'channel' => 'alipay_h5', 'amount' => 0, 'currency' => 'CNY']);
-        static::assertSame(422, $browser->getResponse()->getStatusCode());
-    }
-
-    public function testUnavailablePreviewResponseMatchesThePublicSchema(): void
-    {
-        static::getContainer()->get(SystemConfigService::class)->set(PaymentTransferApprovalService::CONFIG_KEY, null);
-        $browser = $this->getBrowser(permissions: ['payment_transfer:create']);
-        $browser->jsonRequest('POST', '/api/_action/payment/transfers/approval/preview', ['paymentAppId' => Uuid::randomHex(), 'provider' => 'alipay', 'channel' => 'alipay_h5', 'amount' => 1200, 'currency' => 'CNY']);
-        static::assertSame(200, $browser->getResponse()->getStatusCode());
-        $content = (string) $browser->getResponse()->getContent();
-        $body = json_decode($content, true, flags: \JSON_THROW_ON_ERROR);
-        static::assertFalse($body['available']);
-        static::assertSame('workflow_not_configured', $body['reason']);
-        static::assertSame([], $body['steps']);
-        $path = \dirname(__DIR__, 6) . '/src/Core/Framework/Api/ApiDefinition/Generator/Schema/AdminApi/paths/payment-transfer.json';
-        $definition = json_decode((string) file_get_contents($path), true, flags: \JSON_THROW_ON_ERROR);
-        $schema = json_decode(json_encode($definition['paths']['/_action/payment/transfers/approval/preview']['post']['responses']['200']['content']['application/json']['schema'], \JSON_THROW_ON_ERROR), flags: \JSON_THROW_ON_ERROR);
-        static::assertInstanceOf(\stdClass::class, $schema);
-        static::assertTrue((new Validator())->validate(json_decode($content, flags: \JSON_THROW_ON_ERROR), $schema)->isValid());
-    }
-
     public function testBatchRequiresFinanceReadPrivilege(): void
     {
-        $browser = $this->getBrowser(permissions: ['workflow_instance:access']);
+        $browser = $this->getBrowser(permissions: ['approval_flow:access']);
         $browser->jsonRequest('POST', '/api/_action/payment/transfers/approvals', ['ids' => []]);
         static::assertSame(403, $browser->getResponse()->getStatusCode());
     }

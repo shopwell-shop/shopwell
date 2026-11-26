@@ -18,7 +18,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 
 /**
- * Selects the approval path for new Administration transfer bookings.
+ * Books Administration transfers and starts their approval in the same transaction.
  *
  * @internal
  */
@@ -29,33 +29,23 @@ class PaymentTransferApprovalBooking
         private readonly Connection $connection,
         private readonly ApprovalBindingStore $bindings,
         private readonly PaymentTransferBooking $booking,
-        private readonly PaymentTransferApprovalStore $legacyApprovals,
         private readonly PaymentTransferApprovalRequestStore $requestStore,
-        private readonly PaymentTransferApprovalService $legacy,
         private readonly PaymentTransferApprovalRequestService $requests,
         private readonly PaymentTransferService $transfers,
     ) {
     }
 
-    public function usesApprovalFlow(Context $context): bool
+    public function hasActiveBinding(Context $context): bool
     {
         return $this->bindings->findHead(PaymentTransferApprovalRequestService::BUSINESS_TYPE, $context)?->getActiveRevision() !== null;
     }
 
     public function book(PaymentTransferDraft $draft, Context $context): PaymentTransferEntity
     {
-        if (!$this->usesApprovalFlow($context)) {
-            return $this->legacy->book($draft, $context);
-        }
-
         return RetryableTransaction::transactional($this->connection, function () use ($draft, $context): PaymentTransferEntity {
             $transfer = $this->booking->book($draft);
-            $this->requestStore->lockTransfer($transfer->id);
-            // A retried booking keeps its existing legacy approval after cutover.
-            if ($this->legacyApprovals->get($transfer->id) === null) {
-                // The payment route authorizes the booking. Approval's guarded writes retain the original user.
-                $context->scope(Context::SYSTEM_SCOPE, fn (Context $writeContext) => $this->requests->submit($transfer->id, $writeContext));
-            }
+            // The payment route authorizes the booking. Approval's guarded writes retain the original user.
+            $context->scope(Context::SYSTEM_SCOPE, fn (Context $writeContext) => $this->requests->submit($transfer->id, $writeContext));
 
             return $transfer;
         });
@@ -70,10 +60,7 @@ class PaymentTransferApprovalBooking
             $this->requestStore->lockTransfer($transferId);
             $approval = $this->requestStore->getApproval($transferId);
             if ($approval === null) {
-                $app = $this->booking->resolveApp($draft->paymentAppId);
-                $replayed = $draft->outNo !== null && $this->transfers->getByOutNo($app, $draft->outNo) !== null;
-
-                return ['transfer' => $this->legacy->reapply($transferId, $draft, $context), 'replayed' => $replayed];
+                throw PaymentTransferApprovalException::blocked('reapplication_forbidden');
             }
 
             $source = $context->getSource();

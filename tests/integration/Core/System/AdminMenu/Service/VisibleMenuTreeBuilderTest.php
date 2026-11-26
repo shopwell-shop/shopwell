@@ -150,9 +150,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
      */
     private function visibleCoreKeys(): array
     {
-        $declared = array_column($this->collector()->collectCore(), 'internalKey');
-
-        return array_values(array_diff($declared, ['sw-workflow', 'sw-workflow-design', 'sw-workflow-tasks']));
+        return array_column($this->collector()->collectCore(), 'internalKey');
     }
 
     /**

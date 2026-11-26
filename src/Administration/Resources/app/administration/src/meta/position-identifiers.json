@@ -524,15 +524,5 @@
  "sw-user-list",
  "sw-variant-card-tabs",
  "sw-variant-card-tabs",
- "sw-workflow-approval-settings-tabs",
- "sw-workflow-copy-settings-tabs",
- "sw-workflow-instance-actions",
- "sw-workflow-instance-form",
- "sw-workflow-instance-form-changes",
- "sw-workflow-instance-graph",
- "sw-workflow-instance-reminders",
- "sw-workflow-instance-timeline",
- "sw-workflow-management",
- "sw-workflow-personal-queues",
  "tabExtension.componentSectionId"
 ]

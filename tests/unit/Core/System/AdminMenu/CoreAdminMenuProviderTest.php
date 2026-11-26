@@ -109,25 +109,6 @@ class CoreAdminMenuProviderTest extends TestCase
         }
     }
 
-    public function testWorkflowDesignIsAssignableWithinItsOwnDomain(): void
-    {
-        $definitions = array_column($this->definitions, null, 'internalKey');
-
-        static::assertArrayHasKey('sw-workflow', $definitions);
-        static::assertNull($definitions['sw-workflow']->parent);
-        static::assertSame(72, $definitions['sw-workflow']->position);
-        static::assertSame(AdminMenuItemDefinition::TYPE_FOLDER, $definitions['sw-workflow']->type);
-        static::assertArrayHasKey('sw-workflow-design', $definitions);
-        static::assertSame('sw-workflow', $definitions['sw-workflow-design']->parent);
-        static::assertSame('workflow.viewer', $definitions['sw-workflow-design']->privilege);
-        static::assertArrayNotHasKey('sw-workflow-releases', $definitions);
-        static::assertArrayHasKey('sw-workflow-tasks', $definitions);
-        static::assertSame('sw-workflow', $definitions['sw-workflow-tasks']->parent);
-        static::assertSame('workflow_participant.viewer', $definitions['sw-workflow-tasks']->privilege);
-        static::assertSame('My approvals', $definitions['sw-workflow-tasks']->title);
-        static::assertNull((new CoreAdminMenuProvider((new AdminMenuXmlReader())->read(CoreAdminMenuProvider::MENU_FILE)))->getPluginTechnicalName());
-    }
-
     public function testPersonalApprovalsBelongToTheirOwnTopLevelFolder(): void
     {
         $definitions = array_column($this->definitions, null, 'internalKey');

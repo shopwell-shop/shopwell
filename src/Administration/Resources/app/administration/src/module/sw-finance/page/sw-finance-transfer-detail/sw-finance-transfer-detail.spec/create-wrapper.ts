@@ -122,7 +122,6 @@ export async function createWrapper(
                     name: 'sw-finance-transfer-create-modal',
                     template: `<section><button class="reapply-created" @click="$emit('transfer-created', { id: 'new-transfer' })">Created</button></section>`,
                 },
-                'sw-workflow-approval-timeline': true,
                 'sw-finance-transfer-approve-modal': {
                     template:
                         '<section class="approve-modal"><button class="close" @click="$emit(\'modal-close\')">Close</button><button class="decide" @click="$emit(\'transfer-decided\')">Decide</button></section>',
@@ -134,21 +133,6 @@ export async function createWrapper(
             },
             provide: {
                 paymentTransferApiService: { getApproval },
-                workflowRuntimeApiService: {
-                    getInstance: jest.fn(() =>
-                        Promise.resolve({
-                            status: 'REJECT',
-                            history: [
-                                {
-                                    id: 'history-1',
-                                    decision: 'reject',
-                                    comment: 'Invoice missing',
-                                    assignee: { id: 'reviewer', name: 'Finance reviewer' },
-                                },
-                            ],
-                        }),
-                    ),
-                },
                 repositoryFactory: {
                     create: (entityName: string) => {
                         return entityName === 'state_machine_state' ? { search: stateSearch } : { get };

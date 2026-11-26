@@ -19,13 +19,9 @@
                   "type": "object",
                   "description": "The options of the payout modal, grouped by app and provider.",
                   "properties": {
-                    "workflowAvailable": {
-                      "type": "boolean",
-                      "description": "Whether a transfer approval flow is configured."
-                    },
                     "approvalFlowActive": {
                       "type": "boolean",
-                      "description": "Whether new transfer bookings use the published version selected in Approval Flow."
+                      "description": "Whether a transfer approval release is active."
                     }
                   }
                 }
@@ -103,7 +99,7 @@
           "Payment transfer"
         ],
         "summary": "Book a payout",
-        "description": "Books an immutable financial request and starts its configured published approval workflow atomically. A real administration actor and an available compatible finance workflow are required. No provider is called. Replaying the same business out number returns its existing transfer and approval instance.",
+        "description": "Books an immutable financial request and starts its active Approval Flow release atomically. A real administration actor and an active transfer approval binding are required. No provider is called. Replaying the same business out number returns its existing transfer and approval instance.",
         "operationId": "requestPaymentTransfer",
         "requestBody": {
           "required": true,
@@ -199,6 +195,9 @@
               }
             }
           },
+          "404": {
+            "description": "The payment application or active transfer approval binding was not found."
+          },
           "409": {
             "description": "The out number is already taken by a payout with another recipient, amount or currency.",
             "content": {
@@ -228,7 +227,7 @@
           "Payment transfer"
         ],
         "summary": "Hand a booked payout to its channel",
-        "description": "Manually executes a transfer only after its bound workflow has finally approved the immutable amount, currency, account and recipient snapshot. Approval is checked again under the atomic first-attempt claim. Missing, pending, rejected, canceled or unavailable approval cannot execute. Unknown provider outcomes cannot be submitted again.",
+        "description": "Manually executes a transfer only after its bound approval has finally approved the immutable amount, currency, account and recipient snapshot. Approval is checked again under the atomic first-attempt claim. Missing, pending, rejected, canceled or unavailable approval cannot execute. Unknown provider outcomes cannot be submitted again.",
         "operationId": "submitPaymentTransfer",
         "parameters": [
           {
@@ -321,213 +320,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/failure"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/_action/payment/transfers/workflow": {
-      "get": {
-        "tags": [
-          "Payment transfer"
-        ],
-        "summary": "Read finance approval configuration and compatible releases",
-        "operationId": "getPaymentTransferWorkflow",
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "releaseId",
-                    "releaseName",
-                    "revision",
-                    "available",
-                    "releases",
-                    "reason"
-                  ],
-                  "properties": {
-                    "releaseId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "releaseName": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "revision": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
-                    },
-                    "available": {
-                      "type": "boolean"
-                    },
-                    "releases": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "id",
-                          "name",
-                          "revision",
-                          "available",
-                          "reason"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "revision": {
-                            "type": "integer"
-                          },
-                          "available": {
-                            "type": "boolean"
-                          },
-                          "reason": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          }
-                        }
-                      }
-                    },
-                    "reason": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "Machine-readable reason when the configured release is unavailable."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Workflow missing, unavailable or incompatible; approval does not authorize this operation."
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Payment transfer"
-        ],
-        "summary": "Select the mandatory finance approval release",
-        "operationId": "configurePaymentTransferWorkflow",
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "releaseId",
-                    "releaseName",
-                    "revision",
-                    "available",
-                    "releases",
-                    "reason"
-                  ],
-                  "properties": {
-                    "releaseId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "releaseName": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "revision": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
-                    },
-                    "available": {
-                      "type": "boolean"
-                    },
-                    "releases": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "id",
-                          "name",
-                          "revision",
-                          "available",
-                          "reason"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "revision": {
-                            "type": "integer"
-                          },
-                          "available": {
-                            "type": "boolean"
-                          },
-                          "reason": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          }
-                        }
-                      }
-                    },
-                    "reason": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "Machine-readable reason when the configured release is unavailable."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Workflow missing, unavailable or incompatible; approval does not authorize this operation."
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "releaseId"
-                ],
-                "properties": {
-                  "releaseId": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
                 }
               }
             }
@@ -632,10 +424,6 @@
                         "null"
                       ]
                     },
-                    "usesApprovalFlow": {
-                      "type": "boolean",
-                      "description": "Present and true for transfers using Approval Flow."
-                    },
                     "canReapply": {
                       "type": "boolean",
                       "description": "Original initiator may create a fresh request after rejection or cancellation, before any payment attempt."
@@ -664,7 +452,7 @@
             }
           },
           "409": {
-            "description": "Workflow missing, unavailable or incompatible; approval does not authorize this operation."
+            "description": "Approval missing, unavailable or incompatible; approval does not authorize this operation."
           }
         },
         "parameters": [
@@ -778,10 +566,6 @@
                         "null"
                       ]
                     },
-                    "usesApprovalFlow": {
-                      "type": "boolean",
-                      "description": "Present and true for transfers using Approval Flow."
-                    },
                     "canReapply": {
                       "type": "boolean",
                       "description": "Original initiator may create a fresh request after rejection or cancellation, before any payment attempt."
@@ -810,7 +594,7 @@
             }
           },
           "409": {
-            "description": "Workflow missing, unavailable or incompatible; approval does not authorize this operation."
+            "description": "Approval missing, unavailable or incompatible; approval does not authorize this operation."
           }
         },
         "requestBody": {
@@ -852,7 +636,7 @@
           "Payment transfer"
         ],
         "summary": "Read approval summaries for a page of authorized transfers",
-        "description": "Requires payment_transfer:read. Read projection only; it never authorizes executing a transfer. Detail links are offered only to workflow participants with workflow_instance:access.",
+        "description": "Requires payment_transfer:read. Read projection only; it never authorizes executing a transfer. Detail links are offered only to initiators with approval_flow:access.",
         "operationId": "readPaymentTransferApprovalSummaries",
         "requestBody": {
           "required": true,
@@ -956,227 +740,6 @@
           },
           "403": {
             "description": "Missing payment_transfer:read privilege."
-          }
-        }
-      }
-    },
-    "/_action/payment/transfers/approval/preview": {
-      "post": {
-        "tags": [
-          "Payment Transfer"
-        ],
-        "summary": "Preview the approval path for a proposed transfer",
-        "description": "Requires payment_transfer:create. Uses the currently configured immutable release and business-owned input. Read-only: creates no recipient, transfer, instance or task, and never calls a provider. The path assumes all stages agree; submitting always revalidates the live workflow. An unsupported runtime returns available=false and reason=preview_unavailable.",
-        "operationId": "previewPaymentTransferApproval",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "paymentAppId": {
-                    "type": "string",
-                    "description": "The id of the app the payout is booked in."
-                  },
-                  "provider": {
-                    "type": "string",
-                    "description": "The payment interface that pays out."
-                  },
-                  "channel": {
-                    "type": "string",
-                    "description": "The channel of the interface the payout is booked for."
-                  },
-                  "recipientId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "An existing recipient to book the payout to. When omitted, the identity fields below describe a new recipient."
-                  },
-                  "identityType": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "The identity type of a new recipient, as the interface declares it."
-                  },
-                  "identityValue": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "The identity of a new recipient. It is trimmed, never rewritten, because the hash and the ciphertext are derived from exactly this value."
-                  },
-                  "holderName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "maxLength": 255,
-                    "description": "The name the account is held by."
-                  },
-                  "bankInfo": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
-                    "description": "The bank details a card payout needs, as the interface declares them."
-                  },
-                  "amount": {
-                    "type": "integer",
-                    "description": "The amount in the smallest unit of the currency, for example fen for CNY. A decimal amount is refused instead of being rounded.",
-                    "minimum": 1,
-                    "maximum": 10000000000
-                  },
-                  "currency": {
-                    "type": "string",
-                    "description": "The three letter ISO code of the currency. A lower case code is accepted and stored upper case.",
-                    "pattern": "^[A-Za-z]{3}$"
-                  },
-                  "outNo": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "The out number of the payout, which is also its idempotency key.",
-                    "pattern": "^[0-9a-zA-Z]{1,30}$"
-                  },
-                  "note": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "maxLength": 255,
-                    "description": "A note that is stored in the metadata of the payout."
-                  },
-                  "accountId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "The selected payment account authorized for the application."
-                  }
-                },
-                "required": [
-                  "paymentAppId",
-                  "provider",
-                  "channel",
-                  "amount",
-                  "currency"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Advisory path or a specific unavailability reason.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "available",
-                    "reason",
-                    "releaseId",
-                    "releaseName",
-                    "revision",
-                    "steps"
-                  ],
-                  "properties": {
-                    "available": {
-                      "type": "boolean"
-                    },
-                    "reason": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "releaseId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "releaseName": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "revision": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
-                    },
-                    "steps": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "nodeId",
-                          "type",
-                          "name",
-                          "rule",
-                          "assignees",
-                          "branch"
-                        ],
-                        "properties": {
-                          "nodeId": {
-                            "type": "string"
-                          },
-                          "type": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "rule": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "branch": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "assignees": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "required": [
-                                "id",
-                                "name"
-                              ],
-                              "properties": {
-                                "id": {
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "type": "string"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Missing transfer creation privilege."
-          },
-          "422": {
-            "description": "Invalid transfer input."
           }
         }
       }

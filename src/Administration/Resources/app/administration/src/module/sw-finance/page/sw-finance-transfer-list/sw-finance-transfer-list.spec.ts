@@ -67,7 +67,7 @@ const getApprovalSummaries = jest.fn().mockResolvedValue({
     'transfer-1': {
         status: 'pending',
         currentAssignees: [{ id: 'reviewer-1', name: '财务李四' }],
-        detailRoute: { name: 'sw.workflow.instance', params: { id: 'instance-1' } },
+        detailRoute: { name: 'sw.approval.flow.detail', params: { id: 'instance-1' } },
     },
 });
 
@@ -143,7 +143,6 @@ async function createWrapper(
                 },
                 'router-link': { template: '<a><slot></slot></a>' },
                 'mt-button': { template: '<button><slot></slot></button>' },
-                'sw-finance-transfer-workflow-settings': { template: '<section class="workflow-settings"></section>' },
                 'mt-badge': {
                     props: ['variant'],
                     template: '<span class="state" :data-variant="variant"><slot></slot></span>',
@@ -224,17 +223,17 @@ describe('module/sw-finance/page/sw-finance-transfer-list', () => {
         const { wrapper, routerPush } = await createWrapper();
         expect(getApprovalSummaries).toHaveBeenCalledTimes(1);
         expect(getApprovalSummaries).toHaveBeenCalledWith(['transfer-1']);
-        expect(cell(wrapper, 'approval').text()).toContain('sw-finance.transfer.workflow.status.pending');
+        expect(cell(wrapper, 'approval').text()).toContain('sw-finance.transfer.approval.status.pending');
         expect(cell(wrapper, 'approval').text()).toContain('财务李四');
         await cell(wrapper, 'approval').get('button').trigger('click');
-        expect(routerPush).toHaveBeenCalledWith({ name: 'sw.workflow.instance', params: { id: 'instance-1' } });
+        expect(routerPush).toHaveBeenCalledWith({ name: 'sw.approval.flow.detail', params: { id: 'instance-1' } });
     });
 
     it('keeps the transfer list usable when approval summaries cannot load', async () => {
         getApprovalSummaries.mockRejectedValueOnce(new Error('Offline'));
         const { wrapper } = await createWrapper();
         expect(cell(wrapper, 'amount').text()).toContain('5.00');
-        expect(cell(wrapper, 'approval').text()).toContain('sw-finance.transfer.workflow.status.unavailable');
+        expect(cell(wrapper, 'approval').text()).toContain('sw-finance.transfer.approval.status.unavailable');
         expect(cell(wrapper, 'approval').find('button').exists()).toBe(false);
     });
 
@@ -392,23 +391,6 @@ describe('module/sw-finance/page/sw-finance-transfer-list', () => {
         expect(wrapper.find('.approve-modal').exists()).toBe(false);
     });
 
-    it.each([true, false])(
-        'should require system configuration update privileges for workflow settings: %s',
-        async (allowed) => {
-            const { wrapper } = await createWrapper((privilege) => privilege !== 'system_config:update' || allowed);
-            expect(wrapper.find('.sw-finance-transfer-list__workflow-settings').exists()).toBe(allowed);
-            if (allowed) {
-                await wrapper.get('.sw-finance-transfer-list__workflow-settings').trigger('click');
-            }
-        },
-    );
-
-    it('opens workflow settings for a manager', async () => {
-        const { wrapper } = await createWrapper();
-        await wrapper.get('.sw-finance-transfer-list__workflow-settings').trigger('click');
-        expect(wrapper.find('.workflow-settings').exists()).toBe(true);
-    });
-
     it.each([true, false])('should gate creation for creator privilege %s', async (creator) => {
         const { wrapper } = await createWrapper((privilege) => privilege !== 'payment_transfer.creator' || creator);
         expect(wrapper.find('.sw-finance-transfer-list__button-create').exists()).toBe(creator);
@@ -426,21 +408,6 @@ describe('module/sw-finance/page/sw-finance-transfer-list', () => {
         await flushPromises();
         expect(wrapper.find('.create-modal').exists()).toBe(false);
         expect(search).toHaveBeenCalled();
-    });
-
-    it('opens the finance form from the workflow entry and consumes only its create query', async () => {
-        const { wrapper, routerReplace } = await createWrapper(undefined, {}, transfers, { create: '1', term: 'T-1' });
-        expect(wrapper.find('.create-modal').exists()).toBe(true);
-        await wrapper.get('.create-modal .close').trigger('click');
-        expect(wrapper.find('.create-modal').exists()).toBe(false);
-        expect(routerReplace).toHaveBeenCalledWith({ query: { term: 'T-1' } });
-    });
-
-    it('does not open the workflow finance entry without creator permission', async () => {
-        const { wrapper } = await createWrapper((privilege) => privilege !== 'payment_transfer.creator', {}, transfers, {
-            create: '1',
-        });
-        expect(wrapper.find('.create-modal').exists()).toBe(false);
     });
 
     it('should mount creation from the empty state', async () => {

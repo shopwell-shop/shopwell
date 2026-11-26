@@ -25,8 +25,7 @@ class PaymentTransferApprovalResultVerifier
     }
 
     /**
-     * Null means this transfer has no Approval Flow submission and belongs to the existing entry point.
-     * A submitted transfer without an applied approval always fails here.
+     * A transfer with an approval request is payable only after its decision is applied.
      */
     public function recipient(PaymentTransferEntity $transfer): ?PaymentTransferRecipientEntity
     {

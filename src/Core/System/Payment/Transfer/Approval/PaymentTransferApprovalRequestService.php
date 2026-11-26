@@ -27,7 +27,6 @@ class PaymentTransferApprovalRequestService
     public function __construct(
         private readonly PaymentTransferApprovalRequestStore $store,
         private readonly ApprovalRequestService $requests,
-        private readonly PaymentTransferApprovalStore $legacyApprovals,
         private readonly PaymentTransferPresenter $presenter,
     ) {
     }
@@ -40,9 +39,6 @@ class PaymentTransferApprovalRequestService
                 $this->requests->start($existing->getId(), $context);
 
                 return $existing;
-            }
-            if ($this->legacyApprovals->get($transferId) !== null) {
-                throw PaymentTransferApprovalException::blocked('approval_already_started');
             }
             $facts = $this->store->snapshot($transferId, requirePayoutEligibility: true);
             if ($facts['submitAttempts'] !== 0 || $facts['state'] !== PaymentTransferStates::STATE_CREATED) {

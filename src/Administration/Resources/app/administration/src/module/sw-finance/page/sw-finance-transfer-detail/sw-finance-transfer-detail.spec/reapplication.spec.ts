@@ -6,43 +6,24 @@ describe('transfer reapplication', () => {
         cleanupWrapper();
     });
 
-    it('shows the refusal and original reviewer, then opens the shared editable form', async () => {
+    it('opens the shared form for a withdrawn request and navigates to the replacement', async () => {
         const { wrapper, routerPush } = await createWrapper(
             transfer,
             () => true,
             {},
             {
-                status: 'rejected',
+                status: 'canceled',
                 canReapply: true,
-                instanceId: 'instance-1',
-                detailRoute: { name: 'sw.workflow.instance', params: { id: 'instance-1' } },
             },
-        );
-        expect(wrapper.text()).toContain('Invoice missing');
-        expect(wrapper.text()).toContain('Finance reviewer');
-        await wrapper.get('.sw-finance-transfer-detail__button-reapply').trigger('click');
-        const modal = wrapper.findComponent({ name: 'sw-finance-transfer-create-modal' });
-        expect(modal.attributes('source-transfer-id')).toBe('transfer-1');
-        await wrapper.get('.reapply-created').trigger('click');
-        await flushPromises();
-        expect(routerPush).toHaveBeenCalledWith({
-            name: 'sw.finance.transferDetail',
-            params: { id: 'new-transfer' },
-        });
-    });
-
-    it('opens the shared form in Approval Flow mode for a withdrawn request', async () => {
-        const { wrapper } = await createWrapper(
-            transfer,
-            () => true,
-            {},
-            { status: 'canceled', canReapply: true, usesApprovalFlow: true },
         );
 
         await wrapper.get('.sw-finance-transfer-detail__button-reapply').trigger('click');
 
         const modal = wrapper.getComponent({ name: 'sw-finance-transfer-create-modal' });
-        expect(modal.attributes('source-uses-approval-flow')).toBe('true');
+        expect(modal.attributes('source-transfer-id')).toBe('transfer-1');
+        await wrapper.get('.reapply-created').trigger('click');
+        await flushPromises();
+        expect(routerPush).toHaveBeenCalledWith({ name: 'sw.finance.transferDetail', params: { id: 'new-transfer' } });
     });
 
     it('does not offer reapplication without server eligibility or creator privilege', async () => {

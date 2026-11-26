@@ -33,15 +33,6 @@
     {% endblock %}
 
     <template #smart-bar-actions>
-        <mt-button
-            v-if="canConfigureWorkflow"
-            class="sw-finance-transfer-list__workflow-settings"
-            variant="secondary"
-            size="default"
-            @click="showWorkflowModal = true"
-        >
-            {{ $t('sw-finance.transfer.workflow.settingsTitle') }}
-        </mt-button>
         {% block sw_finance_transfer_list_smart_bar_actions_create %}
         {#
         Booking a request moves no money, which is why this button is bound to the creator role and
@@ -156,7 +147,7 @@
                             class="sw-finance-transfer-list__reviewers"
                             :title="reviewerLabel(item.id)"
                         >
-                            {{ $t('sw-finance.transfer.workflow.currentAssignees') }}{{ reviewerLabel(item.id) }}
+                            {{ $t('sw-finance.transfer.approval.currentAssignees') }}{{ reviewerLabel(item.id) }}
                         </span>
                     </div>
                 </template>
@@ -223,7 +214,7 @@
                         class="sw-finance-transfer-list__action-detail"
                         :router-link="{ name: 'sw.finance.transferDetail', params: { id: item.id } }"
                     >
-                        {{ $t('sw-finance.transfer.workflow.openTransfer') }}
+                        {{ $t('sw-finance.transfer.approval.openTransfer') }}
                     </sw-context-menu-item>
                     {% endblock %}
                     {% block sw_finance_transfer_list_grid_action_cancel %}{% endblock %}
@@ -244,10 +235,6 @@
                 @modal-close="onCloseCreateModal"
             />
 
-            <sw-finance-transfer-workflow-settings
-                v-if="showWorkflowModal && canConfigureWorkflow"
-                @modal-close="showWorkflowModal = false"
-            />
             {% endblock %}
         </div>
         {% endblock %}

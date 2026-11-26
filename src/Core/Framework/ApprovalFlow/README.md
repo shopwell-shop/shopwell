@@ -144,7 +144,6 @@ Unavailable exact plugin types remain readable with capability diagnostics; edit
 `ApprovalDraftWriteGuard` rejects ordinary repository and Sync creates, updates and deletes for both tables, including system-scope calls.
 Its internal scope is an in-process coordination mechanism, not a security sandbox for trusted PHP plugins with direct database access.
 `Migration1795072461CreateApprovalFlowDraftTables` creates the new tables through the normal migration runner.
-It performs no legacy Workflow conversion or compatibility reads.
 This increment adds no HTTP action endpoints or Administration pages.
 
 ## Publication preflight
@@ -350,7 +349,6 @@ The query response carries readable publication and participant names plus label
 Assigned reviewers can now confirm approve or reject actions through the public personal task decision endpoint.
 This thin HTTP adapter delegates to the existing `ApprovalInstanceService::decide` transaction; the dialog preserves the original command on an uncertain retry and requests a refresh on conflict.
 A successful personal opinion remains distinct from later group progression, final approval and payment execution.
-The legacy workflow menu is hidden through the existing menu visibility event; removing its code belongs to the completed replacement stage.
 
 ## Source calibration
 
@@ -370,7 +368,7 @@ The legacy workflow menu is hidden through the existing menu visibility event; r
 - Flow and NumberRange DAL classes: entity accessors and collection conventions, without mechanical class-level restriction annotations.
 - `VisibleMenuTreeBuilder` and its tests: runtime visibility for stored, customized and synthesized menu entries.
 
-The new graph and execution model must not depend on ContentSystem or the legacy workflow implementation.
+The graph and execution model own their persistence and execution contracts.
 
 ## Instance command transaction boundary
 
@@ -552,12 +550,10 @@ The same row is the business approval decision and its inbox deduplication recor
 Unavailable recipients/accounts or changed transfer facts leave the result pending for bounded retry instead of applying it to different inputs.
 Existing receipts replay before rechecking live facts, so a redelivery after the business commit does not fail because those facts changed later.
 Ordinary Administration writes, updates and deletes cannot replace that decision.
-The migration adds a new table without converting legacy Workflow records.
 
 Payment's existing submission preflight and atomic attempt claim both call `PaymentTransferApprovalService::assertApproved()`.
 For a transfer with an Approval Flow submission, `PaymentTransferApprovalResultVerifier` requires the original request's applied `Approved` decision.
-A pending, rejected or not-yet-delivered decision cannot authorize a payout or select the legacy Workflow path.
-Only transfers without a new submission use their existing Workflow approval binding; there is no conversion or missing-capability fallback.
+A transfer can be paid only after its approved decision has been delivered and its current evidence matches the approved snapshot.
 Under the transfer lock, the verifier reads the current business revision and decision, then rechecks the current transfer, recipient and active merchant account.
 It compares that snapshot with the submitted revision and the outgoing transfer's financial inputs and reason before returning the approved recipient.
 The same check runs inside the attempt claim; failure rolls back the claim before any channel call.
@@ -630,7 +626,7 @@ The request DAL batch uses a dedicated scope on the original Context and preserv
 Ordinary DAL/Sync writes and borrowed listener contexts cannot create or rewrite request facts.
 
 Payment owns `PaymentTransferApprovalRequestService::submit(transferId, Context)` and constructs the form from the locked transfer, recipient and account.
-Only a created, unexecuted transfer without a legacy approval may acquire a new request.
+Only a created, unexecuted transfer may acquire a new approval request.
 An existing request replays its start command before being returned, without rechecking the current binding or mutable business eligibility, so retry preserves its original snapshot.
 The form contains integer minor-unit amounts, a masked recipient label and an account display name; private evidence stays in `payment_transfer_approval_request` with the recipient identity still encrypted.
 Request, private evidence, initial executions, reviewer tasks and the running instance commit or roll back together, without channel calls.
@@ -638,7 +634,7 @@ Payment currently uses submission round 1 because reapplication creates another 
 
 Both Payment approval entry points lock the same transfer row and reject a committed binding in the other system.
 They also share a per-transfer operation guard while their callbacks run: database row locks are reentrant on the same connection.
-The new path covers validation, DAL events and private freeze; the legacy path covers its lookup, runtime start and binding write.
+The submission transaction covers validation, DAL events, private evidence and approval start.
 The old store owns this temporary coordination while both implementations coexist; it is not a new shared-framework extension contract.
 Generic DAL updates or deletes of private evidence are rejected by Payment's existing write protection.
 

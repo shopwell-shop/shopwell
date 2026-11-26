@@ -16,17 +16,6 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         jest.restoreAllMocks();
     });
 
-    it('passes complete minor-unit input to preview and blocks a known unavailable approval', async () => {
-        const { wrapper } = await createWrapper();
-        expect(wrapper.get('.preview-probe span').text()).toBe('');
-        await fillExistingRecipient(wrapper, '5000.01');
-        expect(wrapper.get('.preview-probe span').text()).toBe('500001 CNY alipay-account recipient-1');
-        await wrapper.get('.preview-block').trigger('click');
-        expect(saveButton(wrapper).attributes('disabled')).toBeDefined();
-        await wrapper.get('.preview-ready').trigger('click');
-        expect(saveButton(wrapper).attributes('disabled')).toBeUndefined();
-    });
-
     it('should preselect and lock the default app interface, channel and currency', async () => {
         const { wrapper } = await createWrapper();
         expect(wrapper.find('.sw-finance-transfer-create-modal__loading').exists()).toBe(false);
@@ -46,7 +35,7 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         const { wrapper, createTransfer } = await createWrapper({
             getOptions: jest
                 .fn()
-                .mockResolvedValue({ apps: [{ ...apps[0], accounts }], defaultAppId: 'app-1', workflowAvailable: true }),
+                .mockResolvedValue({ apps: [{ ...apps[0], accounts }], defaultAppId: 'app-1', approvalFlowActive: true }),
         });
         expect(field(wrapper, 'account').text()).toContain('Second account');
         await select(wrapper, 'account', 'second-alipay');
@@ -123,7 +112,7 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         const japaneseApps = [{ ...apps[0], accounts: [{ ...apps[0].accounts[0], currencies: ['JPY'] }] }];
         const { wrapper, createTransfer } = await createWrapper({
             getOptions: jest.fn(() =>
-                Promise.resolve({ apps: japaneseApps, defaultAppId: 'app-1', workflowAvailable: true }),
+                Promise.resolve({ apps: japaneseApps, defaultAppId: 'app-1', approvalFlowActive: true }),
             ),
         });
         await fillExistingRecipient(wrapper, '1234');
@@ -249,48 +238,6 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         expect(saveButton(wrapper).attributes('data-loading')).toBe('false');
     });
 
-    it('submits to the active Approval Flow without displaying the legacy preview', async () => {
-        const { wrapper, createTransfer } = await createWrapper({
-            getOptions: jest.fn().mockResolvedValue({
-                apps,
-                defaultAppId: 'app-1',
-                workflowAvailable: true,
-                approvalFlowActive: true,
-            }),
-        });
-        await fillExistingRecipient(wrapper);
-
-        expect(wrapper.find('.preview-probe').exists()).toBe(false);
-        await saveButton(wrapper).trigger('click');
-        await flushPromises();
-        expect(createTransfer).toHaveBeenCalledTimes(1);
-    });
-
-    it('should preserve a settlement amount and use its booking handler', async () => {
-        const bookTransfer = jest.fn(() => Promise.resolve({ transfer: { id: 'settlement-transfer' }, replayed: false }));
-        const { wrapper, createTransfer } = await createWrapper(
-            { getOptions: jest.fn().mockResolvedValue({ apps, defaultAppId: 'app-1', workflowAvailable: false }) },
-            { fixedAmount: '90.00', fixedCurrency: 'CNY', bookTransfer },
-        );
-        await select(wrapper, 'recipient', 'recipient-1');
-        expect(field(wrapper, 'amount').get('input').element.value).toBe('90.00');
-        expect(field(wrapper, 'amount').attributes('disabled')).toBeDefined();
-        await saveButton(wrapper).trigger('click');
-        await flushPromises();
-        expect(bookTransfer).toHaveBeenCalledWith(expect.objectContaining({ amount: 9000, currency: 'CNY' }));
-        expect(createTransfer).not.toHaveBeenCalled();
-        expect(wrapper.emitted('transfer-created')).toEqual([[{ id: 'settlement-transfer' }]]);
-    });
-
-    it('should refuse a channel that cannot pay the fixed settlement currency', async () => {
-        const { wrapper } = await createWrapper({}, { fixedAmount: '90.00', fixedCurrency: 'EUR' });
-        await select(wrapper, 'recipient', 'recipient-1');
-        expect(saveButton(wrapper).attributes('disabled')).toBeDefined();
-        expect(field(wrapper, 'currency').attributes('error')).toBe(
-            'sw-finance.transfer.create.validationCurrencyUnsupported',
-        );
-    });
-
     it('should prevent closing the modal while saving, then allow closing', async () => {
         let resolveCreate: (value: unknown) => void = () => {};
         const { wrapper } = await createWrapper({
@@ -314,7 +261,7 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
     });
     it('prevents booking when no approval workflow is available', async () => {
         const { wrapper, createTransfer } = await createWrapper({
-            getOptions: jest.fn().mockResolvedValue({ apps, defaultAppId: 'app-1', workflowAvailable: false }),
+            getOptions: jest.fn().mockResolvedValue({ apps, defaultAppId: 'app-1', approvalFlowActive: false }),
         });
         await fillExistingRecipient(wrapper);
         expect(saveButton(wrapper).attributes('disabled')).toBeDefined();

@@ -18,13 +18,8 @@ inject
   paymentTransferApiService  [private]
 
 props
-  bookTransfer?: (payload: PaymentTransferPayload) => Promise<PaymentTransferBookingResult>  default=null  [private]
-  fixedAmount?: string  default=null  [private]
-  fixedCurrency?: string  default=null  [private]
   initialDraft?: TransferReapplicationDraft | null  default=null  [private]
-  purpose?: string  default=''  [private]
   sourceTransferId?: string  default=null  [private]
-  sourceUsesApprovalFlow?: boolean  default=false  [private]
 
 emits
   modal-close(...args: any[])  [private]
@@ -51,18 +46,15 @@ data
   note: any  [private]
   outNo: any  [private]
   paymentAppId: any  [private]
-  previewBlocked: any  [private]
   recipientGeneration: any  [private]
   recipientId: any  [private]
   recipientSource: any  [private]
   recipients: any  [private]
   selectionUnavailable: any  [private]
-  workflowAvailable: any  [private]
 
 computed
   accountOptions: TransferAccountOption[]  [private]
   amountInMinorUnits: number | null  [private]
-  approvalPreviewPayload: PaymentTransferPayload | null  [private]
   bankAccountTypes: string[]  [private]
   channelOptions: TransferChannelOption[]  [private]
   currencyOptions: string[]  [private]
@@ -107,7 +99,6 @@ blocks
       sw_finance_transfer_create_modal_field_amount  [private]
       sw_finance_transfer_create_modal_field_currency  [private]
       sw_finance_transfer_create_modal_field_out_no  [private]
-    sw_finance_transfer_create_modal_approval_preview  [private]
     sw_finance_transfer_create_modal_footer_cancel  [private]
     sw_finance_transfer_create_modal_footer_save  [private]
     sw_finance_transfer_create_modal_loading  [private]

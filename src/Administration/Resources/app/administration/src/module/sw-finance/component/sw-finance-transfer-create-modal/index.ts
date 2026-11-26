@@ -9,7 +9,6 @@ import { fromMinorUnits, providerLabelKey, toMinorUnits } from '../../service/pa
 import type {
     PaymentTransferPayload,
     TransferReapplicationDraft,
-    PaymentTransferBookingResult,
     TransferAccountOption,
     TransferAppOption,
     TransferRecipientOption,
@@ -86,14 +85,6 @@ export default defineComponent({
     props: {
         initialDraft: { type: Object as PropType<TransferReapplicationDraft | null>, default: null },
         sourceTransferId: { type: String, default: null },
-        sourceUsesApprovalFlow: { type: Boolean, default: false },
-        fixedAmount: { type: String, default: null },
-        fixedCurrency: { type: String, default: null },
-        purpose: { type: String, default: '' },
-        bookTransfer: {
-            type: Function as PropType<(payload: PaymentTransferPayload) => Promise<PaymentTransferBookingResult>>,
-            default: null,
-        },
     },
 
     data(): {
@@ -101,9 +92,7 @@ export default defineComponent({
         selectionUnavailable: boolean;
         recipientGeneration: number;
         isLoadingOptions: boolean;
-        workflowAvailable: boolean;
         approvalFlowActive: boolean;
-        previewBlocked: boolean;
         isSaving: boolean;
         isLoadingRecipients: boolean;
         apps: TransferAppOption[];
@@ -130,9 +119,7 @@ export default defineComponent({
             selectionUnavailable: false,
             recipientGeneration: 0,
             isLoadingOptions: true,
-            workflowAvailable: false,
             approvalFlowActive: false,
-            previewBlocked: false,
             isSaving: false,
             isLoadingRecipients: false,
             apps: [],
@@ -149,8 +136,8 @@ export default defineComponent({
             bankAccountType: null,
             bankName: '',
             bankBranchName: '',
-            amount: this.fixedAmount ?? '',
-            currency: this.fixedCurrency ?? '',
+            amount: '',
+            currency: '',
             outNo: this.sourceTransferId ? Shopwell.Utils.createId().slice(0, 30) : '',
             note: '',
             errors: {},
@@ -248,10 +235,7 @@ export default defineComponent({
         },
 
         isCurrencyLocked(): boolean {
-            return (
-                this.fixedCurrency !== null ||
-                (this.currencyOptions.length === 1 && this.currencyOptions.includes(this.currency))
-            );
+            return this.currencyOptions.length === 1 && this.currencyOptions.includes(this.currency);
         },
 
         payableRecipients(): TransferRecipientOption[] {
@@ -312,13 +296,9 @@ export default defineComponent({
                 this.isSaving ||
                 this.isLoadingOptions ||
                 this.isLoadingRecipients ||
-                (!this.bookTransfer && (!this.workflowAvailable || this.previewBlocked)) ||
+                !this.approvalFlowActive ||
                 this.isFormIncomplete
             );
-        },
-
-        approvalPreviewPayload(): PaymentTransferPayload | null {
-            return this.isLoadingOptions || this.isFormIncomplete ? null : this.buildPayload();
         },
 
         isFormIncomplete(): boolean {
@@ -401,12 +381,7 @@ export default defineComponent({
             try {
                 const options = await this.paymentTransferApiService.getOptions();
 
-                this.workflowAvailable = this.sourceUsesApprovalFlow
-                    ? options.approvalFlowActive === true
-                    : options.workflowAvailable;
-                this.approvalFlowActive = this.sourceTransferId
-                    ? this.sourceUsesApprovalFlow
-                    : options.approvalFlowActive === true;
+                this.approvalFlowActive = options.approvalFlowActive;
                 this.apps = options.apps;
                 if (this.initialDraft) {
                     await this.applyInitialDraft(this.initialDraft);
@@ -482,7 +457,7 @@ export default defineComponent({
 
             const currencies = this.currencyOptions;
 
-            if (this.fixedCurrency === null && currencies.length > 0 && !currencies.includes(this.currency)) {
+            if (currencies.length > 0 && !currencies.includes(this.currency)) {
                 this.currency = currencies[0];
             }
 
@@ -610,11 +585,10 @@ export default defineComponent({
 
             this.isSaving = true;
 
-            const booking = this.bookTransfer
-                ? this.bookTransfer(this.buildPayload())
-                : this.sourceTransferId
-                  ? this.paymentTransferApiService.reapplyTransfer(this.sourceTransferId, this.buildPayload())
-                  : this.paymentTransferApiService.createTransfer(this.buildPayload());
+            const payload = this.buildPayload();
+            const booking = this.sourceTransferId
+                ? this.paymentTransferApiService.reapplyTransfer(this.sourceTransferId, payload)
+                : this.paymentTransferApiService.createTransfer(payload);
 
             booking
                 .then((result) => {

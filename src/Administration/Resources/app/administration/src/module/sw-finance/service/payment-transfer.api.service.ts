@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  *
- * Transfer options, booking, financial execution and workflow approval endpoints.
+ * Transfer options, booking, financial execution and approval endpoints.
  */
 import type { HttpClient } from 'src/core/factory/http-client.types';
 import type { LoginService } from 'src/core/service/login.service';
@@ -103,7 +103,7 @@ export type TransferRecipientOption = {
 };
 
 /**
- * Business input for booking or a read-only approval preview.
+ * Business input for booking a transfer.
  * `identityValue` is supplied only for a new recipient; previews never persist it.
  *
  * @private
@@ -285,8 +285,7 @@ export type PaymentTransferView = {
  * @private
  */
 export type PaymentTransferOptions = {
-    workflowAvailable: boolean;
-    approvalFlowActive?: boolean;
+    approvalFlowActive: boolean;
     apps: TransferAppOption[];
     defaultAppId: string | null;
 };
@@ -325,41 +324,11 @@ export type PaymentTransferCancelResult = {
     transfer: PaymentTransferView | null;
 };
 
-/** @private */
-export type TransferWorkflowConfiguration = {
-    releaseId: string | null;
-    releaseName: string | null;
-    revision: number | null;
-    available: boolean;
-    reason: string | null;
-    releases: Array<{ id: string; name: string; revision: number; available: boolean; reason: string | null }>;
-};
-
 /** @private Read projection only; execution is authorized by the transfer detail endpoint. */
 export type TransferApprovalSummary = {
     status: TransferApproval['status'];
     currentAssignees: Array<{ id: string; name: string }>;
     detailRoute: TransferApproval['detailRoute'];
-};
-
-/** @private */
-export type TransferApprovalPreviewStep = {
-    nodeId: string;
-    type: string;
-    name: string;
-    rule: string | null;
-    assignees: Array<{ id: string; name: string }>;
-    branch: string | null;
-};
-
-/** @private An advisory path; submitting always revalidates the current release and input. */
-export type TransferApprovalPreview = {
-    available: boolean;
-    reason: string | null;
-    releaseId: string | null;
-    releaseName: string | null;
-    revision: number | null;
-    steps: TransferApprovalPreviewStep[];
 };
 
 /** @private */
@@ -370,7 +339,7 @@ export type TransferReapplicationDraft = Pick<
 
 /** @private */
 export type TransferApproval = {
-    status: 'pending' | 'returned' | 'approved' | 'rejected' | 'canceled' | 'unavailable' | 'not_started';
+    status: 'pending' | 'approved' | 'rejected' | 'canceled' | 'unavailable' | 'not_started';
     releaseId: string | null;
     releaseName: string | null;
     revision: number | null;
@@ -378,7 +347,6 @@ export type TransferApproval = {
     detailRoute: { name: string; params: { id: string } } | null;
     canCancel: boolean;
     canReapply: boolean;
-    usesApprovalFlow?: boolean;
     previousTransfer: { id: string; transferNo: string } | null;
     recipientLabel: string | null;
     paymentAccountLabel: string | null;
@@ -388,7 +356,6 @@ export type TransferApproval = {
  * The raw json shapes below exist because a response is json first and a typed object second.
  */
 type OptionsResponse = {
-    workflowAvailable?: boolean;
     approvalFlowActive?: boolean;
     apps?: TransferAppOption[];
     defaultAppId?: string | null;
@@ -447,7 +414,6 @@ export default class PaymentTransferApiService {
             .get<OptionsResponse>('/_action/payment/transfers/options', { headers: this.getAuthHeaders() })
             .then((response): PaymentTransferOptions => {
                 return {
-                    workflowAvailable: response.data.workflowAvailable === true,
                     approvalFlowActive: response.data.approvalFlowActive === true,
                     apps: response.data.apps || [],
                     defaultAppId: response.data.defaultAppId || null,
@@ -520,30 +486,6 @@ export default class PaymentTransferApiService {
                     transfer: response.data.transfer || null,
                 };
             });
-    }
-
-    public getWorkflowConfiguration(): Promise<TransferWorkflowConfiguration> {
-        return this.httpClient
-            .get<TransferWorkflowConfiguration>('/_action/payment/transfers/workflow', { headers: this.getAuthHeaders() })
-            .then((response) => response.data);
-    }
-
-    public saveWorkflowConfiguration(releaseId: string): Promise<TransferWorkflowConfiguration> {
-        return this.httpClient
-            .put<TransferWorkflowConfiguration>(
-                '/_action/payment/transfers/workflow',
-                { releaseId },
-                { headers: this.getAuthHeaders() },
-            )
-            .then((response) => response.data);
-    }
-
-    public previewApproval(payload: PaymentTransferPayload): Promise<TransferApprovalPreview> {
-        return this.httpClient
-            .post<TransferApprovalPreview>('/_action/payment/transfers/approval/preview', payload, {
-                headers: this.getAuthHeaders(),
-            })
-            .then((response) => response.data);
     }
 
     public getApprovalSummaries(ids: string[]): Promise<Record<string, TransferApprovalSummary>> {

@@ -15,7 +15,6 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestService;
 use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalRequestStore;
-use Shopwell\Core\System\Payment\Transfer\Approval\PaymentTransferApprovalStore;
 use Shopwell\Tests\Integration\Core\Framework\ApprovalFlow\Execution\Instance\_fixtures\ApprovalRuntimeFixture;
 use Shopwell\Tests\Integration\Core\System\Payment\Transfer\_fixtures\PaymentTransferApprovalFixture;
 use Shopwell\Tests\Unit\Core\Framework\ApprovalFlow\Graph\_fixtures\GraphFixture;
@@ -67,11 +66,10 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
         $service = new PaymentTransferApprovalRequestService(
             $container->get(PaymentTransferApprovalRequestStore::class),
             $runtime->get(ApprovalRequestService::class),
-            $container->get(PaymentTransferApprovalStore::class),
             $container->get(PaymentTransferPresenter::class),
         );
         $input = new InputStream();
-        $writer = new Process([\PHP_BINARY, '-d', 'xdebug.mode=off', __DIR__ . '/_fixtures/competing-approval-request.php', $mode, $transfer->id, $actor, $manifest]);
+        $writer = new Process([\PHP_BINARY, '-d', 'xdebug.mode=off', __DIR__ . '/_fixtures/competing-approval-request.php', $transfer->id, $actor, $manifest]);
         $writer->setTimeout(30);
         $writer->setInput($input);
 
@@ -81,16 +79,7 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
             $connection->beginTransaction();
             $request = null;
             $binding = null;
-            if ($mode === 'new-after-legacy') {
-                $container->get(PaymentTransferApprovalStore::class)->lock($transfer->id);
-                $container->get('payment_transfer_approval.repository')->create([[
-                    'id' => $transfer->id,
-                    'releaseId' => Uuid::randomHex(),
-                    'instanceId' => Uuid::randomHex(),
-                    'initiatorId' => $actor,
-                    'snapshot' => ['amount' => 100],
-                ]], $system);
-            } elseif ($mode === 'facts') {
+            if ($mode === 'facts') {
                 $connection->fetchOne('SELECT id FROM payment_transfer WHERE id = :id FOR UPDATE', ['id' => Uuid::fromHexToBytes($transfer->id)]);
                 $container->get('payment_transfer.repository')->update([['id' => $transfer->id, 'metadata' => ['note' => 'Updated reason']]], $system);
                 $container->get('payment_transfer_recipient.repository')->update([['id' => $transfer->recipientId, 'holderName' => 'Updated holder']], $system);
@@ -107,9 +96,7 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
             $input->close();
 
             static::assertSame(0, $writer->wait(), $writer->getOutput() . $writer->getErrorOutput());
-            if ($mode === 'new-after-legacy' || $mode === 'legacy-after-new') {
-                static::assertStringContainsString('REJECTED:approval_already_started', $writer->getOutput());
-            } elseif ($mode === 'facts') {
+            if ($mode === 'facts') {
                 static::assertNotNull($binding);
                 static::assertStringContainsString('"bindingId":"' . $binding->getId() . '"', $writer->getOutput());
                 static::assertStringContainsString('Updated account', $writer->getOutput());
@@ -129,7 +116,6 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
                 $connection->rollBack();
             }
             $connection->delete('payment_transfer_approval_request', ['id' => Uuid::fromHexToBytes($transfer->id)]);
-            $connection->delete('payment_transfer_approval', ['id' => Uuid::fromHexToBytes($transfer->id)]);
             $connection->delete('approval_flow_request', ['business_type' => 'payment:transfer', 'business_id' => $transfer->id]);
             $connection->executeStatement('DELETE t FROM approval_flow_task t INNER JOIN approval_flow_execution e ON e.id = t.execution_id INNER JOIN approval_flow_instance i ON i.id = e.instance_id WHERE i.release_id = :id', ['id' => Uuid::fromHexToBytes($releaseId)]);
             foreach (['approval_flow_execution', 'approval_flow_operation'] as $table) {
@@ -153,8 +139,6 @@ class PaymentTransferApprovalRequestConcurrencyTest extends TestCase
     public static function operations(): iterable
     {
         yield 'retry returns committed request after older snapshot' => ['retry'];
-        yield 'new request waits for legacy approval' => ['new-after-legacy'];
-        yield 'legacy approval waits for new request' => ['legacy-after-new'];
         yield 'new submission reads current binding and business facts' => ['facts'];
     }
 

@@ -46,7 +46,11 @@ class PaymentTransferApprovalView
 
         $requests = $this->requests->search($this->criteria($transferIds), $context)->getEntities();
         $results = $this->results->search(new Criteria($transferIds), $context)->getEntities();
-        $summaries = [];
+        $summaries = array_fill_keys($transferIds, [
+            'status' => 'not_started',
+            'currentAssignees' => [],
+            'detailRoute' => null,
+        ]);
         foreach ($requests as $request) {
             $summaries[$request->getBusinessId()] = $this->summary($request, $results->get($request->getBusinessId()), $context);
         }
@@ -63,7 +67,19 @@ class PaymentTransferApprovalView
         $criteria = $this->criteria([$transferId])->addAssociation('instance.release.definition');
         $request = $this->requests->search($criteria, $context)->first();
         if ($request === null) {
-            return [];
+            return [
+                'status' => 'not_started',
+                'releaseId' => null,
+                'releaseName' => null,
+                'revision' => null,
+                'instanceId' => null,
+                'detailRoute' => null,
+                'canCancel' => false,
+                'canReapply' => false,
+                'previousTransfer' => null,
+                'recipientLabel' => null,
+                'paymentAccountLabel' => null,
+            ];
         }
 
         $result = $this->results->search(new Criteria([$transferId]), $context)->first();
@@ -82,7 +98,6 @@ class PaymentTransferApprovalView
             'releaseId' => $release?->getId(),
             'releaseName' => $release?->getDefinition()?->getName(),
             'revision' => $release?->getDraftRevision(),
-            'usesApprovalFlow' => true,
             'canCancel' => $canAct && $state === PaymentTransferStates::STATE_CREATED && $instance?->getStatus() === ApprovalInstanceStatus::Running,
             'canReapply' => $canAct && (
                 ($state === PaymentTransferStates::STATE_CREATED && $result?->outcome === ApprovalOutcome::Rejected)

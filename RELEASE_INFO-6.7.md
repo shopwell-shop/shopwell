@@ -80,53 +80,10 @@ Declarations may supply an explicit `draftConfigurationSchema`; otherwise drafts
 Use `approval-flow:graph:diagnose <file>` to inspect draft structure, incomplete configuration and unavailable capabilities without saving or executing the graph.
 Approval definitions and drafts now have DAL models; writes require the controlled draft path so graph admission, expected revisions and explicit removal confirmation cannot be skipped through ordinary repository or Sync calls.
 An unavailable exact node declaration keeps an existing draft readable and blocks edits until the declaration returns.
-The legacy Workflow navigation is hidden during the replacement, while its existing routes and business execution remain available.
 The Administration now groups My pending approvals, My completed reviews and My requests under the top-level Approvals menu, with a shared request detail page.
 Assign `approval_flow.viewer` to grant personal query access without generic approval or user entity read privileges.
 Query summaries include `title` and nullable `initiatorName`; details include `formLabels` for visible fields and `participantNames` for the initiator and assigned reviewers.
 Business form schemas may provide `title` and `x-shopwell-label-snippet` annotations for display labels.
-
-### Dynamic workflow reviewers
-
-Approval sources now include `core:initiator`, `core:roles` (`roleIds`) and `core:supervisors`.
-Supervisor and department-leader sources accept `level` (1–20) and `continuous` (boolean) and resolve the reporting relationship from the initiator’s captured department.
-A missing target level does not shorten the approval quorum.
-Approval configuration accepts `missingAssignee` with an explicit `action`: `block` (default), `approve`, `reject` or `assign` with `userId`.
-Publication validates replacement reviewers; preview and node entry apply the same policy and retain automatic decisions in node execution output.
-Malformed reporting snapshots, unsupported sources and operational errors do not trigger automatic decisions.
-Workflow viewers gain `acl_role:read` for role selection; selected role membership remains live until node entry.
-
-
-### People and department workflow fields
-
-Workflow request schemas now support `user`, `users` and `department` fields with an optional frozen `candidateIds` range.
-Submit a UUID for single selections or an ordered UUID list for `users`; unavailable or out-of-range selections are rejected by the server.
-Approval nodes can use `core:form-field` with `config.fieldKey` referencing a people field, so requesters choose reviewers within the published range.
-Existing workflow roles receive read access to organizations and departments for these selectors.
-
-
-### Automatic workflow approvals
-
-Approval nodes accept an opt-in `automation` policy with `decision` (`manual`, `approve` or `reject`), `approveInitiator` and `deduplication` (`none`, `adjacent` or `all`).
-Explicit automatic decisions retain their reason in node execution output without creating human tasks.
-Participant automation records completed approval tasks and reasons while preserving the selected approval mode's quorum.
-Deduplication uses successful decisions from the current submission round; missing required review input keeps a participant task manual.
-Automatic completions emit completion events without creating pending-task notifications.
-
-### Approval form permissions
-
-Approval and copy nodes support frozen `formPermissions` keyed by the published form field key.
-Approval fields default to read-only; editable fields may be required at a node, while copy nodes support only hidden and read-only access.
-`ApprovalFormPolicyEvent` lets business integrations further restrict field visibility and editing without changing the canvas or workflow engine.
-Transfer evidence stays immutable; optional supplemental workflow fields can be edited independently of payout inputs.
-
-The approve and resubmit actions accept a `formData` patch with the `formVersion` from the authorized instance response.
-Only changed editable keys may be submitted; omitted values are retained, and stale edits return `FRAMEWORK__WORKFLOW_FORM_CONFLICT`.
-Form updates, private change history and approval progression share one transaction.
-Instance details expose projected `formPermissions`, `formVersion` and `formChanges`; select a task or copy using `taskId` when `formContextRequired` is true.
-Raw instance form values, graph snapshots, extension metadata, log payloads and node outputs are no longer exposed through generic DAL serialization.
-Read runtime details through the authorized workflow instance endpoint.
-`WorkflowInstancePresentationEvent::filterData()` applies response projections after subscribers add their data.
 
 ### User organization assignments
 
@@ -136,162 +93,8 @@ Write department assignments through `user.organizationUnitMappings` and scoped 
 Each normal user requires exactly one primary department and primary position; use the Sync API when replacing related assignments together.
 Department memberships expose `isLeader`, `leaderPosition` and `supervisorMembershipId` to the Admin API.
 A supervisor references a specific membership in the same organization, so reporting lines remain explicit for users with multiple departments.
-Approval workflows can select `core:department-leaders` as their assignee source with an empty configuration.
-This source uses the initiator's primary department captured at instance start and supports all-must-approve or first-decision modes.
-Department and position sources resolve current eligible staff within that captured department when entering each node; later changes to the initiator's department do not redirect existing instances.
 The user editor configures department leaders and department-specific positions.
-Assignees are resolved when entering a node, must be active and authorized, and remain attached to tasks already created when organization relationships change.
 Core now directly requires `symfony/expression-language` with a minimum version of 7.4.21 within the 7.4 series.
-
-### Experimental Workflow Studio
-
-Approval nodes accept an optional `deadline` with `minutes` (1–525600 elapsed minutes) and `remind` (boolean); publication freezes it in the runtime snapshot.
-Transfers retain the deadline, while new sequential and added reviewers receive their own time limit.
-Initiators may send private reminders through `POST /api/_action/workflow/instance/{instanceId}/remind`, subject to a 600-second task cooldown.
-Task projections expose a `reminder` receipt with deadline, overdue status and latest reminder; reminder actions are separate from approval decisions.
-The `workflow.approval.reminder` scheduled task runs every minute, retries pending delivery and records one automatic overdue reminder per task.
-Approval reminder actions and their scheduled handler require an independent transaction; plugins must invoke them after their business transaction commits.
-Calls inside an existing transaction fail with `FRAMEWORK__WORKFLOW_REMINDER_TRANSACTION_ACTIVE` to prevent stale REPEATABLE READ snapshots from bypassing admission.
-Run the regular scheduled task registration and message queue workers to enable automatic processing.
-Plugins may narrow admission through `ApprovalReminderPolicyEvent` and deliver additional channels through `ApprovalReminderDeliveryEvent` after commit.
-Delivery is at least once: use the stable `deliveryId` to deduplicate external effects, and throw on failure to retry without adding another receipt or audit entry.
-
-Approval task owners may use `POST /api/_action/workflow/task/{taskId}/return` with a reason to request changes without ending the instance.
-The initiator may resubmit through `POST /api/_action/workflow/instance/{instanceId}/resubmit` with the expected `round`, replacement `formData` and an optional `comment`.
-Resubmission uses the saved graph and input schema, creates a new round and keeps prior decisions and copy receipts as history.
-`ApprovalResubmittingEvent` allows business integrations to validate replacement inputs before writes; bound transfer inputs remain immutable.
-The public instance status includes `RETURNED`, and workflow runtime consumers receive `returned` while the initiator prepares changes.
-
-Workflow Studio provides editable workflow drafts, an approval template, automatic diagnostics and JSON export.
-Its shared canvas editor is available independently through `CanvasEditorSession<TDocument>`, `sw-canvas-editor` and `sw-canvas-contributions`.
-The shared layer provides graph history, commands and optional shell regions; the canvas accepts native Vue Flow nodes, edges, renderer slots, component maps and event listeners.
-Workflow supplies its node types, layouts, forms and publication behavior.
-Canvas extensions cannot commit malformed graph structures, and individual contribution disposers remove their owned dialog state without affecting later registrations.
-Workflow Studio extensions register through `workflowExtensionService.register()` and receive an isolated context for commands, session events, UI contributions and resource cleanup in each editor session.
-Document edits share access checks, undo/redo and the existing diagnostics pipeline; retained extension contexts become inactive on teardown.
-The designer opens node selection beside hovered or focused connections, stages node configuration in a right-side panel and previews templates before explicit replacement.
-Unapplied settings are protected during selection changes, extension commands and page navigation; applying them creates one undoable edit.
-Opening panels preserves the canvas zoom and only pans when needed to keep the selected node visible.
-See `technical-docs/03-extensibility/09-workflow-studio.md` in the Administration for the extension contract and registration example.
-Registered layout callbacks receive an optional third argument containing measured node sizes and resolved output port order.
-The built-in layouts reserve routing space for branch labels and insertion controls, including nodes supplied by extensions.
-The read-only instance diagram reuses this geometry and shows participant states inside approval nodes, with zoom controls and an expanded view.
-Transfer initiators can use `POST /api/_action/payment/transfers/{id}/reapply` after rejection or withdrawal, supplying a fresh `outNo` for retry safety.
-The new request uses the active workflow release and exposes its original request through `previousTransfer` in the approval status response.
-Business modules can register context-specific text and choice fields through `workflowFieldService.register(name, provider)` for condition configuration.
-Providers return field metadata for the current document and node; the default approval template declares request inputs consumed by the core approval runtime.
-Condition nodes support ordered text conditions, dynamic output ports and a fallback path through the node extension services.
-The Admin API exposes `GET /api/_info/workflow-node-types.json` and `POST /api/_action/workflow/diagnose`, both requiring `workflow:read`.
-The experimental definition and presentation registries support custom node types independently of the canvas.
-The built-in node catalog contains only implemented types; action and handler nodes require an extension providing their definition, presentation, publication and execution.
-`WorkflowInstanceMetadataEvent` collects extension-owned JSON metadata under distinct owner keys before the first node runs, storing it in `workflow_instance.ext`.
-The same event runs for previews without persistence, so subscribers must only read and must not trigger external side effects.
-Drafts can be created, reopened, renamed and deleted under Workflow > Process design.
-The revision-checked draft API at `/api/_action/workflow/draft` requires the corresponding `workflow:create`, `workflow:read`, `workflow:update` or `workflow:delete` privilege; listing uses `workflow_draft:read`.
-Updates and deletes require `expectedRevision` and return HTTP 409 on conflicting edits.
-Approval nodes support a single named user or multiple users with all-must-approve and first-decision rules, and display current approver names.
-`workflowApprovalService.registerSource()` and `registerMode()` provide independent settings components for business extensions; sources also provide their node summary component and optional `supportedModes` to constrain compatible rules.
-When a source declares `supportedModes`, extensions opt in custom rules through `workflowApprovalService.registerSupportedMode(sourceName, modeName)`.
-Approval mode registrations accept an explicit positive `version`; saved nodes select that exact implementation, and unavailable versions are not replaced automatically.
-Source compatibility entries use a mode name for version 1 or `name@version` for later versions; `registerSupportedMode(sourceName, modeName, version)` owns a version-specific opt-in.
-Backend strategies implement `ApprovalMode` and register the `shopwell.workflow.approval.mode` tag; participant configuration compilers implement `ApprovalAssigneeSource` with the `shopwell.workflow.approval.assignee_source` tag.
-`CompileApprovalConfigurationExtension` supports publication-time selection overrides; the resulting strategy type, version and configuration are pinned in the execution graph and instance snapshot.
-Keep referenced versions installed while published definitions or running instances use them.
-Approval publication node compilers implement `ApprovalNodeCompiler` and register `shopwell.workflow.approval.node_compiler` for an exact designer type and version.
-All built-in approval node types use this contract; compilers validate configuration and return runtime properties, input ports, ordered routed outputs and executor-completed terminal ports.
-`CompileApprovalNodeExtension` selects registered replacements of the same structural role; duplicate type/version registrations fail.
-Result substitution and short-circuiting are rejected so the recorded compiler always produced the published node.
-The actual compiler identity and version, runtime configuration and source-port mapping are saved in the published graph.
-Published definitions execute their snapshot without recompilation; keep their runtime executors and referenced approval strategies installed, and use a distinct runtime type when execution semantics change.
-Custom nodes must also register their designer presentation and runtime executor; business preview support is a separate extension.
-`ApprovalNodePreviewEvent` allows subscribers to contribute or replace a node preview from the published graph and normalized execution context.
-`ApprovalWorkflowValidationEvent` lets node extensions validate live business prerequisites during publication and release revalidation, rejecting invalid prerequisites with a domain exception.
-Preview subscribers must remain read-only; unhandled nodes make the preview unavailable rather than disappearing from the path.
-The approval designer now exposes any approval (`core:or-sign`) and sequential approval (`core:sequential`) separately from first decision (`core:any`), whose execution semantics remain unchanged.
-The designer and task views distinguish first-decision approval from any-one-approves: first decision ends on either approval or rejection, while any-one-approves waits after a rejection unless everyone rejects.
-Copy nodes (`core:copy`, version 1) publish nonblocking recipient receipts and require active recipients with `workflow_instance:access`, without requiring approval decision privileges.
-Participants can list their receipts through `GET /api/_action/workflow/copy` and acknowledge their own receipt through `POST /api/_action/workflow/copy/{copyId}/read`; repeated acknowledgements preserve the first read timestamp.
-The structured approval publisher still requires an approval stage and supports sequential routing rather than parallel joins or subprocess scheduling.
-Default node names, request labels, fallback labels and newly installed workflow role text use the system translator with English and Chinese resources.
-Authored names and existing published snapshots are preserved.
-Personnel sources pair their compiled assignment type with the existing experimental `AssigneeResolverInterface`; its execution context and entity contracts remain experimental.
-Plugin resolvers receive the normalized request form during preview and execution, and unavailable dynamic participants prevent submission or stage entry.
-Instance details use actual node execution outcomes rather than inferring approval policy from individual task votes.
-Approval source, mode and compatibility registrations, request form data sources and release actions reject duplicate names and return disposers.
-Removing a source or mode also removes its compatibility registrations; reinstalling requires explicitly opting in again.
-Template `create(types, { translate })` receives the current interface translation context; authored labels and form fields are translated only when creating the document.
-Workflow viewers require `user:read` to resolve approvers; no user write privileges are granted.
-Saved draft revisions can be published through `POST /api/_action/workflow/draft/{id}/publish` with `expectedRevision` and `publisher`.
-Publication requires `workflow:publish` plus the target privileges, preserves the original document in an immutable snapshot, and deduplicates repeat publication of the same revision and target.
-Deleting a draft preserves its published versions and reserves its identifier against reuse.
-`GET /api/_action/workflow/publishers`, `/api/_action/workflow/releases`, and `/api/_action/workflow/release/{id}` expose targets and snapshots to `workflow:read` users.
-Business targets implement `WorkflowPublisher` and register the `shopwell.workflow.publisher` tag; target persistence runs in the snapshot transaction, while instance execution starts separately.
-The built-in `core:approval` target executes approval stages and ordered conditional branches based on request fields: each approval stage supports single-person, all-must-approve, or first-decision rules.
-The first-decision rule ends on either agreement or rejection; remaining tasks close automatically once the outcome is decided.
-Unavailable configured reviewers block publication or stage entry instead of silently reducing the required reviewer set.
-Unsupported nodes and modes are rejected at publication.
-Request forms are configured on the start node with `formFields` and support text, amount, number, date and single-select fields, required checks and published schema snapshots.
-Text fields can declare a `dataSource`; `core:currency` provides configured currency names and ISO codes through a standard selection control and validates submitted membership on the server.
-Extensions supply read-only options through `Shopwell\Core\Framework\Workflow\Definition\Input\WorkflowFormOptionsEvent` and can register request action components using the start node's `requestAction` identifier.
-Published node and connection identifiers are limited to 64 characters so they can be recorded by the runtime; editable drafts retain their 128-character limit.
-Invalid runtime identifiers and approval configuration expose structured diagnostics with code, document path and node identifier in `errors[].meta.parameters.violations`.
-`GET /api/_action/workflow/request-catalogue` requires workflow read and request start permissions; `GET /api/_action/workflow/form-options/{source}` exposes only source options to workflow readers.
-
-Position assignees (`core:positions`, compiled as `position`) resolve selected positions within the initiator's primary department at stage entry and use the configured position order for sequential approval.
-Inactive positions, unavailable members and missing decision privileges block publication or entry instead of reducing the participant set.
-Workflow designers require `position:read` to select and display position names; installations of new default manager roles include that privilege.
-Structured branches support nested `and`/`or` condition groups, with at most six nesting levels and 100 conditions per branch; empty groups are rejected.
-Conditions reference `request.<field key>` with a bound `fieldType`, evaluate in configured order and use the default branch when no condition matches; amount comparisons use decimal arithmetic.
-Generic execution conditions retain `${form.<field key>}` references, explicit comparisons and `&&`/`||` grouping, with at most 64 nested parentheses and Symfony ExpressionLanguage's native parsing and AST depth limits.
-Very long flat logical chains can exceed the library's depth limit and are rejected during validation.
-Changing a referenced field type requires explicitly rebinding the condition before publication.
-Invalid values, unavailable fields and unsupported operator/type combinations are rejected before execution; unselected branches create no approval tasks.
-The Administration exposes `workflowRequestFormService.getFields(config, defaultReasonLabel)` for release consumers to read request field definitions without importing designer internals.
-Core workflow instance details expose ordered `approvalStages` with immutable stage names, descriptions, rules and participants from the published snapshot, stage outcomes and actual tasks.
-Future stages remain visible without creating tasks or todos before entry; rejection and unselected branches mark remaining stages as skipped.
-Instance details expose `plannedPath` for the route selected by frozen request values and `selectedPath` for the visited prefix, with node and edge identifiers matching the instance graph.
-`approvalTasks` includes all actual tasks, including those closed without a decision; `tasks` remains the current-node action list.
-The Administration `workflowReleaseActionService` registers target-specific actions without coupling the designer to a runtime.
-System installation creates missing workflow manager and participant roles with their corresponding menu selections; `workflow:roles:install` provides the same create-only operation for development installations without assigning users or overwriting existing roles.
-Business extensions can add default privileges and menu keys through `WorkflowDefaultRolesEvent`.
-
-Approval nodes accept an optional `operations` list, frozen at publication; omission enables transfer, add-sign and return, while an empty list disables them.
-Task `availableActions` and locked operation admission use the same node policy.
-Plugins declare names through `ApprovalOperationRegistrationEvent`, restrict eligibility through the read-only `ApprovalTaskActionsEvent`, and handle their operation through `ApprovalTaskOperationExtension` at `POST /api/_action/workflow/task/{taskId}/operation`.
-Core checks ownership, active node and round before dispatch and records the operation name and comment after success; plugin payloads are not automatically logged.
-The Administration `workflowApprovalService.registerOperation({ name, labelKey, actionComponent })` returns an owned disposer; custom action components receive `taskId` and `isLoading` and emit `completed` to refresh the detail.
-
-Pending approval tasks support `POST /api/_action/workflow/task/{taskId}/participation` with an `action`, `targetUserId` and required `comment`.
-`transfer` creates a replacement task at the same approval position; `add-sign` adds a parallel mandatory reviewer whose rejection vetoes the stage, independently of its original approval mode.
-Both operations require task ownership and `workflow_task:decide`, validate the target's active organization membership and approval permissions, and retain a distinct operation in task history.
-Plugins can observe or replace participant operations through `ApprovalTaskParticipationExtension` within the instance transaction; external side effects must be queued through `WorkflowEventQueue` until commit.
-Task projections expose `availableActions` and `requiredReviewer`; history may contain `transfer` and `add-sign` decisions with a `target` participant, in addition to approval votes.
-
-### Workflow approval for finance transfers
-
-Finance transfer requests require a published workflow selected through the finance list's approval settings.
-The transfer template starts with department position approval, adds finance review for non-CNY currencies or CNY amounts above 5,000, and copies recipients after approval.
-Select approval positions, the finance reviewer and copy recipients before publishing; the template does not assign authority to the default employee position.
-Transfer previews apply the booking product and currency checks without creating payment or workflow records.
-The request supplies the workflow's `amount`, `currency`, `recipient`, `paymentAccount` and optional `reason` fields from server-side financial data.
-The published revision and encrypted recipient snapshot remain fixed for that transfer.
-Approval and payment statuses are separate: final approval enables an authorized finance operator to execute the transfer, while channel processing, failure and return remain payment outcomes.
-Unbound, pending, rejected or unavailable approvals cannot be submitted through the transfer endpoint.
-Generic entity writes and state transitions cannot replace the approval process or alter the reviewed financial data.
-The Admin API provides `GET` and `PUT /api/_action/payment/transfers/workflow`, `GET /api/_action/payment/transfers/{id}/approval`, and `POST /api/_action/payment/transfers/{id}/approval/cancel`.
-Runtime integrations implement `WorkflowRuntime` and register `shopwell.workflow.runtime` using their publication target name.
-Business bindings and instance creation commit together before runtime events are dispatched.
-The built-in `core:approval` publisher and runtime are part of the main system and work with OA disabled.
-Workflow > My tasks provides pending tasks, completed tasks and initiated requests, with participant-scoped details and decision actions.
-Core runtime resources use `workflow_instance:access`, `workflow_instance:start` and `workflow_task:decide`; designer publication continues to require `workflow:publish`.
-Core database migrations create Workflow drafts, releases, transfer bindings, execution tables and state machines for both installation and updates.
-
-Transfer approval configuration now reports unavailable reviewers and rechecks their live account and decision privileges before binding a release or accepting new requests.
-Transfer lists load approval state and current reviewers in one batch through `POST /api/_action/payment/transfers/approvals`, requiring `payment_transfer:read`; approval detail links remain participant-scoped.
-Transfer creation previews the expected approval path through `POST /api/_action/payment/transfers/approval/preview`, requiring `payment_transfer:create`.
-The read-only preview uses the configured release and shared routing rules, assumes all reviewers agree, and creates no recipient, transfer, instance or task.
-Runtimes can supply previews through `WorkflowRuntimePreviewEvent` without changing the execution adapter contract; submitting still revalidates live prerequisites.
-Runtime extensions can contribute read summaries through `WorkflowRuntimeStatusesEvent` and recheck release prerequisites through `WorkflowReleaseCheckEvent` without changing the execution interface.
 
 ### After-sales refund destination
 
@@ -773,9 +576,6 @@ All layouts use the configured menu order, role restrictions and registered modu
 Top and combined layouts place the existing page search and toolbar actions in one compact header.
 Sales channels use their own navigation area instead of appearing in every module sidebar.
 Top navigation is the default for accounts without a saved layout preference.
-Workflow is a separate top-level menu with My approvals and Workflow management.
-Publication history is a management tab; participants choose an available workflow through Start request.
-Generic requests use the newest release per workflow; business modules can restrict their request actions to the enabled release through `WorkflowRequestCatalogueEvent`.
 Transfer requests expose only the finance-enabled release to users with transfer creation permission.
 Articles, categories, authors and comments are grouped under Content > Articles.
 Payment orders and refund orders are direct entries under Finance, alongside transfer requests and wallet transactions.
@@ -1131,6 +931,12 @@ Theme overrides of the notice templates should keep the link's `aria-label` and 
 
 ## API
 
+### Transfer approval uses the active Approval Flow release
+
+In Administration, publish and activate a transfer process under Approval → Process definitions.
+New transfers require an active release before booking.
+The experimental Workflow endpoints and finance approval preview and configuration endpoints have been removed.
+
 ### Withdraw and reapply transfer approvals
 
 The transfer approval endpoints now accept withdrawal by the initiator while an Approval Flow transfer is pending.
@@ -1283,20 +1089,6 @@ App MCP resource responses must be JSON objects containing a `text` string or a 
 Plain-text resource responses are no longer accepted; wrap the content in a JSON object.
 Resources use the URI declared in `mcp.xml`; a non-empty `mimeType` in the response takes precedence over the configured MIME type.
 Invalid JSON, malformed messages or resource contents, and `{"success":false,"error":"..."}` responses produce MCP errors with details for the client.
-
-### Handling, media and workflow control flow
-
-Approval workflows support handling tasks with an explicit completion action and preserve completion comments in task history.
-Input schemas support `media`, `mediaList` and `images` values; submitted media is checked through the Media repository and `media:read` privilege at the point of submission.
-Returning a task may name a published approval stage; the next resubmission starts at that stage while retaining prior rounds.
-Parallel and join nodes create branch-scoped execution records and wait for every incoming branch before continuing.
-Working-time deadlines count Monday to Friday from 09:00 to 18:00 UTC when `workingTime` is enabled; elapsed deadlines remain the default.
-Overdue reminder events include an optional configured `escalateTo` user ID for delivery extensions.
-
-### Workflow integrations and script nodes
-
-Action, notification and subprocess nodes dispatch `WorkflowAutomationActionEvent` with a pinned action and input map so connectors and data actions can run through one transaction-aware extension seam.
-Script nodes evaluate bounded Symfony expressions with only `form` and `round` values and persist their result in node output; PHP and service access is unavailable.
 
 ### Deprecated the old shop ID format
 

@@ -28,7 +28,6 @@ data
   isLoadingApprovals: any  [private]
   listRevision: any  [private]
   showCreateModal: any  [private]
-  showWorkflowModal: any  [private]
   sortBy: any  [private]
   sortDirection: any  [private]
   states: any  [private]
@@ -39,7 +38,6 @@ data
 
 computed
   canApprove: boolean  [private]
-  canConfigureWorkflow: boolean  [private]
   canCreate: boolean  [private]
   criteria: CriteriaType  [private]
   dateFilter: (value: string | Date) => string  [private]
@@ -101,7 +99,7 @@ blocks
     sw_finance_transfer_list_sidebar  [private]
       sw_finance_transfer_list_sidebar_filter  [private]
       sw_finance_transfer_list_sidebar_refresh  [private]
-    sw_finance_transfer_list_smart_bar_actions_create  [after v-if] [private]
+    sw_finance_transfer_list_smart_bar_actions_create  [private]
     sw_finance_transfer_list_smart_bar_header  [private]
       sw_finance_transfer_list_smart_bar_header_title  [private]
         sw_finance_transfer_list_smart_bar_header_amount  [private]

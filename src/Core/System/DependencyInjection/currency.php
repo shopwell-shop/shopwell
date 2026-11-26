@@ -15,7 +15,6 @@ use Shopwell\Core\System\Currency\CurrencyExceptionHandler;
 use Shopwell\Core\System\Currency\CurrencyFormatter;
 use Shopwell\Core\System\Currency\CurrencyLoadSubscriber;
 use Shopwell\Core\System\Currency\CurrencyValidator;
-use Shopwell\Core\System\Currency\CurrencyWorkflowOptionsSubscriber;
 use Shopwell\Core\System\Currency\Rule\CurrencyRule;
 use Shopwell\Core\System\Currency\SalesChannel\AbstractCurrencyRoute;
 use Shopwell\Core\System\Currency\SalesChannel\CurrencyRoute;
@@ -39,10 +38,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CurrencyTranslationDefinition::class)
         ->tag('shopwell.entity.definition');
-
-    $services->set(CurrencyWorkflowOptionsSubscriber::class)
-        ->args([service('currency.repository')])
-        ->tag('kernel.event_subscriber');
 
     $services->set(CurrencyLoadSubscriber::class)
         ->tag('kernel.event_subscriber');

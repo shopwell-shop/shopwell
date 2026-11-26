@@ -106,16 +106,6 @@
 |`state_enter.payment_transfer.status.returned` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`state_enter.payment_transfer.status.submitted` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`state_enter.payment_transfer.status.succeeded` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_instance.state.agreed` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_instance.state.canceled` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_instance.state.completed` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_instance.state.rejected` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_instance.state.returned` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_instance.state.running` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_task.state.agreed` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_task.state.canceled` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_task.state.rejected` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_enter.workflow_task.state.todo` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`state_leave.order.state.cancelled` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`state_leave.order.state.completed` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`state_leave.order.state.in_progress` | __EMPTY__ | `order:read` | {"entity":"order"}
@@ -197,16 +187,6 @@
 |`state_leave.payment_transfer.status.returned` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`state_leave.payment_transfer.status.submitted` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`state_leave.payment_transfer.status.succeeded` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_instance.state.agreed` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_instance.state.canceled` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_instance.state.completed` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_instance.state.rejected` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_instance.state.returned` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_instance.state.running` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_task.state.agreed` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_task.state.canceled` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_task.state.rejected` | __EMPTY__ | `order:read` | {"entity":"order"}
-|`state_leave.workflow_task.state.todo` | __EMPTY__ | `order:read` | {"entity":"order"}
 |`sales_channel.written` | Triggers when a sales_channel is written | `sales_channel:read` | {"entity":"sales_channel","operation":"update insert","primaryKey":"array string","payload":"array"}
 |`sales_channel.deleted` | Triggers when a sales_channel is deleted | `sales_channel:read` | {"entity":"sales_channel","operation":"deleted","primaryKey":"array string","payload":"array"}
 |`sales_channel_domain.written` | Triggers when a sales_channel_domain is written | `sales_channel_domain:read` | {"entity":"sales_channel_domain","operation":"update insert","primaryKey":"array string","payload":"array"}

@@ -6,7 +6,6 @@ import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-finance-transfer-detail.html.twig';
 import './sw-finance-transfer-detail.scss';
-import type { RuntimeInstance } from 'src/core/workflow/workflow-runtime.types';
 import type {
     PaymentTransferView,
     TransferReapplicationDraft,
@@ -34,7 +33,6 @@ export default defineComponent({
         'repositoryFactory',
         'acl',
         'paymentTransferApiService',
-        'workflowRuntimeApiService',
     ],
 
     props: {
@@ -46,8 +44,6 @@ export default defineComponent({
 
     data(): {
         showReapplyModal: boolean;
-        approvalInstance: RuntimeInstance | null;
-        approvalHistoryUnavailable: boolean;
         requestGeneration: number;
         transfer: PaymentTransfer | null;
         approval: TransferApproval | null;
@@ -59,8 +55,6 @@ export default defineComponent({
     } {
         return {
             showReapplyModal: false,
-            approvalInstance: null,
-            approvalHistoryUnavailable: false,
             requestGeneration: 0,
             transfer: null,
             approval: null,
@@ -177,13 +171,6 @@ export default defineComponent({
             return !this.isLoadingApproval && this.approval?.canReapply === true && this.acl.can('payment_transfer.creator');
         },
 
-        terminalDecision(): { reason: string; actor: string } | null {
-            const rejected = this.approvalInstance?.history?.find((entry) => entry.decision === 'reject');
-            if (rejected) return { reason: rejected.comment || '–', actor: rejected.assignee.name || rejected.assignee.id };
-            const canceled = this.approvalInstance?.logs?.find((entry) => entry.action === 'cancel');
-            return canceled ? { reason: canceled.comment || '–', actor: canceled.operator?.name || '–' } : null;
-        },
-
         reapplicationDraft(): TransferReapplicationDraft | null {
             if (!this.transfer) return null;
             return {
@@ -271,7 +258,6 @@ export default defineComponent({
                 const approval = await this.paymentTransferApiService.getApproval(transferId);
                 if (this.isCurrentRequest(requestGeneration, transferId)) {
                     this.approval = approval;
-                    await this.loadApprovalHistory(approval, requestGeneration, transferId);
                 }
             } catch {
                 if (this.isCurrentRequest(requestGeneration, transferId)) {
@@ -284,16 +270,6 @@ export default defineComponent({
             }
         },
 
-        async loadApprovalHistory(approval: TransferApproval, generation: number, transferId: string): Promise<void> {
-            if (approval.detailRoute?.name !== 'sw.workflow.instance' || !approval.instanceId) return;
-            try {
-                const instance = await this.workflowRuntimeApiService.getInstance(approval.instanceId);
-                if (this.isCurrentRequest(generation, transferId)) this.approvalInstance = instance;
-            } catch {
-                if (this.isCurrentRequest(generation, transferId)) this.approvalHistoryUnavailable = true;
-            }
-        },
-
         async onRefresh(): Promise<void> {
             const generation = ++this.requestGeneration;
             this.transfer = null;
@@ -301,8 +277,6 @@ export default defineComponent({
             this.showApproveModal = false;
             this.showRejectModal = false;
             this.showReapplyModal = false;
-            this.approvalInstance = null;
-            this.approvalHistoryUnavailable = false;
             await Promise.all([this.loadTransfer(generation), this.loadApproval(generation)]);
         },
 

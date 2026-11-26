@@ -108,7 +108,7 @@ export async function createWrapper(
     props: Record<string, unknown> = {},
 ) {
     const getOptions =
-        overrides.getOptions ?? jest.fn(() => Promise.resolve({ apps, defaultAppId: 'app-1', workflowAvailable: true }));
+        overrides.getOptions ?? jest.fn(() => Promise.resolve({ apps, defaultAppId: 'app-1', approvalFlowActive: true }));
     const getRecipients = overrides.getRecipients ?? jest.fn(() => Promise.resolve(recipients));
     const createTransfer =
         overrides.createTransfer ?? jest.fn(() => Promise.resolve({ transfer: { id: 'transfer-1' }, replayed: false }));
@@ -128,15 +128,6 @@ export async function createWrapper(
                 'mt-select': selectStub,
                 'mt-text-field': inputStub,
                 'mt-textarea': inputStub,
-                'sw-finance-transfer-approval-preview': {
-                    props: ['payload'],
-                    emits: ['update:blocked'],
-                    template: `<div class="preview-probe">
-                        <span>{{ payload?.amount }} {{ payload?.currency }} {{ payload?.accountId }} {{ payload?.recipientId }}</span>
-                        <button class="preview-block" @click="$emit('update:blocked', true)">Unavailable</button>
-                        <button class="preview-ready" @click="$emit('update:blocked', false)">Ready</button>
-                    </div>`,
-                },
                 'mt-button': {
                     props: ['disabled', 'isLoading'],
                     template: '<button :disabled="disabled" :data-loading="isLoading"><slot></slot></button>',

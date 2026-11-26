@@ -156,12 +156,9 @@ class PaymentTransferController
             return strcmp($left->technicalName, $right->technicalName);
         });
 
-        $approvalFlowActive = $this->approvalBooking->usesApprovalFlow($context);
-
         return new JsonResponse([
             ...$this->presenter->options($apps, $this->providerRegistry),
-            'workflowAvailable' => $approvalFlowActive || $this->approvals->available($context),
-            'approvalFlowActive' => $approvalFlowActive,
+            'approvalFlowActive' => $this->approvalBooking->hasActiveBinding($context),
         ]);
     }
 
@@ -372,30 +369,6 @@ class PaymentTransferController
         ]);
     }
 
-    #[Route(path: '/api/_action/payment/transfers/workflow', name: 'api.action.payment.transfer.workflow', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read', 'system_config:read']], methods: [Request::METHOD_GET])]
-    public function workflow(Context $context): JsonResponse
-    {
-        return new JsonResponse($this->approvals->configuration($context));
-    }
-
-    #[Route(path: '/api/_action/payment/transfers/workflow', name: 'api.action.payment.transfer.workflow.configure', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read', 'system_config:update']], methods: [Request::METHOD_PUT])]
-    public function configureWorkflow(Request $request, Context $context): JsonResponse
-    {
-        $releaseId = $request->toArray()['releaseId'] ?? null;
-        if (!\is_string($releaseId)) {
-            throw PaymentException::missingParameter('releaseId');
-        }
-        $this->approvals->configure($releaseId, $context);
-
-        return new JsonResponse($this->approvals->configuration($context));
-    }
-
-    #[Route(path: '/api/_action/payment/transfers/approval/preview', name: 'api.action.payment.transfer.approval.preview', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create']], methods: [Request::METHOD_POST])]
-    public function previewApproval(#[MapRequestPayload] PaymentTransferDraft $draft, Context $context): JsonResponse
-    {
-        return new JsonResponse($this->approvals->preview($draft, $context));
-    }
-
     #[Route(path: '/api/_action/payment/transfers/approvals', name: 'api.action.payment.transfer.approvals', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read']], methods: [Request::METHOD_POST])]
     public function approvals(Request $request, Context $context): JsonResponse
     {
@@ -413,19 +386,15 @@ class PaymentTransferController
 
         $transferIds = array_values(array_unique($normalized));
 
-        return new JsonResponse(['approvals' => (object) array_replace(
-            $this->approvals->summaries($transferIds, $context),
-            $this->approvalView->summaries($transferIds, $context),
-        )]);
+        return new JsonResponse(['approvals' => (object) $this->approvalView->summaries($transferIds, $context)]);
     }
 
     #[Route(path: '/api/_action/payment/transfers/{id}/approval', name: 'api.action.payment.transfer.approval', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:read']], methods: [Request::METHOD_GET])]
     public function approval(string $id, Context $context): JsonResponse
     {
         $transfer = $this->transferService->getById($id);
-        $approval = $this->approvalView->detail($transfer, $context);
 
-        return new JsonResponse($approval === [] ? $this->approvals->status($id, $context) : $approval);
+        return new JsonResponse($this->approvalView->detail($transfer, $context));
     }
 
     #[Route(path: '/api/_action/payment/transfers/{id}/approval/cancel', name: 'api.action.payment.transfer.approval.cancel', defaults: ['auth_required' => true, PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'], PlatformRequest::ATTRIBUTE_ACL => ['payment_transfer:create']], methods: [Request::METHOD_POST])]

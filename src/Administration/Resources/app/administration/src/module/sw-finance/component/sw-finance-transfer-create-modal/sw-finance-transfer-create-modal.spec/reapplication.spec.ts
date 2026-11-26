@@ -1,5 +1,5 @@
 /** @sw-package framework */
-import { apps, createWrapper, field, input, select, saveButton, cleanupWrapper } from './create-wrapper';
+import { createWrapper, field, input, select, saveButton, cleanupWrapper } from './create-wrapper';
 
 describe('reapplying a transfer', () => {
     afterEach(() => {
@@ -17,14 +17,13 @@ describe('reapplying a transfer', () => {
         note: 'Correct the invoice',
     };
 
-    it('prefills an editable form, previews it and books through the reapplication endpoint with a fresh stable out number', async () => {
+    it('prefills an editable form and books through the reapplication endpoint with a fresh stable out number', async () => {
         const { wrapper, reapplyTransfer, createTransfer } = await createWrapper(
             {},
             { initialDraft, sourceTransferId: 'old-transfer' },
         );
         expect((field(wrapper, 'recipient').element as HTMLSelectElement).value).toBe('recipient-1');
         expect(field(wrapper, 'amount').get('input').element.value).toBe('123.45');
-        expect(wrapper.get('.preview-probe').text()).toContain('12345 CNY alipay-account recipient-1');
         await input(wrapper, 'amount', '125.01');
         await saveButton(wrapper).trigger('click');
         await flushPromises();
@@ -34,26 +33,6 @@ describe('reapplying a transfer', () => {
         expect(payload.amount).toBe(12501);
         expect(payload.outNo).toMatch(/^[a-zA-Z0-9]{1,30}$/);
         expect(wrapper.emitted('transfer-created')?.[0]).toEqual([{ id: 'new-transfer' }]);
-    });
-
-    it('submits an Approval Flow reapplication without loading the legacy preview', async () => {
-        const { wrapper, reapplyTransfer } = await createWrapper(
-            {
-                getOptions: jest.fn().mockResolvedValue({
-                    apps,
-                    defaultAppId: 'app-1',
-                    workflowAvailable: true,
-                    approvalFlowActive: true,
-                }),
-            },
-            { initialDraft, sourceTransferId: 'old-transfer', sourceUsesApprovalFlow: true },
-        );
-
-        expect(wrapper.find('.preview-probe').exists()).toBe(false);
-        await saveButton(wrapper).trigger('click');
-        await flushPromises();
-
-        expect(reapplyTransfer).toHaveBeenCalledWith('old-transfer', expect.objectContaining({ amount: 12345 }));
     });
 
     it('requires reselecting an unavailable account instead of silently using another account', async () => {

@@ -618,56 +618,6 @@
             "order:read"
         ]
     },
-    "state_enter.workflow_instance.state.agreed": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_instance.state.canceled": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_instance.state.completed": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_instance.state.rejected": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_instance.state.returned": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_instance.state.running": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_task.state.agreed": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_task.state.canceled": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_task.state.rejected": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_enter.workflow_task.state.todo": {
-        "privileges": [
-            "order:read"
-        ]
-    },
     "state_leave.order.state.cancelled": {
         "privileges": [
             "order:read"
@@ -1069,56 +1019,6 @@
         ]
     },
     "state_leave.payment_transfer.status.succeeded": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_instance.state.agreed": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_instance.state.canceled": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_instance.state.completed": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_instance.state.rejected": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_instance.state.returned": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_instance.state.running": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_task.state.agreed": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_task.state.canceled": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_task.state.rejected": {
-        "privileges": [
-            "order:read"
-        ]
-    },
-    "state_leave.workflow_task.state.todo": {
         "privileges": [
             "order:read"
         ]

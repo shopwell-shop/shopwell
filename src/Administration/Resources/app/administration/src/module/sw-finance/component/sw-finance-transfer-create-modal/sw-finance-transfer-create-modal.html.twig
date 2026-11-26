@@ -28,14 +28,11 @@
             {{ $t('sw-finance.transfer.reapply.selectionUnavailable') }}
         </mt-banner>
         <mt-banner
-            v-if="!bookTransfer && !workflowAvailable"
+            v-if="!approvalFlowActive"
             variant="attention"
         >
-            {{ $t('sw-finance.transfer.workflow.unavailable') }}
+            {{ $t('sw-finance.transfer.approval.unavailable') }}
         </mt-banner>
-        <p v-if="purpose">
-            {{ purpose }}
-        </p>
         {% block sw_finance_transfer_create_modal_recipient_group %}
         <section class="sw-finance-transfer-create-modal__group">
             <h3 class="sw-finance-transfer-create-modal__group-title">
@@ -198,7 +195,6 @@
             #}
             <mt-text-field
                 v-model="amount"
-                :disabled="fixedAmount !== null || undefined"
                 class="sw-finance-transfer-create-modal__field-amount"
                 :label="$t('sw-finance.transfer.create.fieldAmount')"
                 :placeholder="$t('sw-finance.transfer.create.placeholderAmount')"
@@ -221,7 +217,6 @@
 
             {% block sw_finance_transfer_create_modal_field_out_no %}
             <mt-text-field
-                v-if="!bookTransfer"
                 v-model="outNo"
                 class="sw-finance-transfer-create-modal__field-out-no"
                 :label="$t('sw-finance.transfer.create.fieldOutNo')"
@@ -251,13 +246,6 @@
             />
             {% endblock %}
         </section>
-        {% endblock %}
-        {% block sw_finance_transfer_create_modal_approval_preview %}
-        <sw-finance-transfer-approval-preview
-            v-if="!bookTransfer && !approvalFlowActive"
-            v-model:blocked="previewBlocked"
-            :payload="approvalPreviewPayload"
-        />
         {% endblock %}
     </template>
 

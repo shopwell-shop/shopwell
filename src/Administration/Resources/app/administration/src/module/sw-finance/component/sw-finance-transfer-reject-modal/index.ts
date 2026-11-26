@@ -53,7 +53,7 @@ export default defineComponent({
 
     computed: {
         snippetPrefix(): string {
-            return this.approval ? 'sw-finance.transfer.workflow.cancellation' : 'sw-finance.transfer.reject';
+            return this.approval ? 'sw-finance.transfer.approval.cancellation' : 'sw-finance.transfer.reject';
         },
 
         reasonLength(): number {

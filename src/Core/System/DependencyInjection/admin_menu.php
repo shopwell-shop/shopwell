@@ -22,7 +22,6 @@ use Shopwell\Core\System\AdminMenu\Service\PluginMenuSynchronizer;
 use Shopwell\Core\System\AdminMenu\Service\VisibleMenuTreeBuilder;
 use Shopwell\Core\System\AdminMenu\Subscriber\AdminMenuCacheSubscriber;
 use Shopwell\Core\System\AdminMenu\Subscriber\PluginMenuLifecycleSubscriber;
-use Shopwell\Core\System\AdminMenu\Subscriber\WorkflowMenuVisibilitySubscriber;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -102,9 +101,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(PluginMenuLifecycleSubscriber::class)
         ->args([service(PluginMenuSynchronizer::class)])
-        ->tag('kernel.event_subscriber');
-
-    $services->set(WorkflowMenuVisibilitySubscriber::class)
         ->tag('kernel.event_subscriber');
 
     // ---- the api ----

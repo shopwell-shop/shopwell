@@ -117,18 +117,6 @@
             <title lang="zh-CN">流程定义</title>
         </menu>
     </menu>
-    <menu id="sw-workflow" type="folder" icon="regular-flow" position="72">
-        <title lang="en-GB">Workflow</title>
-        <title lang="zh-CN">工作流</title>
-        <menu id="sw-workflow-design" position="10" privilege="workflow.viewer">
-            <title lang="en-GB">Workflow management</title>
-            <title lang="zh-CN">流程管理</title>
-        </menu>
-        <menu id="sw-workflow-tasks" icon="regular-check-circle" position="25" privilege="workflow_participant.viewer">
-            <title lang="en-GB">My approvals</title>
-            <title lang="zh-CN">我的审批</title>
-        </menu>
-    </menu>
     <menu id="sw-finance" type="folder" icon="regular-money-bill" position="75" color="var(--sw-color-module-green-default)">
         <title lang="en-GB">Finance</title>
         <title lang="zh-CN">财务</title>

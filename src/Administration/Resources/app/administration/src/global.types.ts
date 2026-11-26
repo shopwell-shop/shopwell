@@ -1,16 +1,6 @@
-import type WorkflowStudioService from './module/sw-workflow/service/workflow-studio.service';
-import type WorkflowRequestFormService from './module/sw-workflow/service/workflow-request-form.service';
-import type WorkflowExtensionService from './module/sw-workflow/service/workflow-extension.service';
-import type WorkflowReleaseActionService from './module/sw-workflow/service/workflow-release-action.service';
 /**
  * @sw-package framework
  */
-import type WorkflowApprovalService from './module/sw-workflow/service/workflow-approval.service';
-import type WorkflowFieldService from './module/sw-workflow/service/workflow-field.service';
-import type WorkflowLayoutService from './module/sw-workflow/service/workflow-layout.service';
-import type WorkflowTemplateService from './module/sw-workflow/service/workflow-template.service';
-import type WorkflowNodeEditingService from './module/sw-workflow/service/workflow-node-editing.service';
-import type WorkflowNodePresentationService from './module/sw-workflow/service/workflow-node-presentation.service';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
@@ -29,8 +19,6 @@ import type ExtensionSdkService from 'src/core/service/api/extension-sdk.service
 import type CartStoreService from 'src/core/service/api/cart-store-api.api.service';
 import type CustomSnippetApiService from 'src/core/service/api/custom-snippet.api.service';
 import type MediaService from 'src/core/service/api/media.api.service';
-import type WorkflowRuntimeApiService from 'src/core/service/api/workflow-runtime.api.service';
-import type WorkflowApiService from 'src/core/service/api/workflow.api.service';
 import type createMediaDefaultFolderService from 'src/app/service/media-default-folder.service';
 import type ContentSystemElementTypeApiService from 'src/core/service/api/content-system-element-type.api.service';
 import type ContentSystemLayoutDraftMutationApiService from 'src/core/service/api/content-system-layout-draft-mutation.api.service';
@@ -257,18 +245,6 @@ declare global {
      * Define global container for the bottle.js containers
      */
     interface ServiceContainer extends SubContainer<'service'> {
-        workflowReleaseActionService: WorkflowReleaseActionService;
-        workflowService: WorkflowApiService;
-        workflowRuntimeApiService: WorkflowRuntimeApiService;
-        workflowNodePresentationService: WorkflowNodePresentationService;
-        workflowNodeEditingService: WorkflowNodeEditingService;
-        workflowTemplateService: WorkflowTemplateService;
-        workflowLayoutService: WorkflowLayoutService;
-        workflowFieldService: WorkflowFieldService;
-        workflowRequestFormService: WorkflowRequestFormService;
-        workflowExtensionService: WorkflowExtensionService;
-        workflowStudioService: WorkflowStudioService;
-        workflowApprovalService: WorkflowApprovalService;
         acl: AclService;
         adminMenuApiService: $TSFixMe;
         appAclService: $TSFixMe;

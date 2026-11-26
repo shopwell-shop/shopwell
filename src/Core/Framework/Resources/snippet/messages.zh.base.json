@@ -102,28 +102,5 @@
         "sortByPriceAscending": "价格从低到高",
         "sortByPriceDescending": "价格从高到低",
         "sortByScore": "综合排序"
-    },
-    "workflow": {
-        "nodes": {
-            "start": "发起人",
-            "end": "结束",
-            "copy": "抄送",
-            "approval": "审批",
-            "condition": "条件分支",
-            "fallback": "默认分支"
-        },
-        "inputs": {
-            "reason": "申请事由"
-        },
-        "roles": {
-            "manager": {
-                "name": "流程管理员",
-                "description": "管理流程定义、查看草稿并发布流程。"
-            },
-            "participant": {
-                "name": "流程参与者",
-                "description": "发起流程、处理分配给自己的审批任务并查看参与记录。"
-            }
-        }
     }
 }
