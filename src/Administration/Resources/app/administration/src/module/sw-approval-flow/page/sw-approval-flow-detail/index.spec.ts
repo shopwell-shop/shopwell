@@ -27,6 +27,7 @@ const detail: ApprovalDetail = {
     executions: [{ id: 'execution', nodeId: 'review', sequence: 2, status: 'awaiting_approval', outcome: null }],
     tasks: [{ id: 'task', executionId: 'execution', assigneeId: 'reviewer', status: 'approved' }],
     returns: [],
+    transfers: [],
     decisions: [
         {
             taskId: 'task',

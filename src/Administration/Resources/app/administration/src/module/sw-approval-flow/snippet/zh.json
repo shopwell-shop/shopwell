@@ -54,6 +54,7 @@
             "filtered": "没有符合筛选条件的申请"
         },
         "detail": {
+            "transferredTo": "转交给{name}",
             "returnedTo": "退回至{step}",
             "title": "审批详情",
             "back": "返回审批列表",
@@ -71,6 +72,9 @@
             "notFilled": "未填写"
         },
         "decision": {
+            "transfer": "转交",
+            "transferTarget": "接手人",
+            "transferReason": "转交原因",
             "return": "退回",
             "returnTarget": "退回节点",
             "returnReason": "退回原因",

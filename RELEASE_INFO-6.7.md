@@ -23,6 +23,11 @@ While a stored file is kept, the document also keeps its order version and confi
 The missing file is rendered from the current order.
 To get fresh files for an existing document, generate a new document instead of regenerating it.
 
+### Transfer a pending approval task
+
+An assigned approver can search for eligible reviewers with the `transfer-candidates` Admin API action and hand over the task with `transfer`.
+The current review keeps its recorded opinions, and the approval detail lists the transfer alongside its reason.
+
 ### Return an approval task to an earlier review
 
 An assigned approver can use the task's `return-targets` and `return` Admin API actions to reopen a previously approved step on the current branch.

@@ -54,6 +54,7 @@
             "filtered": "No requests match these filters"
         },
         "detail": {
+            "transferredTo": "Transferred to {name}",
             "returnedTo": "Returned to {step}",
             "title": "Approval details",
             "back": "Back to approvals",
@@ -71,6 +72,9 @@
             "notFilled": "Not provided"
         },
         "decision": {
+            "transfer": "Transfer",
+            "transferTarget": "Hand over to",
+            "transferReason": "Reason for transfer",
             "return": "Return",
             "returnTarget": "Return to",
             "returnReason": "Reason for return",

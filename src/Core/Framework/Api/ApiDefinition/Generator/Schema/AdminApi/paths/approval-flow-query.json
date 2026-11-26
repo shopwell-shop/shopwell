@@ -12,7 +12,7 @@
                 ],
                 "operationId": "searchPersonalApprovalRequests",
                 "summary": "List my approvals",
-                "description": "Requires approval_flow:access and an Administration user. Ownership is applied before counting and pagination. Todo includes pending personal tasks on running instances; done includes personal approvals, rejections and returns; started includes requests initiated by this user. Lists do not contain forms.",
+                "description": "Requires approval_flow:access and an Administration user. Ownership is applied before counting and pagination. Todo includes pending personal tasks on running instances; done includes personal approvals, rejections, returns and transfers; started includes requests initiated by this user. Lists do not contain forms.",
                 "parameters": [
                     {
                         "name": "view",
@@ -370,7 +370,8 @@
                     "decisions",
                     "formLabels",
                     "participantNames",
-                    "returns"
+                    "returns",
+                    "transfers"
                 ],
                 "properties": {
                     "request": {
@@ -431,6 +432,12 @@
                         "items": {
                             "$ref": "#/components/schemas/ApprovalReturnSummary"
                         }
+                    },
+                    "transfers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApprovalTransferSummary"
+                        }
                     }
                 }
             },
@@ -456,6 +463,40 @@
                         "type": "string"
                     },
                     "returnedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "aggregateVersion": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "ApprovalTransferSummary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "taskId",
+                    "replacementTaskId",
+                    "reason",
+                    "transferredAt",
+                    "aggregateVersion"
+                ],
+                "properties": {
+                    "taskId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "replacementTaskId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "transferredAt": {
                         "type": [
                             "string",
                             "null"

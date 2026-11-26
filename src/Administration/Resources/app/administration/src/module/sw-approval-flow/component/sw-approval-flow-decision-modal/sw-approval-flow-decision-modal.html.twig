@@ -7,27 +7,29 @@
 >
     {% block sw_approval_flow_decision_modal_content %}
     <sw-loader v-if="isLoadingTargets" />
-    <p v-else-if="!isReturn">
+    <p v-else-if="!needsTarget">
         {{ $t('sw-approval-flow.decision.confirmation') }}
     </p>
     <mt-select
-        v-else-if="returnOptions.length"
-        v-model="targetExecutionId"
-        :label="$t('sw-approval-flow.decision.returnTarget')"
-        :options="returnOptions"
+        v-else-if="isTransfer || targetOptions.length"
+        v-model="targetId"
+        :label="$t(isTransfer ? 'sw-approval-flow.decision.transferTarget' : 'sw-approval-flow.decision.returnTarget')"
+        :options="targetOptions"
+        :search-function="isTransfer ? searchTransferTargets : undefined"
         :disabled="command !== null"
         required
+        @item-add="rememberTarget"
     />
     <p v-else-if="!failure">
         {{ $t('sw-approval-flow.decision.noReturnTargets') }}
     </p>
     <mt-textarea
-        v-if="!isReturn || returnOptions.length"
+        v-if="!isReturn || targetOptions.length"
         v-model="reason"
-        :label="$t(isReturn ? 'sw-approval-flow.decision.returnReason' : 'sw-approval-flow.decision.reason')"
+        :label="$t(needsTarget ? `sw-approval-flow.decision.${action}Reason` : 'sw-approval-flow.decision.reason')"
         :disabled="command !== null"
         :max-length="1000"
-        :required="isReturn"
+        :required="needsTarget"
     />
     <mt-banner
         v-if="failure"
@@ -48,7 +50,7 @@
             {{ $t('global.default.cancel') }}
         </mt-button>
         <mt-button
-            v-if="(!failure || canRetry) && (!isReturn || returnOptions.length)"
+            v-if="(!failure || canRetry) && (!isReturn || targetOptions.length)"
             data-testid="decision-submit"
             :variant="action === 'rejected' ? 'critical' : 'primary'"
             size="small"

@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\ApprovalFlow\Execution\Node\ApprovalNodeExecutionSta
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalInstanceCommandResult;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Operation\ApprovalOperationCollection;
 use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskDecisionStore;
+use Shopwell\Core\Framework\ApprovalFlow\Execution\Task\ApprovalTaskTransfer;
 use Shopwell\Core\Framework\ApprovalFlow\Result\ApprovalResultStore;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
@@ -57,6 +58,8 @@ class ApprovalInstanceStore
 
     public const DECIDE = 'decide';
 
+    public const TRANSFER_TASK = 'transfer-task';
+
     public const ADVANCE_APPROVAL = 'advance-approval';
 
     public const ENTER_END = 'enter-end';
@@ -80,6 +83,7 @@ class ApprovalInstanceStore
         private readonly ApprovalTaskDecisionStore $decisions,
         private readonly ApprovalResultStore $results,
         private readonly ReturnApprovalHandler $returns,
+        private readonly ApprovalTaskTransfer $taskTransfer,
     ) {
     }
 
@@ -270,6 +274,52 @@ class ApprovalInstanceStore
                 $taskId,
                 $targetExecutionId,
             ),
+            fn () => $this->decisions->requireAssignee($instanceId, $taskId, $userId),
+        );
+    }
+
+    /**
+     * @return list<array{id: string, name: string}>
+     */
+    public function transferCandidates(string $instanceId, string $taskId, string $userId, string $term): array
+    {
+        return RetryableTransaction::transactional($this->connection, function () use ($instanceId, $taskId, $userId, $term): array {
+            $instance = $this->lockInstance($instanceId);
+            $this->decisions->requireAssignee($instanceId, $taskId, $userId);
+            if ($instance['status'] !== ApprovalInstanceStatus::Running) {
+                return [];
+            }
+
+            return $this->taskTransfer->candidates($instanceId, $taskId, $term);
+        });
+    }
+
+    public function transferTask(string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $assigneeId, string $reason, string $userId, Context $context): ApprovalInstanceCommandResult
+    {
+        $actorJson = $this->actorJson($context);
+        $requestHash = Hasher::hash([
+            'operation' => self::TRANSFER_TASK,
+            'taskId' => $taskId,
+            'assigneeId' => $assigneeId,
+            'expectedVersion' => $expectedVersion,
+            'reason' => $reason,
+            'actorJson' => $actorJson,
+        ], 'sha256');
+
+        return $this->runCommand(
+            $instanceId,
+            $commandId,
+            $expectedVersion,
+            self::TRANSFER_TASK,
+            $requestHash,
+            $reason,
+            $actorJson,
+            $context,
+            function () use ($instanceId, $taskId, $commandId, $assigneeId, $context): ApprovalInstanceStatus {
+                $this->taskTransfer->transfer($instanceId, $taskId, $commandId, $assigneeId, $context);
+
+                return ApprovalInstanceStatus::Running;
+            },
             fn () => $this->decisions->requireAssignee($instanceId, $taskId, $userId),
         );
     }

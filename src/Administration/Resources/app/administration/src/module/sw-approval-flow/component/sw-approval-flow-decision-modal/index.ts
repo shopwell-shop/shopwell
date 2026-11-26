@@ -4,12 +4,17 @@ import type { HttpError } from 'src/core/factory/http-client.types';
 import type {
     ApprovalDecision,
     ApprovalReturn,
-    ApprovalReturnTarget,
     ApprovalTaskAction,
+    ApprovalTransfer,
 } from '../../service/approval-flow.api.service';
 import template from './sw-approval-flow-decision-modal.html.twig';
 
-type TaskActionInput = Pick<ApprovalDecision, 'outcome' | 'reason'> | Pick<ApprovalReturn, 'targetExecutionId' | 'reason'>;
+type TaskCommand = ApprovalDecision | ApprovalReturn | ApprovalTransfer;
+type TaskActionInput =
+    | Pick<ApprovalDecision, 'outcome' | 'reason'>
+    | Pick<ApprovalReturn, 'targetExecutionId' | 'reason'>
+    | Pick<ApprovalTransfer, 'assigneeId' | 'reason'>;
+type TargetOption = { value: string; label: string };
 type SubmissionFailure = 'conflict' | 'forbidden' | 'unavailable' | 'retryError';
 
 const submissionFailures: Partial<Record<number, SubmissionFailure>> = {
@@ -35,9 +40,10 @@ export default Shopwell.Component.wrapComponentConfig({
     },
     data(): {
         reason: string;
-        command: ApprovalDecision | ApprovalReturn | null;
-        targetExecutionId: string | null;
-        targets: ApprovalReturnTarget[];
+        command: TaskCommand | null;
+        targetId: string | null;
+        targetOptions: TargetOption[];
+        searchRevision: number;
         isLoadingTargets: boolean;
         isSubmitting: boolean;
         isActive: boolean;
@@ -46,8 +52,9 @@ export default Shopwell.Component.wrapComponentConfig({
         return {
             reason: '',
             command: null,
-            targetExecutionId: null,
-            targets: [],
+            targetId: null,
+            targetOptions: [],
+            searchRevision: 0,
             isLoadingTargets: false,
             isSubmitting: false,
             isActive: true,
@@ -58,19 +65,23 @@ export default Shopwell.Component.wrapComponentConfig({
         isReturn(): boolean {
             return this.action === 'return';
         },
-        returnOptions() {
-            return this.targets.map((target) => ({
-                value: target.executionId,
-                label: this.$t('sw-approval-flow.detail.step', { number: target.sequence }),
-            }));
+        isTransfer(): boolean {
+            return this.action === 'transfer';
+        },
+        needsTarget(): boolean {
+            return this.isReturn || this.isTransfer;
         },
         actionInput(): TaskActionInput | null {
-            if (this.action !== 'return') {
+            if (this.action === 'approved' || this.action === 'rejected') {
                 return { outcome: this.action, reason: this.reason };
             }
 
             const reason = this.reason.trim();
-            return this.targetExecutionId && reason ? { targetExecutionId: this.targetExecutionId, reason } : null;
+            if (!this.targetId || !reason) {
+                return null;
+            }
+
+            return this.isReturn ? { targetExecutionId: this.targetId, reason } : { assigneeId: this.targetId, reason };
         },
         canSubmit(): boolean {
             return !this.isSubmitting && this.actionInput !== null;
@@ -80,20 +91,25 @@ export default Shopwell.Component.wrapComponentConfig({
         },
     },
     mounted() {
-        if (this.isReturn) {
-            void this.loadReturnTargets();
+        if (this.needsTarget) {
+            void this.loadTargets();
         }
     },
     beforeUnmount() {
         this.isActive = false;
     },
     methods: {
-        async loadReturnTargets(): Promise<void> {
+        async loadTargets(): Promise<void> {
             this.isLoadingTargets = true;
             try {
-                const targets = await this.approvalFlowApiService.returnTargets(this.instanceId, this.taskId);
+                const options = this.isTransfer
+                    ? await this.findTransferTargets('')
+                    : (await this.approvalFlowApiService.returnTargets(this.instanceId, this.taskId)).map((target) => ({
+                          value: target.executionId,
+                          label: this.$t('sw-approval-flow.detail.step', { number: target.sequence }),
+                      }));
                 if (this.isActive) {
-                    this.targets = targets;
+                    this.targetOptions = options;
                 }
             } catch {
                 if (this.isActive) {
@@ -104,6 +120,40 @@ export default Shopwell.Component.wrapComponentConfig({
                     this.isLoadingTargets = false;
                 }
             }
+        },
+        async findTransferTargets(term: string): Promise<TargetOption[]> {
+            const candidates = await this.approvalFlowApiService.transferCandidates(this.instanceId, this.taskId, term);
+            return candidates.map((candidate) => ({ value: candidate.id, label: candidate.name }));
+        },
+        async searchTransferTargets({ searchTerm }: { searchTerm: string }): Promise<TargetOption[] | undefined> {
+            const revision = ++this.searchRevision;
+            try {
+                const options = await this.findTransferTargets(searchTerm);
+                if (this.isActive && revision === this.searchRevision) {
+                    return options;
+                }
+            } catch {
+                if (this.isActive && revision === this.searchRevision) {
+                    this.failure = 'unavailable';
+                }
+            }
+
+            return undefined;
+        },
+        rememberTarget(option: TargetOption): void {
+            if (!this.targetOptions.some((target) => target.value === option.value)) {
+                this.targetOptions = [...this.targetOptions, option];
+            }
+        },
+        submitCommand(command: TaskCommand): Promise<unknown> {
+            if ('assigneeId' in command) {
+                return this.approvalFlowApiService.transferTask(this.instanceId, this.taskId, command);
+            }
+            if ('targetExecutionId' in command) {
+                return this.approvalFlowApiService.returnTask(this.instanceId, this.taskId, command);
+            }
+
+            return this.approvalFlowApiService.decide(this.instanceId, this.taskId, command);
         },
         async submit(): Promise<void> {
             const input = this.actionInput;
@@ -119,11 +169,7 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isSubmitting = true;
             this.failure = null;
             try {
-                if ('targetExecutionId' in this.command) {
-                    await this.approvalFlowApiService.returnTask(this.instanceId, this.taskId, this.command);
-                } else {
-                    await this.approvalFlowApiService.decide(this.instanceId, this.taskId, this.command);
-                }
+                await this.submitCommand(this.command);
                 if (this.isActive) {
                     this.$emit('completed');
                 }

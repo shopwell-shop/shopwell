@@ -75,8 +75,8 @@ class ApprovalTaskDecisionStore
         }
 
         $group = $this->connection->fetchAllAssociative(
-            'SELECT id, status FROM approval_flow_task WHERE execution_id = :execution ORDER BY id FOR UPDATE',
-            ['execution' => $task['execution_id']],
+            'SELECT id, status FROM approval_flow_task WHERE execution_id = :execution AND NOT (completion_reason <=> :transferred) ORDER BY id FOR UPDATE',
+            ['execution' => $task['execution_id'], 'transferred' => ApprovalTaskCompletionReason::TRANSFERRED],
         );
         $decisionStatus = match ($decision) {
             ApprovalOutcome::Approved => ApprovalTaskStatus::Approved,

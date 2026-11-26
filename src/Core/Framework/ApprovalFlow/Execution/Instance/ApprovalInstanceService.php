@@ -114,6 +114,31 @@ class ApprovalInstanceService
         return $this->store->returnApproval($instanceId, $taskId, $commandId, $expectedVersion, $targetExecutionId, $reason, $userId, $context);
     }
 
+    /**
+     * @return list<array{id: string, name: string}>
+     */
+    public function transferCandidates(string $instanceId, string $taskId, string $term, Context $context): array
+    {
+        $userId = $this->taskActor($context);
+        if (!Uuid::isValid($instanceId) || !Uuid::isValid($taskId)) {
+            throw ApprovalFlowException::invalidInstanceCommand('Valid instance and task IDs are required.');
+        }
+
+        return $this->store->transferCandidates($instanceId, $taskId, $userId, trim($term));
+    }
+
+    public function transferTask(string $instanceId, string $taskId, string $commandId, int $expectedVersion, string $assigneeId, string $reason, Context $context): ApprovalInstanceCommandResult
+    {
+        $userId = $this->taskActor($context);
+        $reason = trim($reason);
+        if ($expectedVersion < 1 || !Uuid::isValid($instanceId) || !Uuid::isValid($taskId) || !Uuid::isValid($commandId)
+            || !Uuid::isValid($assigneeId) || $reason === '' || mb_strlen($reason) > 1000) {
+            throw ApprovalFlowException::invalidInstanceCommand('Valid instance, task, command and assignee IDs, a positive version and a non-blank reason of at most 1000 characters are required.');
+        }
+
+        return $this->store->transferTask($instanceId, $taskId, $commandId, $expectedVersion, $assigneeId, $reason, $userId, $context);
+    }
+
     private function taskActor(Context $context): string
     {
         $source = $context->getSource();

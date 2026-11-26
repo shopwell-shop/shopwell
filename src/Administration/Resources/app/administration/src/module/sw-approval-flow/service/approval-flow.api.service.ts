@@ -10,7 +10,7 @@ export type ApprovalStatus = 'draft' | 'running' | 'suspended' | 'completed' | '
 /** @private */
 export type ApprovalOutcome = 'approved' | 'rejected';
 /** @private */
-export type ApprovalTaskAction = ApprovalOutcome | 'return';
+export type ApprovalTaskAction = ApprovalOutcome | 'return' | 'transfer';
 /** @private */
 export type FormValue = string | number | boolean | null | FormValue[] | { [key: string]: FormValue };
 
@@ -48,6 +48,13 @@ export interface ApprovalDetail {
         executionId: string;
         assigneeId: string;
         status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+    }[];
+    transfers: {
+        taskId: string;
+        replacementTaskId: string;
+        reason: string;
+        transferredAt: string | null;
+        aggregateVersion: number;
     }[];
     returns: {
         taskId: string;
@@ -88,6 +95,20 @@ export interface ApprovalReturn {
     expectedVersion: number;
     targetExecutionId: string;
     reason: string;
+}
+
+/** @private */
+export interface ApprovalTransfer {
+    commandId: string;
+    expectedVersion: number;
+    assigneeId: string;
+    reason: string;
+}
+
+/** @private */
+export interface ApprovalTransferCandidate {
+    id: string;
+    name: string;
 }
 
 /** @private */
@@ -150,6 +171,27 @@ export default class ApprovalFlowApiService extends ApiService {
         return this.httpClient
             .post<ApprovalDecisionReceipt>(
                 `/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/return`,
+                command,
+                { headers: this.getBasicHeaders() },
+            )
+            .then((response) => response.data);
+    }
+
+    transferCandidates(instanceId: string, taskId: string, term: string): Promise<ApprovalTransferCandidate[]> {
+        return this.httpClient
+            .get<{
+                data: ApprovalTransferCandidate[];
+            }>(`/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/transfer-candidates`, {
+                params: { term },
+                headers: this.getBasicHeaders(),
+            })
+            .then((response) => response.data.data);
+    }
+
+    transferTask(instanceId: string, taskId: string, command: ApprovalTransfer): Promise<ApprovalDecisionReceipt> {
+        return this.httpClient
+            .post<ApprovalDecisionReceipt>(
+                `/_action/approval-flow/instances/${instanceId}/tasks/${taskId}/transfer`,
                 command,
                 { headers: this.getBasicHeaders() },
             )

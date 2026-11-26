@@ -21,6 +21,8 @@ class ApprovalTaskEntity extends Entity
 
     protected ApprovalTaskStatus $status;
 
+    protected ?string $replacesTaskId = null;
+
     protected ?string $completionReason = null;
 
     protected ?string $completionCommandId = null;
@@ -75,6 +77,16 @@ class ApprovalTaskEntity extends Entity
     public function setExecution(?ApprovalNodeExecutionEntity $execution): void
     {
         $this->execution = $execution;
+    }
+
+    public function getReplacesTaskId(): ?string
+    {
+        return $this->replacesTaskId;
+    }
+
+    public function setReplacesTaskId(?string $replacesTaskId): void
+    {
+        $this->replacesTaskId = $replacesTaskId;
     }
 
     public function getCompletionReason(): ?string

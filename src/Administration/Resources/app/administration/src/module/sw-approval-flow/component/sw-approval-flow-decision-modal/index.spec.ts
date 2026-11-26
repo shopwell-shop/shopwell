@@ -6,11 +6,13 @@ async function createWrapper(
     action = 'approved',
     returnTask = jest.fn(),
     returnTargets = jest.fn(),
+    transferTask = jest.fn(),
+    transferCandidates = jest.fn(),
 ) {
     const wrapper = shallowMount(await wrapTestComponent('sw-approval-flow-decision-modal', { sync: true }), {
         props: { instanceId: 'instance', taskId: 'task', expectedVersion: 3, action },
         global: {
-            provide: { approvalFlowApiService: { decide, returnTask, returnTargets } },
+            provide: { approvalFlowApiService: { decide, returnTask, returnTargets, transferTask, transferCandidates } },
             stubs: {
                 'sw-modal': { template: '<section><slot/><slot name="modal-footer"/></section>' },
                 'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot/></button>' },
@@ -76,6 +78,37 @@ describe('personal approval decision confirmation', () => {
             reason: 'Recheck the transfer.',
         });
         expect(returnTask.mock.calls[1]).toEqual(returnTask.mock.calls[0]);
+        expect(wrapper.emitted('completed')).toHaveLength(1);
+    });
+
+    it('submits a transfer to the selected reviewer with the original version', async () => {
+        const transferTask = jest.fn().mockResolvedValue({});
+        const transferCandidates = jest.fn().mockResolvedValue([{ id: 'reviewer', name: 'Lin' }]);
+        const { wrapper, decide } = await createWrapper(
+            undefined,
+            'transfer',
+            undefined,
+            undefined,
+            transferTask,
+            transferCandidates,
+        );
+        await flushPromises();
+
+        expect(transferCandidates).toHaveBeenCalledWith('instance', 'task', '');
+        await wrapper.find('select').setValue('reviewer');
+        const submit = wrapper.find('[data-testid="decision-submit"]');
+        expect(submit.attributes('disabled')).toBeDefined();
+        await wrapper.find('textarea').setValue('  Handover.  ');
+        await submit.trigger('click');
+        await flushPromises();
+
+        expect(decide).not.toHaveBeenCalled();
+        expect(transferTask).toHaveBeenCalledWith('instance', 'task', {
+            commandId: expect.stringMatching(/^[a-f0-9]{32}$/) as string,
+            expectedVersion: 3,
+            assigneeId: 'reviewer',
+            reason: 'Handover.',
+        });
         expect(wrapper.emitted('completed')).toHaveLength(1);
     });
 

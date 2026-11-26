@@ -43,6 +43,8 @@ class ApprovalFlowException extends HttpException
     public const ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__ASSIGNEE_UNAVAILABLE';
     public const EMPTY_APPROVAL_ASSIGNEES = 'APPROVAL_FLOW__EMPTY_APPROVAL_ASSIGNEES';
     public const TASK_NOT_FOUND = 'APPROVAL_FLOW__TASK_NOT_FOUND';
+    public const TRANSFER_ASSIGNEE_UNAVAILABLE = 'APPROVAL_FLOW__TRANSFER_ASSIGNEE_UNAVAILABLE';
+
     public const RETURN_TARGET_UNAVAILABLE = 'APPROVAL_FLOW__RETURN_TARGET_UNAVAILABLE';
 
     public const TASK_NOT_PENDING = 'APPROVAL_FLOW__TASK_NOT_PENDING';
@@ -421,6 +423,11 @@ class ApprovalFlowException extends HttpException
             self::SINGLE_APPROVAL_ASSIGNEE_REQUIRED,
             'Single approval configuration requires exactly one candidate.'
         );
+    }
+
+    public static function transferAssigneeUnavailable(string $assigneeId): self
+    {
+        return new self(Response::HTTP_CONFLICT, self::TRANSFER_ASSIGNEE_UNAVAILABLE, 'User "{{ assigneeId }}" is unavailable to take over this approval task.', ['assigneeId' => $assigneeId]);
     }
 
     public static function returnTargetUnavailable(string $executionId): self

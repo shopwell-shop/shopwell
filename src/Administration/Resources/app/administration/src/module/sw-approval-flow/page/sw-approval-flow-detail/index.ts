@@ -100,7 +100,19 @@ export default Shopwell.Component.wrapComponentConfig({
                 recordedAt: returned.returnedAt,
                 aggregateVersion: returned.aggregateVersion,
             }));
-            return [...opinions, ...returns].sort((first, second) => first.aggregateVersion - second.aggregateVersion);
+            const transfers = this.detail.transfers.map((transfer) => ({
+                taskId: transfer.taskId,
+                assigneeId: assignees.get(transfer.taskId),
+                label: this.$t('sw-approval-flow.detail.transferredTo', {
+                    name: this.personName(assignees.get(transfer.replacementTaskId)),
+                }),
+                reason: transfer.reason,
+                recordedAt: transfer.transferredAt,
+                aggregateVersion: transfer.aggregateVersion,
+            }));
+            return [...opinions, ...returns, ...transfers].sort(
+                (first, second) => first.aggregateVersion - second.aggregateVersion,
+            );
         },
         steps() {
             if (!this.detail) {

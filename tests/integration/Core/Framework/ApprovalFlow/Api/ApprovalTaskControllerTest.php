@@ -195,6 +195,85 @@ class ApprovalTaskControllerTest extends TestCase
         static::assertSame('second-review', $detail['executions'][5]['nodeId']);
     }
 
+    public function testTransferReplacesOnePendingTaskAndKeepsEarlierOpinions(): void
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        $permissions = [ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access'];
+        $first = TestUser::createNewTestUser($connection, $permissions);
+        $owner = TestUser::createNewTestUser($connection, $permissions);
+        $other = TestUser::createNewTestUser($connection, $permissions);
+        $recipient = TestUser::createNewTestUser($connection, $permissions);
+        $viewer = TestUser::createNewTestUser($connection, ['approval_flow:access']);
+        $graph = GraphFixture::codec()->decodeWritable(new DraftGraph(GraphFixture::json()));
+        $graph->nodes[1]->config->assignees = [[
+            'kind' => 'core:users',
+            'userIds' => [$first->getUserId(), $owner->getUserId(), $other->getUserId()],
+        ]];
+        [$request, , $executionId] = $this->createRequest($first->getUserId(), json_encode($graph, \JSON_THROW_ON_ERROR));
+        $instanceId = $request->getInstanceId();
+        $detailPath = '/api/_action/approval-flow/requests/' . $request->getId();
+
+        $browser = $this->getBrowser(authorized: false);
+        $first->authorizeBrowser($browser);
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $tasks = array_column($detail['tasks'], 'id', 'assigneeId');
+        $browser->jsonRequest('POST', $this->path($instanceId, $tasks[$first->getUserId()]), $this->payload());
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        $owner->authorizeBrowser($browser);
+        $path = '/api/_action/approval-flow/instances/' . $instanceId . '/tasks/' . $tasks[$owner->getUserId()];
+        $browser->request('GET', $path . '/transfer-candidates');
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $candidates = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $candidateIds = array_column($candidates['data'], 'id');
+        static::assertContains($recipient->getUserId(), $candidateIds);
+        static::assertNotContains($viewer->getUserId(), $candidateIds);
+        static::assertNotContains($first->getUserId(), $candidateIds);
+        static::assertNotContains($other->getUserId(), $candidateIds);
+        $payload = ['commandId' => Uuid::randomHex(), 'expectedVersion' => 3, 'assigneeId' => $recipient->getUserId(), 'reason' => 'Handover.'];
+        $browser->jsonRequest('POST', $path . '/transfer', array_replace($payload, ['assigneeId' => $other->getUserId()]));
+        static::assertSame(409, $browser->getResponse()->getStatusCode());
+        $browser->jsonRequest('POST', $path . '/transfer', $payload);
+        static::assertSame(200, $browser->getResponse()->getStatusCode(), (string) $browser->getResponse()->getContent());
+        $receipt = $browser->getResponse()->getContent();
+        $browser->jsonRequest('POST', $path . '/transfer', $payload);
+        static::assertSame($receipt, $browser->getResponse()->getContent());
+
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $transferredTasks = array_column($detail['tasks'], null, 'assigneeId');
+        $newTask = $transferredTasks[$recipient->getUserId()];
+        static::assertSame($executionId, $newTask['executionId']);
+        static::assertSame('cancelled', $transferredTasks[$owner->getUserId()]['status']);
+        static::assertSame('pending', $transferredTasks[$other->getUserId()]['status']);
+        static::assertSame([$tasks[$first->getUserId()]], array_column($detail['decisions'], 'taskId'));
+        static::assertSame([$newTask['id']], array_column($detail['transfers'], 'replacementTaskId'));
+        static::assertNull($detail['request']['outcome']);
+        static::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM approval_flow_result'));
+
+        $browser->jsonRequest('POST', $this->path($instanceId, $tasks[$owner->getUserId()]), array_replace($this->payload(), ['expectedVersion' => 4]));
+        $this->assertError($browser, 409, ApprovalFlowException::TASK_NOT_PENDING);
+        $other->authorizeBrowser($browser);
+        $browser->jsonRequest('POST', $this->path($instanceId, $tasks[$other->getUserId()]), array_replace($this->payload(), ['expectedVersion' => 4]));
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $recipient->authorizeBrowser($browser);
+        $browser->jsonRequest('POST', '/api/_action/approval-flow/instances/' . $instanceId . '/tasks/' . $newTask['id'] . '/transfer', [
+            'commandId' => Uuid::randomHex(), 'expectedVersion' => 5, 'assigneeId' => $owner->getUserId(), 'reason' => 'Back to the original reviewer.',
+        ]);
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $owner->authorizeBrowser($browser);
+        $browser->request('GET', $detailPath);
+        $detail = json_decode((string) $browser->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        static::assertSame([$tasks[$owner->getUserId()], $newTask['id']], array_column($detail['transfers'], 'taskId'));
+        $replacementId = $detail['transfers'][1]['replacementTaskId'];
+
+        $browser->jsonRequest('POST', $this->path($instanceId, $replacementId), array_replace($this->payload(), ['expectedVersion' => 6]));
+        static::assertSame(200, $browser->getResponse()->getStatusCode());
+        $receipt = $this->runtime->get(ApprovalInstanceService::class)->progress($instanceId, $executionId, Uuid::randomHex(), 7, Context::createDefaultContext());
+        static::assertSame('approved', $receipt->outcome?->value);
+    }
+
     public static function outcomes(): iterable
     {
         yield 'approved' => ['approved'];

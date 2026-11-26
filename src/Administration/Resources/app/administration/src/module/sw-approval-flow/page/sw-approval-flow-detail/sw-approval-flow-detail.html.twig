@@ -120,6 +120,14 @@
                         >
                             {{ $t('sw-approval-flow.decision.return') }}
                         </mt-button>
+                        <mt-button
+                            data-testid="decision-transfer"
+                            variant="secondary"
+                            size="small"
+                            @click="openDecision(task.id, 'transfer')"
+                        >
+                            {{ $t('sw-approval-flow.decision.transfer') }}
+                        </mt-button>
                     </div>
                 </mt-card>
                 {% endblock %}

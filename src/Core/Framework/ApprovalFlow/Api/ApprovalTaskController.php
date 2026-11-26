@@ -10,6 +10,7 @@ use Shopwell\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -67,6 +68,31 @@ class ApprovalTaskController
             $payload->commandId,
             $payload->expectedVersion,
             $payload->targetExecutionId,
+            $payload->reason,
+            $context,
+        ));
+    }
+
+    #[Route(path: '/api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/transfer-candidates', name: 'api.action.approval_flow.task.transfer_candidates', defaults: [PlatformRequest::ATTRIBUTE_ACL => [ApprovalInstanceService::DECIDE_PRIVILEGE]], methods: [Request::METHOD_GET])]
+    public function transferCandidates(string $instanceId, string $taskId, Context $context, #[MapQueryParameter] string $term = ''): JsonResponse
+    {
+        return new JsonResponse(['data' => $this->instances->transferCandidates($instanceId, $taskId, $term, $context)]);
+    }
+
+    #[Route(path: '/api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/transfer', name: 'api.action.approval_flow.task.transfer', defaults: [PlatformRequest::ATTRIBUTE_ACL => [ApprovalInstanceService::DECIDE_PRIVILEGE]], methods: [Request::METHOD_POST])]
+    public function transferTask(
+        string $instanceId,
+        string $taskId,
+        #[MapRequestPayload(validationFailedStatusCode: Response::HTTP_BAD_REQUEST)]
+        ApprovalTaskTransferRequest $payload,
+        Context $context,
+    ): JsonResponse {
+        return new JsonResponse($this->instances->transferTask(
+            $instanceId,
+            $taskId,
+            $payload->commandId,
+            $payload->expectedVersion,
+            $payload->assigneeId,
             $payload->reason,
             $context,
         ));

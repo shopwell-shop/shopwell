@@ -21,6 +21,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
@@ -141,6 +142,33 @@ class PaymentTransferApprovalExecutionTest extends TestCase
     public function testPendingApprovalDoesNotClaimAnAttempt(): void
     {
         $this->assertClaimBlocked('pending');
+    }
+
+    public function testTransferringATaskKeepsPayoutBlockedUntilTheRecipientApproves(): void
+    {
+        $permissions = [ApprovalInstanceService::DECIDE_PRIVILEGE, 'approval_flow:access'];
+        $user = TestUser::createNewTestUser($this->connection, $permissions);
+        $source = new AdminApiSource($user->getUserId());
+        $source->setPermissions($permissions);
+        $recipient = Context::createDefaultContext($source);
+        $system = Context::createDefaultContext();
+        $instanceId = $this->request->getInstanceId();
+        $instances = $this->runtime->get(ApprovalInstanceService::class);
+        $original = $this->pendingReview();
+        $instances->transferTask($instanceId, $original['taskId'], Uuid::randomHex(), 2, $user->getUserId(), 'Handover.', $this->reviewerContext());
+
+        $this->assertClaimBlocked('pending');
+        $replacement = $this->pendingReview();
+        static::assertNotSame($original['taskId'], $replacement['taskId']);
+        static::assertSame($original['executionId'], $replacement['executionId']);
+        $instances->decide($instanceId, $replacement['taskId'], Uuid::randomHex(), 3, ApprovalOutcome::Approved, '', $recipient);
+        $instances->progress($instanceId, $replacement['executionId'], Uuid::randomHex(), 4, $system);
+        $this->assertClaimBlocked('pending');
+
+        static::getContainer()->get(PaymentTransferApprovalResultHandler::class)->handle($this->approvalResult(), $this->request, $system);
+        static::getContainer()->get(PaymentTransferResultBooker::class)->claim($this->transfer);
+
+        static::assertSame(1, static::getContainer()->get(PaymentTransferService::class)->getById($this->transfer->id)->submitAttempts);
     }
 
     public function testReturnedTransferCannotClaimAPayoutUntilTheReopenedReviewsPass(): void

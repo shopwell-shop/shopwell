@@ -39,6 +39,7 @@ use Shopwell\Core\System\User\UserCollection;
  * @phpstan-type RequestSummary array{id: string, title: string, businessType: string, businessId: string, submissionRound: int, instanceId: string, initiatorId: string, initiatorName: string|null, createdAt: string|null, status: string, outcome: string|null, aggregateVersion: int}
  * @phpstan-type ExecutionSummary array{id: string, nodeId: string, sequence: int, status: string, outcome: string|null}
  * @phpstan-type TaskSummary array{id: string, executionId: string, assigneeId: string, status: string}
+ * @phpstan-type TransferSummary array{taskId: string, replacementTaskId: string, reason: string, transferredAt: string|null, aggregateVersion: int}
  * @phpstan-type ReturnSummary array{taskId: string, targetExecutionId: string, reason: string, returnedAt: string|null, aggregateVersion: int}
  * @phpstan-type DecisionSummary array{taskId: string, nodeId: string, assigneeId: string, decision: string, reason: string, decidedAt: string|null, aggregateVersion: int}
  */
@@ -81,6 +82,7 @@ class ApprovalRequestQuery
                 : new EqualsAnyFilter('instance.executions.tasks.completionReason', [
                     ApprovalTaskCompletionReason::DECISION,
                     ApprovalTaskCompletionReason::RETURNED,
+                    ApprovalTaskCompletionReason::TRANSFERRED,
                 ]);
             $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_AND, [
                 new EqualsFilter('instance.executions.tasks.assigneeId', $userId),
@@ -107,7 +109,7 @@ class ApprovalRequestQuery
     }
 
     /**
-     * @return array{request: RequestSummary, form: \stdClass, formLabels: \stdClass, participantNames: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>, returns: list<ReturnSummary>}
+     * @return array{request: RequestSummary, form: \stdClass, formLabels: \stdClass, participantNames: \stdClass, executions: list<ExecutionSummary>, tasks: list<TaskSummary>, decisions: list<DecisionSummary>, returns: list<ReturnSummary>, transfers: list<TransferSummary>}
      */
     public function detail(string $requestId, Context $context): array
     {
@@ -130,7 +132,7 @@ class ApprovalRequestQuery
         $executions = $this->executions->search($executionCriteria, $context)->getEntities();
         $operationCriteria = (new Criteria())->addFilter(
             new EqualsFilter('instanceId', $request->getInstanceId()),
-            new EqualsAnyFilter('operation', [ApprovalInstanceStore::DECIDE, ApprovalInstanceStore::RETURN_APPROVAL]),
+            new EqualsAnyFilter('operation', [ApprovalInstanceStore::DECIDE, ApprovalInstanceStore::RETURN_APPROVAL, ApprovalInstanceStore::TRANSFER_TASK]),
         );
         $operations = $this->operations->search($operationCriteria, $context)->getEntities();
         $receipts = [];
@@ -142,6 +144,7 @@ class ApprovalRequestQuery
         $tasks = [];
         $decisions = [];
         $returns = [];
+        $transfers = [];
         $assignedNodeIds = [];
         foreach ($executions as $execution) {
             $executionSummaries[] = [
@@ -151,6 +154,22 @@ class ApprovalRequestQuery
             $executionTasks = $execution->getTasks();
             \assert($executionTasks !== null);
             foreach ($executionTasks as $task) {
+                $replacedId = $task->getReplacesTaskId();
+                if ($replacedId !== null) {
+                    $replaced = $executionTasks->get($replacedId);
+                    \assert($replaced !== null);
+                    $commandId = $replaced->getCompletionCommandId();
+                    \assert($commandId !== null);
+                    $receipt = $receipts[$commandId];
+                    $transfers[] = [
+                        'taskId' => $replacedId,
+                        'replacementTaskId' => $task->getId(),
+                        'reason' => $receipt->getReason(),
+                        'transferredAt' => $receipt->getCreatedAt()?->format(\DATE_ATOM),
+                        'aggregateVersion' => $receipt->getAggregateVersion(),
+                    ];
+                }
+
                 $tasks[] = ['id' => $task->getId(), 'executionId' => $execution->getId(), 'assigneeId' => $task->getAssigneeId(), 'status' => $task->getStatus()->value];
                 if ($task->getAssigneeId() === $userId) {
                     $assignedNodeIds[] = $execution->getNodeId();
@@ -185,6 +204,7 @@ class ApprovalRequestQuery
         }
         usort($decisions, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
         usort($returns, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
+        usort($transfers, static fn (array $first, array $second): int => $first['aggregateVersion'] <=> $second['aggregateVersion']);
         $instance = $request->getInstance();
         \assert($instance !== null);
         $release = $instance->getRelease();
@@ -206,6 +226,7 @@ class ApprovalRequestQuery
             'tasks' => $tasks,
             'decisions' => $decisions,
             'returns' => $returns,
+            'transfers' => $transfers,
         ];
     }
 

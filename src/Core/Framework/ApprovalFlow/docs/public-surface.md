@@ -397,6 +397,15 @@ A Symfony event subscriber can handle `ApprovalReturnTargetsEvent` and call `res
 The event runs for target listing and for the locked command, so listeners must apply the same rules without writing business state.
 Each listener can remove candidates from the current list.
 
+### Transferring an approval task
+
+The assignee of a pending task can search for eligible reviewers with `GET /api/_action/approval-flow/instances/{instanceId}/tasks/{taskId}/transfer-candidates`.
+Submit the new `assigneeId` with `commandId`, `expectedVersion` and a reason to the task's `POST .../transfer` action.
+The recipient must be active, have access to approvals and be eligible to decide the task.
+An active participant or someone who already voted in the same execution is excluded.
+The replacement stays in the same approval group and counts as the original pending vote.
+Request detail exposes the relationship between the old and replacement task in `transfers`.
+
 ## Scope execution intents and snapshots
 
 `OpenScopeEffect` and `WaitEffect` are supported public node intents alongside advance, approval request and completion.

@@ -46,6 +46,7 @@ class ApprovalTaskDefinition extends EntityDefinition
             (new FkField('execution_id', 'executionId', ApprovalNodeExecutionDefinition::class))->addFlags(new Required()),
             (new IdField('assignee_id', 'assigneeId'))->addFlags(new Required()),
             (new EnumField('status', 'status', ApprovalTaskStatus::Pending))->addFlags(new Required()),
+            new FkField('replaces_task_id', 'replacesTaskId', self::class),
             new IdField('completion_command_id', 'completionCommandId'),
             new StringField('completion_reason', 'completionReason'),
             new ManyToOneAssociationField('execution', 'execution_id', ApprovalNodeExecutionDefinition::class, 'id', false),

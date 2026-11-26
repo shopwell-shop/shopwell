@@ -32,20 +32,26 @@ data
   isLoadingTargets: any  [private]
   isSubmitting: any  [private]
   reason: any  [private]
-  targetExecutionId: any  [private]
-  targets: any  [private]
+  searchRevision: any  [private]
+  targetId: any  [private]
+  targetOptions: any  [private]
 
 computed
   actionInput: TaskActionInput | null  [private]
   canRetry: boolean  [private]
   canSubmit: boolean  [private]
   isReturn: boolean  [private]
-  returnOptions: any  [private]
+  isTransfer: boolean  [private]
+  needsTarget: boolean  [private]
 
 methods
   close(): void  [private]
-  loadReturnTargets(): Promise<void>  [private]
+  findTransferTargets(term: string): Promise<TargetOption[]>  [private]
+  loadTargets(): Promise<void>  [private]
+  rememberTarget(option: TargetOption): void  [private]
+  searchTransferTargets(arg0: { searchTerm: string }): Promise<TargetOption[] | undefined>  [private]
   submit(): Promise<void>  [private]
+  submitCommand(command: TaskCommand): Promise<unknown>  [private]
 
 blocks
   sw_approval_flow_decision_modal  [private]
